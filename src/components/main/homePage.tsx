@@ -7,6 +7,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
 import { useEffect } from "react";
 import { Product } from "@/types/product";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const categories = [
   { name: "상의", icon: "/banner/top.png" },
@@ -67,13 +68,13 @@ export default function HomePage() {
       </section>
 
       {/* 카테고리 */}
-      <section className="w-full h-full px-10">
+      <section className="w-full h-full px-4 sm:px-6 md:px-8 lg:px-10">
         <h2 className="text-lg font-semibold mb-4">카테고리</h2>
-        <div className="flex justify-center w-full gap-20">
+        <div className="flex justify-between gap-4">
           {categories.map((cat) => (
             <div
               key={cat.name}
-              className="flex items-center justify-center w-full gap-2 bg-white rounded-xl shadow p-4 hover:shadow-md transition relative aspect-square max-w-40 max-h-40"
+              className="flex items-center justify-center w-full gap-2 bg-white rounded-lg shadow p-4 hover:shadow-md transition relative aspect-square max-w-40 max-h-40 cursor-pointer"
             >
               <Image src={cat.icon} alt={cat.name} fill />
             </div>
@@ -85,7 +86,21 @@ export default function HomePage() {
       <section className="w-full h-full px-4 sm:px-6 md:px-8 lg:px-10">
         <h2 className="text-lg font-semibold mb-6">전체 상품</h2>
         {status === "pending" ? (
-          <div className="text-center py-10">로딩 중...</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            {Array.from({ length: 10 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-xl shadow flex flex-col p-3 sm:p-4 gap-2 sm:gap-3 animate-fadeIn"
+              >
+                <Skeleton className="relative w-full aspect-[7/8] rounded-lg" />
+                <div className="flex-1 flex flex-col gap-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-5 w-1/2" />
+                </div>
+                <Skeleton className="h-10 w-full mt-1 sm:mt-2" />
+              </div>
+            ))}
+          </div>
         ) : error ? (
           <div className="text-center text-red-500 py-10">{`${error}`}</div>
         ) : (

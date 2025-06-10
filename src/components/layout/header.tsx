@@ -32,7 +32,7 @@ export default function Header() {
         {/* 좌측: 로고 */}
         <div className="flex items-center gap-2">
           <Link href="/">
-            <span className="font-bold text-xl tracking-tight select-none">
+            <span className="font-bold text-xl tracking-tight select-none text-[#D74FDF]">
               BOGOFIT
             </span>
           </Link>
@@ -75,7 +75,7 @@ export default function Header() {
             onClick={() => setOpen(true)}
             aria-label="메뉴 열기"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-10 h-10 text-[#D74FDF]" />
           </Button>
         </div>
       </header>

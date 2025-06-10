@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Heart, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -14,6 +14,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProductDetail() {
   const params = useParams();
@@ -25,7 +26,33 @@ export default function ProductDetail() {
   const [selectedOption, setSelectedOption] = useState<string>("");
 
   if (isLoading) {
-    return <div className="text-center py-20">로딩 중...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col gap-8">
+          {/* 이미지 Skeleton */}
+          <div className="space-y-4">
+            <Skeleton className="aspect-square w-full h-full rounded-lg bg-gray-100" />
+          </div>
+          {/* 정보 Skeleton */}
+          <div className="space-y-6">
+            <div className="flex justify-between">
+              <Skeleton className="w-24 h-8" />
+              <div className="flex gap-4">
+                <Skeleton className="w-16 h-8" />
+                <Skeleton className="w-16 h-8" />
+              </div>
+            </div>
+            <Skeleton className="h-8 w-2/3" />
+            <Skeleton className="h-5 w-1/3" />
+            <Skeleton className="h-12 w-full" />
+            <div className="flex gap-4">
+              <Skeleton className="h-12 w-1/2" />
+              <Skeleton className="h-12 w-1/2" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
   if (error) {
     return (
@@ -40,7 +67,7 @@ export default function ProductDetail() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="flex flex-col gap-8 max-w-sm mx-auto">
         {/* 상품 이미지 */}
         <div className="space-y-4">
           <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-50">
@@ -70,10 +97,6 @@ export default function ProductDetail() {
               </Link>
             </div>
             <div className="flex justify-center gap-8 text-gray-500">
-              <button className="flex items-center gap-2 hover:text-pink-600 transition">
-                <Heart className="w-5 h-5" />
-                <span>찜하기</span>
-              </button>
               <button className="flex items-center gap-2 hover:text-pink-600 transition">
                 <Share2 className="w-5 h-5" />
                 <span>공유하기</span>
@@ -136,9 +159,6 @@ export default function ProductDetail() {
           <div className="flex gap-4">
             <Button size="lg" className="flex-1">
               바로 구매하기
-            </Button>
-            <Button size="lg" variant="outline" className="flex-1">
-              장바구니 담기
             </Button>
           </div>
         </div>
