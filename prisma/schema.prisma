@@ -19,3 +19,19 @@ model products {
   createdAt DateTime @default(now())
   updatedAt DateTime
 }
+
+
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  orderId     String   @unique
+  amount      Int
+  status      String   // "PENDING", "SUCCESS", "FAILED"
+  method      String?  // 카드, 계좌이체 등
+  paymentKey  String?  // Toss 결제키
+  failReason  String?  // 실패 사유
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+}
+

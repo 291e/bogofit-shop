@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Menu } from "lucide-react";
+import { Menu, User } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useUser } from "@/hooks/useUser";
 
 const navLinks = [
   { href: "/products", label: "전체상품" },
@@ -13,6 +14,12 @@ const navLinks = [
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const { user, loading } = useUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 모바일 메뉴 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -51,21 +58,24 @@ export default function Header() {
         </nav>
         {/* 우측: 유저/장바구니/로그인 (데스크탑) */}
         <div className="hidden md:flex items-center gap-2">
-          <Link href="/cart">
+          {/* <Link href="/cart">
             <Button variant="ghost" size="icon" aria-label="장바구니">
               <ShoppingCart className="w-5 h-5" />
             </Button>
-          </Link>
-          <Link href="/login">
-            <Button variant="ghost" size="icon" aria-label="로그인">
-              <User className="w-5 h-5" />
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button size="sm" variant="secondary">
-              회원가입
-            </Button>
-          </Link>
+          </Link> */}
+          <>
+            {!mounted || loading ? (
+              <span className="text-sm text-gray-400">로딩중...</span>
+            ) : user ? (
+              <span className="text-sm font-semibold mr-2">{user.userId}</span>
+            ) : (
+              <Link href="/login">
+                <Button variant="ghost" size="icon" aria-label="로그인">
+                  <User className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+          </>
         </div>
         {/* 모바일: 햄버거 메뉴 */}
         <div className="md:hidden flex items-center">
@@ -103,21 +113,26 @@ export default function Header() {
               ))}
             </div>
             <div className="flex gap-2 mt-8">
-              <Link href="/cart">
+              {/* <Link href="/cart">
                 <Button variant="outline" size="icon" aria-label="장바구니">
                   <ShoppingCart className="w-5 h-5" />
                 </Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="outline" size="icon" aria-label="로그인">
-                  <User className="w-5 h-5" />
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm" variant="secondary">
-                  회원가입
-                </Button>
-              </Link>
+              </Link> */}
+              <>
+                {!mounted || loading ? (
+                  <span className="text-sm text-gray-400">로딩중...</span>
+                ) : user ? (
+                  <span className="text-sm font-semibold mr-2 text-[#D74FDF]">
+                    {user.userId}님
+                  </span>
+                ) : (
+                  <Link href="/login">
+                    <Button variant="ghost" size="icon" aria-label="로그인">
+                      <User className="w-5 h-5" />
+                    </Button>
+                  </Link>
+                )}
+              </>
             </div>
           </nav>
         </div>

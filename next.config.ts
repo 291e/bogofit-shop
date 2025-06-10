@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/api/graphql",
+        destination: "https://api.bogofit.kr/graphql",
+      },
+    ];
+  },
   images: {
     domains: [
       "bogofit.s3.ap-northeast-2.amazonaws.com",

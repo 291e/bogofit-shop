@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Share2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,6 +14,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CheckoutButton } from "@/components/payment/Checkout";
 
 export default function ProductDetail() {
   const params = useParams();
@@ -157,9 +157,11 @@ export default function ProductDetail() {
           )}
 
           <div className="flex gap-4">
-            <Button size="lg" className="flex-1">
-              바로 구매하기
-            </Button>
+            <CheckoutButton
+              productTitle={product.title}
+              productPrice={product.price}
+              selectedOption={selectedOption}
+            />
           </div>
         </div>
       </div>
