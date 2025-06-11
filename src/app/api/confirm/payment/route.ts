@@ -31,6 +31,13 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Toss Payments API Error:", errorData);
+
+      // 결제 실패 시 status를 FAIL로 업데이트
+      await prisma.payment.update({
+        where: { orderId },
+        data: { status: "FAIL" },
+      });
+
       return NextResponse.json(
         {
           error: true,

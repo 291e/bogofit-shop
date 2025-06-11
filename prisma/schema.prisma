@@ -30,8 +30,9 @@ model Payment {
   method      String?  // 카드, 계좌이체 등
   paymentKey  String?  // Toss 결제키
   failReason  String?  // 실패 사유
+  productId   Int?      // 상품 ID
+  productTitle String?  // 상품명
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
 }
 

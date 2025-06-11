@@ -158,9 +158,15 @@ export default function ProductDetail() {
 
           <div className="flex gap-4">
             <CheckoutButton
+              productId={Number(params.id)}
               productTitle={product.title}
               productPrice={product.price}
               selectedOption={selectedOption}
+              hasOptions={
+                Array.isArray(product.options)
+                  ? product.options.length > 0
+                  : !!product.options
+              }
             />
           </div>
         </div>

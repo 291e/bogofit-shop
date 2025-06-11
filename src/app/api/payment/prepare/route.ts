@@ -5,6 +5,9 @@ import { v4 as uuidv4 } from "uuid";
 interface PaymentPrepareRequest {
   amount: number;
   method: string;
+  productId: number;
+  productTitle: string;
+  selectedOption?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -28,16 +31,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { amount, method } = data;
+    const { amount, method, productId, productTitle } = data;
 
     if (
       typeof amount !== "number" ||
       amount < 1000 ||
       !method ||
-      typeof method !== "string"
+      typeof method !== "string" ||
+      !productId ||
+      !productTitle
     ) {
       console.warn(
-        `[API/payment/prepare] 필수 결제 정보 누락 또는 잘못됨, amount: ${amount}, method: ${method}`
+        `[API/payment/prepare] 필수 결제 정보 누락 또는 잘못됨, amount: ${amount}, method: ${method}, productId: ${productId}, productTitle: ${productTitle}`
       );
       return NextResponse.json(
         { error: "필수 결제 정보가 누락되었거나 잘못되었습니다." },
@@ -72,6 +77,8 @@ export async function POST(req: NextRequest) {
           amount,
           status: "PENDING",
           method,
+          productId,
+          productTitle,
         },
       });
       console.log(
@@ -89,6 +96,36 @@ export async function POST(req: NextRequest) {
     console.error("[API/payment/prepare] 알 수 없는 서버 에러:", error);
     return NextResponse.json(
       { error: "서버 오류, 관리자에게 문의하세요.", detail: String(error) },
+      { status: 500 }
+    );
+  }
+}
+
+// 결제 실패 처리 API
+export async function PUT(req: NextRequest) {
+  try {
+    const { orderId, failReason } = await req.json();
+
+    if (!orderId) {
+      return NextResponse.json(
+        { error: "주문번호가 필요합니다." },
+        { status: 400 }
+      );
+    }
+
+    const payment = await prisma.payment.update({
+      where: { orderId },
+      data: {
+        status: "FAIL",
+        failReason: failReason || "사용자에 의한 취소",
+      },
+    });
+
+    return NextResponse.json({ success: true, payment });
+  } catch (error) {
+    console.error("[API/payment/prepare] 결제 실패 처리 중 에러:", error);
+    return NextResponse.json(
+      { error: "결제 실패 처리 중 오류가 발생했습니다." },
       { status: 500 }
     );
   }
