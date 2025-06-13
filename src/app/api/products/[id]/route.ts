@@ -16,8 +16,31 @@ export async function GET(
         { status: 400 }
       );
     }
-    const product = await prisma.products.findUnique({
-      where: { id },
+    const product = await prisma.product.findUnique({
+      where: { id, isActive: true },
+      include: {
+        variants: {
+          select: {
+            id: true,
+            optionName: true,
+            optionValue: true,
+            priceDiff: true,
+          },
+        },
+        reviews: {
+          include: {
+            user: {
+              select: {
+                userId: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
     });
     if (!product) {
       return NextResponse.json(

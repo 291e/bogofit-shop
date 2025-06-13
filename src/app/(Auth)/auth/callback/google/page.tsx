@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@apollo/client";
 import { LOGIN_WITH_GOOGLE } from "@/graphql/mutations";
@@ -14,7 +14,7 @@ interface LoginResponse {
   user: User;
 }
 
-export default function GoogleCallback() {
+function GoogleCallbackContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
@@ -127,4 +127,21 @@ export default function GoogleCallback() {
   }
 
   return null;
+}
+
+export default function GoogleCallback() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">로딩 중...</h2>
+            <p className="text-gray-500">잠시만 기다려주세요.</p>
+          </div>
+        </div>
+      }
+    >
+      <GoogleCallbackContent />
+    </Suspense>
+  );
 }

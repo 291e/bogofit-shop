@@ -10,7 +10,21 @@ export async function GET(req: NextRequest) {
 
     const payments = await prisma.payment.findMany({
       where: { userId },
-      include: { product: true },
+      include: {
+        order: {
+          include: {
+            items: {
+              include: {
+                variant: {
+                  include: {
+                    product: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 

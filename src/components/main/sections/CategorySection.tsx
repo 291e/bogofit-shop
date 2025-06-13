@@ -1,0 +1,113 @@
+"use client";
+
+import { motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
+
+const categories = [
+  { name: "상의", icon: "/banner/top.png", color: "from-pink-400 to-rose-500" },
+  {
+    name: "하의",
+    icon: "/banner/bottom.png",
+    color: "from-blue-400 to-indigo-500",
+  },
+  {
+    name: "한벌 옷",
+    icon: "/banner/onepiece.png",
+    color: "from-purple-400 to-violet-500",
+  },
+  {
+    name: "아우터",
+    icon: "/banner/outer.png",
+    color: "from-emerald-400 to-teal-500",
+  },
+];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+    },
+  },
+};
+
+export default function CategorySection() {
+  return (
+    <section className="w-full py-16 px-4 sm:px-6 md:px-8 lg:px-10 bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+            카테고리별 쇼핑
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            원하는 스타일을 빠르게 찾아보세요
+          </p>
+        </motion.div>
+
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-6"
+        >
+          {categories.map((category) => (
+            <motion.div key={category.name} variants={itemVariants}>
+              <Link
+                href={`/products?category=${encodeURIComponent(category.name)}`}
+                className="group block"
+              >
+                <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                  {/* 배경 그라디언트 */}
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-10 group-hover:opacity-20 transition-opacity`}
+                  />
+
+                  {/* 카테고리 이미지 */}
+                  <div className="relative aspect-square p-8">
+                    <Image
+                      src={category.icon}
+                      alt={category.name}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className="object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
+
+                  {/* 카테고리 이름 */}
+                  <div className="p-6 pt-0">
+                    <h3 className="text-xl font-semibold text-center text-gray-900 group-hover:text-gray-700 transition-colors">
+                      {category.name}
+                    </h3>
+                  </div>
+
+                  {/* 호버 효과 */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors rounded-2xl" />
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}

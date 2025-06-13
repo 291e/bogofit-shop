@@ -6,10 +6,11 @@ const prisma = new PrismaClient();
 // 주소 수정
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     if (isNaN(id)) {
       return NextResponse.json(
         { error: "유효하지 않은 주소 ID입니다." },
@@ -75,10 +76,11 @@ export async function PUT(
 // 주소 삭제
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
     if (isNaN(id)) {
       return NextResponse.json(
         { error: "유효하지 않은 주소 ID입니다." },

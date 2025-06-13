@@ -8,6 +8,8 @@ interface PaymentPrepareRequest {
   productId: number;
   productTitle: string;
   selectedOption?: string;
+  quantity?: number;
+  variantId?: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -31,7 +33,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { amount, method, productId, productTitle } = data;
+    const {
+      amount,
+      method,
+      productId,
+      productTitle,
+      quantity = 1,
+      variantId,
+    } = data;
 
     if (
       typeof amount !== "number" ||
@@ -66,20 +75,56 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ orderId: existing.orderId });
     }
 
-    // 4. 새 orderId 생성 및 DB 저장
+    // 4. 새 orderId 생성 및 Order, Payment 생성
     const orderId = uuidv4();
+    const orderNumber = `${new Date()
+      .toISOString()
+      .slice(0, 10)
+      .replace(/-/g, "")}-${Math.random()
+      .toString(36)
+      .substr(2, 4)
+      .toUpperCase()}`;
 
     try {
-      await prisma.payment.create({
-        data: {
-          userId,
-          orderId,
-          amount,
-          status: "PENDING",
-          method,
-          productId,
-        },
+      // 트랜잭션으로 Order와 Payment 동시 생성
+      await prisma.$transaction(async (tx) => {
+        // Order 생성
+        const order = await tx.order.create({
+          data: {
+            id: orderId,
+            userId,
+            orderNumber,
+            status: "PENDING",
+            totalAmount: amount,
+          },
+        });
+
+        // OrderItem 생성 (variantId가 있는 경우)
+        if (variantId) {
+          await tx.orderItem.create({
+            data: {
+              orderId: order.id,
+              variantId,
+              quantity,
+              unitPrice: Math.floor(amount / quantity),
+            },
+          });
+        }
+
+        // Payment 생성
+        const payment = await tx.payment.create({
+          data: {
+            userId,
+            orderId: order.id,
+            amount,
+            status: "PENDING",
+            method,
+          },
+        });
+
+        return { order, payment };
       });
+
       console.log(
         `[API/payment/prepare] 결제 사전 생성 성공(orderId: ${orderId})`
       );
@@ -115,7 +160,7 @@ export async function PUT(req: NextRequest) {
     const payment = await prisma.payment.update({
       where: { orderId },
       data: {
-        status: "FAIL",
+        status: "FAILED",
         failReason: failReason || "사용자에 의한 취소",
       },
     });
