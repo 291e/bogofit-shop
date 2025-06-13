@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useUser } from "./useUser";
+import { Product } from "@/types/product";
 
 export interface Payment {
   id: string;
@@ -7,8 +8,8 @@ export interface Payment {
   amount: number;
   method: string;
   status: "FAIL" | "PENDING" | "COMPLETED";
-  productTitle: string;
-  productId: string;
+  productId: number;
+  product: Product | null;
   createdAt: string;
 }
 

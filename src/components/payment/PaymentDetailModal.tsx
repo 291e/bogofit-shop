@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Payment } from "@/hooks/usePaymentHistory";
+import Image from "next/image";
 
 const paymentStatusMap = {
   PENDING: { label: "진행중", variant: "secondary" as const },
@@ -47,8 +48,14 @@ export function PaymentDetailModal({
                 href={`/product/${payment.productId}`}
                 className="text-[#d74fdf] hover:underline"
               >
-                {payment.productTitle}
+                {payment.product?.title}
               </Link>
+              <Image
+                src={payment.product?.imageUrl || ""}
+                alt={payment.product?.title || ""}
+                width={100}
+                height={100}
+              />
             </div>
 
             <div className="space-y-2">

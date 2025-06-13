@@ -24,3 +24,15 @@ export const GET_MY_INFO = gql`
     }
   }
 `;
+
+export const GET_ALL_USERS = gql`
+  query GetAllUsers($offset: Int) {
+    getAllUsers(offset: $offset) {
+      id
+      userId
+      email
+      phoneNumber
+      profile
+    }
+  }
+`;

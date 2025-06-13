@@ -76,7 +76,13 @@ export default function HomePage() {
               key={cat.name}
               className="flex items-center justify-center w-full gap-2 bg-white rounded-lg shadow p-4 hover:shadow-md transition relative aspect-square max-w-40 max-h-40 cursor-pointer"
             >
-              <Image src={cat.icon} alt={cat.name} fill />
+              <Image
+                src={cat.icon}
+                alt={cat.name}
+                fill
+                sizes="100vw 100vh"
+                className="object-contain"
+              />
             </div>
           ))}
         </div>

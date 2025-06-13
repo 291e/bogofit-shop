@@ -78,7 +78,6 @@ export async function POST(req: NextRequest) {
           status: "PENDING",
           method,
           productId,
-          productTitle,
         },
       });
       console.log(

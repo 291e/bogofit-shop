@@ -6,9 +6,9 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
 import { useState } from "react";
 import { PaymentDetailModal } from "@/components/payment/PaymentDetailModal";
+import Image from "next/image";
 
 const paymentStatusMap = {
   PENDING: { label: "진행중", variant: "secondary" as const },
@@ -85,14 +85,18 @@ export default function PaymentHistoryPage() {
             className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
             onClick={() => setSelectedPayment(payment)}
           >
+            <div>
+              <Image
+                src={payment.product?.imageUrl || ""}
+                alt={payment.product?.title || ""}
+                width={100}
+                height={100}
+              />
+            </div>
             <div className="flex-1">
-              <Link
-                href={`/product/${payment.productId}`}
-                className="font-semibold hover:text-[#d74fdf] transition-colors"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {payment.productTitle}
-              </Link>
+              <span className="font-semibold hover:text-[#d74fdf] transition-colors">
+                {payment.product?.title}
+              </span>
               <p className="text-sm text-gray-500">
                 {format(new Date(payment.createdAt), "PPP", { locale: ko })}
               </p>

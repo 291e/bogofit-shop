@@ -61,7 +61,8 @@
     "tailwind-merge": "^3.3.0",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
-    "zod": "^3.25.34"
+    "zod": "^3.25.34",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

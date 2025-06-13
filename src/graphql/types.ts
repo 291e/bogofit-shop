@@ -129,6 +129,19 @@ export interface LoginWithGoogleResult {
   };
 }
 
+export interface LoginWithKakaoResult {
+  success: boolean;
+  message: string;
+  token: string;
+  user: {
+    id: string;
+    userId: string;
+    email: string;
+    profile?: string;
+    provider?: string;
+  };
+}
+
 export interface Business {
   id: string;
   user: User;

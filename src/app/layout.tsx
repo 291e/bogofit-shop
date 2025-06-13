@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={inter.className}>
+      <body suppressHydrationWarning className={inter.className}>
         <Providers>
           <QueryProvider>
             <MainLayout>{children}</MainLayout>
