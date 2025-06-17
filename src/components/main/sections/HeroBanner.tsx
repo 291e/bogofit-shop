@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function HeroBanner() {
@@ -55,10 +55,10 @@ export default function HeroBanner() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
+            className="text-4xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight flex flex-col items-center "
           >
-            BOGOFIT
-            <br />
+            <span className="">BOGOFIT</span>
+
             <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
               SHOP
             </span>
@@ -81,22 +81,12 @@ export default function HeroBanner() {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <Link href="/products">
-              <Button
-                size="lg"
-                className="bg-white text-black hover:bg-gray-100 px-8 py-4 text-lg font-semibold rounded-full group transition-all duration-300 hover:scale-105"
-              >
-                해외 상품 둘러보기
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-
             <Button
               variant="outline"
               size="lg"
               className="border-white text-white hover:bg-white hover:text-black px-8 py-4 text-lg font-semibold rounded-full backdrop-blur-sm bg-white/10 transition-all duration-300 hover:scale-105"
             >
-              구매 대행 신청
+              <Link href="/products">상품 둘러보기</Link>
             </Button>
           </motion.div>
         </div>

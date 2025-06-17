@@ -45,7 +45,7 @@ export function PaymentDetailModal({
             <div className="space-y-2">
               <h3 className="font-semibold">상품 정보</h3>
               <Link
-                href={`/product/${payment.productId}`}
+                href={`/product/${payment.product?.id}`}
                 className="text-[#d74fdf] hover:underline"
               >
                 {payment.product?.title}

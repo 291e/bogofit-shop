@@ -91,19 +91,45 @@ export function CheckoutButton({
       return;
     }
 
+    // 주문 페이지에서 온 경우 URL 파라미터에서 주문 정보 가져오기
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderInfo = {
+      ordererName: urlParams.get("ordererName") || "",
+      ordererPhone: urlParams.get("ordererPhone") || "",
+      ordererEmail: urlParams.get("ordererEmail") || "",
+      recipientName: urlParams.get("recipientName") || "",
+      recipientPhone: urlParams.get("recipientPhone") || "",
+      address: urlParams.get("address") || "",
+      addressDetail: urlParams.get("addressDetail") || "",
+      zipCode: urlParams.get("zipCode") || "",
+      deliveryRequest: urlParams.get("deliveryRequest") || "",
+      customsInfo: {
+        recipientNameEn: urlParams.get("recipientNameEn") || "",
+        personalCustomsCode: urlParams.get("personalCustomsCode") || "",
+      },
+    };
+
+    // 주문 정보가 있는지 확인 (주문 페이지에서 온 경우)
+    const hasOrderInfo =
+      orderInfo.ordererName && orderInfo.recipientName && orderInfo.address;
+
+    const requestBody = {
+      amount: Number(amount),
+      method: paymentMethod.method,
+      productId,
+      productTitle,
+      selectedOption,
+      quantity: 1,
+      ...(hasOrderInfo && { orderInfo }), // 주문 정보가 있을 때만 포함
+    };
+
     const res = await fetch("/api/payment/prepare", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-user-id": user.id,
       },
-      body: JSON.stringify({
-        amount: Number(amount),
-        method: paymentMethod.method,
-        productId,
-        productTitle,
-        selectedOption,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const data = await res.json();
@@ -153,7 +179,7 @@ export function CheckoutButton({
   return (
     <Dialog open={dialogOpen} onOpenChange={dialogSetOpen}>
       <DialogTrigger asChild>
-        <Button className="flex-1 bg-[#d74fdf] hover:bg-[#b93fc0] text-white font-bold py-2 px-4 rounded-md transition-colors shadow-md">
+        <Button className="flex-1 bg-[#d74fdf] hover:bg-[#b93fc0] text-white font-bold py-2 px-4 rounded-md transition-colors">
           {dict.payment.checkout}
         </Button>
       </DialogTrigger>
@@ -181,10 +207,10 @@ export function CheckoutButton({
               {paymentMethods.map((method) => (
                 <button
                   key={method.method}
-                  className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold flex items-center gap-1 transition-all focus:outline-none focus:ring-2 focus:ring-[#d74fdf] focus:border-[#d74fdf] shadow-sm
+                  className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold flex items-center gap-1 transition-all shadow-sm
                     ${
                       paymentMethod?.method === method.method
-                        ? "bg-[#d74fdf] border-[#d74fdf] text-white scale-105 shadow-lg"
+                        ? "bg-[#d74fdf] border-[#d74fdf] text-white"
                         : "bg-white border-gray-300 text-[#d74fdf] hover:bg-[#f7e6fa] hover:border-[#d74fdf]"
                     }
                   `}

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { User } from "@/graphql/types";
 import { GET_MY_INFO } from "@/graphql/queries";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { useApolloClient } from "@apollo/client";
 
@@ -9,6 +9,7 @@ export function useUser() {
   const client = useApolloClient();
   const { setAuth } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const upsertedUserIds = useRef<Set<string>>(new Set()); // 업서트된 사용자 ID 추적
 
   useEffect(() => {
     setMounted(true);
@@ -42,17 +43,29 @@ export function useUser() {
     retry: false, // 인증 실패 시 재시도 안 함
   });
 
-  // 사용자 정보가 변경될 때 Zustand 상태 업데이트
+  // 사용자 정보가 변경될 때 Zustand 상태 업데이트 및 사용자별 1회만 업서트
   useEffect(() => {
-    if (data?.user) {
+    if (data?.user && data.user.id) {
       const token = localStorage.getItem("token");
-
       setAuth(data.user, token);
 
-      // 상태 업데이트 후 약간의 지연을 두고 확인
-      setTimeout(() => {}, 100);
+      // 해당 사용자 ID로 업서트가 이미 되었는지 확인
+      if (!upsertedUserIds.current.has(data.user.id)) {
+        upsertedUserIds.current.add(data.user.id);
+
+        // 비동기적으로 업서트 실행 (UI 블로킹 방지)
+        fetch("/api/user/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data.user),
+        }).catch((error) => {
+          console.error("사용자 업서트 실패:", error);
+          // 실패 시 다시 시도할 수 있도록 Set에서 제거
+          upsertedUserIds.current.delete(data.user.id);
+        });
+      }
     }
-  }, [data, setAuth]);
+  }, [data?.user?.id, setAuth]); // data?.user?.id로 의존성 변경
 
   // 사용자 정보 업데이트 함수
   const updateUser = async (newUser: User) => {

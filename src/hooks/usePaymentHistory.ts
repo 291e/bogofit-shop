@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useUser } from "./useUser";
-import { Product } from "@/types/product";
 
 export interface Payment {
   id: string;
@@ -8,9 +7,29 @@ export interface Payment {
   amount: number;
   method: string;
   status: "FAIL" | "PENDING" | "COMPLETED";
-  productId: number;
-  product: Product | null;
   createdAt: string;
+  approvedAt?: string | null;
+  product: {
+    id: number;
+    title: string;
+    imageUrl: string;
+  } | null;
+  productCount: number;
+  orderer: {
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    tel: string | null;
+  } | null;
+  shipping: {
+    recipientName: string | null;
+    recipientPhone: string | null;
+    recipientTel: string | null;
+    zipCode: string | null;
+    address1: string | null;
+    address2: string | null;
+  } | null;
+  customsId: string | null;
 }
 
 export function usePaymentHistory() {

@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { AuthProvider } from "@/providers/AuthProvider";
-import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
 interface MainLayoutProps {
   children: React.ReactNode;

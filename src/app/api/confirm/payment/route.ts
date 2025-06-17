@@ -32,10 +32,17 @@ export async function POST(request: Request) {
       const errorData = await response.json();
       console.error("Toss Payments API Error:", errorData);
 
-      // 결제 실패 시 status를 FAIL로 업데이트
-      await prisma.payment.update({
-        where: { orderId },
-        data: { status: "FAIL" },
+      // 결제 실패 시 Payment와 Order 모두 FAILED로 업데이트
+      await prisma.$transaction(async (tx) => {
+        await tx.payment.update({
+          where: { orderId },
+          data: { status: "FAILED" },
+        });
+
+        await tx.order.update({
+          where: { id: orderId },
+          data: { status: "FAILED" },
+        });
       });
 
       return NextResponse.json(
@@ -51,9 +58,21 @@ export async function POST(request: Request) {
     const result = await response.json();
     console.log("Toss Payments API Success Response:", result);
 
-    await prisma.payment.update({
-      where: { orderId },
-      data: { status: "COMPLETED", paymentKey },
+    // 결제 성공 시 Payment와 Order 모두 COMPLETED로 업데이트
+    await prisma.$transaction(async (tx) => {
+      await tx.payment.update({
+        where: { orderId },
+        data: {
+          status: "COMPLETED",
+          paymentKey,
+          approvedAt: new Date(),
+        },
+      });
+
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "COMPLETED" },
+      });
     });
 
     return NextResponse.json(result);

@@ -10,6 +10,34 @@ interface PaymentPrepareRequest {
   selectedOption?: string;
   quantity?: number;
   variantId?: number;
+  orderInfo?: {
+    ordererName: string;
+    ordererPhone: string;
+    ordererEmail: string;
+    recipientName: string;
+    recipientPhone: string;
+    address: string;
+    addressDetail: string;
+    zipCode: string;
+    deliveryRequest: string;
+    customsInfo: {
+      recipientNameEn: string;
+      personalCustomsCode: string;
+    };
+  };
+  // 기존 필드들도 호환성을 위해 유지
+  ordererName?: string;
+  ordererEmail?: string;
+  ordererPhone?: string;
+  ordererTel?: string;
+  recipientName?: string;
+  recipientPhone?: string;
+  recipientTel?: string;
+  zipCode?: string;
+  address1?: string;
+  address2?: string;
+  customsId?: string;
+  agreePrivacy?: boolean;
 }
 
 export async function POST(req: NextRequest) {
@@ -40,7 +68,32 @@ export async function POST(req: NextRequest) {
       productTitle,
       quantity = 1,
       variantId,
+      orderInfo,
+      ordererName,
+      ordererEmail,
+      ordererPhone,
+      ordererTel,
+      recipientName,
+      recipientPhone,
+      recipientTel,
+      zipCode,
+      address1,
+      address2,
+      customsId,
+      agreePrivacy,
     } = data;
+
+    // orderInfo가 있으면 우선 사용, 없으면 기존 필드 사용
+    const finalOrdererName = orderInfo?.ordererName || ordererName;
+    const finalOrdererEmail = orderInfo?.ordererEmail || ordererEmail;
+    const finalOrdererPhone = orderInfo?.ordererPhone || ordererPhone;
+    const finalRecipientName = orderInfo?.recipientName || recipientName;
+    const finalRecipientPhone = orderInfo?.recipientPhone || recipientPhone;
+    const finalZipCode = orderInfo?.zipCode || zipCode;
+    const finalAddress1 = orderInfo?.address || address1;
+    const finalAddress2 = orderInfo?.addressDetail || address2;
+    const finalCustomsId =
+      orderInfo?.customsInfo?.personalCustomsCode || customsId;
 
     if (
       typeof amount !== "number" ||
@@ -59,12 +112,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. 중복 결제 방지: 기존 PENDING 결제 존재 시 재사용
+    // 3. 중복 결제 방지: 더 정확한 조건으로 수정 (productId와 amount 모두 체크)
     const existing = await prisma.payment.findFirst({
       where: {
         userId,
         amount,
         status: "PENDING",
+        order: {
+          items: {
+            some: {
+              productId: productId,
+            },
+          },
+        },
+      },
+      include: {
+        order: {
+          include: {
+            items: true,
+          },
+        },
       },
     });
 
@@ -88,7 +155,7 @@ export async function POST(req: NextRequest) {
     try {
       // 트랜잭션으로 Order와 Payment 동시 생성
       await prisma.$transaction(async (tx) => {
-        // Order 생성
+        // Order 생성 (주문자/배송지/통관/동의 정보 포함)
         const order = await tx.order.create({
           data: {
             id: orderId,
@@ -96,6 +163,18 @@ export async function POST(req: NextRequest) {
             orderNumber,
             status: "PENDING",
             totalAmount: amount,
+            ordererName: finalOrdererName,
+            ordererEmail: finalOrdererEmail,
+            ordererPhone: finalOrdererPhone,
+            ordererTel,
+            recipientName: finalRecipientName,
+            recipientPhone: finalRecipientPhone,
+            recipientTel,
+            zipCode: finalZipCode,
+            address1: finalAddress1,
+            address2: finalAddress2,
+            customsId: finalCustomsId,
+            agreePrivacy,
           },
         });
 
@@ -105,6 +184,16 @@ export async function POST(req: NextRequest) {
             data: {
               orderId: order.id,
               variantId,
+              productId,
+              quantity,
+              unitPrice: Math.floor(amount / quantity),
+            },
+          });
+        } else {
+          await tx.orderItem.create({
+            data: {
+              orderId: order.id,
+              productId,
               quantity,
               unitPrice: Math.floor(amount / quantity),
             },
@@ -157,15 +246,23 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const payment = await prisma.payment.update({
-      where: { orderId },
-      data: {
-        status: "FAILED",
-        failReason: failReason || "사용자에 의한 취소",
-      },
+    // Payment와 Order 모두 실패 상태로 업데이트
+    await prisma.$transaction(async (tx) => {
+      await tx.payment.update({
+        where: { orderId },
+        data: {
+          status: "FAILED",
+          failReason: failReason || "사용자에 의한 취소",
+        },
+      });
+
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "FAILED" },
+      });
     });
 
-    return NextResponse.json({ success: true, payment });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[API/payment/prepare] 결제 실패 처리 중 에러:", error);
     return NextResponse.json(

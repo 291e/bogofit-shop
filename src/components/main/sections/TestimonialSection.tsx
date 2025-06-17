@@ -3,36 +3,8 @@
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Star, Quote, Heart } from "lucide-react";
-
-const testimonials = [
-  {
-    name: "김민지",
-    role: "패션 블로거",
-    content:
-      "BOGOFIT에서 쇼핑한 후로 스타일이 완전히 바뀌었어요! 품질도 좋고 가격도 합리적이라 자주 이용하고 있습니다.",
-    rating: 5,
-    avatar: "/api/placeholder/80/80",
-    verified: true,
-  },
-  {
-    name: "박서준",
-    role: "직장인",
-    content:
-      "배송도 빠르고 상품 품질이 정말 좋아요. 특히 고객 서비스가 친절해서 믿고 구매할 수 있어요.",
-    rating: 5,
-    avatar: "/api/placeholder/80/80",
-    verified: true,
-  },
-  {
-    name: "이수현",
-    role: "대학생",
-    content:
-      "학생 할인 혜택도 있고, 트렌디한 옷들이 많아서 친구들에게도 추천했어요. 정말 만족스러워요!",
-    rating: 5,
-    avatar: "/api/placeholder/80/80",
-    verified: true,
-  },
-];
+import { testimonials } from "@/contents/Testimonial/testimonials";
+import { stats } from "@/contents/Testimonial/stats";
 
 export default function TestimonialSection() {
   return (
@@ -130,12 +102,7 @@ export default function TestimonialSection() {
           viewport={{ once: true }}
           className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-8"
         >
-          {[
-            { number: "50,000+", label: "만족한 고객" },
-            { number: "4.9/5", label: "평균 평점" },
-            { number: "98%", label: "재구매율" },
-            { number: "24시간", label: "빠른 배송" },
-          ].map((stat, index) => (
+          {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, scale: 0.8 }}

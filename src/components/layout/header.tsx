@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Menu, User, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/providers/AuthProvider";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
   { href: "/products", label: "전체상품" },
@@ -54,51 +61,59 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-30 w-full h-16 flex items-center justify-between px-4 sm:px-8 backdrop-blur bg-white shadow-md">
-        {/* 좌측: 로고 */}
-        <div className="flex items-center gap-2">
-          <Link href="/">
-            <span className="font-bold text-xl tracking-tight select-none text-[#D74FDF]">
-              BOGOFIT
-            </span>
-          </Link>
-        </div>
-        {/* 중앙: 메뉴 (데스크탑) */}
-        <nav className="hidden md:flex gap-6 absolute left-1/2 -translate-x-1/2">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium hover:text-primary transition-colors"
-            >
-              {link.label}
+        <div className="container mx-auto flex items-center justify-between">
+          {/* 좌측: 로고 */}
+          <div className="flex items-center gap-2">
+            <Link href="/">
+              <span className="font-bold text-xl tracking-tight select-none text-[#D74FDF]">
+                BOGOFIT
+              </span>
             </Link>
-          ))}
-        </nav>
-        {/* 우측: 유저/로그인 (데스크탑) */}
-        <div className="hidden md:flex items-center gap-2">
-          {mounted && isAuthenticated && user ? (
-            <div className="flex items-center gap-2">
-              <Link href="/profile">
-                <span className="text-sm font-semibold mr-2">
-                  {user.userId}
-                </span>
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="로그아웃"
-                onClick={handleLogout}
+          </div>
+          {/* 중앙: 메뉴 (데스크탑) */}
+          <nav className="hidden md:flex gap-6 absolute left-1/2 -translate-x-1/2">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium hover:text-primary transition-colors"
               >
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </div>
-          ) : (
-            <Link href="/login">
-              <Button variant="ghost" size="icon" aria-label="로그인">
-                <User className="w-5 h-5" />
-              </Button>
-            </Link>
-          )}
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          {/* 우측: 유저/로그인 (데스크탑) */}
+          <div className="hidden md:flex items-center gap-2">
+            {mounted && isAuthenticated && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="유저 메뉴">
+                    <span className="text-sm font-semibold mr-2">
+                      {user.userId}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href="/myPage">마이페이지</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-500"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> 로그아웃
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/login">
+                <Button variant="ghost" size="icon" aria-label="로그인">
+                  <User className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
         {/* 모바일: 햄버거 메뉴 */}
         <div className="md:hidden flex items-center">
@@ -137,24 +152,37 @@ export default function Header() {
             </div>
             <div className="flex gap-2 mt-8">
               {mounted && isAuthenticated && user ? (
-                <div className="flex flex-col gap-2">
-                  <Link href="/profile" onClick={() => setOpen(false)}>
-                    <span className="text-sm font-semibold mr-2 text-[#D74FDF]">
-                      {user.userId}님
-                    </span>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      handleLogout();
-                      setOpen(false);
-                    }}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    로그아웃
-                  </Button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label="유저 메뉴">
+                      <span className="text-sm font-semibold mr-2 text-[#D74FDF]">
+                        {user.userId}님
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" onClick={() => setOpen(false)}>
+                        내 정보 수정
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/myPage" onClick={() => setOpen(false)}>
+                        마이페이지
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        handleLogout();
+                        setOpen(false);
+                      }}
+                      className="text-red-500"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" /> 로그아웃
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <Link href="/login" onClick={() => setOpen(false)}>
                   <Button variant="ghost" size="icon" aria-label="로그인">

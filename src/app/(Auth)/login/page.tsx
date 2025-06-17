@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login: authLogin } = useAuth();
 
-  // Apollo Client의 login 뮤테이션 정의
   const [loginMutation] = useMutation(LOGIN);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +36,6 @@ export default function LoginPage() {
       });
 
       if (data?.login?.success && data.login.token) {
-        // AuthProvider의 login 함수 사용
         authLogin(data.login.token, data.login.user);
         router.replace("/");
       } else {

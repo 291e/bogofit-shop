@@ -1,6 +1,6 @@
 "use client";
 
-import { Share2, Star } from "lucide-react";
+import { Share2, Star, Heart, Truck, Shield, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -14,9 +14,9 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckoutButton } from "@/components/payment/Checkout";
 import { Badge } from "@/components/ui/badge";
 import { ProductVariant } from "@/types/product";
+import { PurchaseButton } from "@/components/product/PurchaseButton";
 
 export default function ProductDetail() {
   const params = useParams();
@@ -28,30 +28,42 @@ export default function ProductDetail() {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     null
   );
+  const [quantity, setQuantity] = useState(1);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col gap-8">
-          {/* 이미지 Skeleton */}
-          <div className="space-y-4">
-            <Skeleton className="aspect-square w-full h-full rounded-lg bg-gray-100" />
-          </div>
-          {/* 정보 Skeleton */}
-          <div className="space-y-6">
-            <div className="flex justify-between">
-              <Skeleton className="w-24 h-8" />
-              <div className="flex gap-4">
-                <Skeleton className="w-16 h-8" />
-                <Skeleton className="w-16 h-8" />
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {/* 이미지 Skeleton */}
+              <div className="space-y-4">
+                <Skeleton className="aspect-square w-full rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200" />
+                <div className="grid grid-cols-4 gap-3">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton
+                      key={i}
+                      className="aspect-square rounded-lg bg-gray-100"
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-            <Skeleton className="h-8 w-2/3" />
-            <Skeleton className="h-5 w-1/3" />
-            <Skeleton className="h-12 w-full" />
-            <div className="flex gap-4">
-              <Skeleton className="h-12 w-1/2" />
-              <Skeleton className="h-12 w-1/2" />
+              {/* 정보 Skeleton */}
+              <div className="space-y-6">
+                <Skeleton className="h-8 w-2/3" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-6 w-1/3" />
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="h-4 w-full" />
+                  ))}
+                </div>
+                <div className="flex gap-4">
+                  <Skeleton className="h-14 flex-1" />
+                  <Skeleton className="h-14 w-14" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -61,14 +73,30 @@ export default function ProductDetail() {
 
   if (error) {
     return (
-      <div className="text-center text-red-500 py-20">
-        상품을 불러오지 못했습니다.
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😞</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            상품을 불러올 수 없습니다
+          </h2>
+          <p className="text-gray-600">잠시 후 다시 시도해주세요.</p>
+        </div>
       </div>
     );
   }
 
   if (!product) {
-    return <div className="text-center py-20">상품을 찾을 수 없습니다.</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            상품을 찾을 수 없습니다
+          </h2>
+          <p className="text-gray-600">요청하신 상품이 존재하지 않습니다.</p>
+        </div>
+      </div>
+    );
   }
 
   // 최종 가격 계산 (기본 가격 + 선택된 옵션의 가격 차이)
@@ -93,166 +121,304 @@ export default function ProductDetail() {
       return acc;
     }, {} as Record<string, ProductVariant[]>) || {};
 
+  const totalPrice = finalPrice * quantity;
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col gap-8 max-w-sm mx-auto">
-        {/* 상품 이미지 */}
-        <div className="space-y-4">
-          <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-50">
-            <Image
-              src={product.imageUrl}
-              alt={product.title}
-              fill
-              className="object-contain"
-              priority
-            />
-
-            {/* 품절 배지 */}
-            {isOutOfStock && (
-              <div className="absolute top-4 left-4">
-                <Badge variant="secondary">품절</Badge>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 상품 정보 */}
-        <div className="space-y-6">
-          <div className="flex justify-between">
-            <div className="flex items-center">
-              <Link href="/">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {/* 상품 이미지 섹션 */}
+            <div className="space-y-6">
+              <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-xl">
                 <Image
-                  src={`/images/WunderStory/WunderStory.jpg`}
-                  alt={`로고`}
-                  width={100}
-                  height={100}
-                  className="object-contain"
+                  src={product.imageUrl}
+                  alt={product.title}
+                  fill
+                  className="object-contain p-8"
                   priority
                 />
-              </Link>
-            </div>
-            <div className="flex justify-center gap-8 text-gray-500">
-              <button className="flex items-center gap-2 hover:text-pink-600 transition">
-                <Share2 className="w-5 h-5" />
-                <span>공유하기</span>
-              </button>
-            </div>
-          </div>
 
-          <div>
-            <h1 className="text-lg md:text-2xl font-bold mb-2">
-              {product.title}
-            </h1>
-            <div className="text-gray-500 text-sm mb-2">
-              카테고리: {product.category}
-            </div>
-            <div className="text-gray-500 text-sm mb-2">
-              판매자: {product.storeName}
-            </div>
-          </div>
-
-          {/* 평점 정보 */}
-          {product.avgRating && product.avgRating > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                <span className="font-medium">{product.avgRating}</span>
-              </div>
-              <span className="text-gray-500 text-sm">
-                ({product.reviewCount}개 리뷰)
-              </span>
-            </div>
-          )}
-
-          {/* 가격 */}
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl md:text-3xl font-bold text-pink-600">
-              {finalPrice.toLocaleString()}원
-            </span>
-            {selectedVariant && selectedVariant.priceDiff !== 0 && (
-              <span className="text-sm text-gray-500">
-                (기본가 {product.price.toLocaleString()}원
-                {selectedVariant.priceDiff > 0 ? " +" : " "}
-                {selectedVariant.priceDiff.toLocaleString()}원)
-              </span>
-            )}
-          </div>
-
-          {/* 상품 옵션 (ProductVariant) */}
-          {Object.keys(groupedVariants).length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold">상품 옵션</h2>
-              {Object.entries(groupedVariants).map(([optionName, variants]) => (
-                <div key={optionName}>
-                  <label className="text-sm font-medium mb-2 block">
-                    {optionName}
-                  </label>
-                  <Select
-                    value={selectedVariant?.id.toString() || ""}
-                    onValueChange={(value) => {
-                      const variant = variants.find(
-                        (v) => v.id.toString() === value
-                      );
-                      setSelectedVariant(variant || null);
-                    }}
-                  >
-                    <SelectTrigger className="w-full bg-white">
-                      <SelectValue placeholder={`${optionName}을 선택하세요`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {variants.map((variant) => (
-                        <SelectItem
-                          key={variant.id}
-                          value={variant.id.toString()}
-                          disabled={variant.optionValue.includes("품절")}
-                        >
-                          <div className="flex justify-between items-center w-full">
-                            <span>{variant.optionValue}</span>
-                            <div className="flex items-center gap-2 ml-4">
-                              {variant.priceDiff !== 0 && (
-                                <span className="text-sm text-gray-500">
-                                  {variant.priceDiff > 0 ? "+" : ""}
-                                  {variant.priceDiff.toLocaleString()}원
-                                </span>
-                              )}
-                              {variant.optionValue.includes("품절") && (
-                                <Badge variant="secondary" className="text-xs">
-                                  품절
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* 상태 배지들 */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {isOutOfStock && (
+                    <Badge
+                      variant="destructive"
+                      className="bg-red-500 text-white font-bold"
+                    >
+                      품절
+                    </Badge>
+                  )}
+                  <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
+                    NEW
+                  </Badge>
                 </div>
-              ))}
-            </div>
-          )}
 
-          {/* 설명 */}
-          {product.description && (
-            <div className="space-y-2">
-              <h3 className="font-semibold">상품 설명</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                {product.description}
-              </p>
-            </div>
-          )}
+                {/* 위시리스트 버튼 */}
+                <button
+                  onClick={() => setIsWishlisted(!isWishlisted)}
+                  className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-200 group"
+                >
+                  <Heart
+                    className={`w-6 h-6 transition-all duration-200 ${
+                      isWishlisted
+                        ? "fill-red-500 text-red-500"
+                        : "text-gray-600 group-hover:text-red-500"
+                    }`}
+                  />
+                </button>
+              </div>
 
-          {/* 구매 버튼 */}
-          <CheckoutButton
-            productId={Number(params.id)}
-            productTitle={product.title}
-            productPrice={finalPrice}
-            selectedOption={
-              selectedVariant
-                ? `${selectedVariant.optionName}: ${selectedVariant.optionValue}`
-                : ""
-            }
-            hasOptions={Object.keys(groupedVariants).length > 0}
-          />
+              {/* 썸네일 이미지들 (예시) */}
+              <div className="grid grid-cols-4 gap-3">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="aspect-square rounded-lg overflow-hidden bg-white shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                  >
+                    <Image
+                      src={product.imageUrl}
+                      alt={`${product.title} ${i + 1}`}
+                      width={100}
+                      height={100}
+                      className="w-full h-full object-contain p-2"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 상품 정보 섹션 */}
+            <div className="space-y-8">
+              {/* 브랜드 및 공유 */}
+              <div className="flex justify-between items-start">
+                <Link href="/" className="flex items-center space-x-2 group">
+                  <Image
+                    src="/images/WunderStory/WunderStory.jpg"
+                    alt="브랜드 로고"
+                    width={60}
+                    height={60}
+                    className="rounded-full border-2 border-pink-200 group-hover:border-pink-400 transition-colors"
+                  />
+                  <span className="font-semibold text-gray-700 group-hover:text-pink-600 transition-colors">
+                    WunderStory
+                  </span>
+                </Link>
+                <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-gray-600 hover:text-pink-600">
+                  <Share2 className="w-4 h-4" />
+                  <span className="text-sm font-medium">공유</span>
+                </button>
+              </div>
+
+              {/* 상품명 및 기본 정보 */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500 font-medium">
+                    {product.category}
+                  </p>
+                  <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+                    {product.title}
+                  </h1>
+                </div>
+
+                {/* 평점 */}
+                {product.avgRating && product.avgRating > 0 && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-5 h-5 ${
+                            i < Math.floor(product.avgRating!)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-semibold text-gray-900">
+                      {product.avgRating}
+                    </span>
+                    <span className="text-gray-500">
+                      ({product.reviewCount}개 리뷰)
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 가격 */}
+              <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border border-pink-200">
+                <div className="space-y-2">
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
+                      {finalPrice.toLocaleString()}원
+                    </span>
+                    {selectedVariant && selectedVariant.priceDiff !== 0 && (
+                      <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded-full">
+                        기본가 {product.price.toLocaleString()}원
+                        {selectedVariant.priceDiff > 0 ? " +" : " "}
+                        {selectedVariant.priceDiff.toLocaleString()}원
+                      </span>
+                    )}
+                  </div>
+                  {quantity > 1 && (
+                    <p className="text-lg font-semibold text-gray-700">
+                      총 {totalPrice.toLocaleString()}원 (수량: {quantity}개)
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* 상품 옵션 */}
+              {Object.keys(groupedVariants).length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-gray-900">상품 옵션</h3>
+                  {Object.entries(groupedVariants).map(
+                    ([optionName, variants]) => (
+                      <div key={optionName} className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700">
+                          {optionName}
+                        </label>
+                        <Select
+                          value={selectedVariant?.id.toString() || ""}
+                          onValueChange={(value) => {
+                            const variant = variants.find(
+                              (v) => v.id.toString() === value
+                            );
+                            setSelectedVariant(variant || null);
+                          }}
+                        >
+                          <SelectTrigger className="w-full bg-white border-2 border-gray-200 hover:border-pink-300 transition-colors rounded-xl h-12">
+                            <SelectValue
+                              placeholder={`${optionName}을 선택하세요`}
+                            />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            {variants.map((variant) => (
+                              <SelectItem
+                                key={variant.id}
+                                value={variant.id.toString()}
+                                disabled={variant.optionValue.includes("품절")}
+                                className="rounded-lg"
+                              >
+                                <div className="flex justify-between items-center w-full">
+                                  <span className="font-medium">
+                                    {variant.optionValue}
+                                  </span>
+                                  <div className="flex items-center gap-2 ml-4">
+                                    {variant.priceDiff !== 0 && (
+                                      <span className="text-sm text-pink-600 font-semibold">
+                                        {variant.priceDiff > 0 ? "+" : ""}
+                                        {variant.priceDiff.toLocaleString()}원
+                                      </span>
+                                    )}
+                                    {variant.optionValue.includes("품절") && (
+                                      <Badge
+                                        variant="destructive"
+                                        className="text-xs"
+                                      >
+                                        품절
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+
+              {/* 수량 선택 */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-700">
+                  수량
+                </label>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </button>
+                  <span className="w-12 text-center font-semibold text-lg">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* 배송 및 서비스 정보 */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
+                <h3 className="font-bold text-gray-900">배송 & 서비스</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <Truck className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">무료배송</p>
+                      <p className="text-xs text-gray-500">3만원 이상</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Shield className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">품질보장</p>
+                      <p className="text-xs text-gray-500">100% 정품</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <RefreshCw className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">교환/환불</p>
+                      <p className="text-xs text-gray-500">7일 이내</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 상품 설명 */}
+              {product.description && (
+                <div className="bg-white rounded-xl p-6 border border-gray-200 space-y-3">
+                  <h3 className="font-bold text-gray-900">상품 설명</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {product.description}
+                  </p>
+                </div>
+              )}
+
+              {/* 구매 버튼 */}
+              <div className="sticky bottom-4 bg-white/95 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 shadow-lg">
+                <PurchaseButton
+                  productId={Number(params.id)}
+                  productTitle={product.title}
+                  productPrice={finalPrice}
+                  quantity={quantity}
+                  selectedOption={
+                    selectedVariant
+                      ? `${selectedVariant.optionName}: ${selectedVariant.optionValue}`
+                      : ""
+                  }
+                  hasOptions={Object.keys(groupedVariants).length > 0}
+                  isOutOfStock={isOutOfStock}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

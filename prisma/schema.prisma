@@ -69,6 +69,7 @@ model Product  {
   updatedAt DateTime @updatedAt
   variants      ProductVariant[]
   reviews       Review[]
+  orderItems    OrderItem[]
 }
 
 model ProductVariant {
@@ -117,6 +118,26 @@ model Order {
   couponUsed    CouponUser?   @relation(fields: [couponUsedId], references: [id])
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  // 주문자 정보
+  ordererName    String?
+  ordererEmail   String?
+  ordererPhone   String?
+  ordererTel     String?
+
+  // 배송지 정보
+  recipientName  String?
+  recipientPhone String?
+  recipientTel   String?
+  zipCode        String?
+  address1       String?
+  address2       String?
+
+  // 통관 정보
+  customsId      String?
+
+  // 개인정보 동의
+  agreePrivacy   Boolean?
 }
 
 enum OrderStatus {
@@ -132,8 +153,10 @@ model OrderItem {
   id          Int             @id @default(autoincrement())
   order       Order           @relation(fields: [orderId], references: [id])
   orderId     String
-  variant     ProductVariant  @relation(fields: [variantId], references: [id])
-  variantId   Int
+  variant     ProductVariant?  @relation(fields: [variantId], references: [id])
+  variantId   Int?
+  product     Product?  @relation(fields: [productId], references: [id])
+  productId   Int?
   quantity    Int
   unitPrice   Int // 주문 시점 가격
 }
