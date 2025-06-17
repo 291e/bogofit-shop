@@ -121,6 +121,27 @@ export default function ProductDetail() {
       return acc;
     }, {} as Record<string, ProductVariant[]>) || {};
 
+  // 옵션이 없는 상품의 경우 기본 variant ID 설정 (첫 번째 variant 또는 product.id 사용)
+  const effectiveVariantId =
+    Object.keys(groupedVariants).length === 0
+      ? product.variants && product.variants.length > 0
+        ? product.variants[0].id
+        : product.id // 옵션이 없으면 product.id를 variantId로 사용
+      : selectedVariant?.id;
+
+  console.log("effectiveVariantId 계산:", {
+    hasOptions: Object.keys(groupedVariants).length > 0,
+    selectedVariant: selectedVariant?.id,
+    firstVariant: product.variants?.[0]?.id,
+    productId: product.id,
+    effectiveVariantId,
+    allVariants: product.variants?.map((v) => ({
+      id: v.id,
+      optionName: v.optionName,
+      optionValue: v.optionValue,
+    })),
+  });
+
   const totalPrice = finalPrice * quantity;
 
   return (
@@ -285,6 +306,7 @@ export default function ProductDetail() {
                             const variant = variants.find(
                               (v) => v.id.toString() === value
                             );
+
                             setSelectedVariant(variant || null);
                           }}
                         >
@@ -415,6 +437,7 @@ export default function ProductDetail() {
                   }
                   hasOptions={Object.keys(groupedVariants).length > 0}
                   isOutOfStock={isOutOfStock}
+                  variantId={effectiveVariantId}
                 />
               </div>
             </div>

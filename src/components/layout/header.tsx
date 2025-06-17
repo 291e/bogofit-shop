@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, User, LogOut } from "lucide-react";
+import { Menu, User, LogOut, ShoppingCart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/providers/AuthProvider";
+import { useCart } from "@/hooks/useCart";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -25,6 +27,9 @@ export default function Header() {
 
   // 단일 인증 훅 사용
   const { user, isAuthenticated, logout } = useAuth();
+
+  // 장바구니 훅 사용
+  const { cart } = useCart();
 
   useEffect(() => {
     setMounted(true);
@@ -82,8 +87,8 @@ export default function Header() {
               </Link>
             ))}
           </nav>
-          {/* 우측: 유저/로그인 (데스크탑) */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* 우측: 장바구니 + 유저/로그인 (데스크탑) */}
+          <div className="hidden md:flex items-center gap-6">
             {mounted && isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -113,10 +118,54 @@ export default function Header() {
                 </Button>
               </Link>
             )}
+
+            {/* 장바구니 아이콘 */}
+            {mounted && isAuthenticated && (
+              <Link href="/cart">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="장바구니"
+                  className="relative"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  {cart && cart.totalItems > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    >
+                      {cart.totalItems > 99 ? "99+" : cart.totalItems}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
-        {/* 모바일: 햄버거 메뉴 */}
-        <div className="md:hidden flex items-center">
+        {/* 모바일: 장바구니 + 햄버거 메뉴 */}
+        <div className="md:hidden flex items-center gap-2">
+          {/* 모바일 장바구니 아이콘 */}
+          {mounted && isAuthenticated && (
+            <Link href="/cart">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="장바구니"
+                className="relative"
+              >
+                <ShoppingCart className="w-6 h-6 text-[#D74FDF]" />
+                {cart && cart.totalItems > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {cart.totalItems > 99 ? "99+" : cart.totalItems}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+          )}
+
           <Button
             variant="ghost"
             size="icon"

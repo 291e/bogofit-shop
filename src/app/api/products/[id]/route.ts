@@ -25,6 +25,7 @@ export async function GET(
             optionName: true,
             optionValue: true,
             priceDiff: true,
+            stock: true,
           },
         },
         reviews: {

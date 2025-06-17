@@ -1,9 +1,10 @@
 "use client";
 
-import { ShoppingBag, Heart } from "lucide-react";
+import { ShoppingBag, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/useUser";
+import { useCart } from "@/hooks/useCart";
 
 interface PurchaseButtonProps {
   productId: number;
@@ -13,6 +14,7 @@ interface PurchaseButtonProps {
   selectedOption?: string;
   hasOptions?: boolean;
   isOutOfStock?: boolean;
+  variantId?: number; // 장바구니에 추가할 때 필요한 variant ID
 }
 
 export function PurchaseButton({
@@ -23,9 +25,11 @@ export function PurchaseButton({
   selectedOption,
   hasOptions = false,
   isOutOfStock = false,
+  variantId,
 }: PurchaseButtonProps) {
   const router = useRouter();
   const { user } = useUser();
+  const { addToCart, isAddingToCart } = useCart();
 
   const handlePurchase = () => {
     if (!user?.id) {
@@ -66,9 +70,60 @@ export function PurchaseButton({
     router.push(`/order?${orderParams.toString()}`);
   };
 
-  const handleAddToCart = () => {
-    // TODO: 장바구니 기능 구현
-    alert("장바구니 기능은 추후 구현 예정입니다.");
+  const handleAddToCart = async () => {
+    if (!user?.id) {
+      alert("로그인이 필요합니다.");
+      router.push("/login");
+      return;
+    }
+
+    // 옵션이 있는 상품인 경우 variantId 체크
+    if (hasOptions && !variantId) {
+      alert("옵션을 선택해주세요.");
+      return;
+    }
+
+    // variantId가 없는 경우 처리
+    if (!variantId) {
+      if (hasOptions) {
+        alert("옵션을 선택해주세요.");
+      } else {
+        alert("상품 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.");
+      }
+      return;
+    }
+
+    // 옵션이 있는 상품인 경우 추가 검증
+    if (hasOptions) {
+      if (typeof selectedOption === "string" && selectedOption.trim() === "") {
+        alert("옵션을 선택하세요.");
+        return;
+      }
+      if (
+        typeof selectedOption === "string" &&
+        selectedOption.includes("품절")
+      ) {
+        alert("선택하신 상품은 품절입니다.");
+        return;
+      }
+    }
+
+    if (isOutOfStock) {
+      alert("품절된 상품입니다.");
+      return;
+    }
+
+    try {
+      await addToCart({ variantId: variantId!, quantity });
+      alert("장바구니에 추가되었습니다!");
+    } catch (error) {
+      console.error("장바구니 추가 실패:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "장바구니에 추가하는데 실패했습니다."
+      );
+    }
   };
 
   const totalPrice = productPrice * quantity;
@@ -92,10 +147,10 @@ export function PurchaseButton({
           onClick={handleAddToCart}
           variant="outline"
           className="flex-1 h-14 border-2 border-pink-300 text-pink-600 hover:bg-pink-50 hover:border-pink-400 transition-all duration-200 font-semibold"
-          disabled={isOutOfStock}
+          disabled={isOutOfStock || isAddingToCart}
         >
-          <Heart className="w-5 h-5 mr-2" />
-          찜하기
+          <ShoppingCart className="w-5 h-5 mr-2" />
+          {isAddingToCart ? "추가 중..." : "장바구니"}
         </Button>
 
         {/* 바로 구매 버튼 */}

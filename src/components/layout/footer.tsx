@@ -28,18 +28,20 @@ export default function Footer() {
         {/* 주요 메뉴 */}
         <div className="flex-1 min-w-[180px] flex flex-col gap-1">
           <span className="font-semibold mb-1">메뉴</span>
-          <a href="/about" className="hover:underline">
+          <Link
+            href="https://www.metabank3d.com/"
+            className="hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             회사소개
-          </a>
-          <a href="/terms" className="hover:underline">
+          </Link>
+          <Link href="/terms/agreement" className="hover:underline">
             이용약관
-          </a>
-          <a href="/privacy" className="hover:underline">
+          </Link>
+          <Link href="/terms/privacy" className="hover:underline">
             개인정보처리방침
-          </a>
-          <a href="/contact" className="hover:underline">
-            입점문의
-          </a>
+          </Link>
         </div>
 
         {/* 고객센터 */}
@@ -47,12 +49,12 @@ export default function Footer() {
           <span className="font-semibold mb-1">고객센터</span>
           <span>
             1:1 문의{" "}
-            <a
+            <Link
               href="mailto:help@bogofit.com"
               className="text-blue-600 hover:underline ml-1"
             >
               metabank.ask@gmail.com
-            </a>
+            </Link>
           </span>
           <span>
             042-385-1008{" "}

@@ -3,6 +3,7 @@ export interface ProductVariant {
   optionName: string;
   optionValue: string;
   priceDiff: number;
+  stock: number;
 }
 
 export interface ProductReview {

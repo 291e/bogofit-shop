@@ -7,14 +7,7 @@ import RecentProducts from "@/components/myPage/RecentProducts";
 import Cart from "@/components/myPage/Cart";
 import ProfileEditLink from "@/components/myPage/ProfileEditLink";
 import LogoutButton from "@/components/myPage/LogoutButton";
-import {
-  Ticket,
-  MapPin,
-  Clock,
-  ShoppingCart,
-  User,
-  LogOut,
-} from "lucide-react";
+import { Ticket, MapPin, Clock, User, LogOut } from "lucide-react";
 
 const menuSections = [
   {
@@ -44,11 +37,6 @@ const menuSections = [
         key: "recent",
         label: "최근 본 상품",
         icon: <Clock className="w-4 h-4" />,
-      },
-      {
-        key: "cart",
-        label: "장바구니",
-        icon: <ShoppingCart className="w-4 h-4" />,
       },
     ],
   },
