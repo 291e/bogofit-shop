@@ -17,6 +17,10 @@ import {
 
 const navLinks = [
   { href: "/products", label: "전체상품" },
+  { href: "/category/top", label: "상의" },
+  { href: "/category/bottom", label: "하의" },
+  { href: "/category/outer", label: "아우터" },
+  { href: "/category/onepiece", label: "원피스" },
   { href: "/event", label: "이벤트" },
   { href: "/about", label: "소개" },
 ];
@@ -77,7 +81,17 @@ export default function Header() {
           </div>
           {/* 중앙: 메뉴 (데스크탑) */}
           <nav className="hidden md:flex gap-6 absolute left-1/2 -translate-x-1/2">
-            {navLinks.map((link) => (
+            <div className="relative group">
+              <Link
+                href="/products"
+                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1"
+              >
+                전체상품
+              </Link>
+            </div>
+
+            {/* 기타 메뉴 */}
+            {navLinks.slice(1).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -184,59 +198,149 @@ export default function Header() {
           onClick={() => setOpen(false)}
         >
           <nav
-            className="w-64 h-full min-h-screen bg-white shadow-lg p-6 flex flex-col gap-6 animate-in slide-in-from-right-32"
+            className="w-80 h-full min-h-screen bg-gradient-to-br from-white via-pink-50 to-purple-50 shadow-2xl p-6 flex flex-col gap-6 animate-in slide-in-from-right-32 border-l border-pink-100"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex flex-col gap-4">
-              {navLinks.map((link) => (
+            {/* 로고 및 닫기 */}
+            <div className="flex items-center justify-between pb-4 border-b border-pink-200">
+              <span className="font-bold text-xl text-[#D74FDF]">BOGOFIT</span>
+              <button
+                onClick={() => setOpen(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 메뉴 항목들 */}
+            <div className="flex flex-col gap-2">
+              {/* 전체상품 드롭다운 */}
+              <div className="space-y-2">
+                <Link
+                  href="/products"
+                  className="flex items-center justify-between px-4 py-3 text-base font-semibold text-gray-800 hover:text-[#D74FDF] hover:bg-white/50 rounded-xl transition-all"
+                  onClick={() => setOpen(false)}
+                >
+                  <span>전체상품</span>
+                </Link>
+              </div>
+
+              {/* 기타 메뉴 */}
+              {navLinks.slice(1).map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-base font-semibold hover:text-primary transition-colors"
+                  className="flex items-center px-4 py-3 text-base font-semibold text-gray-800 hover:text-[#D74FDF] hover:bg-white/50 rounded-xl transition-all"
                   onClick={() => setOpen(false)}
                 >
                   {link.label}
                 </Link>
               ))}
             </div>
-            <div className="flex gap-2 mt-8">
+
+            {/* 사용자 정보 */}
+            <div className="mt-auto pt-6 border-t border-pink-200">
               {mounted && isAuthenticated && user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="유저 메뉴">
-                      <span className="text-sm font-semibold mr-2 text-[#D74FDF]">
-                        {user.userId}님
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-white/70 rounded-xl">
+                    <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">
+                        {user.userId.charAt(0).toUpperCase()}
                       </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" onClick={() => setOpen(false)}>
-                        내 정보 수정
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/myPage" onClick={() => setOpen(false)}>
-                        마이페이지
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800">
+                        {user.userId}님
+                      </p>
+                      <p className="text-xs text-gray-500">환영합니다!</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Link
+                      href="/profile"
+                      className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#D74FDF] hover:bg-white/50 rounded-lg transition-all"
+                      onClick={() => setOpen(false)}
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                      내 정보 수정
+                    </Link>
+                    <Link
+                      href="/myPage"
+                      className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-600 hover:text-[#D74FDF] hover:bg-white/50 rounded-lg transition-all"
+                      onClick={() => setOpen(false)}
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                      마이페이지
+                    </Link>
+                    <button
                       onClick={() => {
                         handleLogout();
                         setOpen(false);
                       }}
-                      className="text-red-500"
+                      className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg transition-all w-full text-left"
                     >
-                      <LogOut className="w-4 h-4 mr-2" /> 로그아웃
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      로그아웃
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <Link href="/login" onClick={() => setOpen(false)}>
-                  <Button variant="ghost" size="icon" aria-label="로그인">
-                    <User className="w-5 h-5" />
-                  </Button>
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold rounded-xl hover:from-pink-600 hover:to-purple-600 transition-all"
+                  onClick={() => setOpen(false)}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  로그인
                 </Link>
               )}
             </div>

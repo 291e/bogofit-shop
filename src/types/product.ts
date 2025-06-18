@@ -29,6 +29,9 @@ export interface Product {
   imageUrl: string;
   storeName: string;
   isActive: boolean;
+  detailImage?: string;
+  thumbnailImages?: string[];
+  badge?: string;
   createdAt: string;
   updatedAt: string;
   variants?: ProductVariant[];

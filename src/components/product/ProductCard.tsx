@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/product";
@@ -19,12 +19,8 @@ export default function ProductCard({
   className = "",
 }: ProductCardProps) {
   const finalPrice = product.price;
-  const hasDiscount = false; // 할인 로직은 나중에 추가
   // 옵션이 있으면 모든 옵션에 "품절"이 포함되어 있을 때만 품절, 옵션이 없으면 품절 아님
-  const isOutOfStock =
-    product.variants && product.variants.length > 0
-      ? product.variants.every((v) => v.optionValue.includes("품절"))
-      : false;
+  const isOutOfStock = product.badge === "SOLDOUT" ? true : false;
 
   return (
     <div
@@ -42,27 +38,13 @@ export default function ProductCard({
               sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
             />
 
-            {/* 배지들 */}
-            <div className="absolute top-2 left-2 flex flex-col gap-1">
-              {hasDiscount && (
-                <Badge variant="destructive" className="text-xs">
-                  할인
-                </Badge>
-              )}
-              {isOutOfStock && (
-                <Badge variant="secondary" className="text-xs">
-                  품절
-                </Badge>
-              )}
-            </div>
-
-            {/* 평점 */}
+            {/* 평점
             {product.avgRating && product.avgRating > 0 && (
               <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                 <span>{product.avgRating}</span>
               </div>
-            )}
+            )} */}
           </div>
         </Link>
       </div>
@@ -70,7 +52,7 @@ export default function ProductCard({
       <div className="flex flex-col justify-between p-4 h-full">
         {/* 스토어명 */}
         <div className="text-xs text-gray-500 font-medium flex flex-col gap-1">
-          <span>BOGOFIT</span>
+          <span>{product.storeName}</span>
           <Link href={`/products/${product.id}`} className="block">
             <h3 className="font-semibold text-sm line-clamp-2 hover:text-pink-600 transition-colors">
               {product.title}
@@ -90,10 +72,28 @@ export default function ProductCard({
         {/* 액션 버튼 */}
         {showAddToCart && (
           <div className="pt-2 flex flex-col gap-2">
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline justify-between gap-2">
               <span className="text-lg font-bold text-pink-600">
                 {finalPrice.toLocaleString()}원
               </span>
+              {/* 배지들 */}
+              <div className="flex flex-col gap-1 mt-2">
+                {product.badge === "BEST" && (
+                  <Badge variant="destructive" className="text-xs">
+                    BEST
+                  </Badge>
+                )}
+                {product.badge === "SOLDOUT" && (
+                  <Badge variant="secondary" className="text-xs">
+                    SOLDOUT
+                  </Badge>
+                )}
+                {product.badge === "New" && (
+                  <Badge variant="secondary" className="text-xs">
+                    NEW
+                  </Badge>
+                )}
+              </div>
             </div>
             <Link href={`/products/${product.id}`}>
               <Button className="w-full" size="sm" disabled={isOutOfStock}>

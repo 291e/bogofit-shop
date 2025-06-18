@@ -36,10 +36,10 @@ export default function Footer() {
           >
             회사소개
           </Link>
-          <Link href="/terms/agreement" className="hover:underline">
+          <Link href="/agreement" className="hover:underline">
             이용약관
           </Link>
-          <Link href="/terms/privacy" className="hover:underline">
+          <Link href="/privacy" className="hover:underline">
             개인정보처리방침
           </Link>
         </div>

@@ -1,121 +1,158 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, TrendingUp, Zap } from "lucide-react";
+import { Star } from "lucide-react";
 import Link from "next/link";
-import { features } from "@/contents/Featured/features";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import Image from "next/image";
+
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+  imageUrl: string;
+  badge?: string;
+}
+
+const TABS = [
+  { key: "BEST", label: "BEST" },
+  { key: "New", label: "NEW" },
+  { key: "RECOMMEND", label: "추천 아이템" },
+];
 
 export default function FeaturedSection() {
+  const [tab, setTab] = useState("BEST");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const emblaApiRef = useRef<import("embla-carousel").EmblaCarouselType | null>(
+    null
+  );
+
+  useEffect(() => {
+    let url = "/api/products?limit=20";
+    if (tab === "BEST") url += "&badge=BEST";
+    else if (tab === "NEW") url += "&badge=NEW";
+    else if (tab === "RECOMMEND") url += "&random=20";
+    setLoading(true);
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => setProducts(data.products || []))
+      .finally(() => setLoading(false));
+  }, [tab]);
+
+  // 오토플레이 (3초마다 next, loop)
+  useEffect(() => {
+    if (!emblaApiRef.current) return;
+    const interval = setInterval(() => {
+      if (emblaApiRef.current) {
+        emblaApiRef.current.scrollNext();
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [products]);
+
   return (
     <section className="w-full py-20 px-4 sm:px-6 md:px-8 lg:px-10">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-10">
           <Badge
             variant="outline"
             className="mb-4 px-4 py-2 text-sm font-medium"
           >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            SPECIAL OFFERS
-          </Badge>
-          <h2 className="text-3xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             특별 기획전
+          </Badge>
+          <h2 className="text-3xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-gray-900 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            놓칠 수 없는 혜택
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            놓칠 수 없는 특별한 혜택과 인기 상품들을 만나보세요
+            BEST, NEW, 추천 아이템을 만나보세요
           </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: index * 0.2 }}
-              viewport={{ once: true }}
-              className="group cursor-pointer"
+        </div>
+        <div className="flex justify-center gap-4 mb-8">
+          {TABS.map((t) => (
+            <Button
+              key={t.key}
+              variant={tab === t.key ? "default" : "outline"}
+              onClick={() => setTab(t.key)}
+              className="text-base font-bold px-6"
             >
-              <div className="relative overflow-hidden rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 group-hover:scale-105">
-                {/* 배경 그라디언트 */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${feature.color}`}
-                />
-
-                {/* 배경 패턴 */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
-                </div>
-
-                {/* 콘텐츠 */}
-                <div className="relative z-10 p-8 h-80 flex flex-col justify-between">
-                  <div>
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      whileInView={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: index * 0.2 + 0.3 }}
-                      viewport={{ once: true }}
-                      className="inline-flex items-center gap-2 mb-4"
-                    >
-                      <Zap className={`w-6 h-6 ${feature.textColor}`} />
-                      <Badge
-                        variant="secondary"
-                        className="bg-white/20 text-white border-0"
-                      >
-                        LIMITED
-                      </Badge>
-                    </motion.div>
-
-                    <h3
-                      className={`text-2xl font-bold mb-2 ${feature.textColor}`}
-                    >
-                      {feature.title}
-                    </h3>
-                    <p
-                      className={`text-3xl font-extrabold mb-4 ${feature.textColor}`}
-                    >
-                      {feature.subtitle}
-                    </p>
-                    <p className={`text-lg opacity-90 ${feature.textColor}`}>
-                      {feature.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Link href="/products">
-                      <Button
-                        variant="secondary"
-                        className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm group-hover:scale-110 transition-transform"
-                      >
-                        지금 보기
-                      </Button>
-                    </Link>
-
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${feature.textColor} fill-current`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 장식 요소 */}
-                <div className="absolute top-4 right-4 w-20 h-20 bg-white/10 rounded-full blur-xl" />
-                <div className="absolute bottom-4 left-4 w-16 h-16 bg-white/10 rounded-full blur-lg" />
-              </div>
-            </motion.div>
+              {t.label}
+            </Button>
           ))}
         </div>
+        {loading ? (
+          <div className="h-64 flex items-center justify-center text-lg text-gray-400">
+            로딩 중...
+          </div>
+        ) : products.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-lg text-gray-400">
+            상품이 없습니다.
+          </div>
+        ) : (
+          <Carousel
+            className="relative"
+            opts={{ loop: true }}
+            setApi={(api) => (emblaApiRef.current = api ?? null)}
+          >
+            <CarouselContent>
+              {products.map((product) => (
+                <CarouselItem
+                  key={product.id}
+                  className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4 py-4"
+                >
+                  <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col h-full group hover:scale-105 transition-transform">
+                    <div className="relative aspect-square w-full mb-4 overflow-hidden rounded-xl">
+                      <Image
+                        src={product.imageUrl}
+                        alt={product.title}
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        priority
+                      />
+                      {product.badge && product.badge !== "SOLDOUT" && (
+                        <Badge className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
+                          {product.badge}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="text-md font-bold mb-1 line-clamp-2">
+                          {product.title}
+                        </h3>
+                        <div className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
+                          {product.price.toLocaleString()}원
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <Link href={`/products/${product.id}`}>
+                          <Button variant="outline" className="font-bold">
+                            지금 보기
+                          </Button>
+                        </Link>
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className="w-4 h-4 text-yellow-400 fill-yellow-400"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        )}
       </div>
     </section>
   );

@@ -144,6 +144,10 @@ export default function ProductDetail() {
 
   const totalPrice = finalPrice * quantity;
 
+  // 썸네일 이미지 배열 분리
+  const thumbnails = product.thumbnailImages || [];
+  const detailImage = product.detailImage;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -162,7 +166,7 @@ export default function ProductDetail() {
 
                 {/* 상태 배지들 */}
                 <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  {isOutOfStock && (
+                  {product.badge === "SOLDOUT" && (
                     <Badge
                       variant="destructive"
                       className="bg-red-500 text-white font-bold"
@@ -170,9 +174,16 @@ export default function ProductDetail() {
                       품절
                     </Badge>
                   )}
-                  <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
-                    NEW
-                  </Badge>
+                  {product.badge === "New" && (
+                    <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
+                      NEW
+                    </Badge>
+                  )}
+                  {product.badge === "BEST" && (
+                    <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
+                      BEST
+                    </Badge>
+                  )}
                 </div>
 
                 {/* 위시리스트 버튼 */}
@@ -190,23 +201,25 @@ export default function ProductDetail() {
                 </button>
               </div>
 
-              {/* 썸네일 이미지들 (예시) */}
-              <div className="grid grid-cols-4 gap-3">
-                {[...Array(4)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-lg overflow-hidden bg-white shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                  >
-                    <Image
-                      src={product.imageUrl}
-                      alt={`${product.title} ${i + 1}`}
-                      width={100}
-                      height={100}
-                      className="w-full h-full object-contain p-2"
-                    />
-                  </div>
-                ))}
-              </div>
+              {/* 썸네일 이미지들 */}
+              {thumbnails.length > 0 && (
+                <div className="grid grid-cols-4 gap-3">
+                  {thumbnails.map((thumb, i) => (
+                    <div
+                      key={i}
+                      className="aspect-square rounded-lg overflow-hidden bg-white shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                    >
+                      <Image
+                        src={thumb}
+                        alt={`${product.title} 썸네일 ${i + 1}`}
+                        width={100}
+                        height={100}
+                        className="w-full h-full object-contain p-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 상품 정보 섹션 */}
@@ -442,6 +455,19 @@ export default function ProductDetail() {
               </div>
             </div>
           </div>
+
+          {/* 상품 상세 이미지 (하단) */}
+          {detailImage && (
+            <div className="max-w-3xl mx-auto mt-16">
+              <Image
+                src={detailImage}
+                alt="상세 이미지"
+                width={1200}
+                height={1600}
+                className="w-full h-auto rounded-2xl shadow-lg"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -19,7 +19,20 @@ export async function GET(request: Request) {
     const showSoldOut = searchParams.get("showSoldOut") === "true";
 
     // 필터 조건 구성
-    const where: Record<string, unknown> = {
+    const where: {
+      isActive: boolean;
+      OR?: Array<{
+        title?: { contains: string; mode: "insensitive" };
+        description?: { contains: string; mode: "insensitive" };
+        storeName?: { contains: string; mode: "insensitive" };
+      }>;
+      category?: string;
+      price?: {
+        gte?: number;
+        lte?: number;
+      };
+      badge?: string;
+    } = {
       isActive: true,
     };
 
@@ -37,14 +50,43 @@ export async function GET(request: Request) {
 
     if (minPrice || maxPrice) {
       where.price = {};
-      if (minPrice)
-        (where.price as Record<string, number>).gte = parseFloat(minPrice);
-      if (maxPrice)
-        (where.price as Record<string, number>).lte = parseFloat(maxPrice);
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+    }
+
+    // random 파라미터 처리
+    if (searchParams.get("random")) {
+      const randomCount = Number(searchParams.get("random")) || 20;
+      const totalCount = await prisma.product.count({ where });
+      const skipArr = Array.from({ length: totalCount }, (_, i) => i);
+      const randomIndexes = skipArr
+        .sort(() => 0.5 - Math.random())
+        .slice(0, randomCount);
+      const randomProducts = await Promise.all(
+        randomIndexes.map((idx) =>
+          prisma.product.findFirst({
+            skip: idx,
+            where,
+            orderBy: { id: "asc" },
+          })
+        )
+      );
+      return NextResponse.json({
+        products: randomProducts.filter(Boolean),
+        total: randomProducts.length,
+        page: 1,
+        totalPages: 1,
+        filters: {},
+      });
+    }
+
+    // badge 필터 처리
+    if (searchParams.get("badge")) {
+      where.badge = searchParams.get("badge")!;
     }
 
     // 정렬 조건
-    let orderBy: Record<string, string> = { id: "desc" };
+    let orderBy: Record<string, string> = { createdAt: "desc" };
     switch (sortBy) {
       case "price_low":
         orderBy = { price: "asc" };
@@ -61,6 +103,10 @@ export async function GET(request: Request) {
         break;
     }
 
+    // 전체 상품 수 조회 (필터 조건 적용)
+    const totalCount = await prisma.product.count({ where });
+
+    // 상품 조회 (페이지네이션 적용)
     const products = await prisma.product.findMany({
       where,
       skip,
@@ -83,15 +129,15 @@ export async function GET(request: Request) {
       },
     });
 
-    // 평균 평점 계산 및 품절 상품 필터링
-    let productsWithRating = products.map((product) => {
+    // 평균 평점 계산
+    const productsWithRating = products.map((product) => {
       const avgRating =
         product.reviews.length > 0
           ? product.reviews.reduce((sum, review) => sum + review.rating, 0) /
             product.reviews.length
           : 0;
 
-      // 품절 여부 확인 (모든 variants가 "품절"을 포함하는지 확인)
+      // 품절 여부 확인
       const isSoldOut =
         product.variants && product.variants.length > 0
           ? product.variants.every((variant) =>
@@ -104,24 +150,20 @@ export async function GET(request: Request) {
         avgRating: Math.round(avgRating * 10) / 10,
         reviewCount: product.reviews.length,
         isSoldOut,
-        reviews: undefined, // 응답에서 제거
+        reviews: undefined,
       };
     });
 
-    // 품절 상품 필터링 (showSoldOut이 false면 품절 상품 제외)
-    if (!showSoldOut) {
-      productsWithRating = productsWithRating.filter(
-        (product) => !product.isSoldOut
-      );
-    }
-
-    const filteredTotal = productsWithRating.length;
+    // 품절 상품 필터링 (클라이언트 사이드에서 처리)
+    const filteredProducts = showSoldOut
+      ? productsWithRating
+      : productsWithRating.filter((product) => !product.isSoldOut);
 
     return NextResponse.json({
-      products: productsWithRating,
-      total: filteredTotal,
+      products: filteredProducts,
+      total: totalCount,
       page,
-      totalPages: Math.ceil(filteredTotal / limit),
+      totalPages: Math.ceil(totalCount / limit),
       filters: {
         search,
         category,

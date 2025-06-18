@@ -63,8 +63,11 @@ model Product  {
   url       String   @unique
   category  String
   imageUrl  String
+  badge           String?
   storeName String
   isActive  Boolean   @default(true)
+  detailImage     String?      // 상세 영역 첫 이미지 (단일)
+  thumbnailImages String[]     // 썸네일 배열(Postgres text[])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   variants      ProductVariant[]

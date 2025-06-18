@@ -6,7 +6,7 @@ export const categories = [
     color: "from-blue-400 to-indigo-500",
   },
   {
-    name: "한벌 옷",
+    name: "원피스",
     icon: "/banner/onepiece.png",
     color: "from-purple-400 to-violet-500",
   },
