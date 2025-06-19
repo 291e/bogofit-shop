@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import Image from "next/image";
 
 const navLinks = [
   { href: "/products", label: "전체상품" },
@@ -73,10 +74,17 @@ export default function Header() {
         <div className="container mx-auto flex items-center justify-between">
           {/* 좌측: 로고 */}
           <div className="flex items-center gap-2">
-            <Link href="/">
+            <Link href="/" className="flex items-center gap-2">
               <span className="font-bold text-xl tracking-tight select-none text-[#D74FDF]">
                 BOGOFIT
               </span>
+              <Image
+                src="/logo.svg"
+                alt="브랜드 로고"
+                width={30}
+                height={30}
+                className="rounded-lg"
+              />
             </Link>
           </div>
           {/* 중앙: 메뉴 (데스크탑) */}

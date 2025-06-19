@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ProductVariant } from "@/types/product";
 import { PurchaseButton } from "@/components/product/PurchaseButton";
+import VirtualFitting from "@/components/product/VirtualFitting";
 
 export default function ProductDetail() {
   const params = useParams();
@@ -30,6 +31,7 @@ export default function ProductDetail() {
   );
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   if (isLoading) {
     return (
@@ -148,6 +150,10 @@ export default function ProductDetail() {
   const thumbnails = product.thumbnailImages || [];
   const detailImage = product.detailImage;
 
+  // 모든 이미지 배열 (메인 + 썸네일)
+  const allImages = [product.imageUrl, ...thumbnails];
+  const currentImage = allImages[selectedImageIndex];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -157,7 +163,7 @@ export default function ProductDetail() {
             <div className="space-y-6">
               <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-xl">
                 <Image
-                  src={product.imageUrl}
+                  src={currentImage}
                   alt={product.title}
                   fill
                   className="object-contain p-8"
@@ -202,16 +208,21 @@ export default function ProductDetail() {
               </div>
 
               {/* 썸네일 이미지들 */}
-              {thumbnails.length > 0 && (
+              {allImages.length > 1 && (
                 <div className="grid grid-cols-4 gap-3">
-                  {thumbnails.map((thumb, i) => (
+                  {allImages.map((image, i) => (
                     <div
                       key={i}
-                      className="aspect-square rounded-lg overflow-hidden bg-white shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => setSelectedImageIndex(i)}
+                      className={`aspect-square rounded-lg overflow-hidden bg-white shadow-md cursor-pointer hover:shadow-lg transition-all duration-200 ${
+                        selectedImageIndex === i
+                          ? "ring-2 ring-pink-500 shadow-lg scale-105"
+                          : ""
+                      }`}
                     >
                       <Image
-                        src={thumb}
-                        alt={`${product.title} 썸네일 ${i + 1}`}
+                        src={image}
+                        alt={`${product.title} 이미지 ${i + 1}`}
                         width={100}
                         height={100}
                         className="w-full h-full object-contain p-2"
@@ -227,15 +238,11 @@ export default function ProductDetail() {
               {/* 브랜드 및 공유 */}
               <div className="flex justify-between items-start">
                 <Link href="/" className="flex items-center space-x-2 group">
-                  <Image
-                    src="/images/WunderStory/WunderStory.jpg"
-                    alt="브랜드 로고"
-                    width={60}
-                    height={60}
-                    className="rounded-full border-2 border-pink-200 group-hover:border-pink-400 transition-colors"
-                  />
-                  <span className="font-semibold text-gray-700 group-hover:text-pink-600 transition-colors">
-                    WunderStory
+                  <span
+                    className="rounded-full border-2 border-pink-200 
+                    group-hover:border-pink-400 transition-colors px-2 font-bold text-pink-500"
+                  >
+                    BOGOFIT
                   </span>
                 </Link>
                 <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-gray-600 hover:text-pink-600">
@@ -454,6 +461,15 @@ export default function ProductDetail() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* 가상 피팅 */}
+          <div className="mt-8">
+            <VirtualFitting
+              productTitle={product.title}
+              productCategory={product.category}
+              currentImage={currentImage}
+            />
           </div>
 
           {/* 상품 상세 이미지 (하단) */}
