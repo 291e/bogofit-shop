@@ -2,78 +2,104 @@
 
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+
+// Swiper imports
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import "swiper/css/effect-coverflow";
+import { slideImages } from "@/contents/Hero/slideImages";
 
 export default function HeroBanner() {
   return (
     <section className="relative w-full h-[70vh] min-h-[500px] overflow-hidden">
-      {/* 배경 그라디언트 */}
-      <div className="absolute inset-0 bg-gradient-to-br from-pink-500 via-purple-600 to-blue-600" />
-
-      {/* 애니메이션 배경 요소들 */}
+      {/* 배경 이미지 */}
       <div className="absolute inset-0">
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-32 h-32 bg-white/10 rounded-full blur-xl"
-            animate={{
-              x: [0, 100, 0],
-              y: [0, -100, 0],
-              scale: [1, 1.2, 1],
+        <Image
+          src="/hero/bg.png"
+          alt="배경 이미지"
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
+
+      {/* 슬라이드 이미지들 */}
+      <div className="absolute inset-0 flex items-center justify-center z-10">
+        <div className="w-full max-w-7xl mx-auto px-4">
+          <Swiper
+            modules={[Autoplay]}
+            spaceBetween={30}
+            slidesPerView={1}
+            centeredSlides={true}
+            loop={true}
+            autoplay={{
+              delay: 4000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true,
             }}
-            transition={{
-              duration: 8 + i * 2,
-              repeat: Infinity,
-              ease: "easeInOut",
+            breakpoints={{
+              320: {
+                slidesPerView: 1,
+                spaceBetween: 20,
+              },
+              640: {
+                slidesPerView: 1.5,
+                spaceBetween: 30,
+              },
+              768: {
+                slidesPerView: 2,
+                spaceBetween: 40,
+              },
+              1024: {
+                slidesPerView: 2.5,
+                spaceBetween: 50,
+              },
+              1280: {
+                slidesPerView: 3,
+                spaceBetween: 60,
+              },
             }}
-            style={{
-              left: `${10 + i * 15}%`,
-              top: `${20 + i * 10}%`,
-            }}
-          />
-        ))}
+            className="w-full h-[400px]"
+          >
+            {slideImages.map((image) => (
+              <SwiperSlide key={image.id}>
+                <div className="relative w-full h-full group cursor-pointer">
+                  {/* 이미지 컨테이너 */}
+                  <div className="relative w-full h-full transition-all duration-300 group-hover:scale-105">
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      fill
+                      className="object-contain p-6 transition-transform duration-300 group-hover:scale-110 drop-shadow-2xl"
+                      priority
+                    />
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="relative z-10 flex items-center justify-center h-full px-4">
-        <div className="text-center text-white max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="flex items-center justify-center gap-2 mb-4"
-          >
-            <Sparkles className="w-6 h-6 text-yellow-300" />
-            <span className="text-lg font-medium bg-white/20 px-4 py-1 rounded-full backdrop-blur-sm">
-              NEW COLLECTION
-            </span>
-            <Sparkles className="w-6 h-6 text-yellow-300" />
-          </motion.div>
-
+      <div className="relative z-20 flex items-start justify-center h-full px-4 pb-18">
+        <div className="text-center text-white max-w-4xl mx-auto h-full flex flex-col justify-between">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight flex flex-col items-center "
+            className="pt-4 sm:pt-0 text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 flex flex-col items-center "
           >
-            <span className="">BOGOFIT</span>
-
-            <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+            <span className="drop-shadow-lg">BOGOFIT</span>
+            <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent drop-shadow-lg">
               SHOP
             </span>
           </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl sm:text-2xl mb-8 text-white/90 max-w-2xl mx-auto"
-          >
-            전 세계 브랜드를 한국까지
-            <br />
-            안전하고 빠른 해외구매 대행 서비스
-          </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -97,7 +123,7 @@ export default function HeroBanner() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 1 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20"
       >
         <motion.div
           animate={{ y: [0, 10, 0] }}
@@ -107,6 +133,23 @@ export default function HeroBanner() {
           <div className="w-1 h-3 bg-white/70 rounded-full mt-2" />
         </motion.div>
       </motion.div>
+
+      {/* Swiper 스타일 커스터마이징 */}
+      <style jsx global>{`
+        .swiper-slide {
+          transition: all 0.3s ease !important;
+        }
+
+        .swiper-slide-active {
+          transform: scale(1.1) !important;
+        }
+
+        .swiper-slide-next,
+        .swiper-slide-prev {
+          transform: scale(0.9) !important;
+          opacity: 0.7 !important;
+        }
+      `}</style>
     </section>
   );
 }

@@ -376,8 +376,8 @@ export default function OrderHistory() {
                   고객 지원
                 </h3>
                 <div className="text-sm text-gray-600 space-y-2">
-                  <p>• 주문 관련 문의: metabank.ask@gmail.com</p>
-                  <p>• 배송 문의: metabank.ask@gmail.com</p>
+                  <p>• 주문 관련 문의: metabank@naver.com</p>
+                  <p>• 배송 문의: metabank@naver.com</p>
                   <p>• 고객센터: 042-385-1008 (평일 10:00-18:00)</p>
                 </div>
               </div>

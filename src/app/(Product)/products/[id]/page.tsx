@@ -1,6 +1,15 @@
 "use client";
 
-import { Share2, Star, Heart, Truck, Shield, RefreshCw } from "lucide-react";
+import {
+  Share2,
+  Star,
+  Heart,
+  Truck,
+  Shield,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -32,6 +41,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
 
   if (isLoading) {
     return (
@@ -209,28 +219,75 @@ export default function ProductDetail() {
 
               {/* 썸네일 이미지들 */}
               {allImages.length > 1 && (
-                <div className="grid grid-cols-4 gap-3">
-                  {allImages.map((image, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setSelectedImageIndex(i)}
-                      className={`aspect-square rounded-lg overflow-hidden bg-white shadow-md cursor-pointer hover:shadow-lg transition-all duration-200 ${
-                        selectedImageIndex === i
-                          ? "ring-2 ring-pink-500 shadow-lg scale-105"
-                          : ""
-                      }`}
+                <div className="relative">
+                  <div className="grid grid-cols-4 gap-3">
+                    {allImages
+                      .slice(thumbnailStartIndex, thumbnailStartIndex + 4)
+                      .map((image, i) => {
+                        const actualIndex = thumbnailStartIndex + i;
+                        return (
+                          <div
+                            key={actualIndex}
+                            onClick={() => setSelectedImageIndex(actualIndex)}
+                            className={`aspect-square rounded-lg overflow-hidden bg-white shadow-md cursor-pointer hover:shadow-lg transition-all duration-200 ${
+                              selectedImageIndex === actualIndex
+                                ? "ring-2 ring-pink-500 shadow-lg scale-105"
+                                : ""
+                            }`}
+                          >
+                            <Image
+                              src={image}
+                              alt={`${product.title} 이미지 ${actualIndex + 1}`}
+                              width={100}
+                              height={100}
+                              className="w-full h-full object-contain p-2"
+                            />
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  {/* 이전 버튼 */}
+                  {thumbnailStartIndex > 0 && (
+                    <button
+                      onClick={() =>
+                        setThumbnailStartIndex(
+                          Math.max(0, thumbnailStartIndex - 1)
+                        )
+                      }
+                      className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-200 z-10"
                     >
-                      <Image
-                        src={image}
-                        alt={`${product.title} 이미지 ${i + 1}`}
-                        width={100}
-                        height={100}
-                        className="w-full h-full object-contain p-2"
-                      />
-                    </div>
-                  ))}
+                      <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    </button>
+                  )}
+
+                  {/* 다음 버튼 */}
+                  {thumbnailStartIndex + 4 < allImages.length && (
+                    <button
+                      onClick={() =>
+                        setThumbnailStartIndex(
+                          Math.min(
+                            allImages.length - 4,
+                            thumbnailStartIndex + 1
+                          )
+                        )
+                      }
+                      className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-200 z-10"
+                    >
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </button>
+                  )}
                 </div>
               )}
+
+              {/* 가상 피팅 */}
+              <div className="mt-8 block md:hidden">
+                <VirtualFitting
+                  productTitle={product.title}
+                  productCategory={product.category}
+                  currentImage={currentImage}
+                />
+              </div>
             </div>
 
             {/* 상품 정보 섹션 */}
@@ -464,7 +521,7 @@ export default function ProductDetail() {
           </div>
 
           {/* 가상 피팅 */}
-          <div className="mt-8">
+          <div className="mt-8 hidden md:block">
             <VirtualFitting
               productTitle={product.title}
               productCategory={product.category}

@@ -53,7 +53,7 @@ export default function Footer() {
               href="mailto:help@bogofit.com"
               className="text-blue-600 hover:underline ml-1"
             >
-              metabank.ask@gmail.com
+              metabank@naver.com
             </Link>
           </span>
           <span>
@@ -69,7 +69,7 @@ export default function Footer() {
           <span className="font-semibold text-sm text-gray-700 mb-1">
             회사정보
           </span>
-          <span>상호: (주)보고핏 | 대표: 소요환</span>
+          <span>상호: (주)메타뱅크 | 대표: 소요환</span>
           <span>사업자등록번호: 755-86-02418</span>
           <span>
             주소: 대전광역시 대덕구 한남로 70 한남대캠퍼스혁신파크 B동 205호

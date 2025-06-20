@@ -25,10 +25,10 @@ export default function AboutPage() {
         <p className="text-gray-700">
           이메일:{" "}
           <a
-            href="mailto:metabank.ask@gmail.com"
+            href="mailto:metabank@naver.com"
             className="text-blue-600 underline"
           >
-            metabank.ask@gmail.com
+            metabank@naver.com
           </a>
         </p>
       </section>

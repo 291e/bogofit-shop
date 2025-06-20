@@ -17,13 +17,13 @@ import {
 import Image from "next/image";
 
 const navLinks = [
+  { href: "/about", label: "소개" },
   { href: "/products", label: "전체상품" },
   { href: "/category/top", label: "상의" },
   { href: "/category/bottom", label: "하의" },
   { href: "/category/outer", label: "아우터" },
   { href: "/category/onepiece", label: "원피스" },
   { href: "/event", label: "이벤트" },
-  { href: "/about", label: "소개" },
 ];
 
 export default function Header() {
@@ -79,7 +79,7 @@ export default function Header() {
                 BOGOFIT
               </span>
               <Image
-                src="/logo.svg"
+                src="/logo.png"
                 alt="브랜드 로고"
                 width={30}
                 height={30}
@@ -89,17 +89,8 @@ export default function Header() {
           </div>
           {/* 중앙: 메뉴 (데스크탑) */}
           <nav className="hidden md:flex gap-6 absolute left-1/2 -translate-x-1/2">
-            <div className="relative group">
-              <Link
-                href="/products"
-                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1"
-              >
-                전체상품
-              </Link>
-            </div>
-
             {/* 기타 메뉴 */}
-            {navLinks.slice(1).map((link) => (
+            {navLinks.slice(0).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
