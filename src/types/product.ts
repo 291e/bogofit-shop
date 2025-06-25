@@ -8,6 +8,7 @@ export interface ProductVariant {
 
 export interface ProductReview {
   id: number;
+  productId: number;
   rating: number;
   content: string;
   imageUrl?: string;

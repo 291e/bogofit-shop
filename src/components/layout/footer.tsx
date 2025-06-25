@@ -5,9 +5,9 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="w-full bg-white border-t text-gray-700 text-sm mt-16 pt-10 pb-6 px-4 md:px-0">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:justify-between gap-8 md:gap-0">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8 md:gap-0 px-4 ">
         {/* 브랜드/소개 */}
-        <div className="flex-1 min-w-[200px] flex flex-col gap-2 mb-6 md:mb-0">
+        <div className="flex-1 flex flex-col gap-2 mb-6 md:mb-0">
           <div className="flex items-center gap-2 mb-1">
             <Image
               src="/BOGOFIT.svg"
@@ -20,13 +20,13 @@ export default function Footer() {
           <span className="text-gray-500">
             해외직구, 쉽고 빠르게 BOGOFIT에서!
           </span>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400 max-w-[270px]">
             전 세계 인기 상품을 한 곳에서, 믿을 수 있는 구매대행 서비스
           </span>
         </div>
 
         {/* 주요 메뉴 */}
-        <div className="flex-1 min-w-[180px] flex flex-col gap-1">
+        <div className="flex-1 flex flex-col gap-1">
           <span className="font-semibold mb-1">메뉴</span>
           <Link
             href="https://www.metabank3d.com/"
@@ -45,7 +45,7 @@ export default function Footer() {
         </div>
 
         {/* 고객센터 */}
-        <div className="flex-1 min-w-[200px] flex flex-col gap-1">
+        <div className="flex-1 flex flex-col gap-1">
           <span className="font-semibold mb-1">고객센터</span>
           <span>
             1:1 문의{" "}
@@ -65,7 +65,7 @@ export default function Footer() {
         </div>
 
         {/* 회사정보 */}
-        <div className="flex-1 min-w-[220px] flex flex-col gap-1 text-xs text-gray-500 mt-4 md:mt-0">
+        <div className="flex-1  flex flex-col gap-1 text-xs text-gray-500 mt-4 md:mt-0">
           <span className="font-semibold text-sm text-gray-700 mb-1">
             회사정보
           </span>

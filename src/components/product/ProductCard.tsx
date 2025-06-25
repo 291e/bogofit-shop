@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/product";
+import { calculateReviewStats } from "@/contents/Sample/sampleReviews";
 
 interface ProductCardProps {
   product: Product;
@@ -61,13 +62,41 @@ export default function ProductCard({
         </div>
 
         {/* 리뷰 정보 */}
-        {/* {product.reviewCount && product.reviewCount > 0 && (
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-            <span>{product.avgRating}</span>
-            <span>({product.reviewCount})</span>
-          </div>
-        )} */}
+        {(() => {
+          const reviewStats = calculateReviewStats([]);
+          // 실제로는 product.reviews를 사용하지만, 현재는 샘플 데이터 사용
+          const stats = product.reviewCount
+            ? {
+                avgRating: product.avgRating || 4.5,
+                reviewCount: product.reviewCount,
+              }
+            : reviewStats;
+
+          return (
+            stats.reviewCount > 0 && (
+              <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                <div className="flex items-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-3 h-3 ${
+                        star <= Math.floor(stats.avgRating)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : star <= stats.avgRating
+                          ? "fill-yellow-200 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="font-medium">
+                  {stats.avgRating.toFixed(1)}
+                </span>
+                <span>({stats.reviewCount.toLocaleString()})</span>
+              </div>
+            )
+          );
+        })()}
 
         {/* 액션 버튼 */}
         {showAddToCart && (

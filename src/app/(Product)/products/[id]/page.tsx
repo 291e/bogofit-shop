@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductVariant } from "@/types/product";
 import { PurchaseButton } from "@/components/product/PurchaseButton";
 import VirtualFitting from "@/components/product/VirtualFitting";
+import ProductReview from "@/components/product/ProductReview";
 
 export default function ProductDetail() {
   const params = useParams();
@@ -529,9 +530,88 @@ export default function ProductDetail() {
             />
           </div>
 
+          {/* 리모트 위젯 메뉴바 */}
+          <div className="fixed right-6 bottom-0 -translate-y-1/2 z-40 ">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-2">
+              <nav className="flex flex-col space-y-2">
+                <button
+                  onClick={() =>
+                    document
+                      .getElementById("product-detail")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative"
+                  title="상품상세"
+                >
+                  <div className="w-6 h-6 bg-gradient-to-br from-pink-400 to-purple-400 rounded-lg flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-sm"></div>
+                  </div>
+                  <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    상품상세
+                  </div>
+                </button>
+
+                <button
+                  onClick={() =>
+                    document
+                      .getElementById("reviews")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative"
+                  title="리뷰"
+                >
+                  <div className="w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-lg flex items-center justify-center">
+                    <div className="w-3 h-3 border border-white rounded-full"></div>
+                  </div>
+                  <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    리뷰
+                  </div>
+                </button>
+                <button
+                  onClick={() =>
+                    document
+                      .getElementById("qna")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative"
+                  title="Q&A"
+                >
+                  <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-400 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                  <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    Q&A
+                  </div>
+                </button>
+                <button
+                  onClick={() =>
+                    document
+                      .getElementById("shipping-info")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative"
+                  title="배송/교환/환불"
+                >
+                  <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-lg flex items-center justify-center">
+                    <div className="w-3 h-2 bg-white rounded-sm"></div>
+                  </div>
+                  <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    배송/교환/환불
+                  </div>
+                </button>
+              </nav>
+            </div>
+          </div>
+
           {/* 상품 상세 이미지 (하단) */}
           {detailImage && (
-            <div className="max-w-3xl mx-auto mt-16">
+            <div id="product-detail" className="max-w-3xl mx-auto mt-16">
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 text-center">
+                  상품 상세
+                </h2>
+                <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
+              </div>
               <Image
                 src={detailImage}
                 alt="상세 이미지"
@@ -541,6 +621,91 @@ export default function ProductDetail() {
               />
             </div>
           )}
+
+          {/* 리뷰 섹션 */}
+          <div id="reviews" className="max-w-6xl mx-auto mt-16">
+            <ProductReview
+              productId={product.id}
+              onReviewSubmit={(review) => {
+                console.log("새 리뷰 제출:", review);
+                // 실제로는 API 호출을 통해 리뷰를 저장하고 상품 데이터를 다시 로드
+              }}
+            />
+          </div>
+
+          {/* Q&A 섹션 */}
+          <div id="qna" className="max-w-6xl mx-auto mt-16">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 text-center">
+                Q&A
+              </h2>
+              <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
+            </div>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">💬</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  아직 등록된 문의가 없습니다
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  상품에 대해 궁금한 점이 있으시면 언제든 문의해주세요.
+                </p>
+                <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200">
+                  문의하기
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 배송/교환/환불 정보 */}
+          <div id="shipping-info" className="max-w-6xl mx-auto mt-16 mb-16">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 text-center">
+                배송/교환/환불
+              </h2>
+              <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
+            </div>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-pink-500" />
+                    배송 정보
+                  </h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p>• 배송비: 3,000원 (3만원 이상 무료배송)</p>
+                    <p>• 배송기간: 주문 후 7-10일 (영업일 기준)</p>
+                    <p>• 배송지역: 전국 (제주/도서산간 추가비용)</p>
+                    <p>• 택배사: CJ대한통운</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 text-blue-500" />
+                    교환/환불
+                  </h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p>• 교환/환불 기간: 상품 수령 후 7일 이내</p>
+                    <p>• 교환/환불 비용: 고객 부담</p>
+                    <p>• 단순변심 시 왕복배송비 부담</p>
+                    <p>• 불량품/오배송 시 무료 교환</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-green-500" />
+                    주의사항
+                  </h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p>• 착용 후 교환/환불 불가</p>
+                    <p>• 세탁 후 교환/환불 불가</p>
+                    <p>• 상품 택 제거 시 교환/환불 불가</p>
+                    <p>• 고객 과실로 인한 손상 시 불가</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
