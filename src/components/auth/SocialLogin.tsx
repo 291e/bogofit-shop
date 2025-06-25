@@ -20,16 +20,27 @@ export default function SocialLogin({ className }: SocialLoginProps) {
   // 클라이언트 사이드에서만 환경 변수 접근
   useEffect(() => {
     setMounted(true);
-    setConfig({
-      googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
-      googleRedirectUri: `${
-        process.env.NEXT_PUBLIC_BASE_URL || ""
-      }/auth/callback/google`,
-      kakaoClientId: process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID || "",
-      kakaoRedirectUri: `${
-        process.env.NEXT_PUBLIC_BASE_URL || ""
-      }/auth/callback/kakao`,
-    });
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+    const kakaoClientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID || "";
+
+    const newConfig = {
+      googleClientId,
+      googleRedirectUri: `${baseUrl}/auth/callback/google`,
+      kakaoClientId,
+      kakaoRedirectUri: `${baseUrl}/auth/callback/kakao`,
+    };
+
+    setConfig(newConfig);
+
+    // 디버깅 정보 출력
+    console.log("=== Social Login Config Debug ===");
+    console.log("Base URL:", baseUrl || "❌ Missing");
+    console.log("Google Client ID:", googleClientId ? "✓ Set" : "❌ Missing");
+    console.log("Kakao Client ID:", kakaoClientId ? "✓ Set" : "❌ Missing");
+    console.log("Google Redirect URI:", newConfig.googleRedirectUri);
+    console.log("Kakao Redirect URI:", newConfig.kakaoRedirectUri);
   }, []);
 
   // OAuth 인증 코드를 받아오는 함수
@@ -41,6 +52,10 @@ export default function SocialLogin({ className }: SocialLoginProps) {
       let authUrl = "";
 
       if (provider === "google") {
+        if (!config.googleClientId) {
+          throw new Error("Google Client ID가 설정되지 않았습니다.");
+        }
+
         // Google OAuth 인증 URL 생성
         const googleParams = new URLSearchParams({
           client_id: config.googleClientId,
@@ -49,7 +64,13 @@ export default function SocialLogin({ className }: SocialLoginProps) {
           scope: "email profile",
         });
         authUrl = `https://accounts.google.com/o/oauth2/auth?${googleParams.toString()}`;
+
+        console.log("Google OAuth URL:", authUrl);
       } else if (provider === "kakao") {
+        if (!config.kakaoClientId) {
+          throw new Error("Kakao Client ID가 설정되지 않았습니다.");
+        }
+
         // Kakao OAuth 인증 URL 생성
         const kakaoParams = new URLSearchParams({
           client_id: config.kakaoClientId,
@@ -57,13 +78,19 @@ export default function SocialLogin({ className }: SocialLoginProps) {
           response_type: "code",
         });
         authUrl = `https://kauth.kakao.com/oauth/authorize?${kakaoParams.toString()}`;
+
+        console.log("Kakao OAuth URL:", authUrl);
       }
 
       // OAuth 인증 페이지로 리다이렉트
       window.location.href = authUrl;
     } catch (error) {
       console.error(`${provider} 인증 오류:`, error);
-      setError(`${provider} 인증 중 오류가 발생했습니다.`);
+      setError(
+        error instanceof Error
+          ? error.message
+          : `${provider} 인증 중 오류가 발생했습니다.`
+      );
       setLoading(false);
     }
   };
@@ -94,15 +121,23 @@ export default function SocialLogin({ className }: SocialLoginProps) {
       <div className="mt-6 grid grid-cols-2 gap-3">
         <button
           onClick={() => handleSocialLoginClick("google")}
-          disabled={loading}
+          disabled={loading || !config.googleClientId}
           className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+          title={
+            !config.googleClientId
+              ? "Google Client ID가 설정되지 않았습니다"
+              : ""
+          }
         >
           Google
         </button>
         <button
           onClick={() => handleSocialLoginClick("kakao")}
-          disabled={loading}
+          disabled={loading || !config.kakaoClientId}
           className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+          title={
+            !config.kakaoClientId ? "Kakao Client ID가 설정되지 않았습니다" : ""
+          }
         >
           Kakao
         </button>
@@ -110,6 +145,14 @@ export default function SocialLogin({ className }: SocialLoginProps) {
 
       {error && (
         <div className="mt-3 text-red-500 text-sm text-center">{error}</div>
+      )}
+
+      {/* 개발 모드에서만 설정 상태 표시 */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="mt-3 text-xs text-gray-400 text-center">
+          <div>Google: {config.googleClientId ? "✓" : "❌"}</div>
+          <div>Kakao: {config.kakaoClientId ? "✓" : "❌"}</div>
+        </div>
       )}
     </div>
   );

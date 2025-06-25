@@ -105,8 +105,13 @@ export default function Header() {
             {mounted && isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" aria-label="유저 메뉴">
-                    <span className="text-sm font-semibold mr-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-20 h-20  focus-visible:border-none focus-visible:ring-ring/50 focus-visible:ring-0 aria-invalid:ring-0 dark:aria-invalid:ring-destructive/40 aria-invalid:border-none hover:bg-transparent active:bg-transparent "
+                    aria-label="유저 메뉴"
+                  >
+                    <span className="text-sm font-semibold mr-2 truncate">
                       {user.userId}
                     </span>
                   </Button>

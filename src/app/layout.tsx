@@ -19,6 +19,14 @@ export const metadata: Metadata = {
     "보고핏",
     "보고핏쇼핑",
     "보고핏샵",
+    "구매대행",
+    "구매대행서비스",
+    "명품",
+    "가상피팅",
+    "메타뱅크",
+    "metabank",
+    "bogofit",
+    "bogofitshop",
   ],
   authors: [{ name: "BOGOFIT" }],
   metadataBase: new URL("https://shop.bogofit.kr"),
@@ -31,7 +39,7 @@ export const metadata: Metadata = {
     description: "다양한 브랜드와 상품을 한 곳에서!",
     images: [
       {
-        url: "/BOGOFIT.svg",
+        url: "/og.png",
         width: 600,
         height: 315,
         alt: "BOGOFIT SHOP",
@@ -43,7 +51,7 @@ export const metadata: Metadata = {
     site: "@bogofit",
     title: "BOGOFIT SHOP",
     description: "다양한 브랜드와 상품을 한 곳에서!",
-    images: ["/BOGOFIT.svg"],
+    images: ["/og.png"],
   },
   robots: {
     index: true,
@@ -57,7 +65,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.ico",
-    apple: "/BOGOFIT.svg",
+    apple: "/favicon.ico",
     shortcut: "/favicon.ico",
   },
   verification: {
