@@ -292,7 +292,7 @@ export default function ProductDetail() {
             </div>
 
             {/* 상품 정보 섹션 */}
-            <div className="space-y-8">
+            <div id="product-info" className="space-y-8">
               {/* 브랜드 및 공유 */}
               <div className="flex justify-between items-start">
                 <Link href="/" className="flex items-center space-x-2 group">
@@ -537,10 +537,27 @@ export default function ProductDetail() {
                 <button
                   onClick={() =>
                     document
+                      .getElementById("product-info")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
+                  title="상품정보"
+                >
+                  <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center">
+                    <div className="w-3 h-3 border-2 border-white rounded-sm"></div>
+                  </div>
+                  <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    상품정보
+                  </div>
+                </button>
+
+                <button
+                  onClick={() =>
+                    document
                       .getElementById("product-detail")
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
-                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative"
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
                   title="상품상세"
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-pink-400 to-purple-400 rounded-lg flex items-center justify-center">
@@ -557,7 +574,7 @@ export default function ProductDetail() {
                       .getElementById("reviews")
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
-                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative"
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
                   title="리뷰"
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-lg flex items-center justify-center">
@@ -573,7 +590,7 @@ export default function ProductDetail() {
                       .getElementById("qna")
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
-                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative"
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
                   title="Q&A"
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-400 rounded-lg flex items-center justify-center">
@@ -589,7 +606,7 @@ export default function ProductDetail() {
                       .getElementById("shipping-info")
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
-                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative"
+                  className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
                   title="배송/교환/환불"
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-lg flex items-center justify-center">
@@ -617,7 +634,7 @@ export default function ProductDetail() {
                 alt="상세 이미지"
                 width={1200}
                 height={1600}
-                className="w-full h-auto rounded-2xl shadow-lg"
+                className="w-full h-auto "
               />
             </div>
           )}

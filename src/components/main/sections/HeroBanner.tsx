@@ -93,7 +93,7 @@ export default function HeroBanner() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="pt-4 sm:pt-0 text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 flex flex-col items-center "
+            className="pt-16 text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 flex flex-col items-center "
           >
             <span className="drop-shadow-lg">BOGOFIT</span>
             <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent drop-shadow-lg">

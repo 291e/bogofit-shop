@@ -1,7 +1,7 @@
 "use client";
 
 import HeroBanner from "./sections/HeroBanner";
-import CategorySection from "./sections/CategorySection";
+// import CategorySection from "./sections/CategorySection";
 import FeaturedSection from "./sections/FeaturedSection";
 import GlobalShoppingSection from "./sections/GlobalShoppingSection";
 // import ServiceInfoSection from "./sections/ServiceInfoSection";
@@ -14,7 +14,7 @@ export default function HomePage() {
       <HeroBanner />
 
       {/* 카테고리 섹션 */}
-      <CategorySection />
+      {/* <CategorySection /> */}
 
       {/* 특별 기획전 섹션 */}
       <FeaturedSection />
