@@ -27,12 +27,11 @@ const MobileAppSection = () => {
           </p>
         </motion.div>
 
-        {/* Mobile Mockups */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="flex justify-center items-center gap-8 mb-12"
+          className="flex justify-center items-center gap-4 md:gap-8 mb-12"
         >
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -40,7 +39,7 @@ const MobileAppSection = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="relative"
           >
-            <div className="w-40 h-72 bg-black rounded-3xl p-2 shadow-2xl">
+            <div className="w-full max-w-40 h-72 bg-black rounded-3xl p-2 shadow-2xl">
               <div className="w-full h-full bg-gray-100 rounded-2xl overflow-hidden">
                 <Image
                   src="/hero/image4.png"
@@ -53,17 +52,15 @@ const MobileAppSection = () => {
             </div>
           </motion.div>
 
-          {/* Click Icon */}
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.6 }}
             className="relative"
           >
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-xl border-4 border-pink-200">
+            <div className="hidden md:flex w-16 h-16 bg-white rounded-full  items-center justify-center shadow-xl border-4 border-pink-200">
               <span className="text-3xl">👆</span>
             </div>
-            {/* Pulse Animation */}
             <div className="absolute inset-0 w-16 h-16 bg-pink-200 rounded-full animate-ping opacity-20"></div>
           </motion.div>
 
@@ -73,7 +70,7 @@ const MobileAppSection = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="relative"
           >
-            <div className="w-40 h-72 bg-black rounded-3xl p-2 shadow-2xl">
+            <div className="w-full max-w-40 h-72 bg-black rounded-3xl p-2 shadow-2xl">
               <div className="w-full h-full bg-gray-100 rounded-2xl overflow-hidden">
                 <Image
                   src="/hero/image5.png"

@@ -4,16 +4,22 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileDropzone } from "@/components/ui/file-dropzone";
 import {
-  Upload,
   Play,
   Download,
   Loader2,
   ChevronDown,
   ChevronUp,
   X,
+  AlertTriangle,
 } from "lucide-react";
-import Image from "next/image";
+import {
+  humanSamples,
+  garmentSamples,
+  lowerSamples,
+  backgroundSamples,
+} from "@/contents/VirtualFitting/sampleImages";
 
 interface VirtualFittingProps {
   productTitle?: string;
@@ -69,7 +75,18 @@ export default function VirtualFitting({
     filename: string
   ): Promise<File | null> => {
     try {
-      // 프록시를 통해 이미지 가져오기
+      // 로컬 이미지인 경우 직접 사용
+      if (url.startsWith("/")) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`이미지 로드 실패: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        return new File([blob], filename, { type: blob.type || "image/jpeg" });
+      }
+
+      // 외부 이미지인 경우 프록시 사용
       const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(url)}`;
       const response = await fetch(proxyUrl);
 
@@ -134,8 +151,17 @@ export default function VirtualFitting({
       };
       reader.readAsDataURL(file);
     } else {
+      // 파일이 null인 경우 프리뷰도 초기화
       setPreviews((prev) => ({ ...prev, [fieldName]: "" }));
     }
+  };
+
+  // 샘플 이미지 선택 핸들러
+  const handleSampleSelect = (
+    fieldName: keyof typeof files,
+    imageSrc: string
+  ) => {
+    setPreviews((prev) => ({ ...prev, [fieldName]: imageSrc }));
   };
 
   // 워크플로우 직접 실행
@@ -143,25 +169,138 @@ export default function VirtualFitting({
     try {
       setStatus("이미지 생성 중...");
 
+      // 배경 이미지가 포함된 경우 더 긴 타임아웃 설정
+      const hasBackground = formData.has("background_file");
+      const timeoutDuration = hasBackground ? 120000 : 60000; // 배경 포함시 2분, 아니면 1분
+
+      // FormData 내용 로깅 (디버깅용)
+      console.log("전송할 파일 정보:");
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(
+            `${key}: ${value.name} (${value.size} bytes, ${value.type})`
+          );
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+
       const workflowResponse = await fetch(
         "/api/virtual-fitting/run_workflow",
         {
           method: "POST",
           body: formData,
+          signal: controller.signal,
         }
       );
+
+      clearTimeout(timeoutId);
 
       let workflowResult;
       const responseText = await workflowResponse.text();
 
+      // 응답 로깅 (디버깅용)
+      console.log("서버 응답 상태:", workflowResponse.status);
+      console.log(
+        "서버 응답 헤더:",
+        Object.fromEntries(workflowResponse.headers.entries())
+      );
+      console.log(
+        "서버 응답 텍스트 (처음 500자):",
+        responseText.substring(0, 500)
+      );
+
+      // Internal Server Error 특별 처리
+      if (
+        workflowResponse.status === 500 &&
+        responseText.trim() === "Internal Server Error"
+      ) {
+        const hasBackground = formData.has("background_file");
+        if (hasBackground) {
+          setStatus(
+            "배경 이미지 처리 중 서버 오류가 발생했습니다. 배경 이미지 없이 다시 시도해보세요."
+          );
+        } else {
+          setStatus(
+            "서버 내부 오류가 발생했습니다. 이미지 품질을 확인하고 다시 시도해주세요."
+          );
+        }
+        return;
+      }
+
       try {
         workflowResult = JSON.parse(responseText);
-      } catch {
-        // JSON 파싱 실패시 원본 텍스트 사용
-        console.error("서버 응답 파싱 실패:", responseText);
+      } catch (parseError) {
+        // JSON 파싱 실패시 더 자세한 분석
+        console.error("JSON 파싱 실패:", parseError);
+        console.error("응답 전체 텍스트:", responseText);
 
-        // 에러 메시지 개선
+        // HTML 응답인지 확인
         if (
+          responseText.includes("<!DOCTYPE html>") ||
+          responseText.includes("<html")
+        ) {
+          setStatus(
+            "서버에서 HTML 응답을 반환했습니다. 관리자에게 문의하세요."
+          );
+          return;
+        }
+
+        // 성공적인 이미지 URL이 포함되어 있는지 확인
+        const imageUrlMatch = responseText.match(
+          /https:\/\/cdn\.klingai\.com\/[^\s"]+\.png/
+        );
+        if (imageUrlMatch) {
+          // 이미지 URL을 찾았다면 성공으로 처리
+          console.log("응답에서 이미지 URL 추출:", imageUrlMatch[0]);
+          setStatus("이미지 생성 완료!");
+          setGeneratedImage(imageUrlMatch[0]);
+
+          if (isProEnabled) {
+            setStatus("비디오 생성 중...");
+            const proFormData = new FormData();
+            proFormData.append("image_url", imageUrlMatch[0]);
+            proFormData.append("connection_info", connectionInfoRef.current!);
+
+            const proResponse = await fetch("/api/virtual-fitting/run_i2v", {
+              method: "POST",
+              body: proFormData,
+            });
+
+            let proResult;
+            const proResponseText = await proResponse.text();
+
+            try {
+              proResult = JSON.parse(proResponseText);
+            } catch {
+              setStatus(
+                `비디오 생성 서버 오류: ${proResponseText.substring(0, 100)}...`
+              );
+              return;
+            }
+
+            if (proResponse.ok && proResult.video_url) {
+              setStatus("비디오 생성 완료!");
+              setGeneratedVideo(proResult.video_url);
+            } else {
+              setStatus(
+                "비디오 생성 실패: " + (proResult.error || "알 수 없는 오류")
+              );
+            }
+          }
+          return;
+        }
+
+        // 배경 이미지 관련 에러 메시지 개선
+        const hasBackground = formData.has("background_file");
+        if (hasBackground) {
+          setStatus(
+            "배경 이미지 처리 중 오류가 발생했습니다. 배경 이미지 없이 시도해보세요."
+          );
+        } else if (
           workflowResponse.status === 500 &&
           (responseText.includes("Internal Server Error") ||
             responseText.includes("Internal S"))
@@ -169,10 +308,9 @@ export default function VirtualFitting({
           setStatus("사람 이미지는 최소한 상반신을 포함하여 올려주세요!");
         } else {
           setStatus(
-            `서버 오류 (${workflowResponse.status}): ${responseText.substring(
-              0,
-              100
-            )}...`
+            `서버 응답 파싱 실패 (${
+              workflowResponse.status
+            }): ${responseText.substring(0, 100)}...`
           );
         }
         return;
@@ -217,8 +355,12 @@ export default function VirtualFitting({
       } else {
         // 에러 메시지 개선
         let errorMessage = "이미지 생성 실패: ";
+        const hasBackground = formData.has("background_file");
 
-        if (
+        if (hasBackground) {
+          errorMessage =
+            "배경 이미지 처리 중 오류가 발생했습니다. 배경 이미지를 제거하고 다시 시도해보세요.";
+        } else if (
           workflowResponse.status === 500 &&
           (responseText.includes("Internal Server Error") ||
             responseText.includes("Internal S"))
@@ -233,7 +375,15 @@ export default function VirtualFitting({
         setStatus(errorMessage);
       }
     } catch (error) {
-      setStatus("네트워크 오류: " + (error as Error).message);
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          setStatus("요청 시간이 초과되었습니다. 다시 시도해주세요.");
+        } else {
+          setStatus("네트워크 오류: " + error.message);
+        }
+      } else {
+        setStatus("알 수 없는 오류가 발생했습니다.");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -249,7 +399,14 @@ export default function VirtualFitting({
     setIsProcessing(true);
     setGeneratedImage("");
     setGeneratedVideo("");
-    setStatus("연결 중...");
+
+    // 배경 이미지가 포함된 경우 사용자에게 알림
+    const hasBackground = !!files.background_file;
+    if (hasBackground) {
+      setStatus("배경 이미지 포함으로 처리 시간이 더 오래 걸릴 수 있습니다...");
+    } else {
+      setStatus("연결 중...");
+    }
 
     const formData = new FormData();
     formData.append("human_file", files.human_file);
@@ -265,7 +422,11 @@ export default function VirtualFitting({
       formData.append("connection_info", connectionInfo);
       formData.append("is_pro", isProEnabled.toString());
 
-      setStatus("워크플로우 시작 중...");
+      setStatus(
+        hasBackground
+          ? "배경 합성을 포함한 워크플로우 시작 중..."
+          : "워크플로우 시작 중..."
+      );
       await runWorkflowDirect(formData);
     } catch (error) {
       setStatus("연결 오류: " + (error as Error).message);
@@ -364,189 +525,131 @@ export default function VirtualFitting({
               <div className="flex flex-col md:flex-row gap-6 md:gap-8">
                 {/* 필수 파일들 */}
                 <div className="flex-1 space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      <span className="text-red-500">*</span> 사람 이미지
-                      <span className="block text-xs text-gray-500 font-normal mt-1">
-                        최소한 상반신이 포함된 사진을 업로드해주세요
-                      </span>
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-400 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={(e) =>
-                          handleFileChange(
-                            "human_file",
-                            e.target.files?.[0] || null
-                          )
-                        }
-                        className="hidden"
-                        id="human_file"
-                      />
-                      <label htmlFor="human_file" className="cursor-pointer">
-                        {previews.human_file ? (
-                          <Image
-                            src={previews.human_file}
-                            alt="사람 이미지"
-                            width={100}
-                            height={100}
-                            className="mx-auto rounded"
-                          />
-                        ) : (
-                          <div className="py-4">
-                            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                            <p className="text-sm text-gray-500">
-                              클릭하여 업로드
-                            </p>
-                          </div>
-                        )}
-                      </label>
-                    </div>
-                  </div>
+                  <FileDropzone
+                    onDrop={(file) => handleFileChange("human_file", file)}
+                    preview={previews.human_file}
+                    label="사람 이미지"
+                    required
+                    description="최소한 상반신이 포함된 사진을 업로드해주세요"
+                    sampleImages={humanSamples}
+                    onSampleSelect={(imageSrc) =>
+                      handleSampleSelect("human_file", imageSrc)
+                    }
+                    onClear={() => handleFileChange("human_file", null)}
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      <span className="text-red-500">*</span> 상의 이미지
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-400 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={(e) =>
-                          handleFileChange(
-                            "garment_file",
-                            e.target.files?.[0] || null
-                          )
-                        }
-                        className="hidden"
-                        id="garment_file"
-                      />
-                      <label htmlFor="garment_file" className="cursor-pointer">
-                        {previews.garment_file ? (
-                          <Image
-                            src={previews.garment_file}
-                            alt="상의 이미지"
-                            width={100}
-                            height={100}
-                            className="mx-auto rounded"
-                          />
-                        ) : currentImage &&
-                          (productCategory === "상의" ||
-                            productCategory === "아우터" ||
-                            productCategory === "원피스") ? (
-                          <div>
-                            <Image
-                              src={currentImage}
-                              alt={productTitle || "상품"}
-                              width={100}
-                              height={100}
-                              className="mx-auto rounded mb-2"
-                            />
-                            <p className="text-xs text-green-600 font-medium">
-                              자동 업로드됨
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="py-4">
-                            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                            <p className="text-sm text-gray-500">
-                              클릭하여 업로드
-                            </p>
-                          </div>
-                        )}
-                      </label>
-                    </div>
-                  </div>
+                  <FileDropzone
+                    onDrop={(file) => handleFileChange("garment_file", file)}
+                    preview={
+                      previews.garment_file ||
+                      (currentImage &&
+                      (productCategory === "상의" ||
+                        productCategory === "아우터" ||
+                        productCategory === "원피스") &&
+                      !files.garment_file // 파일이 해제되지 않은 경우만 currentImage 표시
+                        ? currentImage
+                        : "")
+                    }
+                    label="상의 이미지"
+                    required
+                    sampleImages={garmentSamples}
+                    onSampleSelect={(imageSrc) =>
+                      handleSampleSelect("garment_file", imageSrc)
+                    }
+                    onClear={() => handleFileChange("garment_file", null)}
+                  />
                 </div>
 
                 {/* 선택 파일들 */}
                 <div className="flex-1 space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      하의 이미지 (선택)
-                    </label>
-                    <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-gray-300 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={(e) =>
-                          handleFileChange(
-                            "lower_file",
-                            e.target.files?.[0] || null
-                          )
-                        }
-                        className="hidden"
-                        id="lower_file"
-                      />
-                      <label htmlFor="lower_file" className="cursor-pointer">
-                        {previews.lower_file ? (
-                          <Image
-                            src={previews.lower_file}
-                            alt="하의 이미지"
-                            width={100}
-                            height={100}
-                            className="mx-auto rounded"
-                          />
-                        ) : currentImage && productCategory === "하의" ? (
-                          <div>
-                            <Image
-                              src={currentImage}
-                              alt={productTitle || "상품"}
-                              width={100}
-                              height={100}
-                              className="mx-auto rounded mb-2"
-                            />
-                            <p className="text-xs text-green-600 font-medium">
-                              자동 업로드됨
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="py-4">
-                            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                            <p className="text-sm text-gray-500">선택사항</p>
-                          </div>
-                        )}
-                      </label>
-                    </div>
-                  </div>
+                  <FileDropzone
+                    onDrop={(file) => handleFileChange("lower_file", file)}
+                    preview={
+                      previews.lower_file ||
+                      (currentImage &&
+                      productCategory === "하의" &&
+                      !files.lower_file // 파일이 해제되지 않은 경우만 currentImage 표시
+                        ? currentImage
+                        : "")
+                    }
+                    label="하의 이미지 (선택)"
+                    description="&nbsp;"
+                    sampleImages={lowerSamples}
+                    onSampleSelect={(imageSrc) =>
+                      handleSampleSelect("lower_file", imageSrc)
+                    }
+                    onClear={() => handleFileChange("lower_file", null)}
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      배경 이미지 (선택)
-                    </label>
-                    <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:border-gray-300 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={(e) =>
-                          handleFileChange(
-                            "background_file",
-                            e.target.files?.[0] || null
-                          )
+                  {/* 배경 이미지 업로드 - 일시적으로 비활성화 */}
+                  {false && ( // TODO: 서버 오류 수정 후 true로 변경
+                    <>
+                      <FileDropzone
+                        onDrop={(file) =>
+                          handleFileChange("background_file", file)
                         }
-                        className="hidden"
-                        id="background_file"
+                        preview={previews.background_file}
+                        label="배경 이미지 (선택)"
+                        description="처리 시간이 더 오래 걸릴 수 있습니다"
+                        sampleImages={backgroundSamples}
+                        onSampleSelect={(imageSrc) =>
+                          handleSampleSelect("background_file", imageSrc)
+                        }
+                        onClear={() =>
+                          handleFileChange("background_file", null)
+                        }
                       />
-                      <label
-                        htmlFor="background_file"
-                        className="cursor-pointer"
-                      >
-                        {previews.background_file ? (
-                          <Image
-                            src={previews.background_file}
-                            alt="배경 이미지"
-                            width={100}
-                            height={100}
-                            className="mx-auto rounded"
-                          />
-                        ) : (
-                          <div className="py-4">
-                            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                            <p className="text-sm text-gray-500">선택사항</p>
+
+                      {/* 배경 이미지 사용 시 주의사항 */}
+                      {files.background_file && (
+                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-yellow-800">
+                              <p className="font-medium">
+                                배경 이미지 사용 시 주의사항:
+                              </p>
+                              <ul className="mt-1 space-y-1 text-xs">
+                                <li>
+                                  • 처리 시간이 최대 2분까지 소요될 수 있습니다
+                                </li>
+                                <li>
+                                  • 서버 오류 발생 시 배경 이미지를 제거하고
+                                  다시 시도해주세요
+                                </li>
+                              </ul>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleFileChange("background_file", null)
+                                }
+                                className="mt-2 h-6 text-xs bg-white"
+                              >
+                                배경 이미지 제거
+                              </Button>
+                            </div>
                           </div>
-                        )}
-                      </label>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* 배경 이미지 비활성화 안내 */}
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                      <AlertTriangle className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-gray-700">
+                        <p className="font-medium">
+                          배경 이미지 기능 일시 중단
+                        </p>
+                        <p className="mt-1 text-xs">
+                          서버 안정성을 위해 배경 이미지 업로드 기능을
+                          일시적으로 비활성화했습니다.
+                          <br />
+                          기본 가상 피팅 기능은 정상적으로 사용 가능합니다.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

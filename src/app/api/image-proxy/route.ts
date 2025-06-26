@@ -12,7 +12,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(imageUrl);
+    let fullImageUrl = imageUrl;
+
+    // 로컬 경로인 경우 절대 URL로 변환
+    if (imageUrl.startsWith("/")) {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+      fullImageUrl = `${baseUrl}${imageUrl}`;
+    }
+
+    const response = await fetch(fullImageUrl);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch image: ${response.status}`);

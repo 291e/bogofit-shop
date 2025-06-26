@@ -39,19 +39,4 @@ export const slideImages = [
     src: "/hero/image8.png",
     alt: "제품 이미지 8",
   },
-  {
-    id: 9,
-    src: "/hero/image9.png",
-    alt: "제품 이미지 9",
-  },
-  {
-    id: 10,
-    src: "/hero/image10.png",
-    alt: "제품 이미지 10",
-  },
-  {
-    id: 11,
-    src: "/hero/image11.png",
-    alt: "제품 이미지 11",
-  },
 ];
