@@ -13,6 +13,17 @@
   font-family: "BagelFatOne", sans-serif;
 }
 
+@font-face {
+  font-family: "LINESeedKR-Th";
+  src: url("/fonts/LINESeedKR-Th.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+}
+
+.line-seed-kr {
+  font-family: "LINESeedKR-Th", sans-serif;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

@@ -6,6 +6,7 @@ import FeaturedSection from "./sections/FeaturedSection";
 import GlobalShoppingSection from "./sections/GlobalShoppingSection";
 // import ServiceInfoSection from "./sections/ServiceInfoSection";
 import TestimonialSection from "./sections/TestimonialSection";
+import VirtualFittingSection from "./sections/VirtualFittingSection";
 
 export default function HomePage() {
   return (
@@ -13,8 +14,8 @@ export default function HomePage() {
       {/* 히어로 배너 */}
       <HeroBanner />
 
-      {/* 카테고리 섹션 */}
-      {/* <CategorySection /> */}
+      {/* 가상피팅 AI 서비스 섹션 */}
+      <VirtualFittingSection />
 
       {/* 특별 기획전 섹션 */}
       <FeaturedSection />

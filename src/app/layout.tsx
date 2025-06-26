@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import MainLayout from "@/components/layout/mainLayout";
@@ -7,8 +8,31 @@ import { Providers } from "@/providers/ApolloProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
+const lineSeedKR = localFont({
+  src: [
+    {
+      path: "./fonts/LINESeedKR-Th.woff",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "./fonts/LINESeedKR-Rg.woff",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/LINESeedKR-Bd.woff",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-line-seed-kr",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "BOGOFIT SHOP",
+  title:
+    "보고핏 샵(BOGOFIT SHOP) - AI 가상피팅 쇼핑몰, 내 몸에 딱 맞는 패션 추천",
   description: "다양한 브랜드와 상품을 한 곳에서!",
   keywords: [
     "쇼핑몰",
@@ -82,7 +106,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body suppressHydrationWarning className={inter.className}>
+      <body
+        suppressHydrationWarning
+        className={`${inter.className} ${lineSeedKR.variable}`}
+      >
         <Providers>
           <QueryProvider>
             <MainLayout>{children}</MainLayout>

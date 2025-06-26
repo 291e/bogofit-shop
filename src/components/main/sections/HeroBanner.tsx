@@ -13,6 +13,9 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/effect-coverflow";
 import { slideImages } from "@/contents/Hero/slideImages";
+import { Libre_Bodoni } from "next/font/google";
+
+const LibreBodoni = Libre_Bodoni({ subsets: ["latin"] });
 
 export default function HeroBanner() {
   return (
@@ -64,7 +67,7 @@ export default function HeroBanner() {
                 spaceBetween: 60,
               },
             }}
-            className="w-full h-[400px]"
+            className="w-full h-[600px]"
           >
             {slideImages.map((image) => (
               <SwiperSlide key={image.id}>
@@ -75,7 +78,7 @@ export default function HeroBanner() {
                       src={image.src}
                       alt={image.alt}
                       fill
-                      className="object-contain p-6 transition-transform duration-300 group-hover:scale-110 drop-shadow-2xl"
+                      className="object-contain transition-transform duration-300 group-hover:scale-110"
                       priority
                     />
                   </div>
@@ -95,9 +98,8 @@ export default function HeroBanner() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="pt-16 text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 flex flex-col items-center "
           >
-            <span className="drop-shadow-lg">BOGOFIT</span>
-            <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent drop-shadow-lg">
-              SHOP
+            <span className={`${LibreBodoni.className} drop-shadow-lg`}>
+              BOGOFIT SHOP
             </span>
           </motion.h1>
 
