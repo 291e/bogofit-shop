@@ -64,10 +64,46 @@ export default function VirtualFitting({
   const [isOpen, setIsOpen] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
+  // 파일 업로드 오류 상태 추가
+  const [fileErrors, setFileErrors] = useState<{
+    human_file: string;
+    garment_file: string;
+    lower_file: string;
+    background_file: string;
+  }>({
+    human_file: "",
+    garment_file: "",
+    lower_file: "",
+    background_file: "",
+  });
+
   const connectionInfoRef = useRef<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const clientId = "0d7d0263c7f94a4a90cf2dbbff3a45bf";
+
+  // 파일 유효성 검사 함수
+  const validateFile = (file: File): string => {
+    // 파일 크기 검사 (10MB 제한)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return "파일 크기가 10MB를 초과했습니다. 더 작은 이미지를 사용해주세요.";
+    }
+
+    // 파일 형식 검사
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      return "지원하지 않는 파일 형식입니다. JPG, PNG, WEBP 파일만 업로드 가능합니다.";
+    }
+
+    // 최소 파일 크기 검사 (너무 작은 파일 방지)
+    const minSize = 1024; // 1KB
+    if (file.size < minSize) {
+      return "파일이 너무 작습니다. 유효한 이미지 파일을 업로드해주세요.";
+    }
+
+    return "";
+  };
 
   // 이미지 URL을 File 객체로 변환하는 함수 (프록시 사용)
   const urlToFile = async (
@@ -134,24 +170,66 @@ export default function VirtualFitting({
     autoUploadCurrentImage();
   }, [currentImage, productCategory, productTitle]);
 
-  // 파일 업로드 핸들러
+  // 파일 업로드 핸들러 (개선된 버전)
   const handleFileChange = (
     fieldName: keyof typeof files,
     file: File | null
   ) => {
-    setFiles((prev) => ({ ...prev, [fieldName]: file }));
+    // 기존 에러 메시지 초기화
+    setFileErrors((prev) => ({ ...prev, [fieldName]: "" }));
 
     if (file) {
+      // 파일 유효성 검사
+      const error = validateFile(file);
+      if (error) {
+        setFileErrors((prev) => ({ ...prev, [fieldName]: error }));
+        return;
+      }
+
+      // 파일 설정
+      setFiles((prev) => ({ ...prev, [fieldName]: file }));
+
+      // 미리보기 생성
       const reader = new FileReader();
+
       reader.onload = (e) => {
         setPreviews((prev) => ({
           ...prev,
           [fieldName]: e.target?.result as string,
         }));
       };
-      reader.readAsDataURL(file);
+
+      reader.onerror = () => {
+        setFileErrors((prev) => ({
+          ...prev,
+          [fieldName]:
+            "파일을 읽는 중 오류가 발생했습니다. 다른 이미지를 시도해주세요.",
+        }));
+      };
+
+      // 이미지 파일인지 추가 검증
+      const img = new Image();
+
+      // 임시 URL로 이미지 유효성 검사
+      const tempUrl = URL.createObjectURL(file);
+      img.src = tempUrl;
+
+      img.onload = () => {
+        URL.revokeObjectURL(tempUrl);
+        reader.readAsDataURL(file);
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(tempUrl);
+        setFileErrors((prev) => ({
+          ...prev,
+          [fieldName]:
+            "손상되었거나 유효하지 않은 이미지 파일입니다. 다른 이미지를 선택해주세요.",
+        }));
+      };
     } else {
       // 파일이 null인 경우 프리뷰도 초기화
+      setFiles((prev) => ({ ...prev, [fieldName]: null }));
       setPreviews((prev) => ({ ...prev, [fieldName]: "" }));
     }
   };
@@ -161,6 +239,8 @@ export default function VirtualFitting({
     fieldName: keyof typeof files,
     imageSrc: string
   ) => {
+    // 샘플 이미지는 검증된 이미지이므로 에러 초기화
+    setFileErrors((prev) => ({ ...prev, [fieldName]: "" }));
     setPreviews((prev) => ({ ...prev, [fieldName]: imageSrc }));
   };
 
@@ -538,6 +618,19 @@ export default function VirtualFitting({
                     onClear={() => handleFileChange("human_file", null)}
                   />
 
+                  {/* 사람 이미지 오류 메시지 */}
+                  {fileErrors.human_file && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-start space-x-2">
+                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-red-800">
+                          <p className="font-medium">업로드 오류</p>
+                          <p className="mt-1">{fileErrors.human_file}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <FileDropzone
                     onDrop={(file) => handleFileChange("garment_file", file)}
                     preview={
@@ -558,6 +651,19 @@ export default function VirtualFitting({
                     }
                     onClear={() => handleFileChange("garment_file", null)}
                   />
+
+                  {/* 상의 이미지 오류 메시지 */}
+                  {fileErrors.garment_file && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-start space-x-2">
+                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-red-800">
+                          <p className="font-medium">업로드 오류</p>
+                          <p className="mt-1">{fileErrors.garment_file}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 선택 파일들 */}
@@ -581,6 +687,19 @@ export default function VirtualFitting({
                     onClear={() => handleFileChange("lower_file", null)}
                   />
 
+                  {/* 하의 이미지 오류 메시지 */}
+                  {fileErrors.lower_file && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-start space-x-2">
+                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-red-800">
+                          <p className="font-medium">업로드 오류</p>
+                          <p className="mt-1">{fileErrors.lower_file}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 배경 이미지 업로드 - 일시적으로 비활성화 */}
                   {false && ( // TODO: 서버 오류 수정 후 true로 변경
                     <>
@@ -599,6 +718,21 @@ export default function VirtualFitting({
                           handleFileChange("background_file", null)
                         }
                       />
+
+                      {/* 배경 이미지 오류 메시지 */}
+                      {fileErrors.background_file && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-red-800">
+                              <p className="font-medium">업로드 오류</p>
+                              <p className="mt-1">
+                                {fileErrors.background_file}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* 배경 이미지 사용 시 주의사항 */}
                       {files.background_file && (
@@ -655,6 +789,21 @@ export default function VirtualFitting({
                 </div>
               </div>
 
+              {/* 파일 업로드 도움말 */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-2">📝 파일 업로드 가이드</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• 지원 형식: JPG, PNG</li>
+                    <li>• 최대 파일 크기: 10MB</li>
+                    <li>• 사람 이미지: 최소한 상반신이 포함된 선명한 사진</li>
+                    <li>
+                      • 의류 이미지: 배경이 깔끔하고 의류가 잘 보이는 사진
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
               {/* 옵션 및 실행 버튼 */}
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center space-x-2">
@@ -676,7 +825,13 @@ export default function VirtualFitting({
                 <Button
                   onClick={handleStartWorkflow}
                   disabled={
-                    isProcessing || !files.human_file || !files.garment_file
+                    isProcessing ||
+                    !files.human_file ||
+                    !files.garment_file ||
+                    !!fileErrors.human_file ||
+                    !!fileErrors.garment_file ||
+                    !!fileErrors.lower_file ||
+                    !!fileErrors.background_file
                   }
                   className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
                 >
