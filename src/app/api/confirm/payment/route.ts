@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const apiSecretKey = "test_sk_Gv6LjeKD8aYZb9pEeaX48wYxAdXy";
+const apiSecretKey = process.env.TOSS_SECRET_KEY;
 const encryptedApiSecretKey =
   "Basic " + Buffer.from(apiSecretKey + ":").toString("base64");
 

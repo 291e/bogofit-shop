@@ -110,8 +110,8 @@ model CartItem {
 /// ORDER & PAYMENT ----------------------------------------------------------
 model Order {
   id            String        @id @default(cuid())
-  user          User          @relation(fields: [userId], references: [id])
-  userId        String
+  user          User?         @relation(fields: [userId], references: [id])
+  userId        String?       // 비회원 주문을 위해 nullable로 변경
   orderNumber   String        @unique           // 예: YYMMDD-XXXX
   status        OrderStatus   @default(PENDING) // 결제 전, 후, 배송 등
   totalAmount   Int
@@ -122,25 +122,28 @@ model Order {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  // 주문자 정보
-  ordererName    String?
+  // 주문자 정보 (비회원용 필수)
+  ordererName    String
   ordererEmail   String?
-  ordererPhone   String?
+  ordererPhone   String
   ordererTel     String?
 
-  // 배송지 정보
-  recipientName  String?
-  recipientPhone String?
+  // 배송지 정보 (비회원용 필수)
+  recipientName  String
+  recipientPhone String
   recipientTel   String?
-  zipCode        String?
-  address1       String?
+  zipCode        String
+  address1       String
   address2       String?
 
-  // 통관 정보
-  customsId      String?
+  // 통관 정보 (비회원용 필수)
+  customsId      String
 
-  // 개인정보 동의
-  agreePrivacy   Boolean?
+  // 개인정보 동의 (비회원용 필수)
+  agreePrivacy   Boolean   @default(true)
+  
+  // 비회원 구매 플래그
+  isGuestOrder   Boolean   @default(false)
 }
 
 enum OrderStatus {
@@ -168,7 +171,7 @@ model OrderItem {
 model Payment {
   id          String   @id @default(cuid())
   order       Order        @relation(fields: [orderId], references: [id])
-  userId      String
+  userId      String?      // 비회원 주문을 위해 nullable로 변경
   orderId     String   @unique
   amount      Int
   status      String   // "PENDING", "SUCCESS", "FAILED"

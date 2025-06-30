@@ -77,48 +77,49 @@ function ProductSection({
                 key={product.id}
                 className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4 py-4"
               >
-                <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col h-full group hover:scale-105 transition-transform">
-                  <div className="relative aspect-square w-full mb-4 overflow-hidden rounded-xl">
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.title}
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      priority
-                    />
-                    {product.badge && product.badge !== "SOLDOUT" && (
-                      <Badge className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
-                        {product.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-md font-bold mb-1 line-clamp-2">
-                        {product.title}
-                      </h4>
-                      <div className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
-                        {product.price.toLocaleString()}원
-                      </div>
+                <Link href={`/products/${product.id}`}>
+                  <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col h-full group hover:scale-105 transition-transform">
+                    <div className="relative aspect-square w-full mb-4 overflow-hidden rounded-xl">
+                      <Image
+                        src={product.imageUrl}
+                        alt={product.title}
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        priority
+                      />
+                      {product.badge && product.badge !== "SOLDOUT" && (
+                        <Badge className="absolute top-2 left-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
+                          {product.badge}
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <Link href={`/products/${product.id}`}>
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h4 className="text-md font-bold mb-1 line-clamp-2">
+                          {product.title}
+                        </h4>
+                        <div className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
+                          {product.price.toLocaleString()}원
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
                         <Button variant="outline" className="font-bold">
                           지금 보기
                         </Button>
-                      </Link>
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className="w-4 h-4 text-yellow-400 fill-yellow-400"
-                          />
-                        ))}
+
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className="w-4 h-4 text-yellow-400 fill-yellow-400"
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </CarouselItem>
             ))}
           </CarouselContent>

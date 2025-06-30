@@ -25,6 +25,14 @@ import {
 } from "lucide-react";
 import { CheckoutButton } from "@/components/payment/Checkout";
 
+// 다음 주소 API 타입 정의
+interface DaumPostcodeData {
+  zonecode: string;
+  roadAddress: string;
+  jibunAddress: string;
+  userSelectedType: string;
+}
+
 export default function OrderPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -41,6 +49,7 @@ export default function OrderPageContent() {
   const productPrice = searchParams.get("productPrice");
   const quantity = searchParams.get("quantity");
   const selectedOption = searchParams.get("selectedOption");
+  const isGuest = searchParams.get("isGuest") === "true"; // 비회원 플래그
 
   // 상품 정보가 없을 때 기본값 설정 (개발/테스트용)
   const defaultProductId = productId || "1";
@@ -98,6 +107,65 @@ export default function OrderPageContent() {
 
   // 배송지 탭 상태
   const [addressTab, setAddressTab] = useState("saved");
+
+  // 다음 주소 API 함수들
+  const openAddressSearch = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== "undefined" && (window as any).daum) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      new (window as any).daum.Postcode({
+        oncomplete: function (data: DaumPostcodeData) {
+          // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+          // 각 주소의 노출 규칙에 따라 주소를 조합한다.
+          let addr = ""; // 주소 변수
+
+          // 사용자가 선택한 주소 타입에 따라 해당 주소 값을 가져온다.
+          if (data.userSelectedType === "R") {
+            // 사용자가 도로명 주소를 선택했을 경우
+            addr = data.roadAddress;
+          } else {
+            // 사용자가 지번 주소를 선택했을 경우(J)
+            addr = data.jibunAddress;
+          }
+
+          // 우편번호와 주소 정보를 해당 필드에 넣는다.
+          setOrderForm((prev) => ({
+            ...prev,
+            zipCode: data.zonecode,
+            address: addr,
+          }));
+        },
+      }).open();
+    } else {
+      alert("주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+    }
+  };
+
+  const openNewAddressSearch = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== "undefined" && (window as any).daum) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      new (window as any).daum.Postcode({
+        oncomplete: function (data: DaumPostcodeData) {
+          let addr = "";
+
+          if (data.userSelectedType === "R") {
+            addr = data.roadAddress;
+          } else {
+            addr = data.jibunAddress;
+          }
+
+          setNewAddress((prev) => ({
+            ...prev,
+            zipCode: data.zonecode,
+            address1: addr,
+          }));
+        },
+      }).open();
+    } else {
+      alert("주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+    }
+  };
 
   // 연락처 자동 포맷팅 함수
   const formatPhoneNumber = (value: string) => {
@@ -378,12 +446,59 @@ export default function OrderPageContent() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900">주문/결제</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900">주문/결제</h1>
+              {isGuest && (
+                <span className="px-3 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">
+                  비회원 주문
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* 주문 정보 입력 폼 */}
             <div className="lg:col-span-2 space-y-6">
+              {/* 비회원 주문 안내 */}
+              {isGuest && (
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-white text-sm font-bold">!</span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-orange-800 mb-1">
+                          비회원 주문을 진행하고 계십니다
+                        </h3>
+                        <p className="text-sm text-orange-700 mb-3">
+                          회원가입을 하시면 주문 내역 조회, 포인트 적립, 빠른
+                          재주문 등의 혜택을 받으실 수 있습니다.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                            onClick={() => router.push("/auth/login")}
+                          >
+                            로그인하기
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                            onClick={() => router.push("/auth/register")}
+                          >
+                            회원가입하기
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* 상품 정보 */}
               <Card>
                 <CardHeader>
@@ -428,6 +543,11 @@ export default function OrderPageContent() {
                     <User className="w-5 h-5 text-pink-600" />
                     주문자 정보
                   </CardTitle>
+                  {isGuest && (
+                    <p className="text-sm text-gray-600">
+                      비회원 주문을 위해 주문자 정보를 입력해 주세요.
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -477,117 +597,341 @@ export default function OrderPageContent() {
                     <MapPin className="w-5 h-5 text-pink-600" />
                     배송지 정보
                   </CardTitle>
+                  {isGuest && (
+                    <p className="text-sm text-gray-600">
+                      배송받을 주소를 입력해 주세요.
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Tabs value={addressTab} onValueChange={setAddressTab}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="saved">저장된 주소</TabsTrigger>
-                      <TabsTrigger value="new">
-                        <Plus className="w-4 h-4 mr-1" />새 주소 등록
-                      </TabsTrigger>
-                    </TabsList>
+                  {!isGuest ? (
+                    <Tabs value={addressTab} onValueChange={setAddressTab}>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="saved">저장된 주소</TabsTrigger>
+                        <TabsTrigger value="new">
+                          <Plus className="w-4 h-4 mr-1" />새 주소 등록
+                        </TabsTrigger>
+                      </TabsList>
 
-                    <TabsContent value="saved" className="space-y-4">
-                      {/* 저장된 주소 선택 */}
-                      {!addressLoading && addresses && addresses.length > 0 ? (
-                        <div>
-                          <RadioGroup
-                            value={orderForm.selectedAddressId}
-                            onValueChange={(value) =>
-                              handleInputChange("selectedAddressId", value)
-                            }
-                            className="space-y-3"
-                          >
-                            {addresses.map((address) => (
-                              <div
-                                key={address.id}
-                                className="flex items-center space-x-2"
-                              >
-                                <RadioGroupItem
-                                  value={address.id}
-                                  id={address.id}
-                                />
-                                <Label
-                                  htmlFor={address.id}
-                                  className="flex-1 cursor-pointer"
+                      <TabsContent value="saved" className="space-y-4">
+                        {/* 저장된 주소 선택 */}
+                        {!addressLoading &&
+                        addresses &&
+                        addresses.length > 0 ? (
+                          <div>
+                            <RadioGroup
+                              value={orderForm.selectedAddressId}
+                              onValueChange={(value) =>
+                                handleInputChange("selectedAddressId", value)
+                              }
+                              className="space-y-3"
+                            >
+                              {addresses.map((address) => (
+                                <div
+                                  key={address.id}
+                                  className="flex items-center space-x-2"
                                 >
-                                  <div className="p-3 border rounded-lg hover:bg-gray-50">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-medium">
-                                        {address.recipient}
-                                      </span>
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                      >
-                                        {address.label}
-                                      </Badge>
-                                      {address.isDefault && (
+                                  <RadioGroupItem
+                                    value={address.id}
+                                    id={address.id}
+                                  />
+                                  <Label
+                                    htmlFor={address.id}
+                                    className="flex-1 cursor-pointer"
+                                  >
+                                    <div className="p-3 border rounded-lg hover:bg-gray-50">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-medium">
+                                          {address.recipient}
+                                        </span>
                                         <Badge
-                                          variant="secondary"
+                                          variant="outline"
                                           className="text-xs"
                                         >
-                                          기본
+                                          {address.label}
                                         </Badge>
-                                      )}
+                                        {address.isDefault && (
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-xs"
+                                          >
+                                            기본
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-gray-600">
+                                        {address.address1} {address.address2}
+                                      </p>
+                                      <p className="text-sm text-gray-500">
+                                        {address.phone}
+                                      </p>
                                     </div>
-                                    <p className="text-sm text-gray-600">
-                                      {address.address1} {address.address2}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {address.phone}
-                                    </p>
-                                  </div>
-                                </Label>
-                              </div>
-                            ))}
-                          </RadioGroup>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-gray-500">
-                          <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                          <p>저장된 주소가 없습니다.</p>
-                          <p className="text-sm">새 주소를 등록해주세요.</p>
-                        </div>
-                      )}
+                                  </Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            <MapPin className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <p>저장된 주소가 없습니다.</p>
+                            <p className="text-sm">새 주소를 등록해주세요.</p>
+                          </div>
+                        )}
 
-                      {/* 직접 입력 */}
-                      <Separator />
-                      <div className="space-y-4">
-                        <h4 className="font-semibold">또는 직접 입력</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* 직접 입력 */}
+                        <Separator />
+                        <div className="space-y-4">
+                          <h4 className="font-semibold">또는 직접 입력</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="recipientName">받는 분 *</Label>
+                              <Input
+                                id="recipientName"
+                                value={orderForm.recipientName}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "recipientName",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="받는 분 이름"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="recipientPhone">연락처 *</Label>
+                              <Input
+                                id="recipientPhone"
+                                value={orderForm.recipientPhone}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "recipientPhone",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="010-0000-0000"
+                                maxLength={13}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-4">
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <Label htmlFor="zipCode">우편번호</Label>
+                                <Input
+                                  id="zipCode"
+                                  value={orderForm.zipCode}
+                                  onChange={(e) =>
+                                    handleInputChange("zipCode", e.target.value)
+                                  }
+                                  placeholder="12345"
+                                  readOnly
+                                />
+                              </div>
+                              <div className="flex items-end">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => openAddressSearch()}
+                                  className="h-10"
+                                >
+                                  주소 검색
+                                </Button>
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="address">주소 *</Label>
+                              <Input
+                                id="address"
+                                value={orderForm.address}
+                                onChange={(e) =>
+                                  handleInputChange("address", e.target.value)
+                                }
+                                placeholder="기본 주소"
+                                readOnly
+                              />
+                            </div>
+                          </div>
                           <div>
-                            <Label htmlFor="recipientName">받는 분 *</Label>
+                            <Label htmlFor="addressDetail">상세 주소</Label>
                             <Input
-                              id="recipientName"
-                              value={orderForm.recipientName}
+                              id="addressDetail"
+                              value={orderForm.addressDetail}
                               onChange={(e) =>
                                 handleInputChange(
-                                  "recipientName",
+                                  "addressDetail",
                                   e.target.value
                                 )
                               }
-                              placeholder="받는 분 이름"
+                              placeholder="상세 주소 (선택사항)"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="recipientPhone">연락처 *</Label>
-                            <Input
-                              id="recipientPhone"
-                              value={orderForm.recipientPhone}
+                            <Label htmlFor="deliveryRequest">
+                              배송 요청사항
+                            </Label>
+                            <Textarea
+                              id="deliveryRequest"
+                              value={orderForm.deliveryRequest}
                               onChange={(e) =>
                                 handleInputChange(
-                                  "recipientPhone",
+                                  "deliveryRequest",
                                   e.target.value
                                 )
                               }
-                              placeholder="010-0000-0000"
-                              maxLength={13}
+                              placeholder="배송 시 요청사항을 입력해주세요 (선택사항)"
+                              rows={3}
                             />
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      </TabsContent>
+
+                      <TabsContent value="new" className="space-y-4">
+                        {/* 새 주소 등록 폼 */}
+                        <div className="space-y-4">
                           <div>
+                            <Label htmlFor="newLabel">주소 별칭 *</Label>
+                            <Input
+                              id="newLabel"
+                              value={newAddress.label}
+                              onChange={(e) =>
+                                handleNewAddressChange("label", e.target.value)
+                              }
+                              placeholder="예: 집, 회사, 친구집"
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="newRecipient">받는 분 *</Label>
+                              <Input
+                                id="newRecipient"
+                                value={newAddress.recipient}
+                                onChange={(e) =>
+                                  handleNewAddressChange(
+                                    "recipient",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="받는 분 이름"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="newPhone">연락처 *</Label>
+                              <Input
+                                id="newPhone"
+                                value={newAddress.phone}
+                                onChange={(e) =>
+                                  handleNewAddressChange(
+                                    "phone",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="010-0000-0000"
+                                maxLength={13}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-4">
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <Label htmlFor="newZipCode">우편번호</Label>
+                                <Input
+                                  id="newZipCode"
+                                  value={newAddress.zipCode}
+                                  onChange={(e) =>
+                                    handleNewAddressChange(
+                                      "zipCode",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="12345"
+                                  readOnly
+                                />
+                              </div>
+                              <div className="flex items-end">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => openNewAddressSearch()}
+                                  className="h-10"
+                                >
+                                  주소 검색
+                                </Button>
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="newAddress1">주소 *</Label>
+                              <Input
+                                id="newAddress1"
+                                value={newAddress.address1}
+                                onChange={(e) =>
+                                  handleNewAddressChange(
+                                    "address1",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="기본 주소"
+                                readOnly
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="newAddress2">상세 주소</Label>
+                            <Input
+                              id="newAddress2"
+                              value={newAddress.address2}
+                              onChange={(e) =>
+                                handleNewAddressChange(
+                                  "address2",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="상세 주소 (선택사항)"
+                            />
+                          </div>
+                          <Button
+                            onClick={handleSaveNewAddress}
+                            className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+                          >
+                            주소 저장하고 사용하기
+                          </Button>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  ) : (
+                    // 비회원용 직접 입력 폼
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="recipientName">받는 분 *</Label>
+                          <Input
+                            id="recipientName"
+                            value={orderForm.recipientName}
+                            onChange={(e) =>
+                              handleInputChange("recipientName", e.target.value)
+                            }
+                            placeholder="받는 분 이름"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="recipientPhone">연락처 *</Label>
+                          <Input
+                            id="recipientPhone"
+                            value={orderForm.recipientPhone}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "recipientPhone",
+                                e.target.value
+                              )
+                            }
+                            placeholder="010-0000-0000"
+                            maxLength={13}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex gap-2">
+                          <div className="flex-1">
                             <Label htmlFor="zipCode">우편번호</Label>
                             <Input
                               id="zipCode"
@@ -596,141 +940,58 @@ export default function OrderPageContent() {
                                 handleInputChange("zipCode", e.target.value)
                               }
                               placeholder="12345"
+                              readOnly
                             />
                           </div>
-                          <div className="md:col-span-2">
-                            <Label htmlFor="address">주소 *</Label>
-                            <Input
-                              id="address"
-                              value={orderForm.address}
-                              onChange={(e) =>
-                                handleInputChange("address", e.target.value)
-                              }
-                              placeholder="기본 주소"
-                            />
+                          <div className="flex items-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => openAddressSearch()}
+                              className="h-10"
+                            >
+                              주소 검색
+                            </Button>
                           </div>
                         </div>
                         <div>
-                          <Label htmlFor="addressDetail">상세 주소</Label>
+                          <Label htmlFor="address">주소 *</Label>
                           <Input
-                            id="addressDetail"
-                            value={orderForm.addressDetail}
+                            id="address"
+                            value={orderForm.address}
                             onChange={(e) =>
-                              handleInputChange("addressDetail", e.target.value)
+                              handleInputChange("address", e.target.value)
                             }
-                            placeholder="상세 주소 (선택사항)"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="deliveryRequest">배송 요청사항</Label>
-                          <Textarea
-                            id="deliveryRequest"
-                            value={orderForm.deliveryRequest}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "deliveryRequest",
-                                e.target.value
-                              )
-                            }
-                            placeholder="배송 시 요청사항을 입력해주세요 (선택사항)"
-                            rows={3}
+                            placeholder="기본 주소"
+                            readOnly
                           />
                         </div>
                       </div>
-                    </TabsContent>
-
-                    <TabsContent value="new" className="space-y-4">
-                      {/* 새 주소 등록 폼 */}
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="newLabel">주소 별칭 *</Label>
-                          <Input
-                            id="newLabel"
-                            value={newAddress.label}
-                            onChange={(e) =>
-                              handleNewAddressChange("label", e.target.value)
-                            }
-                            placeholder="예: 집, 회사, 친구집"
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="newRecipient">받는 분 *</Label>
-                            <Input
-                              id="newRecipient"
-                              value={newAddress.recipient}
-                              onChange={(e) =>
-                                handleNewAddressChange(
-                                  "recipient",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="받는 분 이름"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="newPhone">연락처 *</Label>
-                            <Input
-                              id="newPhone"
-                              value={newAddress.phone}
-                              onChange={(e) =>
-                                handleNewAddressChange("phone", e.target.value)
-                              }
-                              placeholder="010-0000-0000"
-                              maxLength={13}
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <Label htmlFor="newZipCode">우편번호</Label>
-                            <Input
-                              id="newZipCode"
-                              value={newAddress.zipCode}
-                              onChange={(e) =>
-                                handleNewAddressChange(
-                                  "zipCode",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="12345"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <Label htmlFor="newAddress1">주소 *</Label>
-                            <Input
-                              id="newAddress1"
-                              value={newAddress.address1}
-                              onChange={(e) =>
-                                handleNewAddressChange(
-                                  "address1",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="기본 주소"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="newAddress2">상세 주소</Label>
-                          <Input
-                            id="newAddress2"
-                            value={newAddress.address2}
-                            onChange={(e) =>
-                              handleNewAddressChange("address2", e.target.value)
-                            }
-                            placeholder="상세 주소 (선택사항)"
-                          />
-                        </div>
-                        <Button
-                          onClick={handleSaveNewAddress}
-                          className="w-full bg-pink-600 hover:bg-pink-700 text-white"
-                        >
-                          주소 저장하고 사용하기
-                        </Button>
+                      <div>
+                        <Label htmlFor="addressDetail">상세 주소</Label>
+                        <Input
+                          id="addressDetail"
+                          value={orderForm.addressDetail}
+                          onChange={(e) =>
+                            handleInputChange("addressDetail", e.target.value)
+                          }
+                          placeholder="상세 주소 (선택사항)"
+                        />
                       </div>
-                    </TabsContent>
-                  </Tabs>
+                      <div>
+                        <Label htmlFor="deliveryRequest">배송 요청사항</Label>
+                        <Textarea
+                          id="deliveryRequest"
+                          value={orderForm.deliveryRequest}
+                          onChange={(e) =>
+                            handleInputChange("deliveryRequest", e.target.value)
+                          }
+                          placeholder="배송 시 요청사항을 입력해주세요 (선택사항)"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -946,6 +1207,7 @@ export default function OrderPageContent() {
                           productPrice={finalAmount}
                           selectedOption={finalSelectedOption}
                           hasOptions={!!finalSelectedOption}
+                          isGuest={isGuest}
                         />
                       </div>
                     ) : (

@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileDropzone } from "@/components/ui/file-dropzone";
+import { Progress } from "@/components/ui/progress";
 import {
   Play,
   Download,
-  Loader2,
   ChevronDown,
   ChevronUp,
   X,
@@ -58,6 +58,7 @@ export default function VirtualFitting({
 
   const [isProEnabled, setIsProEnabled] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
   const [generatedImage, setGeneratedImage] = useState("");
   const [generatedVideo, setGeneratedVideo] = useState("");
@@ -79,8 +80,46 @@ export default function VirtualFitting({
 
   const connectionInfoRef = useRef<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const clientId = "0d7d0263c7f94a4a90cf2dbbff3a45bf";
+
+  // 진행률 점진적 증가 함수
+  const startProgressTimer = (
+    startProgress: number,
+    targetProgress: number,
+    duration: number
+  ) => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+
+    const startTime = Date.now();
+    const progressDiff = targetProgress - startProgress;
+
+    // 즉시 시작 진행률 설정
+    setProgress(startProgress);
+
+    progressIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progressRatio = Math.min(elapsed / duration, 1);
+      const currentProgress = startProgress + progressDiff * progressRatio;
+
+      setProgress(Math.round(currentProgress));
+
+      if (progressRatio >= 1) {
+        clearInterval(progressIntervalRef.current!);
+        progressIntervalRef.current = null;
+      }
+    }, 100); // 100ms마다 업데이트
+  };
+
+  const clearProgressTimer = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+  };
 
   // 파일 유효성 검사 함수
   const validateFile = (file: File): string => {
@@ -247,6 +286,7 @@ export default function VirtualFitting({
   // 워크플로우 직접 실행
   const runWorkflowDirect = async (formData: FormData) => {
     try {
+      setProgress(5);
       setStatus("이미지 생성 중...");
 
       // 배경 이미지가 포함된 경우 더 긴 타임아웃 설정
@@ -268,6 +308,10 @@ export default function VirtualFitting({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
+      // 이미지 생성 진행률을 19초 동안 5%에서 100%까지 점진적으로 증가
+      startProgressTimer(5, 100, 19000);
+      setStatus("AI 서버와 통신 중...");
+
       const workflowResponse = await fetch(
         "/api/virtual-fitting/run_workflow",
         {
@@ -278,6 +322,7 @@ export default function VirtualFitting({
       );
 
       clearTimeout(timeoutId);
+      clearProgressTimer(); // 타이머 정리
 
       let workflowResult;
       const responseText = await workflowResponse.text();
@@ -298,6 +343,7 @@ export default function VirtualFitting({
         workflowResponse.status === 500 &&
         responseText.trim() === "Internal Server Error"
       ) {
+        clearProgressTimer();
         const hasBackground = formData.has("background_file");
         if (hasBackground) {
           setStatus(
@@ -323,6 +369,7 @@ export default function VirtualFitting({
           responseText.includes("<!DOCTYPE html>") ||
           responseText.includes("<html")
         ) {
+          clearProgressTimer();
           setStatus(
             "서버에서 HTML 응답을 반환했습니다. 관리자에게 문의하세요."
           );
@@ -336,11 +383,15 @@ export default function VirtualFitting({
         if (imageUrlMatch) {
           // 이미지 URL을 찾았다면 성공으로 처리
           console.log("응답에서 이미지 URL 추출:", imageUrlMatch[0]);
+          clearProgressTimer();
+          setProgress(90);
           setStatus("이미지 생성 완료!");
           setGeneratedImage(imageUrlMatch[0]);
 
           if (isProEnabled) {
             setStatus("비디오 생성 중...");
+            startProgressTimer(90, 100, 10000);
+
             const proFormData = new FormData();
             proFormData.append("image_url", imageUrlMatch[0]);
             proFormData.append("connection_info", connectionInfoRef.current!);
@@ -356,6 +407,7 @@ export default function VirtualFitting({
             try {
               proResult = JSON.parse(proResponseText);
             } catch {
+              clearProgressTimer();
               setStatus(
                 `비디오 생성 서버 오류: ${proResponseText.substring(0, 100)}...`
               );
@@ -363,18 +415,24 @@ export default function VirtualFitting({
             }
 
             if (proResponse.ok && proResult.video_url) {
+              clearProgressTimer();
+              setProgress(100);
               setStatus("비디오 생성 완료!");
               setGeneratedVideo(proResult.video_url);
             } else {
+              clearProgressTimer();
               setStatus(
                 "비디오 생성 실패: " + (proResult.error || "알 수 없는 오류")
               );
             }
+          } else {
+            setProgress(100);
           }
           return;
         }
 
         // 배경 이미지 관련 에러 메시지 개선
+        clearProgressTimer();
         const hasBackground = formData.has("background_file");
         if (hasBackground) {
           setStatus(
@@ -397,11 +455,15 @@ export default function VirtualFitting({
       }
 
       if (workflowResponse.ok && workflowResult.image_url) {
+        setProgress(90);
         setStatus("이미지 생성 완료!");
         setGeneratedImage(workflowResult.image_url);
 
         if (isProEnabled) {
           setStatus("비디오 생성 중...");
+          // 비디오 생성 진행률을 10초 동안 90%에서 100%까지 증가
+          startProgressTimer(90, 100, 10000);
+
           const proFormData = new FormData();
           proFormData.append("image_url", workflowResult.image_url);
           proFormData.append("connection_info", connectionInfoRef.current!);
@@ -417,6 +479,7 @@ export default function VirtualFitting({
           try {
             proResult = JSON.parse(proResponseText);
           } catch {
+            clearProgressTimer();
             setStatus(
               `비디오 생성 서버 오류: ${proResponseText.substring(0, 100)}...`
             );
@@ -424,16 +487,22 @@ export default function VirtualFitting({
           }
 
           if (proResponse.ok && proResult.video_url) {
+            clearProgressTimer();
+            setProgress(100);
             setStatus("비디오 생성 완료!");
             setGeneratedVideo(proResult.video_url);
           } else {
+            clearProgressTimer();
             setStatus(
               "비디오 생성 실패: " + (proResult.error || "알 수 없는 오류")
             );
           }
+        } else {
+          setProgress(100);
         }
       } else {
         // 에러 메시지 개선
+        clearProgressTimer();
         let errorMessage = "이미지 생성 실패: ";
         const hasBackground = formData.has("background_file");
 
@@ -455,6 +524,7 @@ export default function VirtualFitting({
         setStatus(errorMessage);
       }
     } catch (error) {
+      clearProgressTimer(); // 에러 발생 시 타이머 정리
       if (error instanceof Error) {
         if (error.name === "AbortError") {
           setStatus("요청 시간이 초과되었습니다. 다시 시도해주세요.");
@@ -465,6 +535,7 @@ export default function VirtualFitting({
         setStatus("알 수 없는 오류가 발생했습니다.");
       }
     } finally {
+      clearProgressTimer(); // 최종적으로 타이머 정리
       setIsProcessing(false);
     }
   };
@@ -477,6 +548,7 @@ export default function VirtualFitting({
     }
 
     setIsProcessing(true);
+    setProgress(0);
     setGeneratedImage("");
     setGeneratedVideo("");
 
@@ -509,6 +581,7 @@ export default function VirtualFitting({
       );
       await runWorkflowDirect(formData);
     } catch (error) {
+      clearProgressTimer();
       setStatus("연결 오류: " + (error as Error).message);
       setIsProcessing(false);
     }
@@ -520,16 +593,20 @@ export default function VirtualFitting({
   };
 
   const resetComponent = () => {
+    clearProgressTimer(); // 타이머 정리
     setShowResults(false);
     setGeneratedImage("");
     setGeneratedVideo("");
     setStatus("");
+    setProgress(0);
     setIsProcessing(false);
   };
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (progressIntervalRef.current)
+        clearInterval(progressIntervalRef.current);
     };
   }, []);
 
@@ -836,10 +913,13 @@ export default function VirtualFitting({
                   className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
                 >
                   {isProcessing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      처리 중...
-                    </>
+                    <div className="flex flex-col items-center w-full">
+                      <div className="flex items-center mb-2">
+                        <Play className="w-4 h-4 mr-2" />
+                        처리 중... {progress}%
+                      </div>
+                      <Progress value={progress} className="w-full h-2" />
+                    </div>
                   ) : (
                     <>
                       <Play className="w-4 h-4 mr-2" />
@@ -897,9 +977,13 @@ export default function VirtualFitting({
                   {/* 로딩 상태 표시 */}
                   {isProcessing && !generatedImage && (
                     <div className="space-y-3">
-                      <h3 className="font-medium">이미지 생성 중...</h3>
+                      <h3 className="font-medium">
+                        이미지 생성 중... {progress}%
+                      </h3>
                       <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                        <Loader2 className="w-12 h-12 animate-spin text-pink-500" />
+                        <div className="w-full max-w-xs">
+                          <Progress value={progress} className="w-full h-3" />
+                        </div>
                         <p className="text-sm text-gray-600 text-center">
                           AI가 가상 피팅 이미지를 생성하고 있습니다.
                           <br />
@@ -939,9 +1023,13 @@ export default function VirtualFitting({
                     isProcessing &&
                     !generatedVideo && (
                       <div className="space-y-3">
-                        <h3 className="font-medium">비디오 생성 중...</h3>
+                        <h3 className="font-medium">
+                          비디오 생성 중... {progress}%
+                        </h3>
                         <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                          <Loader2 className="w-10 h-10 animate-spin text-purple-500" />
+                          <div className="w-full max-w-xs">
+                            <Progress value={progress} className="w-full h-3" />
+                          </div>
                           <p className="text-sm text-gray-600 text-center">
                             AI가 비디오를 생성하고 있습니다...
                           </p>

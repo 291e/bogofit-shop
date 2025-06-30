@@ -10,6 +10,7 @@ interface PaymentPrepareRequest {
   selectedOption?: string;
   quantity?: number;
   variantId?: number;
+  isGuest?: boolean;
   orderInfo?: {
     ordererName: string;
     ordererPhone: string;
@@ -42,14 +43,9 @@ interface PaymentPrepareRequest {
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. 인증 체크
-    const userId = req.headers.get("x-user-id");
-    if (!userId) {
-      console.warn("[API/payment/prepare] 사용자 ID 없음");
-      return NextResponse.json({ error: "인증 필요" }, { status: 401 });
-    }
+    console.log("[API/payment/prepare] 결제 준비 요청 시작");
 
-    // 2. 바디 파싱 + 값 검증
+    // 1. 바디 파싱 + 값 검증 (한 번에 처리)
     let data: PaymentPrepareRequest;
     try {
       data = await req.json();
@@ -60,6 +56,29 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // isGuest 플래그 확인
+    const isGuest = data.isGuest || false;
+
+    // 사용자 인증 (비회원인 경우 건너뛰기)
+    let userId: string | null = null;
+    if (!isGuest) {
+      userId = req.headers.get("x-user-id");
+      if (!userId) {
+        console.warn(
+          "[API/payment/prepare] 사용자 인증 실패: x-user-id 헤더 없음"
+        );
+        return NextResponse.json(
+          { error: "로그인이 필요합니다" },
+          { status: 401 }
+        );
+      }
+    }
+
+    // 비회원인 경우 임시 userId 생성
+    const finalUserId = isGuest
+      ? `guest-${Date.now()}-${Math.random()}`
+      : userId!;
 
     const {
       amount,
@@ -112,28 +131,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. 중복 결제 방지: 더 정확한 조건으로 수정 (productId와 amount 모두 체크)
-    const existing = await prisma.payment.findFirst({
-      where: {
-        userId,
-        amount,
-        status: "PENDING",
-        order: {
-          items: {
-            some: {
-              productId: productId,
+    // 3. 중복 결제 방지: 비회원은 중복 체크 안함
+    let existing = null;
+    if (!isGuest) {
+      existing = await prisma.payment.findFirst({
+        where: {
+          userId: finalUserId,
+          amount,
+          status: "PENDING",
+          order: {
+            items: {
+              some: {
+                productId: productId,
+              },
             },
           },
         },
-      },
-      include: {
-        order: {
-          include: {
-            items: true,
+        include: {
+          order: {
+            include: {
+              items: true,
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     if (existing) {
       console.log(
@@ -159,22 +181,23 @@ export async function POST(req: NextRequest) {
         const order = await tx.order.create({
           data: {
             id: orderId,
-            userId,
+            userId: isGuest ? null : finalUserId,
             orderNumber,
             status: "PENDING",
             totalAmount: amount,
-            ordererName: finalOrdererName,
+            ordererName: finalOrdererName || "주문자",
             ordererEmail: finalOrdererEmail,
-            ordererPhone: finalOrdererPhone,
+            ordererPhone: finalOrdererPhone || "010-0000-0000",
             ordererTel,
-            recipientName: finalRecipientName,
-            recipientPhone: finalRecipientPhone,
+            recipientName: finalRecipientName || "수령인",
+            recipientPhone: finalRecipientPhone || "010-0000-0000",
             recipientTel,
-            zipCode: finalZipCode,
-            address1: finalAddress1,
+            zipCode: finalZipCode || "00000",
+            address1: finalAddress1 || "주소",
             address2: finalAddress2,
-            customsId: finalCustomsId,
-            agreePrivacy,
+            customsId: finalCustomsId || "P000000000000",
+            agreePrivacy: agreePrivacy ?? true,
+            isGuestOrder: isGuest,
           },
         });
 
@@ -203,7 +226,7 @@ export async function POST(req: NextRequest) {
         // Payment 생성
         const payment = await tx.payment.create({
           data: {
-            userId,
+            userId: isGuest ? null : finalUserId,
             orderId: order.id,
             amount,
             status: "PENDING",

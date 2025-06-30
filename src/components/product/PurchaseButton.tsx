@@ -4,7 +4,7 @@ import { ShoppingBag, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/useUser";
-import { useCart } from "@/hooks/useCart";
+import { useCart, useGuestCart } from "@/hooks/useCart";
 
 interface PurchaseButtonProps {
   productId: number;
@@ -29,15 +29,15 @@ export function PurchaseButton({
 }: PurchaseButtonProps) {
   const router = useRouter();
   const { user } = useUser();
-  const { addToCart, isAddingToCart } = useCart();
+
+  // 로그인된 사용자와 비회원을 위한 각각의 장바구니 훅
+  const userCart = useCart();
+  const guestCart = useGuestCart();
+
+  // 현재 사용할 장바구니 결정
+  const currentCart = user?.id ? userCart : guestCart;
 
   const handlePurchase = () => {
-    if (!user?.id) {
-      alert("로그인이 필요합니다.");
-      router.push("/login");
-      return;
-    }
-
     // 옵션이 있는 상품인 경우에만 옵션 체크
     if (hasOptions) {
       if (typeof selectedOption === "string" && selectedOption.trim() === "") {
@@ -58,25 +58,20 @@ export function PurchaseButton({
       return;
     }
 
-    // 주문/결제 페이지로 이동 (URL 파라미터로 상품 정보 전달)
+    // 비회원인 경우 게스트 주문 페이지로, 회원인 경우 기존 주문 페이지로
     const orderParams = new URLSearchParams({
       productId: productId.toString(),
       productTitle,
       productPrice: productPrice.toString(),
       quantity: quantity.toString(),
       ...(selectedOption && { selectedOption }),
+      ...(user?.id ? {} : { isGuest: "true" }), // 비회원 플래그
     });
 
     router.push(`/order?${orderParams.toString()}`);
   };
 
   const handleAddToCart = async () => {
-    if (!user?.id) {
-      alert("로그인이 필요합니다.");
-      router.push("/login");
-      return;
-    }
-
     // 옵션이 있는 상품인 경우 variantId 체크
     if (hasOptions && !variantId) {
       alert("옵션을 선택해주세요.");
@@ -114,7 +109,7 @@ export function PurchaseButton({
     }
 
     try {
-      await addToCart({ variantId: variantId!, quantity });
+      await currentCart.addToCart({ variantId: variantId!, quantity });
       alert("장바구니에 추가되었습니다!");
     } catch (error) {
       console.error("장바구니 추가 실패:", error);
@@ -140,6 +135,15 @@ export function PurchaseButton({
         </p>
       </div>
 
+      {/* 비회원 안내 메시지 */}
+      {!user?.id && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-sm text-blue-700 text-center">
+            💡 로그인하지 않아도 주문할 수 있습니다!
+          </p>
+        </div>
+      )}
+
       {/* 버튼 그룹 */}
       <div className="flex gap-3">
         {/* 장바구니 담기 버튼 */}
@@ -147,10 +151,10 @@ export function PurchaseButton({
           onClick={handleAddToCart}
           variant="outline"
           className="flex-1 h-14 border-2 border-pink-300 text-pink-600 hover:bg-pink-50 hover:border-pink-400 transition-all duration-200 font-semibold"
-          disabled={isOutOfStock || isAddingToCart}
+          disabled={isOutOfStock || currentCart.isAddingToCart}
         >
           <ShoppingCart className="w-5 h-5 mr-2" />
-          {isAddingToCart ? "추가 중..." : "장바구니"}
+          {currentCart.isAddingToCart ? "추가 중..." : "장바구니"}
         </Button>
 
         {/* 바로 구매 버튼 */}
@@ -160,7 +164,7 @@ export function PurchaseButton({
           disabled={isOutOfStock}
         >
           <ShoppingBag className="w-5 h-5 mr-2" />
-          {isOutOfStock ? "품절" : "바로 구매"}
+          {isOutOfStock ? "품절" : user?.id ? "바로 구매" : "비회원 주문"}
         </Button>
       </div>
 
@@ -168,6 +172,7 @@ export function PurchaseButton({
       <div className="text-center text-xs text-gray-500 space-y-1">
         <p>• 안전한 결제 시스템으로 보호됩니다</p>
         <p>• 주문 후 1-2일 내 배송 시작</p>
+        {!user?.id && <p>• 비회원 주문 시 주문번호로 배송 조회 가능</p>}
       </div>
     </div>
   );

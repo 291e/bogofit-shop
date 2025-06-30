@@ -2,16 +2,22 @@
 
 import { useState } from "react";
 import { loadTossPayments } from "@tosspayments/payment-sdk";
-import { PaymentMethod } from "@/types/payment";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { CreditCard, Building2, Smartphone } from "lucide-react";
+
+type PaymentMethodType = "카드" | "계좌이체" | "가상계좌";
 
 interface CheckoutButtonProps {
   productId: number;
@@ -19,25 +25,10 @@ interface CheckoutButtonProps {
   productPrice: number;
   selectedOption?: string;
   hasOptions?: boolean;
+  isGuest?: boolean; // 비회원 주문 플래그
   isOpen?: boolean;
   setIsOpen?: (open: boolean) => void;
 }
-
-const dict = {
-  payment: {
-    title: "결제하기",
-    checkout: "결제하기",
-    method: "결제 수단",
-    amount: "결제 금액",
-    proceed: "결제 진행하기",
-    methods: {
-      card: "신용카드",
-      virtual: "가상계좌",
-      transfer: "계좌이체",
-      phone: "휴대폰",
-    },
-  },
-};
 
 export function CheckoutButton({
   productId,
@@ -45,28 +36,24 @@ export function CheckoutButton({
   productPrice,
   selectedOption,
   hasOptions = false,
+  isGuest = false,
   isOpen,
   setIsOpen,
 }: CheckoutButtonProps) {
-  const paymentMethods: PaymentMethod[] = [
-    { method: "카드", label: dict.payment.methods.card },
-    { method: "가상계좌", label: dict.payment.methods.virtual },
-    { method: "계좌이체", label: dict.payment.methods.transfer },
-    { method: "휴대폰", label: dict.payment.methods.phone },
-  ];
-
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
-    paymentMethods[0]
-  );
-  const amount = productPrice.toString();
-  const [internalOpen, setInternalOpen] = useState(false);
-  const dialogOpen = typeof isOpen === "boolean" ? isOpen : internalOpen;
-  const dialogSetOpen =
-    typeof setIsOpen === "function" ? setIsOpen : setInternalOpen;
   const { user } = useUser();
+  const [paymentMethod, setPaymentMethod] = useState<{
+    method: PaymentMethodType;
+    label: string;
+    icon: React.ReactNode;
+  } | null>(null);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const dialogSetOpen = setIsOpen || setDialogOpen;
+  const amount = productPrice;
 
   const handlePayment = async () => {
-    if (!user?.id) {
+    // 비회원인 경우 로그인 체크 건너뛰기
+    if (!isGuest && !user?.id) {
       alert("로그인이 필요합니다.");
       return;
     }
@@ -95,8 +82,8 @@ export function CheckoutButton({
     const urlParams = new URLSearchParams(window.location.search);
     const orderInfo = {
       ordererName: urlParams.get("ordererName") || "",
-      ordererPhone: urlParams.get("ordererPhone") || "",
       ordererEmail: urlParams.get("ordererEmail") || "",
+      ordererPhone: urlParams.get("ordererPhone") || "",
       recipientName: urlParams.get("recipientName") || "",
       recipientPhone: urlParams.get("recipientPhone") || "",
       address: urlParams.get("address") || "",
@@ -120,15 +107,22 @@ export function CheckoutButton({
       productTitle,
       selectedOption,
       quantity: 1,
+      isGuest, // 비회원 플래그 추가
       ...(hasOrderInfo && { orderInfo }), // 주문 정보가 있을 때만 포함
     };
 
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    // 회원인 경우에만 x-user-id 헤더 추가
+    if (!isGuest && user?.id) {
+      headers["x-user-id"] = user.id;
+    }
+
     const res = await fetch("/api/payment/prepare", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-user-id": user.id,
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -149,7 +143,9 @@ export function CheckoutButton({
       await tossPayments.requestPayment(paymentMethod.method, {
         orderId,
         orderName: productTitle,
-        customerName: user?.userId || "고객",
+        customerName: isGuest
+          ? orderInfo.ordererName || "게스트"
+          : user?.userId || "고객",
         amount: Number(amount),
         successUrl: `${window.location.origin}/success`,
         failUrl: `${window.location.origin}/fail`,
@@ -176,186 +172,103 @@ export function CheckoutButton({
     }
   };
 
+  const paymentMethods: Array<{
+    method: PaymentMethodType;
+    label: string;
+    icon: React.ReactNode;
+  }> = [
+    {
+      method: "카드" as PaymentMethodType,
+      label: "신용/체크카드",
+      icon: <CreditCard className="w-5 h-5" />,
+    },
+    {
+      method: "계좌이체" as PaymentMethodType,
+      label: "계좌이체",
+      icon: <Building2 className="w-5 h-5" />,
+    },
+    {
+      method: "가상계좌" as PaymentMethodType,
+      label: "가상계좌",
+      icon: <Smartphone className="w-5 h-5" />,
+    },
+  ];
+
   return (
-    <Dialog open={dialogOpen} onOpenChange={dialogSetOpen}>
+    <Dialog open={isOpen || dialogOpen} onOpenChange={dialogSetOpen}>
       <DialogTrigger asChild>
-        <Button className="flex-1 bg-[#d74fdf] hover:bg-[#b93fc0] text-white font-bold py-2 px-4 rounded-md transition-colors">
-          {dict.payment.checkout}
+        <Button className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold text-lg">
+          {amount.toLocaleString()}원 결제하기
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] p-6 rounded-2xl shadow-lg border-2 border-[#d74fdf]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-[#d74fdf] text-xl font-extrabold flex items-center gap-2">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="12" fill="#d74fdf" opacity="0.15" />
-              <path
-                d="M7 12h10M7 16h10M7 8h10"
-                stroke="#d74fdf"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-            {dict.payment.title}
+          <DialogTitle className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            결제 수단 선택
           </DialogTitle>
+          <DialogDescription>
+            원하시는 결제 방법을 선택해주세요
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-6 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-[#d74fdf]">
-              {dict.payment.method}
-            </label>
-            <div className="flex flex-wrap gap-2">
+
+        <div className="space-y-4">
+          {/* 상품 정보 */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold mb-1">{productTitle}</h3>
+            {selectedOption && (
+              <p className="text-sm text-gray-600 mb-2">{selectedOption}</p>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">결제 금액</span>
+              <span className="text-lg font-bold text-pink-600">
+                {amount.toLocaleString()}원
+              </span>
+            </div>
+          </div>
+
+          {/* 결제 수단 선택 */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">결제 수단</Label>
+            <RadioGroup
+              value={paymentMethod?.method || ""}
+              onValueChange={(value) => {
+                const selected = paymentMethods.find((m) => m.method === value);
+                setPaymentMethod(selected || null);
+              }}
+            >
               {paymentMethods.map((method) => (
-                <button
+                <div
                   key={method.method}
-                  className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold flex items-center gap-1 transition-all shadow-sm
-                    ${
-                      paymentMethod?.method === method.method
-                        ? "bg-[#d74fdf] border-[#d74fdf] text-white"
-                        : "bg-white border-gray-300 text-[#d74fdf] hover:bg-[#f7e6fa] hover:border-[#d74fdf]"
-                    }
-                  `}
+                  className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
                   onClick={() => setPaymentMethod(method)}
-                  type="button"
-                  aria-pressed={paymentMethod?.method === method.method}
                 >
-                  {/* 아이콘 예시: 카드, 계좌 등 */}
-                  {method.method === "카드" && (
-                    <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                      <rect
-                        x="2"
-                        y="4"
-                        width="12"
-                        height="8"
-                        rx="2"
-                        fill="currentColor"
-                        opacity="0.15"
-                      />
-                      <rect
-                        x="2"
-                        y="4"
-                        width="12"
-                        height="8"
-                        rx="2"
-                        stroke="currentColor"
-                        strokeWidth="1.2"
-                      />
-                      <rect
-                        x="4"
-                        y="9"
-                        width="3"
-                        height="1"
-                        rx="0.5"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  )}
-                  {method.method === "가상계좌" && (
-                    <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                      <rect
-                        x="3"
-                        y="5"
-                        width="10"
-                        height="6"
-                        rx="1"
-                        fill="currentColor"
-                        opacity="0.15"
-                      />
-                      <rect
-                        x="3"
-                        y="5"
-                        width="10"
-                        height="6"
-                        rx="1"
-                        stroke="currentColor"
-                        strokeWidth="1.2"
-                      />
-                      <circle cx="8" cy="8" r="1.5" fill="currentColor" />
-                    </svg>
-                  )}
-                  {method.method === "계좌이체" && (
-                    <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                      <rect
-                        x="2.5"
-                        y="6"
-                        width="11"
-                        height="4"
-                        rx="1"
-                        fill="currentColor"
-                        opacity="0.15"
-                      />
-                      <rect
-                        x="2.5"
-                        y="6"
-                        width="11"
-                        height="4"
-                        rx="1"
-                        stroke="currentColor"
-                        strokeWidth="1.2"
-                      />
-                      <path
-                        d="M4 10V12h8v-2"
-                        stroke="currentColor"
-                        strokeWidth="1.2"
-                      />
-                    </svg>
-                  )}
-                  {method.method === "휴대폰" && (
-                    <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                      <rect
-                        x="5"
-                        y="2.5"
-                        width="6"
-                        height="11"
-                        rx="1"
-                        fill="currentColor"
-                        opacity="0.15"
-                      />
-                      <rect
-                        x="5"
-                        y="2.5"
-                        width="6"
-                        height="11"
-                        rx="1"
-                        stroke="currentColor"
-                        strokeWidth="1.2"
-                      />
-                      <circle cx="8" cy="12" r="0.7" fill="currentColor" />
-                    </svg>
-                  )}
-                  {method.label}
-                </button>
+                  <RadioGroupItem value={method.method} id={method.method} />
+                  <div className="flex items-center gap-2 flex-1">
+                    {method.icon}
+                    <Label htmlFor={method.method} className="cursor-pointer">
+                      {method.label}
+                    </Label>
+                  </div>
+                </div>
               ))}
-            </div>
+            </RadioGroup>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-[#d74fdf]">
-              {dict.payment.amount}
-            </label>
-            <div className="w-full p-4 bg-[#f7e6fa] border-2 border-[#d74fdf] rounded-lg text-2xl font-bold text-[#d74fdf] text-center select-none cursor-not-allowed">
-              {Number(amount).toLocaleString()}원
-            </div>
-            {/* 금액 입력란 제거, 아래는 readOnly input 대체용 */}
-            {/*
-            <input
-              type="number"
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min="1000"
-              readOnly
-              style={{ backgroundColor: '#f7e6fa', color: '#d74fdf', cursor: 'not-allowed', fontWeight: 'bold', fontSize: '1.25rem', textAlign: 'center' }}
-            />
-            */}
-          </div>
+          <Separator />
 
+          {/* 결제 버튼 */}
           <Button
-            className="w-full bg-[#d74fdf] hover:bg-[#b93fc0] text-white font-bold py-3 px-4 rounded-xl text-lg shadow-lg transition-colors mt-2"
             onClick={handlePayment}
             disabled={!paymentMethod}
+            className="w-full h-12 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold"
           >
-            {dict.payment.proceed}
+            {amount.toLocaleString()}원 결제하기
           </Button>
+
+          <p className="text-xs text-gray-500 text-center">
+            안전한 결제를 위해 SSL 암호화를 사용합니다
+          </p>
         </div>
       </DialogContent>
     </Dialog>
