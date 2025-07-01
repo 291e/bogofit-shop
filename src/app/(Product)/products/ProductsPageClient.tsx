@@ -7,6 +7,7 @@ import ProductCard from "@/components/product/ProductCard";
 import ProductFilters from "@/components/product/ProductFilters";
 import {
   ProductFilters as IProductFilters,
+  Product,
   ProductsResponse,
 } from "@/types/product";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -56,13 +57,6 @@ export default function ProductsPageClient() {
   const allProducts = data?.products ?? [];
   const totalCount = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
-
-  // 품절 필터 적용
-  const filteredProducts = filters.showSoldOut
-    ? allProducts
-    : allProducts.filter(
-        (product) => product.badge !== "SOLDOUT" && !product.isSoldOut
-      );
 
   // 페이지 이동
   const handlePageChange = (newPage: number) => {
@@ -120,7 +114,7 @@ export default function ProductsPageClient() {
             </div>
           ))}
         </div>
-      ) : filteredProducts.length === 0 ? (
+      ) : allProducts.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-500 text-lg mb-4">검색 결과가 없습니다.</p>
           <button
@@ -133,7 +127,7 @@ export default function ProductsPageClient() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredProducts.map((product) => (
+            {allProducts.map((product: Product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

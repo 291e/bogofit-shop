@@ -125,7 +125,11 @@ export default function ProductCard({
               </div>
             </div>
             <Link href={`/products/${product.id}`}>
-              <Button className="w-full" size="sm" disabled={isOutOfStock}>
+              <Button
+                className="w-full disabled:bg-blue-950"
+                size="sm"
+                disabled={isOutOfStock}
+              >
                 {isOutOfStock ? (
                   "품절"
                 ) : (

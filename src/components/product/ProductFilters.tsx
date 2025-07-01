@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, X, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,7 +22,6 @@ interface ProductFiltersProps {
 export default function ProductFilters({
   filters,
   onFiltersChange,
-  products = [],
 }: ProductFiltersProps) {
   const [localFilters, setLocalFilters] = useState<IProductFilters>(filters);
 
@@ -64,14 +62,8 @@ export default function ProductFilters({
   };
 
   // 품절 상품 개수 계산 (badge가 "품절"이거나 isSoldOut이 true인 경우)
-  const getSoldOutCount = () => {
-    return products.filter(
-      (product) => product.badge === "SOLDOUT" || product.isSoldOut
-    ).length;
-  };
 
   const activeFiltersCount = getActiveFiltersCount();
-  const soldOutCount = getSoldOutCount();
 
   return (
     <div className="space-y-4">
@@ -106,35 +98,6 @@ export default function ProductFilters({
         </Select>
 
         {/* 품절 상품 표시 토글 */}
-        <Button
-          variant={localFilters.showSoldOut ? "default" : "outline"}
-          onClick={() =>
-            handleFilterChange("showSoldOut", !localFilters.showSoldOut)
-          }
-          className="flex items-center gap-2"
-        >
-          {filters.showSoldOut ? (
-            <>
-              <Eye className="w-4 h-4" />
-              품절 상품 표시
-              {soldOutCount > 0 && (
-                <Badge variant="destructive" className="ml-1 text-xs">
-                  {soldOutCount}
-                </Badge>
-              )}
-            </>
-          ) : (
-            <>
-              <EyeOff className="w-4 h-4" />
-              품절 상품 숨김
-              {soldOutCount > 0 && (
-                <Badge variant="secondary" className="ml-1 text-xs">
-                  {soldOutCount}
-                </Badge>
-              )}
-            </>
-          )}
-        </Button>
       </div>
 
       {/* 활성 필터 표시 */}
