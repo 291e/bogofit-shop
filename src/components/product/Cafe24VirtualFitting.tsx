@@ -6,14 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Progress } from "@/components/ui/progress";
-import {
-  Play,
-  Download,
-  ChevronDown,
-  ChevronUp,
-  X,
-  AlertTriangle,
-} from "lucide-react";
+import { Play, Download, X, AlertTriangle } from "lucide-react";
 import {
   humanSamples,
   garmentSamples,
@@ -21,17 +14,17 @@ import {
   backgroundSamples,
 } from "@/contents/VirtualFitting/sampleImages";
 
-interface VirtualFittingProps {
+interface Cafe24VirtualFittingProps {
   productTitle?: string;
   productCategory?: string;
   currentImage?: string; // 현재 선택된 메인 이미지
 }
 
-export default function VirtualFitting({
+export default function Cafe24VirtualFitting({
   productTitle,
   productCategory,
   currentImage,
-}: VirtualFittingProps) {
+}: Cafe24VirtualFittingProps) {
   const [files, setFiles] = useState<{
     human_file: File | null;
     garment_file: File | null;
@@ -62,7 +55,7 @@ export default function VirtualFitting({
   const [status, setStatus] = useState("");
   const [generatedImage, setGeneratedImage] = useState("");
   const [generatedVideo, setGeneratedVideo] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+
   const [showResults, setShowResults] = useState(false);
 
   // 파일 업로드 오류 상태 추가
@@ -601,45 +594,9 @@ export default function VirtualFitting({
   return (
     <div className="w-full max-w-6xl mx-auto">
       {/* 가상 피팅 헤더 (항상 표시) */}
-      <Card
-        className="mb-4"
-        style={{
-          background: "linear-gradient(270deg, #a855f7, #ec4899)",
-          backgroundSize: "200% 200%", // 이동 거리 확보
-          animation: "gradientShift 8s ease-in-out infinite", // 더 부드럽게
-        }}
-      >
-        <CardHeader
-          className="cursor-pointer "
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-white">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Play className="w-4 h-4 text-white" />
-              </div>
-              가상 피팅
-              <Badge variant="secondary" className="ml-2">
-                AI
-              </Badge>
-            </div>
-            {isOpen ? (
-              <ChevronUp className="w-5 h-5 text-white" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-white" />
-            )}
-          </CardTitle>
-        </CardHeader>
-      </Card>
 
-      {/* 가상 피팅 콘텐츠 (접기/펼치기) */}
-      <div
-        className={`transition-all duration-500 ease-in-out ${
-          isOpen
-            ? "max-h-none opacity-100 overflow-visible"
-            : "max-h-0 opacity-0 overflow-hidden"
-        }`}
-      >
+      {/* 가상 피팅 콘텐츠 */}
+      <div className="transition-all duration-500 ease-in-out max-h-none opacity-100 overflow-visible">
         <div
           className={`transition-all duration-700 ease-in-out ${
             showResults

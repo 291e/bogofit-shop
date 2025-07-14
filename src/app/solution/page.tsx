@@ -1,9 +1,9 @@
-import VirtualFitting from "@/components/product/VirtualFitting";
+import Cafe24VirtualFitting from "@/components/product/Cafe24VirtualFitting";
 
 export default function EventPage() {
   return (
     <main className="max-w-4xl mx-auto py-16 px-4">
-      <VirtualFitting
+      <Cafe24VirtualFitting
         productTitle={"test"}
         productCategory={"test"}
         currentImage={"test"}

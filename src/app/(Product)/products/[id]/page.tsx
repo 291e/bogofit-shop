@@ -531,7 +531,7 @@ export default function ProductDetail() {
           </div>
 
           {/* 리모트 위젯 메뉴바 */}
-          <div className="fixed right-6 bottom-0 -translate-y-1/2 z-40 ">
+          <div className="fixed right-6 bottom-0 -translate-y-1/2 z-40 hidden sm:block">
             <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-2">
               <nav className="flex flex-col space-y-2">
                 <button

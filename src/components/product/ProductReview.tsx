@@ -75,70 +75,139 @@ const StarRating = ({
 const ReviewItem = ({ review }: { review: ProductReview }) => {
   const [isHelpful, setIsHelpful] = useState(false);
   const [helpfulCount, setHelpfulCount] = useState(0);
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
 
   return (
-    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-      <CardContent className="p-6">
-        <div className="flex items-start gap-4">
-          <Avatar className="w-12 h-12 border-2 border-pink-100">
-            <div className="bg-gradient-to-br from-pink-400 to-purple-400 w-full h-full flex items-center justify-center text-white font-semibold">
+    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm hover:shadow-md transition-shadow duration-200">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-start gap-3 sm:gap-4">
+          <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-pink-100 flex-shrink-0">
+            <div className="bg-gradient-to-br from-pink-400 to-purple-400 w-full h-full flex items-center justify-center text-white font-semibold text-sm sm:text-base">
               {review.user.name.charAt(0)}
             </div>
           </Avatar>
 
-          <div className="flex-1 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="font-medium text-gray-800">
+          <div className="flex-1 min-w-0 space-y-3">
+            {/* 사용자 정보 및 평점 - 반응형 개선 */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                <span className="font-medium text-gray-800 text-sm sm:text-base truncate max-w-[150px] sm:max-w-[200px]">
                   {review.user.name}
                 </span>
-                <StarRating rating={review.rating} />
-                <Badge variant="outline" className="text-xs">
+                <div className="flex items-center gap-2">
+                  <StarRating
+                    rating={review.rating}
+                    size="w-3 h-3 sm:w-4 sm:h-4"
+                  />
+                  <span className="text-xs sm:text-sm text-gray-600">
+                    {review.rating}점
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2">
+                <span className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
+                  {new Date(review.createdAt).toLocaleDateString("ko-KR", {
+                    year: "2-digit",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })}
+                </span>
+                <Badge variant="outline" className="text-xs h-5 px-2">
                   구매확정
                 </Badge>
               </div>
-              <span className="text-sm text-gray-500">
-                {new Date(review.createdAt).toLocaleDateString("ko-KR")}
-              </span>
             </div>
 
-            <p className="text-gray-700 leading-relaxed">{review.content}</p>
+            {/* 리뷰 내용 */}
+            <div className="text-gray-700 leading-relaxed text-sm sm:text-base break-words">
+              {review.content}
+            </div>
 
+            {/* 리뷰 이미지 - 클릭으로 확대 */}
             {review.imageUrl && (
               <div className="mt-3">
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden">
+                <div
+                  className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setIsImageExpanded(true)}
+                >
                   <Image
                     src={review.imageUrl}
                     alt="리뷰 이미지"
                     fill
                     className="object-cover"
                   />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-20 transition-colors">
+                    <div className="text-white opacity-0 hover:opacity-100 transition-opacity">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
+
+                {/* 이미지 확대 모달 */}
+                {isImageExpanded && (
+                  <div
+                    className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
+                    onClick={() => setIsImageExpanded(false)}
+                  >
+                    <div className="relative max-w-3xl max-h-[80vh] w-full h-full">
+                      <Image
+                        src={review.imageUrl}
+                        alt="리뷰 이미지 확대"
+                        fill
+                        className="object-contain"
+                      />
+                      <button
+                        onClick={() => setIsImageExpanded(false)}
+                        className="absolute top-4 right-4 w-8 h-8 bg-black bg-opacity-50 text-white rounded-full flex items-center justify-center hover:bg-opacity-70 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            <div className="flex items-center gap-4 pt-2">
+            {/* 액션 버튼들 - 반응형 개선 */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 pt-2 border-t border-gray-100">
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 text-xs ${
-                  isHelpful ? "text-pink-600 bg-pink-50" : "text-gray-500"
-                }`}
+                className={`h-7 sm:h-8 text-xs px-2 sm:px-3 ${
+                  isHelpful
+                    ? "text-pink-600 bg-pink-50 hover:bg-pink-100"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                } transition-colors`}
                 onClick={() => {
                   setIsHelpful(!isHelpful);
                   setHelpfulCount((prev) => (isHelpful ? prev - 1 : prev + 1));
                 }}
               >
                 <ThumbsUp className="w-3 h-3 mr-1" />
-                도움돼요 {helpfulCount > 0 && `(${helpfulCount})`}
+                <span className="hidden sm:inline">도움돼요</span>
+                {helpfulCount > 0 && (
+                  <span className="ml-1">({helpfulCount})</span>
+                )}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 text-xs text-gray-500"
+                className="h-7 sm:h-8 text-xs px-2 sm:px-3 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <MessageCircle className="w-3 h-3 mr-1" />
-                답글
+                <span className="hidden sm:inline">답글</span>
               </Button>
             </div>
           </div>
@@ -435,7 +504,7 @@ export default function ProductReview({
     <div className="space-y-8">
       {/* 리뷰 요약 */}
       <div className="bg-white rounded-2xl shadow-lg p-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-800">고객 리뷰</h2>
           <Button
             onClick={() => {
@@ -522,13 +591,12 @@ export default function ProductReview({
       {/* 리뷰 필터 및 정렬 */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-xl p-4 shadow-sm">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">별점:</span>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1 sm:gap-2">
             <Button
               variant={filterRating === null ? "default" : "outline"}
               size="sm"
               onClick={() => setFilterRating(null)}
-              className="h-8 text-xs"
+              className="h-8 text-xs px-2 sm:px-3 min-w-[44px]"
             >
               전체
             </Button>
@@ -538,7 +606,7 @@ export default function ProductReview({
                 variant={filterRating === rating ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilterRating(rating)}
-                className="h-8 text-xs"
+                className="h-8 text-xs px-2 sm:px-3 min-w-[44px]"
               >
                 {rating}⭐
               </Button>
