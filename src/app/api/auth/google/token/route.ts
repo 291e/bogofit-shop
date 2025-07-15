@@ -7,6 +7,56 @@ const GOOGLE_REDIRECT_URI = `${
   process.env.NEXT_PUBLIC_BASE_URL || ""
 }/auth/callback/google`;
 
+/**
+ * @swagger
+ * /api/auth/google/token:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Google OAuth 토큰 교환
+ *     description: Google OAuth 인증 코드를 토큰으로 교환하고 사용자 정보를 가져옵니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: Google OAuth 인증 코드
+ *                 example: "4/0AdQt8qh..."
+ *             required:
+ *               - code
+ *     responses:
+ *       200:
+ *         description: 인증 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   description: 성공 여부
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 token:
+ *                   type: string
+ *                   description: JWT 토큰
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function POST(request: NextRequest) {
   try {
     const { code } = await request.json();

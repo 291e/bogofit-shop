@@ -1,6 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * @swagger
+ * /api/payment/history:
+ *   get:
+ *     tags:
+ *       - Orders
+ *     summary: 결제 이력 조회
+ *     description: 사용자의 결제 이력을 조회합니다.
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: 결제 이력 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: 결제 ID
+ *                   amount:
+ *                     type: number
+ *                     description: 결제 금액
+ *                   status:
+ *                     type: string
+ *                     description: 결제 상태
+ *                   method:
+ *                     type: string
+ *                     description: 결제 방법
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                     description: 결제 일시
+ *                   order:
+ *                     $ref: '#/components/schemas/Order'
+ *       401:
+ *         description: 인증 필요
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(req: NextRequest) {
   try {
     const userId = req.headers.get("x-user-id");

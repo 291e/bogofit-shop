@@ -6,7 +6,69 @@ const prisma = new PrismaClient();
 // userId는 반드시 User의 id(uuid)로만 사용해야 합니다.
 // 프론트엔드에서도 user.id만 전달해야 하며, user.userId(로그인용)는 절대 사용하지 마세요.
 
-// 주소 목록 조회
+/**
+ * @swagger
+ * /api/address:
+ *   get:
+ *     tags:
+ *       - User
+ *     summary: 주소 목록 조회
+ *     description: 사용자의 배송 주소 목록을 조회합니다.
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 사용자 ID (UUID)
+ *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       200:
+ *         description: 주소 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: 주소 ID
+ *                   name:
+ *                     type: string
+ *                     description: 주소 별칭
+ *                   recipientName:
+ *                     type: string
+ *                     description: 수령자명
+ *                   phone:
+ *                     type: string
+ *                     description: 전화번호
+ *                   zipCode:
+ *                     type: string
+ *                     description: 우편번호
+ *                   address:
+ *                     type: string
+ *                     description: 주소
+ *                   addressDetail:
+ *                     type: string
+ *                     description: 상세주소
+ *                   isDefault:
+ *                     type: boolean
+ *                     description: 기본 주소 여부
+ *       400:
+ *         description: userId 누락
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -37,7 +99,87 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 새 주소 추가
+/**
+ * @swagger
+ * /api/address:
+ *   post:
+ *     tags:
+ *       - User
+ *     summary: 새 배송 주소 추가
+ *     description: 사용자의 새로운 배송 주소를 추가합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: 사용자 ID (UUID)
+ *                 example: "123e4567-e89b-12d3-a456-426614174000"
+ *               label:
+ *                 type: string
+ *                 description: 주소 별칭
+ *                 example: "우리집"
+ *               recipientName:
+ *                 type: string
+ *                 description: 수령자명
+ *                 example: "홍길동"
+ *               phone:
+ *                 type: string
+ *                 description: 전화번호
+ *                 example: "010-1234-5678"
+ *               zipCode:
+ *                 type: string
+ *                 description: 우편번호
+ *                 example: "12345"
+ *               address:
+ *                 type: string
+ *                 description: 주소
+ *                 example: "서울시 강남구 역삼동"
+ *               addressDetail:
+ *                 type: string
+ *                 description: 상세주소
+ *                 example: "123-45 상세주소"
+ *               isDefault:
+ *                 type: boolean
+ *                 description: 기본 주소로 설정할지 여부
+ *                 example: false
+ *             required:
+ *               - userId
+ *               - label
+ *               - recipientName
+ *               - phone
+ *               - zipCode
+ *               - address
+ *     responses:
+ *       201:
+ *         description: 주소 추가 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 성공 메시지
+ *                 address:
+ *                   type: object
+ *                   description: 생성된 주소 정보
+ *       400:
+ *         description: 필수 필드 누락 또는 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();

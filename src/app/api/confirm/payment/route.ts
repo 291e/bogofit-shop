@@ -5,6 +5,79 @@ const apiSecretKey = process.env.TOSS_SECRET_KEY;
 const encryptedApiSecretKey =
   "Basic " + Buffer.from(apiSecretKey + ":").toString("base64");
 
+/**
+ * @swagger
+ * /api/confirm/payment:
+ *   post:
+ *     tags:
+ *       - Payment
+ *     summary: 결제 확인
+ *     description: Toss Payments API를 통해 결제를 확인하고 주문 상태를 업데이트합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - paymentKey
+ *               - orderId
+ *               - amount
+ *             properties:
+ *               paymentKey:
+ *                 type: string
+ *                 description: Toss Payments 결제 키
+ *                 example: "payment_12345"
+ *               orderId:
+ *                 type: string
+ *                 description: 주문 ID
+ *                 example: "order_67890"
+ *               amount:
+ *                 type: number
+ *                 description: 결제 금액
+ *                 example: 50000
+ *     responses:
+ *       200:
+ *         description: 결제 확인 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               description: Toss Payments API 응답 데이터
+ *       400:
+ *         description: 결제 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "결제 처리 중 오류가 발생했습니다."
+ *                 code:
+ *                   type: string
+ *                   example: "PAYMENT_FAILED"
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "서버 오류가 발생했습니다."
+ *                 code:
+ *                   type: string
+ *                   example: "INTERNAL_SERVER_ERROR"
+ */
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

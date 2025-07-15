@@ -1,7 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// 장바구니 조회
+/**
+ * @swagger
+ * /api/cart:
+ *   get:
+ *     tags:
+ *       - Cart
+ *     summary: 장바구니 조회
+ *     description: 사용자의 장바구니 정보를 조회합니다.
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: 장바구니 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   description: 장바구니 ID
+ *                 userId:
+ *                   type: string
+ *                   description: 사용자 ID
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/CartItem'
+ *       401:
+ *         description: 인증 필요
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(req: NextRequest) {
   try {
     const userId = req.headers.get("x-user-id");
@@ -85,7 +125,66 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 장바구니에 상품 추가
+/**
+ * @swagger
+ * /api/cart:
+ *   post:
+ *     tags:
+ *       - Cart
+ *     summary: 장바구니에 상품 추가
+ *     description: 장바구니에 새 상품을 추가하거나 기존 상품의 수량을 늘립니다.
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               variantId:
+ *                 type: integer
+ *                 description: 상품 변형 ID
+ *                 example: 1
+ *               quantity:
+ *                 type: integer
+ *                 description: 수량
+ *                 default: 1
+ *                 example: 2
+ *             required:
+ *               - variantId
+ *     responses:
+ *       200:
+ *         description: 장바구니 추가 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 성공 메시지
+ *                 cartItem:
+ *                   $ref: '#/components/schemas/CartItem'
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: 인증 필요
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function POST(req: NextRequest) {
   try {
     const userId = req.headers.get("x-user-id");

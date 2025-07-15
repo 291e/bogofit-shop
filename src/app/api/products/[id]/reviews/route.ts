@@ -8,7 +8,112 @@ interface RouteParams {
   }>;
 }
 
-// 상품 리뷰 목록 조회
+/**
+ * @swagger
+ * /api/products/{id}/reviews:
+ *   get:
+ *     tags:
+ *       - Products
+ *     summary: 상품 리뷰 목록 조회
+ *     description: 특정 상품의 리뷰 목록을 페이지네이션과 필터링으로 조회합니다.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 상품 ID
+ *         example: 1
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 페이지 번호
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: 페이지당 리뷰 수
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [latest, oldest, highest, lowest]
+ *           default: latest
+ *         description: 정렬 방식
+ *       - in: query
+ *         name: rating
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 5
+ *         description: 평점 필터
+ *     responses:
+ *       200:
+ *         description: 리뷰 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reviews:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         description: 리뷰 ID
+ *                       rating:
+ *                         type: integer
+ *                         description: 평점 (1-5)
+ *                       comment:
+ *                         type: string
+ *                         description: 리뷰 내용
+ *                       userName:
+ *                         type: string
+ *                         description: 작성자명
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: 작성일시
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     totalReviews:
+ *                       type: integer
+ *                     hasNext:
+ *                       type: boolean
+ *                     hasPrev:
+ *                       type: boolean
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     averageRating:
+ *                       type: number
+ *                       description: 평균 평점
+ *                     totalCount:
+ *                       type: integer
+ *                       description: 총 리뷰 수
+ *       400:
+ *         description: 잘못된 상품 ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const resolvedParams = await params;

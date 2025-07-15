@@ -3,6 +3,92 @@ import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     tags:
+ *       - Products
+ *     summary: 상품 목록 조회
+ *     description: 페이지네이션, 검색, 필터링이 적용된 상품 목록을 조회합니다.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 페이지 번호
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: 페이지당 아이템 수
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: 상품명, 설명, 상점명 검색어
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: 카테고리 필터
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: 최소 가격
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: 최대 가격
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [newest, oldest, price_asc, price_desc, popular]
+ *           default: newest
+ *         description: 정렬 방식
+ *       - in: query
+ *         name: showSoldOut
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *         description: 품절 상품 포함 여부
+ *     responses:
+ *       200:
+ *         description: 상품 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     totalItems:
+ *                       type: integer
+ *                     hasNext:
+ *                       type: boolean
+ *                     hasPrev:
+ *                       type: boolean
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

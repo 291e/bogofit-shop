@@ -120,6 +120,44 @@ function selectBestImage(
   return "";
 }
 
+/**
+ * @swagger
+ * /api/cafe24/product/{productNo}/fitting:
+ *   get:
+ *     tags:
+ *       - Cafe24
+ *     summary: 카페24 상품 정보를 가상 피팅용으로 변환
+ *     description: 카페24 상품 번호를 받아서 가상 피팅 컴포넌트에 필요한 형태로 변환합니다.
+ *     parameters:
+ *       - in: path
+ *         name: productNo
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 카페24 상품 번호
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: 변환된 상품 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/VirtualFittingRequest'
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *     security:
+ *       - cookieAuth: []
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ productNo: string }> }
@@ -203,7 +241,62 @@ export async function GET(
   }
 }
 
-// 여러 상품의 가상 피팅 정보를 한 번에 가져오는 API
+/**
+ * @swagger
+ * /api/cafe24/product/{productNo}/fitting:
+ *   post:
+ *     tags:
+ *       - Cafe24
+ *     summary: 다중 상품 정보를 가상 피팅용으로 변환
+ *     description: 여러 카페24 상품 번호를 받아서 가상 피팅 컴포넌트에 필요한 형태로 변환합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               productNos:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: 카페24 상품 번호 배열 (최대 10개)
+ *                 example: [1, 2, 3]
+ *             required:
+ *               - productNos
+ *     responses:
+ *       200:
+ *         description: 변환된 상품 정보 목록
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/VirtualFittingRequest'
+ *                 failed:
+ *                   type: integer
+ *                   description: 실패한 상품 수
+ *                 total:
+ *                   type: integer
+ *                   description: 총 상품 수
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *     security:
+ *       - cookieAuth: []
+ */
 export async function POST(request: NextRequest) {
   try {
     const { productNos } = await request.json();

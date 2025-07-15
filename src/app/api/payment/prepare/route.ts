@@ -41,6 +41,101 @@ interface PaymentPrepareRequest {
   agreePrivacy?: boolean;
 }
 
+/**
+ * @swagger
+ * /api/payment/prepare:
+ *   post:
+ *     tags:
+ *       - Orders
+ *     summary: 결제 준비
+ *     description: 결제를 위한 주문 정보를 준비하고 결제 토큰을 생성합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 description: 결제 금액
+ *                 example: 50000
+ *               method:
+ *                 type: string
+ *                 description: 결제 방법
+ *                 example: "card"
+ *               productId:
+ *                 type: integer
+ *                 description: 상품 ID
+ *                 example: 1
+ *               productTitle:
+ *                 type: string
+ *                 description: 상품명
+ *                 example: "스포츠 티셔츠"
+ *               quantity:
+ *                 type: integer
+ *                 description: 수량
+ *                 example: 2
+ *               orderInfo:
+ *                 type: object
+ *                 description: 주문자 정보
+ *                 properties:
+ *                   ordererName:
+ *                     type: string
+ *                     description: 주문자명
+ *                   ordererPhone:
+ *                     type: string
+ *                     description: 주문자 전화번호
+ *                   ordererEmail:
+ *                     type: string
+ *                     description: 주문자 이메일
+ *                   recipientName:
+ *                     type: string
+ *                     description: 수령자명
+ *                   recipientPhone:
+ *                     type: string
+ *                     description: 수령자 전화번호
+ *                   address:
+ *                     type: string
+ *                     description: 주소
+ *                   zipCode:
+ *                     type: string
+ *                     description: 우편번호
+ *             required:
+ *               - amount
+ *               - method
+ *               - productId
+ *               - productTitle
+ *     responses:
+ *       200:
+ *         description: 결제 준비 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 paymentKey:
+ *                   type: string
+ *                   description: 결제 키
+ *                 orderId:
+ *                   type: string
+ *                   description: 주문 ID
+ *                 amount:
+ *                   type: number
+ *                   description: 결제 금액
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function POST(req: NextRequest) {
   try {
     console.log("[API/payment/prepare] 결제 준비 요청 시작");

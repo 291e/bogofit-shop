@@ -3,6 +3,48 @@ import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   get:
+ *     tags:
+ *       - Products
+ *     summary: 상품 상세 정보 조회
+ *     description: 특정 상품의 상세 정보를 조회합니다.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: 상품 ID
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: 상품 상세 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: 잘못된 상품 ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: 상품을 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
