@@ -93,8 +93,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "20", 10);
-    const skip = (page - 1) * limit;
+    const limitParam = searchParams.get("limit");
+    const limit = limitParam ? parseInt(limitParam, 10) : 999999; // limit이 없으면 매우 큰 값
+    const skip = limitParam ? (page - 1) * limit : 0;
 
     // 검색 및 필터 파라미터
     const search = searchParams.get("search") || "";

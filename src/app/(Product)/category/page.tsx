@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
+// import Image from "next/image";
 import Link from "next/link";
 import { categories } from "@/contents/Category/categories";
 
@@ -66,19 +66,11 @@ export default function CategoryListPage() {
                 <div className="relative overflow-hidden rounded-3xl bg-white shadow-xl hover:shadow-2xl transition-all duration-300 group-hover:scale-105">
                   {/* 배경 그라디언트 */}
                   <div
-                    className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-10 group-hover:opacity-20 transition-opacity`}
+                    className={`absolute inset-0 bg-gradient-to-br opacity-10 group-hover:opacity-20 transition-opacity`}
                   />
 
                   {/* 카테고리 이미지 */}
-                  <div className="relative aspect-square p-12">
-                    <Image
-                      src={category.icon}
-                      alt={category.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-contain group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
+                  <div className="relative aspect-square p-12"></div>
 
                   {/* 카테고리 이름 */}
                   <div className="p-8 pt-0">

@@ -1,18 +1,38 @@
-export const categories = [
-  { name: "상의", icon: "/banner/top.png", color: "from-pink-400 to-rose-500" },
+interface Category {
+  id: number;
+  name: string;
+  image: string;
+  href: string;
+  special?: boolean;
+}
+
+export const categories: Category[] = [
   {
+    id: 1,
+    name: "상의",
+    image:
+      "https://cf.image-farm.s.zigzag.kr/original/cms/2024/09/04/202409040247084988_028942.png",
+    href: "/category/top",
+  },
+  {
+    id: 2,
     name: "하의",
-    icon: "/banner/bottom.png",
-    color: "from-blue-400 to-indigo-500",
+    image:
+      "https://cf.image-farm.s.zigzag.kr/original/cms/2024/09/04/202409040247329301_046515.png",
+    href: "/category/bottom",
   },
   {
+    id: 3,
     name: "원피스",
-    icon: "/banner/onepiece.png",
-    color: "from-purple-400 to-violet-500",
+    image:
+      "https://cf.image-farm.s.zigzag.kr/original/cms/2024/09/04/202409040248027653_082406.png",
+    href: "/category/dress",
   },
   {
+    id: 4,
     name: "아우터",
-    icon: "/banner/outer.png",
-    color: "from-emerald-400 to-teal-500",
+    image:
+      "https://cf.image-farm.s.zigzag.kr/original/cms/2024/09/04/202409040249159875_072097.png",
+    href: "/category/outer",
   },
 ];

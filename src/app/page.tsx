@@ -1,5 +1,5 @@
-import HomePage from "@/components/main/homePage";
+import Cafe24MainPage from "@/components/main/cafe24/Cafe24MainPage";
 
 export default function Page() {
-  return <HomePage />;
+  return <Cafe24MainPage />;
 }

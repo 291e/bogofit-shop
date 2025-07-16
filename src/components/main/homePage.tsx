@@ -1,6 +1,6 @@
 "use client";
 
-import HeroBanner from "./sections/HeroBanner";
+// import HeroBanner from "./sections/HeroBanner";
 // import CategorySection from "./sections/CategorySection";
 import FeaturedSection from "./sections/FeaturedSection";
 import GlobalShoppingSection from "./sections/GlobalShoppingSection";
@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* 히어로 배너 */}
-      <HeroBanner />
+      {/* <HeroBanner /> */}
 
       {/* 가상피팅 AI 서비스 섹션 */}
       <VirtualFittingSection />

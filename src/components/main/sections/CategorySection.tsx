@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { categories } from "@/contents/Category/categories";
 
@@ -68,19 +67,11 @@ export default function CategorySection() {
                 <div className="relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                   {/* 배경 그라디언트 */}
                   <div
-                    className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-10 group-hover:opacity-20 transition-opacity`}
+                    className={`absolute inset-0 bg-gradient-to-br  opacity-10 group-hover:opacity-20 transition-opacity`}
                   />
 
                   {/* 카테고리 이미지 */}
-                  <div className="relative aspect-square p-8">
-                    <Image
-                      src={category.icon}
-                      alt={category.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-contain group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
+                  <div className="relative aspect-square p-8"></div>
 
                   {/* 카테고리 이름 */}
                   <div className="p-6 pt-0">
