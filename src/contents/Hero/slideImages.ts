@@ -24,9 +24,8 @@ export const heroBannerSlides: HeroBannerSlide[] = [
     image: "/hero/image1.png",
     alt: "보고핏 여름 컬렉션 신상품",
     discount: "최대 50%",
-    backgroundColor:
-      "bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600",
-    textColor: "text-white",
+    backgroundColor: "",
+    textColor: "text-gray-900",
     priority: true,
   },
   {
@@ -39,8 +38,8 @@ export const heroBannerSlides: HeroBannerSlide[] = [
     image: "/hero/image2.png",
     alt: "베스트셀러 특가전 상품",
     discount: "50% OFF",
-    backgroundColor: "bg-gradient-to-br from-red-200 via-red-400 to-pink-600",
-    textColor: "text-white",
+    backgroundColor: "",
+    textColor: "text-gray-900",
   },
   {
     id: 3,
@@ -51,9 +50,8 @@ export const heroBannerSlides: HeroBannerSlide[] = [
     buttonLink: "/register",
     image: "/hero/image3.png",
     alt: "멤버십 혜택 안내",
-    backgroundColor:
-      "bg-gradient-to-br from-green-500 via-green-600 to-teal-600",
-    textColor: "text-white",
+    backgroundColor: "",
+    textColor: "text-gray-900",
   },
   {
     id: 4,
@@ -64,9 +62,8 @@ export const heroBannerSlides: HeroBannerSlide[] = [
     buttonLink: "/category/lookbook",
     image: "/hero/image4.png",
     alt: "트렌드 룩북 스타일링",
-    backgroundColor:
-      "bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600",
-    textColor: "text-white",
+    backgroundColor: "",
+    textColor: "text-gray-900",
   },
   {
     id: 5,
@@ -77,8 +74,20 @@ export const heroBannerSlides: HeroBannerSlide[] = [
     buttonLink: "/about",
     image: "/hero/image5.png",
     alt: "보고핏 브랜드 스토리",
-    backgroundColor: "bg-gradient-to-br from-gray-700 via-gray-800 to-black",
-    textColor: "text-white",
+    backgroundColor: "",
+    textColor: "text-gray-900",
+  },
+  {
+    id: 6,
+    title: "AI 피팅 서비스",
+    subtitle: "가상 착용 체험",
+    description: "AI로 미리 입어보고 완벽한 사이즈를 찾아보세요",
+    buttonText: "가상 피팅하기",
+    buttonLink: "/virtual-fitting",
+    image: "/hero/image6.png",
+    alt: "AI 가상 피팅 서비스",
+    backgroundColor: "",
+    textColor: "text-gray-900",
   },
 ];
 

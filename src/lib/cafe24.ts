@@ -1,261 +1,405 @@
 import { cookies } from "next/headers";
+import {
+  Cafe24OAuthConfig,
+  Cafe24TokenResponse,
+  Cafe24TokenRequest,
+  Cafe24RefreshTokenRequest,
+  Cafe24Product,
+  Cafe24ApiError,
+} from "@/types/cafe24";
 
-// 카페24 API 기본 설정
-const CAFE24_API_BASE_URL = `https://${process.env.CAFE24_SHOP_ID}.cafe24api.com/api/v2`;
+// Cafe24 OAuth 설정
+export class Cafe24OAuth {
+  private config: Cafe24OAuthConfig;
 
-// 카페24 API 응답 타입 정의
-export interface Cafe24Product {
-  product_no: number;
-  product_code: string;
-  product_name: string;
-  product_name_english?: string;
-  display_name?: string;
-  detail_image?: string;
-  list_image?: string;
-  tiny_image?: string;
-  small_image?: string;
-  category?: Array<{
-    category_no: number;
-    category_name: string;
-    category_depth: number;
-  }>;
-  price?: {
-    pc_price: string;
-    mobile_price: string;
-    price_excluding_tax: string;
-    price_including_tax: string;
-  };
-  description?: string;
-  mobile_description?: string;
-  additional_images?: Array<{
-    big?: string;
-    medium?: string;
-    small?: string;
-  }>;
-  custom_product_code?: string;
-  options?: Array<{
-    option_name: string;
-    option_value: string;
-  }>;
-}
+  constructor() {
+    this.config = {
+      mallId: process.env.CAFE24_MALL_ID || "",
+      clientId: process.env.CAFE24_CLIENT_ID || "",
+      clientSecret: process.env.CAFE24_CLIENT_SECRET || "",
+      redirectUri: `${process.env.NEXT_PUBLIC_BASE_URL}/api/cafe24/oauth/callback`,
+      baseUrl: `https://${process.env.CAFE24_MALL_ID}.cafe24api.com/api/v2`,
+    };
 
-export interface Cafe24Order {
-  order_id: string;
-  order_date: string;
-  order_status: string;
-  items: Array<{
-    product_no: number;
-    product_name: string;
-    product_code: string;
-    option_value: string;
-    quantity: number;
-    product_price: string;
-  }>;
-  buyer_info: {
-    buyer_name: string;
-    buyer_email: string;
-    buyer_phone: string;
-  };
-}
-
-export interface Cafe24Member {
-  member_id: string;
-  member_name: string;
-  member_email: string;
-  member_phone: string;
-  member_birth: string;
-  member_group_no: number;
-  created_date: string;
-}
-
-// 토큰 관련 함수들
-export async function getAccessToken(): Promise<string | null> {
-  try {
-    const cookieStore = await cookies();
-    return cookieStore.get("cafe24_access_token")?.value || null;
-  } catch (error) {
-    console.error("토큰 가져오기 실패:", error);
-    return null;
-  }
-}
-
-export async function refreshAccessToken(): Promise<string | null> {
-  try {
-    const cookieStore = await cookies();
-    const refreshToken = cookieStore.get("cafe24_refresh_token")?.value;
-
-    if (!refreshToken) {
-      throw new Error("리프레시 토큰이 없습니다");
+    if (
+      !this.config.mallId ||
+      !this.config.clientId ||
+      !this.config.clientSecret
+    ) {
+      console.error("❌ Cafe24 OAuth 환경 변수가 설정되지 않았습니다:");
+      console.error("- CAFE24_MALL_ID:", this.config.mallId ? "✓" : "❌");
+      console.error("- CAFE24_CLIENT_ID:", this.config.clientId ? "✓" : "❌");
+      console.error(
+        "- CAFE24_CLIENT_SECRET:",
+        this.config.clientSecret ? "✓" : "❌"
+      );
     }
+  }
 
-    const response = await fetch(`${CAFE24_API_BASE_URL}/oauth/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${Buffer.from(
-          `${process.env.CAFE24_CLIENT_ID}:${process.env.CAFE24_CLIENT_SECRET}`
-        ).toString("base64")}`,
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-      }),
+  /**
+   * 1단계: Authorization Code 요청 URL 생성
+   * 브라우저에서 이 URL로 리디렉션하여 사용자 인증을 받습니다.
+   */
+  getAuthorizationUrl(
+    scopes: string[] = ["mall.read_application", "mall.write_application"]
+  ): string {
+    const state = this.generateState();
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: this.config.clientId,
+      state: state,
+      redirect_uri: this.config.redirectUri,
+      scope: scopes.join(","),
     });
 
-    if (!response.ok) {
-      throw new Error("토큰 갱신 실패");
+    // state를 세션에 저장 (CSRF 방지)
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("cafe24_oauth_state", state);
     }
 
-    const tokenData = await response.json();
-    return tokenData.access_token;
-  } catch (error) {
-    console.error("토큰 갱신 실패:", error);
-    return null;
-  }
-}
-
-// 카페24 API 호출 헬퍼 함수
-export async function cafe24ApiCall<T>(
-  endpoint: string,
-  method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
-  body?: Record<string, unknown>,
-  retryOnUnauthorized: boolean = true
-): Promise<T> {
-  const accessToken = await getAccessToken();
-
-  if (!accessToken) {
-    throw new Error("액세스 토큰이 없습니다");
+    return `${this.config.baseUrl}/oauth/authorize?${params.toString()}`;
   }
 
-  const url = `${CAFE24_API_BASE_URL}${endpoint}`;
-  const headers: HeadersInit = {
-    Authorization: `Bearer ${accessToken}`,
-    "Content-Type": "application/json",
-  };
-
-  const options: RequestInit = {
-    method,
-    headers,
-  };
-
-  if (body && method !== "GET") {
-    options.body = JSON.stringify(body);
-  }
-
-  try {
-    const response = await fetch(url, options);
-
-    // 401 에러 시 토큰 갱신 후 재시도
-    if (response.status === 401 && retryOnUnauthorized) {
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        headers.Authorization = `Bearer ${newToken}`;
-        const retryResponse = await fetch(url, { ...options, headers });
-
-        if (!retryResponse.ok) {
-          throw new Error(`API 호출 실패: ${retryResponse.status}`);
+  /**
+   * 2단계: Authorization Code를 Access Token으로 교환
+   */
+  async exchangeCodeForToken(
+    code: string,
+    state?: string
+  ): Promise<Cafe24TokenResponse> {
+    try {
+      // state 검증 (CSRF 방지)
+      if (state && typeof window !== "undefined") {
+        const storedState = sessionStorage.getItem("cafe24_oauth_state");
+        if (storedState !== state) {
+          throw new Error("Invalid state parameter");
         }
-
-        return await retryResponse.json();
+        sessionStorage.removeItem("cafe24_oauth_state");
       }
+
+      const tokenRequest: Cafe24TokenRequest = {
+        grant_type: "authorization_code",
+        code: code,
+        redirect_uri: this.config.redirectUri,
+      };
+
+      const response = await fetch(`${this.config.baseUrl}/oauth/token`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${this.getBasicAuthHeader()}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          grant_type: tokenRequest.grant_type,
+          code: tokenRequest.code,
+          redirect_uri: tokenRequest.redirect_uri,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData: Cafe24ApiError = await response.json();
+        throw new Error(
+          `Token exchange failed: ${errorData.error} - ${errorData.error_description}`
+        );
+      }
+
+      const tokenData: Cafe24TokenResponse = await response.json();
+
+      // 토큰을 안전하게 저장
+      await this.storeTokens(tokenData);
+
+      return tokenData;
+    } catch (error) {
+      console.error("Cafe24 토큰 교환 실패:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 3단계: Refresh Token으로 Access Token 갱신
+   */
+  async refreshAccessToken(): Promise<string | null> {
+    try {
+      const cookieStore = await cookies();
+      const refreshToken = cookieStore.get("cafe24_refresh_token")?.value;
+
+      if (!refreshToken) {
+        throw new Error("리프레시 토큰이 없습니다");
+      }
+
+      const refreshRequest: Cafe24RefreshTokenRequest = {
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      };
+
+      const response = await fetch(`${this.config.baseUrl}/oauth/token`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${this.getBasicAuthHeader()}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          grant_type: refreshRequest.grant_type,
+          refresh_token: refreshRequest.refresh_token,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData: Cafe24ApiError = await response.json();
+        throw new Error(
+          `Token refresh failed: ${errorData.error} - ${errorData.error_description}`
+        );
+      }
+
+      const tokenData: Cafe24TokenResponse = await response.json();
+
+      // 새 토큰을 저장
+      await this.storeTokens(tokenData);
+
+      return tokenData.access_token;
+    } catch (error) {
+      console.error("Cafe24 토큰 갱신 실패:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Access Token 가져오기
+   */
+  async getAccessToken(): Promise<string | null> {
+    try {
+      const cookieStore = await cookies();
+      const accessToken = cookieStore.get("cafe24_access_token")?.value;
+      const expiresAt = cookieStore.get("cafe24_expires_at")?.value;
+
+      if (!accessToken) {
+        return null;
+      }
+
+      // 토큰 만료 확인 (2시간)
+      if (expiresAt && new Date(expiresAt) <= new Date()) {
+        console.log("Access token expired, refreshing...");
+        return await this.refreshAccessToken();
+      }
+
+      return accessToken;
+    } catch (error) {
+      console.error("토큰 가져오기 실패:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Cafe24 API 호출 (자동 토큰 갱신 포함)
+   */
+  async apiCall<T>(
+    endpoint: string,
+    method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
+    body?: Record<string, unknown>,
+    retryOnUnauthorized: boolean = true
+  ): Promise<T> {
+    const accessToken = await this.getAccessToken();
+
+    if (!accessToken) {
+      throw new Error(
+        "액세스 토큰이 없습니다. 먼저 OAuth 인증을 완료해주세요."
+      );
     }
 
-    if (!response.ok) {
-      throw new Error(`API 호출 실패: ${response.status}`);
+    const url = `${this.config.baseUrl}${endpoint}`;
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    };
+
+    const options: RequestInit = {
+      method,
+      headers,
+    };
+
+    if (body && method !== "GET") {
+      options.body = JSON.stringify(body);
     }
 
-    return await response.json();
-  } catch (error) {
-    console.error("카페24 API 호출 오류:", error);
-    throw error;
+    try {
+      const response = await fetch(url, options);
+
+      // 401 에러 시 토큰 갱신 후 재시도
+      if (response.status === 401 && retryOnUnauthorized) {
+        console.log("API call unauthorized, refreshing token...");
+        const newToken = await this.refreshAccessToken();
+
+        if (newToken) {
+          headers.Authorization = `Bearer ${newToken}`;
+          const retryResponse = await fetch(url, { ...options, headers });
+
+          if (!retryResponse.ok) {
+            throw new Error(
+              `API 호출 실패: ${retryResponse.status} ${retryResponse.statusText}`
+            );
+          }
+
+          return await retryResponse.json();
+        }
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `API 호출 실패: ${response.status} ${response.statusText} - ${errorText}`
+        );
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Cafe24 API 호출 오류:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 상품 정보 가져오기
+   */
+  async getProduct(productNo: number): Promise<Cafe24Product> {
+    return await this.apiCall<{ product: Cafe24Product }>(
+      `/admin/products/${productNo}`
+    ).then((response) => response.product);
+  }
+
+  /**
+   * 상품 목록 가져오기
+   */
+  async getProducts(params?: {
+    category?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<Cafe24Product[]> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.category)
+      queryParams.append("category", params.category.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.offset) queryParams.append("offset", params.offset.toString());
+
+    const endpoint = `/admin/products${
+      queryParams.toString() ? `?${queryParams.toString()}` : ""
+    }`;
+
+    return await this.apiCall<{ products: Cafe24Product[] }>(endpoint).then(
+      (response) => response.products
+    );
+  }
+
+  /**
+   * 상품 이미지 정보 가져오기
+   */
+  async getProductImages(productNo: number): Promise<
+    Array<{
+      image_no: number;
+      image_url: string;
+      image_type: string;
+      image_path: string;
+    }>
+  > {
+    return await this.apiCall<{
+      images: Array<{
+        image_no: number;
+        image_url: string;
+        image_type: string;
+        image_path: string;
+      }>;
+    }>(`/admin/products/${productNo}/images`).then(
+      (response) => response.images
+    );
+  }
+
+  // Private Helper Methods
+
+  private generateState(): string {
+    return Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString(
+      "base64url"
+    );
+  }
+
+  private getBasicAuthHeader(): string {
+    return Buffer.from(
+      `${this.config.clientId}:${this.config.clientSecret}`
+    ).toString("base64");
+  }
+
+  private async storeTokens(tokenData: Cafe24TokenResponse): Promise<void> {
+    if (typeof window === "undefined") {
+      // 서버 사이드에서 쿠키에 저장
+      const cookieStore = await cookies();
+
+      const expiresAt = new Date(tokenData.expires_at);
+      const refreshExpiresAt = new Date(tokenData.refresh_token_expires_at);
+
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict" as const,
+        path: "/",
+      };
+
+      // Access token 저장 (2시간)
+      cookieStore.set("cafe24_access_token", tokenData.access_token, {
+        ...cookieOptions,
+        expires: expiresAt,
+      });
+
+      // Refresh token 저장 (14일)
+      cookieStore.set("cafe24_refresh_token", tokenData.refresh_token, {
+        ...cookieOptions,
+        expires: refreshExpiresAt,
+      });
+
+      // 만료 시간 저장
+      cookieStore.set("cafe24_expires_at", tokenData.expires_at, {
+        ...cookieOptions,
+        expires: expiresAt,
+      });
+
+      // 사용자 정보 저장
+      cookieStore.set("cafe24_user_id", tokenData.user_id, {
+        ...cookieOptions,
+        expires: refreshExpiresAt,
+      });
+
+      cookieStore.set("cafe24_mall_id", tokenData.mall_id, {
+        ...cookieOptions,
+        expires: refreshExpiresAt,
+      });
+    }
   }
 }
 
-// 상품 관련 API 함수들
+// 싱글톤 인스턴스 생성
+export const cafe24OAuth = new Cafe24OAuth();
+
+// 🔄 기존 코드와의 호환성을 위한 함수들
+// 새로운 코드에서는 cafe24OAuth 인스턴스를 직접 사용하는 것을 권장합니다.
+
+/**
+ * @deprecated cafe24OAuth.getProduct()를 사용하세요
+ */
 export async function getProduct(productNo: number): Promise<Cafe24Product> {
-  const response = await cafe24ApiCall<{ product: Cafe24Product }>(
-    `/admin/products/${productNo}`
-  );
-  return response.product;
+  return await cafe24OAuth.getProduct(productNo);
 }
 
+/**
+ * @deprecated cafe24OAuth.getProducts()를 사용하세요
+ */
 export async function getProducts(
   limit: number = 10,
   offset: number = 0
 ): Promise<Cafe24Product[]> {
-  const response = await cafe24ApiCall<{ products: Cafe24Product[] }>(
-    `/admin/products?limit=${limit}&offset=${offset}`
-  );
-  return response.products;
+  return await cafe24OAuth.getProducts({ limit, offset });
 }
 
-export async function searchProducts(
-  keyword: string,
-  limit: number = 10
-): Promise<Cafe24Product[]> {
-  const response = await cafe24ApiCall<{ products: Cafe24Product[] }>(
-    `/admin/products?product_name=${encodeURIComponent(keyword)}&limit=${limit}`
-  );
-  return response.products;
-}
-
-// 주문 관련 API 함수들
-export async function getOrders(
-  limit: number = 10,
-  offset: number = 0
-): Promise<Cafe24Order[]> {
-  const response = await cafe24ApiCall<{ orders: Cafe24Order[] }>(
-    `/admin/orders?limit=${limit}&offset=${offset}`
-  );
-  return response.orders;
-}
-
-export async function getOrder(orderId: string): Promise<Cafe24Order> {
-  const response = await cafe24ApiCall<{ order: Cafe24Order }>(
-    `/admin/orders/${orderId}`
-  );
-  return response.order;
-}
-
-// 회원 관련 API 함수들
-export async function getMembers(
-  limit: number = 10,
-  offset: number = 0
-): Promise<Cafe24Member[]> {
-  const response = await cafe24ApiCall<{ customers: Cafe24Member[] }>(
-    `/admin/customers?limit=${limit}&offset=${offset}`
-  );
-  return response.customers;
-}
-
-export async function getMember(memberId: string): Promise<Cafe24Member> {
-  const response = await cafe24ApiCall<{ customer: Cafe24Member }>(
-    `/admin/customers/${memberId}`
-  );
-  return response.customer;
-}
-
-// 카테고리 관련 API 함수들
-export async function getCategories(): Promise<
-  Array<{
-    category_no: number;
-    category_name: string;
-    category_depth: number;
-    parent_category_no?: number;
-  }>
-> {
-  const response = await cafe24ApiCall<{
-    categories: Array<{
-      category_no: number;
-      category_name: string;
-      category_depth: number;
-      parent_category_no?: number;
-    }>;
-  }>("/admin/categories");
-  return response.categories;
-}
-
-// 상품 이미지 관련 함수들
+/**
+ * @deprecated cafe24OAuth.getProductImages()를 사용하세요
+ */
 export async function getProductImages(productNo: number): Promise<
   Array<{
     image_no: number;
@@ -264,13 +408,25 @@ export async function getProductImages(productNo: number): Promise<
     image_path: string;
   }>
 > {
-  const response = await cafe24ApiCall<{
-    images: Array<{
-      image_no: number;
-      image_url: string;
-      image_type: string;
-      image_path: string;
-    }>;
-  }>(`/admin/products/${productNo}/images`);
-  return response.images;
+  return await cafe24OAuth.getProductImages(productNo);
 }
+
+/**
+ * @deprecated cafe24OAuth.apiCall()을 사용하세요
+ */
+export async function cafe24ApiCall<T>(
+  endpoint: string,
+  method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
+  body?: Record<string, unknown>,
+  retryOnUnauthorized: boolean = true
+): Promise<T> {
+  return await cafe24OAuth.apiCall<T>(
+    endpoint,
+    method,
+    body,
+    retryOnUnauthorized
+  );
+}
+
+// 타입 re-export (기존 코드 호환성)
+export type { Cafe24Product } from "@/types/cafe24";

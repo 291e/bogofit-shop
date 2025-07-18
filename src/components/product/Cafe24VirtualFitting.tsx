@@ -75,7 +75,7 @@ export default function Cafe24VirtualFitting({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const clientId = "0d7d0263c7f94a4a90cf2dbbff3a45bf";
+  // Cafe24 OAuth 연동을 통해 상품 정보를 자동으로 가져옵니다
 
   // 진행률 점진적 증가 함수
   const startProgressTimer = (
@@ -550,7 +550,7 @@ export default function Cafe24VirtualFitting({
 
     try {
       // WebSocket 대신 직접 연결 정보 생성
-      const connectionInfo = `${clientId}_${Date.now()}`;
+      const connectionInfo = `cafe24_integration_${Date.now()}`;
       connectionInfoRef.current = connectionInfo;
       formData.append("connection_info", connectionInfo);
       formData.append("is_pro", isProEnabled.toString());

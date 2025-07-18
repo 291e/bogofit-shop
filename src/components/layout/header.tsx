@@ -17,13 +17,13 @@ import {
 import Image from "next/image";
 
 const navLinks = [
-  { href: "/about", label: "소개" },
   { href: "/products", label: "전체상품" },
   { href: "/category/top", label: "상의" },
   { href: "/category/bottom", label: "하의" },
   { href: "/category/outer", label: "아우터" },
   { href: "/category/onepiece", label: "원피스" },
   { href: "/event", label: "이벤트" },
+  { href: "/about", label: "보고핏 소개" },
 ];
 
 export default function Header() {
@@ -73,7 +73,7 @@ export default function Header() {
       <header className="sticky top-0 z-30 w-full h-16 flex items-center justify-between px-4 sm:px-8 backdrop-blur bg-white shadow-md">
         <div className="container mx-auto flex items-center justify-between">
           {/* 좌측: 로고 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap md:flex-col lg:flex-row">
             <Link href="/" className="flex items-center gap-2">
               <span className="font-bold text-xl tracking-tight select-none text-[#D74FDF]">
                 BOGOFIT
@@ -86,9 +86,12 @@ export default function Header() {
                 className="rounded-lg"
               />
             </Link>
+            <span className="text-xs text-gray-500">
+              &quot;세계 최초 AI 가상피팅 전문 쇼핑몰&quot;
+            </span>
           </div>
           {/* 중앙: 메뉴 (데스크탑) */}
-          <nav className="hidden md:flex gap-6 absolute left-1/2 -translate-x-1/2">
+          <nav className="hidden md:flex gap-3 lg:gap-6">
             {/* 기타 메뉴 */}
             {navLinks.slice(0).map((link) => (
               <Link
@@ -101,7 +104,7 @@ export default function Header() {
             ))}
           </nav>
           {/* 우측: 장바구니 + 유저/로그인 (데스크탑) */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-0 lg:gap-6">
             {mounted && isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
