@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -27,11 +27,47 @@ interface BrandInfo {
 
 export default function BrandSettingsPage() {
   const [brandInfo, setBrandInfo] = useState<BrandInfo>({
-    name: "보고핏",
-    description: "개인 맞춤형 피트니스 의류 전문 브랜드",
-    logo: "/logo.png",
+    name: "",
+    description: "",
+    logo: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // 브랜드 정보 불러오기
+  useEffect(() => {
+    const fetchBrandInfo = async () => {
+      try {
+        setIsLoadingData(true);
+        const response = await fetch("/api/business/brand");
+
+        if (!response.ok) {
+          throw new Error("브랜드 정보를 불러올 수 없습니다");
+        }
+
+        const data = await response.json();
+        if (data.success && data.data.brand) {
+          setBrandInfo({
+            id: data.data.brand.id,
+            name: data.data.brand.name || "",
+            description: data.data.brand.description || "",
+            logo: data.data.brand.logo || "",
+            businessNumber: data.data.brand.businessNumber || "",
+            bankAccount: data.data.brand.bankAccount || "",
+            bankCode: data.data.brand.bankCode || "",
+            accountHolder: data.data.brand.accountHolder || "",
+          });
+        }
+      } catch (error) {
+        console.error("브랜드 정보 불러오기 실패:", error);
+        alert("브랜드 정보를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchBrandInfo();
+  }, []);
 
   // 입력 필드 변경 핸들러
   const handleInputChange = (field: keyof BrandInfo, value: string) => {
@@ -45,39 +81,122 @@ export default function BrandSettingsPage() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // 브랜드 정보 저장 API 호출
-      console.log("Saving brand info:", brandInfo);
+      const response = await fetch("/api/business/brand", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(brandInfo),
+      });
 
-      // 성공 메시지 표시
-      alert("브랜드 정보가 성공적으로 저장되었습니다.");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "저장에 실패했습니다");
+      }
+
+      if (data.success) {
+        // 응답 데이터로 상태 업데이트
+        setBrandInfo({
+          id: data.data.brand.id,
+          name: data.data.brand.name,
+          description: data.data.brand.description || "",
+          logo: data.data.brand.logo || "",
+          businessNumber: data.data.brand.businessNumber || "",
+          bankAccount: data.data.brand.bankAccount || "",
+          bankCode: data.data.brand.bankCode || "",
+          accountHolder: data.data.brand.accountHolder || "",
+        });
+
+        alert("브랜드 정보가 성공적으로 저장되었습니다.");
+      }
     } catch (error) {
       console.error("Error saving brand info:", error);
-      alert("저장 중 오류가 발생했습니다.");
+      alert(
+        error instanceof Error ? error.message : "저장 중 오류가 발생했습니다."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   // 로고 업로드 핸들러
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
-      // 파일 업로드 로직 구현
-      console.log("Uploading logo:", file);
+      try {
+        // 1. Presigned URL 요청
+        const presignedResponse = await fetch(
+          "/api/business/upload/presigned-url",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileName: file.name,
+              fileType: file.type,
+              folder: "brand-logo",
+            }),
+          }
+        );
 
-      // FormData로 파일 업로드
-      const formData = new FormData();
-      formData.append("file", file);
+        const presignedData = await presignedResponse.json();
+        if (!presignedData.success) {
+          throw new Error("업로드 URL 생성 실패");
+        }
 
-      // TODO: 실제 업로드 API 호출
-      // const response = await fetch('/api/upload/image', {
-      //   method: 'POST',
-      //   body: formData
-      // });
-      // const data = await response.json();
-      // setBrandInfo(prev => ({ ...prev, logoUrl: data.url }));
+        // 2. S3에 직접 업로드
+        const uploadResponse = await fetch(presignedData.data.uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": file.type,
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("파일 업로드 실패");
+        }
+
+        // 3. 로고 URL 상태 업데이트
+        const logoUrl = presignedData.data.fileUrl;
+        setBrandInfo((prev) => ({ ...prev, logo: logoUrl }));
+
+        console.log("로고 업로드 성공:", logoUrl);
+      } catch (error) {
+        console.error("로고 업로드 실패:", error);
+        alert("로고 업로드 중 오류가 발생했습니다.");
+      }
     }
   };
+
+  if (isLoadingData) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">브랜드 설정</h1>
+            <p className="text-gray-600">브랜드 정보를 불러오는 중...</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>로딩 중...</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-20 bg-gray-200 rounded"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -105,7 +224,7 @@ export default function BrandSettingsPage() {
               고객에게 표시될 브랜드 정보를 입력하세요.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">브랜드명 *</Label>
               <Input
@@ -131,6 +250,64 @@ export default function BrandSettingsPage() {
                 이 설명은 상품 페이지와 브랜드 소개에서 고객에게 표시됩니다.
               </p>
             </div>
+
+            {/* 사업자 정보 */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">사업자 정보</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="businessNumber">사업자번호</Label>
+                  <Input
+                    id="businessNumber"
+                    value={brandInfo.businessNumber || ""}
+                    onChange={(e) =>
+                      handleInputChange("businessNumber", e.target.value)
+                    }
+                    placeholder="123-45-67890"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 정산 정보 */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">정산 계좌 정보</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bankCode">은행</Label>
+                  <Input
+                    id="bankCode"
+                    value={brandInfo.bankCode || ""}
+                    onChange={(e) =>
+                      handleInputChange("bankCode", e.target.value)
+                    }
+                    placeholder="은행 코드 (예: 004)"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bankAccount">계좌번호</Label>
+                  <Input
+                    id="bankAccount"
+                    value={brandInfo.bankAccount || ""}
+                    onChange={(e) =>
+                      handleInputChange("bankAccount", e.target.value)
+                    }
+                    placeholder="1234-5678-90123"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="accountHolder">예금주</Label>
+                  <Input
+                    id="accountHolder"
+                    value={brandInfo.accountHolder || ""}
+                    onChange={(e) =>
+                      handleInputChange("accountHolder", e.target.value)
+                    }
+                    placeholder="예금주명"
+                  />
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -142,111 +319,45 @@ export default function BrandSettingsPage() {
               브랜드 로고
             </CardTitle>
             <CardDescription>
-              브랜드를 대표하는 로고를 설정하세요.
+              고객에게 표시될 브랜드 로고를 업로드하세요.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>로고 이미지</Label>
-              <div className="flex flex-col items-center space-y-4">
-                {brandInfo.logo ? (
-                  <div className="w-32 h-32 border rounded-lg flex items-center justify-center bg-gray-50">
-                    <img
-                      src={brandInfo.logo}
-                      alt="Brand Logo"
-                      className="w-full h-full object-contain rounded-lg"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-                    <div className="text-center">
-                      <Camera className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-500">로고 없음</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="w-full">
-                  <input
-                    type="file"
-                    id="logo"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById("logo")?.click()}
-                    className="w-full"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    로고 업로드
-                  </Button>
-                </div>
-              </div>
-
-              <div className="text-xs text-gray-500 space-y-1">
-                <p>• 권장 크기: 300x300px 이상</p>
-                <p>• 지원 형식: JPG, PNG, SVG</p>
-                <p>• 최대 파일 크기: 2MB</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 미리보기 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>브랜드 미리보기</CardTitle>
-          <CardDescription>
-            고객에게 표시될 브랜드 정보를 미리 확인하세요.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4 p-6 border rounded-lg bg-white">
-            {brandInfo.logo ? (
-              <img
-                src={brandInfo.logo}
-                alt="Brand Logo"
-                className="w-16 h-16 object-contain rounded-lg border"
-              />
-            ) : (
-              <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-                <Camera className="h-6 w-6 text-gray-400" />
+            {/* 현재 로고 미리보기 */}
+            {brandInfo.logo && (
+              <div className="aspect-square bg-gray-50 rounded-lg border border-dashed border-gray-300 p-4">
+                <img
+                  src={brandInfo.logo}
+                  alt="브랜드 로고"
+                  className="w-full h-full object-contain"
+                />
               </div>
             )}
 
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {brandInfo.name || "브랜드명"}
-              </h3>
-              {brandInfo.description && (
-                <p className="text-sm text-gray-600 mt-1">
-                  {brandInfo.description}
-                </p>
-              )}
+            {/* 로고 업로드 버튼 */}
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+                id="logo-upload"
+              />
+              <Label
+                htmlFor="logo-upload"
+                className="flex items-center justify-center gap-2 w-full h-12 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+              >
+                <Upload className="h-4 w-4" />
+                로고 업로드
+              </Label>
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* 안내사항 */}
-      <Card className="border-blue-200 bg-blue-50">
-        <CardContent className="pt-6">
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-2">💡 브랜드 설정 안내</p>
-            <ul className="space-y-1 list-disc list-inside">
-              <li>브랜드명은 상품 페이지와 쇼핑몰 전체에서 표시됩니다.</li>
-              <li>
-                로고는 브랜드 식별을 위해 중요하므로 고화질 이미지를 사용하세요.
-              </li>
-              <li>브랜드 소개는 고객이 브랜드를 이해하는 데 도움이 됩니다.</li>
-              <li>변경된 정보는 저장 후 즉시 반영됩니다.</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+            <p className="text-xs text-gray-500">
+              권장 크기: 300x300px, PNG/JPG 형식, 최대 2MB
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

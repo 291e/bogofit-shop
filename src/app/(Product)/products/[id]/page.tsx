@@ -312,9 +312,37 @@ export default function ProductDetail() {
               {/* 상품명 및 기본 정보 */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-500 font-medium">
-                    {product.category}
-                  </p>
+                  {/* 브랜드명 및 스토어명 */}
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    {product.brand?.name && (
+                      <span className="font-medium text-pink-600">
+                        {product.brand.name}
+                      </span>
+                    )}
+                    {product.storeName &&
+                      product.storeName !== product.brand?.name && (
+                        <>
+                          <span className="text-gray-400">•</span>
+                          <span className="font-medium">
+                            {product.storeName}
+                          </span>
+                        </>
+                      )}
+                  </div>
+
+                  {/* 카테고리 및 서브카테고리 */}
+                  <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                    <span>{product.category}</span>
+                    {product.subCategory && (
+                      <>
+                        <span className="text-gray-300">&gt;</span>
+                        <span className="text-gray-600">
+                          {product.subCategory}
+                        </span>
+                      </>
+                    )}
+                  </div>
+
                   <h1 className="text-3xl font-bold text-gray-900 leading-tight">
                     {product.title}
                   </h1>
@@ -467,7 +495,7 @@ export default function ProductDetail() {
                     </div>
                     <div>
                       <p className="font-semibold text-sm">무료배송</p>
-                      <p className="text-xs text-gray-500">3만원 이상</p>
+                      <p className="text-xs text-gray-500">모든 주문</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -491,12 +519,12 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* 상품 설명 */}
-              {product.description && (
+              {/* 상품 설명 (간략 설명) */}
+              {product.detailDescription && (
                 <div className="bg-white rounded-xl p-6 border border-gray-200 space-y-3">
                   <h3 className="font-bold text-gray-900">상품 설명</h3>
                   <p className="text-gray-600 leading-relaxed">
-                    {product.description}
+                    {product.detailDescription}
                   </p>
                 </div>
               )}
@@ -620,8 +648,8 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* 상품 상세 이미지 (하단) */}
-          {detailImage && (
+          {/* 상품 상세 (HTML description 또는 이미지) */}
+          {(product.description || detailImage) && (
             <div id="product-detail" className="max-w-3xl mx-auto mt-16">
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 text-center">
@@ -629,13 +657,27 @@ export default function ProductDetail() {
                 </h2>
                 <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
               </div>
-              <Image
-                src={detailImage}
-                alt="상세 이미지"
-                width={1200}
-                height={1600}
-                className="w-full h-auto "
-              />
+
+              {/* HTML description이 있으면 표시 (Tiptap 에디터에서 생성된 HTML) */}
+              {product.description && (
+                <div
+                  className="prose prose-lg max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: product.description,
+                  }}
+                />
+              )}
+
+              {/* HTML description이 없고 detailImage만 있으면 이미지 표시 */}
+              {!product.description && detailImage && (
+                <Image
+                  src={detailImage}
+                  alt="상세 이미지"
+                  width={1200}
+                  height={1600}
+                  className="w-full h-auto"
+                />
+              )}
             </div>
           )}
 
@@ -690,9 +732,9 @@ export default function ProductDetail() {
                     배송 정보
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>• 배송비: 3,000원 (3만원 이상 무료배송)</p>
+                    <p>• 배송비: 무료배송</p>
                     <p>• 배송기간: 주문 후 7-10일 (영업일 기준)</p>
-                    <p>• 배송지역: 전국 (제주/도서산간 추가비용)</p>
+                    <p>• 배송지역: 전국</p>
                     <p>• 택배사: CJ대한통운</p>
                   </div>
                 </div>

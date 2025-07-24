@@ -38,6 +38,7 @@ export interface Product {
   price: number;
   url: string;
   category: string;
+  subCategory?: string; // 서브카테고리 필드 추가
   imageUrl: string;
   badge?: string;
   storeName?: string; // 호환성을 위해 유지 (brand.name으로 설정됨)

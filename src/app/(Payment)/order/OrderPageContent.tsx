@@ -284,7 +284,7 @@ export default function OrderPageContent() {
   }
 
   const totalPrice = Number(finalProductPrice) * Number(finalQuantity);
-  const shippingFee = totalPrice >= 30000 ? 0 : 3000;
+  const shippingFee: number = 0; // 모든 배송 무료
   const finalAmount = totalPrice + shippingFee;
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -1116,13 +1116,7 @@ export default function OrderPageContent() {
                     </div>
                     <div className="flex justify-between">
                       <span>배송비</span>
-                      <span>
-                        {shippingFee === 0 ? (
-                          <span className="text-green-600">무료</span>
-                        ) : (
-                          `${shippingFee.toLocaleString()}원`
-                        )}
-                      </span>
+                      <span className="text-green-600">무료</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
@@ -1134,7 +1128,7 @@ export default function OrderPageContent() {
                   </div>
 
                   <div className="text-xs text-gray-500 space-y-1">
-                    <p>• 3만원 이상 주문 시 무료배송</p>
+                    <p>• 모든 주문 무료배송</p>
                     <p>• 주문 완료 후 1-2일 내 배송 시작</p>
                     <p>• 결제 완료 후 취소/변경이 어려울 수 있습니다</p>
                   </div>

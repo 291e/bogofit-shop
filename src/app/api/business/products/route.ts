@@ -183,13 +183,10 @@ export async function POST(request: NextRequest) {
       "-" +
       Date.now();
 
-    // url 자동 생성
-    const url = `/products/${Date.now()}`;
-
     try {
       // 트랜잭션으로 Product와 ProductVariant 동시 생성
       const result = await prisma.$transaction(async (tx) => {
-        // Product 생성
+        // Product 생성 (url은 임시로 빈 문자열)
         const newProduct = await tx.product.create({
           data: {
             brandId: user!.brandId,
@@ -198,7 +195,7 @@ export async function POST(request: NextRequest) {
             description: productData.description || null,
             detailDescription: productData.detailDescription || null,
             price: parseFloat(productData.price),
-            url: url,
+            url: "", // 임시 빈 값
             category: productData.category,
             subCategory: productData.subCategory || null,
             imageUrl: productData.imageUrl || "",
@@ -247,6 +244,14 @@ export async function POST(request: NextRequest) {
           variants = [defaultVariant];
         }
 
+        // 상품 ID를 기반으로 URL 업데이트
+        const updatedProduct = await tx.product.update({
+          where: { id: newProduct.id },
+          data: {
+            url: `/products/${newProduct.id}`,
+          },
+        });
+
         // 브랜드 정보 별도 조회
         const brandInfo = await tx.brand.findUnique({
           where: { id: user!.brandId! },
@@ -258,7 +263,7 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return { product: newProduct, variants, brand: brandInfo };
+        return { product: updatedProduct, variants, brand: brandInfo };
       });
 
       console.log("새 상품 생성 성공:", result.product.id);

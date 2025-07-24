@@ -335,29 +335,19 @@ export default function CartPage() {
                       </div>
                       <div className="flex justify-between">
                         <span>배송비</span>
-                        <span>
-                          {cart.totalPrice >= 30000 ? (
-                            <span className="text-green-600">무료</span>
-                          ) : (
-                            "3,000원"
-                          )}
-                        </span>
+                        <span className="text-green-600">무료</span>
                       </div>
                       <Separator />
                       <div className="flex justify-between font-bold text-lg">
                         <span>총 결제 금액</span>
                         <span className="text-pink-600">
-                          {(
-                            cart.totalPrice +
-                            (cart.totalPrice >= 30000 ? 0 : 3000)
-                          ).toLocaleString()}
-                          원
+                          {cart.totalPrice.toLocaleString()}원
                         </span>
                       </div>
                     </div>
 
                     <div className="text-xs text-gray-500 space-y-1">
-                      <p>• 3만원 이상 주문 시 무료배송</p>
+                      <p>• 모든 주문 무료배송</p>
                       <p>• 주문 완료 후 1-2일 내 배송 시작</p>
                     </div>
 

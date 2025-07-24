@@ -14,8 +14,8 @@ import {
 const features = [
   {
     icon: Truck,
-    title: "빠른 배송",
-    description: "평균 7-14일 내 배송",
+    title: "무료배송",
+    description: "모든 주문 무료배송",
     detail: "항공 특송으로 빠르고 안전하게",
     color: "from-blue-500 to-cyan-500",
   },
@@ -196,20 +196,20 @@ export default function ServiceInfoSection() {
               className="mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100"
             >
               <h4 className="text-lg font-bold text-blue-900 mb-3 text-center">
-                💡 배송비 절약 팁
+                🎉 무료배송 혜택
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
                 <div className="flex items-start gap-2">
                   <span className="text-blue-500">•</span>
-                  <span>여러 상품을 한 번에 주문하면 배송비 절약</span>
+                  <span>모든 상품 무료배송 서비스</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-blue-500">•</span>
-                  <span>무게가 가벼운 상품일수록 배송비 저렴</span>
+                  <span>주문 금액에 관계없이 배송비 0원</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-blue-500">•</span>
-                  <span>부피가 큰 상품은 사전 문의 권장</span>
+                  <span>안전한 포장과 빠른 배송</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-blue-500">•</span>
