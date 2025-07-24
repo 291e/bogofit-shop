@@ -87,11 +87,11 @@ export default function MusinsaProductCard({
         {/* 상품 정보 */}
         <div className="pl-2 pr-1 pt-2 pb-3 bg-white">
           {/* 브랜드명 */}
-          <Link href={`/brand/${product.storeName}`} className="block mb-1">
+          <div className="block mb-1">
             <p className="text-[11px] font-semibold line-clamp-1 break-all whitespace-break-spaces text-black font-pretendard">
               {product.storeName}
             </p>
-          </Link>
+          </div>
 
           {/* 상품명 */}
           <Link href={`/products/${product.id}`} className="block mb-2">

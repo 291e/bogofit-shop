@@ -111,7 +111,7 @@ export async function GET(request: Request) {
       OR?: Array<{
         title?: { contains: string; mode: "insensitive" };
         description?: { contains: string; mode: "insensitive" };
-        storeName?: { contains: string; mode: "insensitive" };
+        brand?: { name?: { contains: string; mode: "insensitive" } };
       }>;
       category?: string;
       price?: {
@@ -127,7 +127,7 @@ export async function GET(request: Request) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
-        { storeName: { contains: search, mode: "insensitive" } },
+        { brand: { name: { contains: search, mode: "insensitive" } } },
       ];
     }
 
@@ -155,6 +155,16 @@ export async function GET(request: Request) {
             skip: idx,
             where,
             orderBy: { id: "asc" },
+            include: {
+              brand: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  logo: true,
+                },
+              },
+            },
           })
         )
       );
@@ -200,6 +210,14 @@ export async function GET(request: Request) {
       take: limit,
       orderBy,
       include: {
+        brand: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+          },
+        },
         variants: {
           select: {
             id: true,
@@ -237,6 +255,8 @@ export async function GET(request: Request) {
         avgRating: Math.round(avgRating * 10) / 10,
         reviewCount: product.reviews.length,
         isSoldOut,
+        // storeName 우선, 없으면 브랜드명 사용 (업체명 ≠ 브랜드명)
+        storeName: product.storeName || product.brand?.name || "보고핏",
         reviews: undefined,
       };
     });

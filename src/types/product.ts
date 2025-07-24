@@ -19,20 +19,37 @@ export interface ProductReview {
   };
 }
 
+export interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  logo?: string;
+  description?: string;
+}
+
 export interface Product {
   id: number;
+  brandId?: number;
+  brand?: Brand;
   title: string;
   slug: string;
   description?: string;
+  detailDescription?: string;
   price: number;
   url: string;
   category: string;
   imageUrl: string;
-  storeName: string;
+  badge?: string;
+  storeName?: string; // 호환성을 위해 유지 (brand.name으로 설정됨)
   isActive: boolean;
   detailImage?: string;
   thumbnailImages?: string[];
-  badge?: string;
+  status?: "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
+  totalSales?: number;
+  totalSold?: number;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectionReason?: string;
   createdAt: string;
   updatedAt: string;
   variants?: ProductVariant[];

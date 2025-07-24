@@ -61,6 +61,15 @@ export async function GET(
     const product = await prisma.product.findUnique({
       where: { id, isActive: true },
       include: {
+        brand: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+            description: true,
+          },
+        },
         variants: {
           select: {
             id: true,
@@ -91,7 +100,14 @@ export async function GET(
         { status: 404 }
       );
     }
-    return NextResponse.json({ product });
+
+    // storeName 호환성을 위해 brand.name으로 설정
+    const productWithCompatibility = {
+      ...product,
+      storeName: product.brand?.name || product.storeName || null,
+    };
+
+    return NextResponse.json({ product: productWithCompatibility });
   } catch (error) {
     return NextResponse.json(
       { message: "DB 조회 오류", error },

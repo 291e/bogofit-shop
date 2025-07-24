@@ -12,12 +12,22 @@ model User {
   userId      String       @unique
   password    String?
   isAdmin     Boolean      @default(false)
+  isBusiness  Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   email       String       @unique
   profile     String?
   phoneNumber String?      @unique
   name        String
+  gender            String?
+  birthDate         DateTime?
+
+  brandId     Int?
+  brand       Brand?        @relation(fields: [brandId], references: [id])
+
+  gradeId     Int?
+  grade       UserGrade?    @relation(fields: [gradeId], references: [id])
+
 
   addresses   Address[]
   carts       Cart[]
@@ -25,8 +35,27 @@ model User {
   reviews     Review[]
   coupons     CouponUser[]
   providers   Provider[]
+  termsAgreements TermsAgreement[]
+  userLogs UserLog[]
 }
 
+model UserGrade {
+  id Int @id @default(autoincrement())
+  name String @unique
+  slug String @unique
+  description String?
+  discountRate Float @default(0)
+  pointRate Float @default(1.0)
+  freeShipping Boolean @default(false)
+  minOrderAmount Float @default(0)
+  minOrderCount Int @default(0)
+  isActive Boolean @default(true)
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+}
 model Address {
   id        Int      @id @default(autoincrement())
   user      User     @relation(fields: [userId], references: [id])
@@ -53,26 +82,144 @@ model Provider {
   @@unique([provider, socialId])
 }
 
+model Brand {
+  id Int @id @default(autoincrement())
+  name String @unique
+  slug String @unique
+  logo String?
+  description String?
+  businessNumber String?
+  status BrandStatus @default(PENDING)
+  isActive Boolean @default(true)
+  commissionRate Float @default(0)
+  bankAccount String?
+  bankCode String?
+  accountHolder String?
+  settings Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+  products Product[]
+  orders Order[]
+  settlements Settlement[]
+  analytics BrandAnalytics[]
+}
+
+
+enum BrandStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+model TermsAgreement {
+  id Int @id @default(autoincrement())
+  user User @relation(fields: [userId], references: [id])
+  userId String
+  termsType TermsType
+  termsVersion String
+  content String?
+  isAgreed Boolean @default(false)
+  ipAddress String?
+  userAgent String?
+  isWithdraw Boolean @default(false)
+  withdrawReason String?
+  withdrawAt DateTime?
+  agreedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, termsType, termsVersion])
+}
+
+enum TermsType {
+  SERVICE
+  PRIVACY
+  MARKETING
+  LOCATION
+  THIRDPARTY
+}
+
+model UserLog {
+  id Int @id @default(autoincrement())
+  user User @relation(fields: [userId], references: [id])
+  userId String
+  action LogAction
+  category String?
+  description String?
+  targetType String?
+  targetId String?
+  sessionId String?
+  ipAddress String?
+  userAgent String?
+  metadata Json?
+  isSuccess Boolean @default(true)
+  errorMessage String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+enum LogAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  PASSWORD_RESET
+  VIEW_PRODUCT
+  ADD_TO_CART
+  REMOVE_FROM_CART
+  CREATE_ORDER
+  CANCEL_ORDER
+  PAYMENT_SUCCESS
+  PAYMENT_FAIL
+  WRITE_REVIEW
+  UPDATE_PROFILE
+  BUSINESS_LOGIN
+  BUSINESS_ACTION
+}
+
 /// PRODUCT ------------------------------------------------------------------
 model Product  {
   id        Int      @id @default(autoincrement())
+  brandId   Int?
+  brand     Brand?   @relation(fields: [brandId], references: [id])
   title     String
   slug          String          @unique
   description   String?
+  detailDescription String?
   price     Float
   url       String   @unique
   category  String
+  subCategory String? // 세부 카테고리 (후드, 맨투맨, 청바지 등)
   imageUrl  String
   badge           String?
-  storeName String
+  storeName       String?       // 임시 유지 - 기존 데이터 보존용
   isActive  Boolean   @default(true)
   detailImage     String?      // 상세 영역 첫 이미지 (단일)
   thumbnailImages String[]     // 썸네일 배열(Postgres text[])
+  status ProductStatus @default(PENDING)
+  totalSales Int @default(0)
+  totalSold Int @default(0)
+  approvedAt DateTime?
+  approvedBy String?
+  rejectionReason String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   variants      ProductVariant[]
   reviews       Review[]
   orderItems    OrderItem[]
+}
+
+enum ProductStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DRAFT
 }
 
 model ProductVariant {
@@ -142,8 +289,17 @@ model Order {
   // 개인정보 동의 (비회원용 필수)
   agreePrivacy   Boolean   @default(true)
   
+  
   // 비회원 구매 플래그
   isGuestOrder   Boolean   @default(false)
+
+  // 브랜드, 정산
+  brandId Int?
+  brand Brand? @relation(fields: [brandId], references: [id])
+  totalCommission Float @default(0)
+  settlementStatus SettlementStatus @default(PENDING)
+  settlementId String?
+  settlement Settlement? @relation(fields: [settlementId], references: [id])
 }
 
 enum OrderStatus {
@@ -252,4 +408,63 @@ model Notice {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Settlement {
+  id              String        @id @default(cuid())
+  brand           Brand         @relation(fields: [brandId], references: [id])
+  brandId         Int
+  periodStart     DateTime
+  periodEnd       DateTime
+  settlementDate  DateTime?
+  totalSales      Float
+  totalOrders     Int
+  commission      Float
+  commissionRate  Float
+  adjustments     Float         @default(0)
+  finalAmount     Float
+  status          SettlementStatus @default(PENDING)
+  bankAccount     String?
+  bankCode        String?
+  accountHolder   String?
+  notes           String?
+  attachments     String[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  orders          Order[]
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model BrandAnalytics {
+  id                   Int        @id @default(autoincrement())
+  brand                Brand      @relation(fields: [brandId], references: [id])
+  brandId              Int
+  period               String
+  periodType           PeriodType
+  totalRevenue         Float      @default(0)
+  totalOrders          Int        @default(0)
+  totalProducts        Int        @default(0)
+  averageOrderValue    Float      @default(0)
+  bestSellingProduct   String?
+  totalProductViews    Int        @default(0)
+  conversionRate       Float      @default(0)
+  returnsCount         Int        @default(0)
+  refundsAmount        Float      @default(0)
+  reviewsCount         Int        @default(0)
+  averageRating        Float      @default(0)
+  calculatedAt         DateTime   @default(now())
+  @@unique([brandId, period, periodType])
+}
+
+enum PeriodType {
+  DAILY
+  MONTHLY
+  YEARLY
 }

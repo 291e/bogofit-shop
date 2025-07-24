@@ -51,31 +51,6 @@ const prisma = new PrismaClient();
  *                 type: boolean
  *                 description: 관리자 여부
  *                 example: false
- *     responses:
- *       200:
- *         description: 사용자 생성/업데이트 성공
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 action:
- *                   type: string
- *                   enum: [created, updated, ignored]
- *                   description: 수행된 작업
- *                   example: "created"
- *                 user:
- *                   type: object
- *                   description: 생성/업데이트된 사용자 정보
- *       400:
- *         description: 잘못된 요청 (필수 필드 누락)
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 
 export async function POST(req: NextRequest) {
@@ -105,6 +80,11 @@ export async function POST(req: NextRequest) {
           phoneNumber: user.phoneNumber || null,
           name: user.name || user.userId,
           isAdmin: user.isAdmin || false,
+          isBusiness: user.isBusiness || false,
+          brandId: user.brandId || null,
+          gradeId: user.gradeId || null,
+          gender: user.gender || null,
+          birthDate: user.birthDate ? new Date(user.birthDate) : null,
           updatedAt: new Date(),
         },
       });
@@ -126,6 +106,11 @@ export async function POST(req: NextRequest) {
           phoneNumber: user.phoneNumber || null,
           name: user.name || user.userId,
           isAdmin: user.isAdmin || false,
+          isBusiness: user.isBusiness || false,
+          brandId: user.brandId || null,
+          gradeId: user.gradeId || null,
+          gender: user.gender || null,
+          birthDate: user.birthDate ? new Date(user.birthDate) : null,
         },
       });
 
@@ -136,7 +121,7 @@ export async function POST(req: NextRequest) {
         user: newUser,
       });
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[API/user/upsert] 에러:", error);
 
     // Prisma 유니크 제약 조건 에러인 경우

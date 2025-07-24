@@ -18,18 +18,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
   }, []);
 
   const pathname = usePathname();
-  // /solution 경로이거나, /solution/하위 경로도 모두 적용하려면 startsWith로 체크
-  const isSolutionPage = pathname.startsWith("/solution");
+  // /solution 또는 /business 경로에서는 헤더와 푸터를 숨김
+  const isNoLayoutPage =
+    pathname.startsWith("/solution") || pathname.startsWith("/business");
 
   return (
     <AuthProvider>
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-white via-gray-50 to-pink-50">
-        {/* /solution 경로가 아니면 Header, Footer 보임 */}
-        {!isSolutionPage && <Header />}
+        {/* /solution 또는 /business 경로가 아니면 Header, Footer 보임 */}
+        {!isNoLayoutPage && <Header />}
         <main className="flex-1 w-full mx-auto">
           <div>{children}</div>
         </main>
-        {!isSolutionPage && <Footer />}
+        {!isNoLayoutPage && <Footer />}
       </div>
     </AuthProvider>
   );

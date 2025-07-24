@@ -272,6 +272,12 @@ export async function POST(req: NextRequest) {
     try {
       // 트랜잭션으로 Order와 Payment 동시 생성
       await prisma.$transaction(async (tx) => {
+        // 상품 정보 조회하여 brandId 가져오기
+        const product = await tx.product.findUnique({
+          where: { id: productId },
+          select: { brandId: true, title: true },
+        });
+
         // Order 생성 (주문자/배송지/통관/동의 정보 포함)
         const order = await tx.order.create({
           data: {
@@ -293,6 +299,11 @@ export async function POST(req: NextRequest) {
             customsId: finalCustomsId || "P000000000000",
             agreePrivacy: agreePrivacy ?? true,
             isGuestOrder: isGuest,
+            // 새로운 필드들 추가
+            brandId: product?.brandId || null,
+            totalCommission: 0, // 초기값은 0
+            settlementStatus: "PENDING",
+            settlementId: null,
           },
         });
 

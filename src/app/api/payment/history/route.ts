@@ -64,9 +64,28 @@ export async function GET(req: NextRequest) {
       include: {
         order: {
           include: {
+            brand: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                logo: true,
+              },
+            },
             items: {
               include: {
-                product: true,
+                product: {
+                  include: {
+                    brand: {
+                      select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        logo: true,
+                      },
+                    },
+                  },
+                },
                 variant: true,
               },
             },
