@@ -105,7 +105,7 @@ export function Cafe24HeroBanner() {
   );
 
   return (
-    <div className="w-full py-8">
+    <div className="w-full pb-8">
       {/* 슬라이드 컨테이너 - 이미지 크기에 맞춤 */}
       <div
         className="relative h-[400px] md:h-[500px] container mx-auto overflow-hidden "
@@ -137,10 +137,9 @@ export function Cafe24HeroBanner() {
                         src={slide.image}
                         alt={slide.alt}
                         fill
-                        className="object-cover"
+                        className="object-contain"
                         priority={slide.priority || slideIndex === 0}
-                        sizes="33vw"
-                        quality={90}
+                        quality={100}
                       />
 
                       {/* 개별 이미지 오버레이 */}

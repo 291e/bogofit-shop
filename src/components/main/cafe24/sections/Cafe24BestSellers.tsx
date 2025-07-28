@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Product } from "@/types/product";
 import MusinsaProductCard from "@/components/product/MusinsaProductCard";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,6 @@ export function Cafe24BestSellers({ products }: Cafe24BestSellersProps) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-red-500" />
               <h2 className="text-2xl font-bold text-gray-900">베스트 상품</h2>
             </div>
             <div className="hidden sm:block">
@@ -102,15 +101,6 @@ export function Cafe24BestSellers({ products }: Cafe24BestSellersProps) {
                   `}
                   >
                     {index + 1}
-                  </div>
-                </div>
-              )}
-
-              {/* BEST 배지 */}
-              {index < 3 && (
-                <div className="absolute top-2 right-2 z-10">
-                  <div className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                    BEST
                   </div>
                 </div>
               )}

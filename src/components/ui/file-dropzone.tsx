@@ -87,97 +87,130 @@ export function FileDropzone({
   };
 
   return (
-    <div>
-      <label className="block text-sm font-medium mb-2">
-        {required && <span className="text-red-500">*</span>} {label}
+    <div className="w-full h-full flex flex-col">
+      {/* 라벨 영역 */}
+      <div className="mb-3">
+        <label className="block text-sm font-semibold text-gray-900">
+          {required && <span className="text-red-500 mr-1">*</span>}
+          {label}
+        </label>
         {description && (
-          <span className="block text-xs text-gray-500 font-normal mt-1">
+          <p className="text-xs text-gray-600 mt-1 leading-relaxed min-h-[39px]">
             {description}
-          </span>
+          </p>
         )}
-      </label>
-      <div
-        {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer ${
-          isDragActive
-            ? "border-pink-500 bg-pink-50"
-            : required
-            ? "border-gray-300 hover:border-pink-400"
-            : "border-gray-200 hover:border-gray-300"
-        }`}
-      >
-        <input {...getInputProps()} />
-        {preview ? (
-          <div className="relative">
-            <Image
-              src={preview}
-              alt={label}
-              width={100}
-              height={100}
-              className="mx-auto rounded"
-            />
-            {onClear && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClear();
-                }}
-                className="absolute -top-2 -right-2 w-6 h-6 text-red-500 flex items-center justify-center"
-                title="이미지 제거"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="py-4">
-            <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-            <p className="text-sm text-gray-500">
-              {isDragActive
-                ? "여기에 파일을 드롭하세요"
-                : "클릭하거나 드래그하여 업로드"}
-            </p>
-          </div>
-        )}
+      </div>
+
+      {/* 업로드 영역 */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <div
+          {...getRootProps()}
+          className={`flex-1 rounded-xl transition-all duration-200 cursor-pointer relative overflow-hidden ${
+            preview
+              ? "border-0" // 이미지가 있을 때는 테두리 없음
+              : `border-2 border-dashed ${
+                  isDragActive
+                    ? "border-pink-500 bg-pink-50 shadow-lg"
+                    : required
+                    ? "border-gray-300 hover:border-pink-400 hover:shadow-md"
+                    : "border-gray-200 hover:border-gray-300"
+                }`
+          }`}
+        >
+          <input {...getInputProps()} />
+          {preview ? (
+            <div className="relative w-full h-full">
+              <Image
+                src={preview}
+                alt={label}
+                fill
+                className="rounded-xl object-contain"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+
+              {/* 삭제 버튼 */}
+              {onClear && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClear();
+                  }}
+                  className="absolute top-3 right-3 w-6 h-6 bg-[#FF84CD] text-white rounded-full flex items-center justify-center hover:bg-[#F9CFB7] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  title="이미지 제거"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+              <div className="mb-4">
+                <Upload className="w-16 h-16 mx-auto text-gray-400 mb-3" />
+                <p className="text-base font-medium text-gray-700 mb-1">
+                  {isDragActive
+                    ? "여기에 파일을 드롭하세요"
+                    : "이미지를 업로드하세요"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  클릭하거나 드래그하여 업로드
+                </p>
+              </div>
+              <div className="text-xs text-gray-400 border-t border-gray-200 pt-3 w-full">
+                JPG, PNG, WEBP 파일 지원
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 샘플 이미지 선택 버튼 */}
       {sampleImages.length > 0 && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full mt-2 text-xs">
-              <ImageIcon className="w-3 h-3 mr-1" />
-              샘플 이미지 선택
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{label} 샘플 선택</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-4 p-4">
-              {sampleImages.map((sample) => (
-                <div
-                  key={sample.id}
-                  className="cursor-pointer group"
-                  onClick={() => handleSampleSelect(sample.src)}
-                >
-                  <div className="relative aspect-square overflow-hidden rounded-lg border-2 border-gray-200 group-hover:border-pink-400 transition-colors">
-                    <Image
-                      src={sample.src}
-                      alt={sample.alt}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <p className="text-xs text-center mt-1 text-gray-600">
-                    {sample.alt}
-                  </p>
+        <div className="mt-3">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-sm font-medium hover:bg-pink-50 hover:border-pink-300 transition-all duration-200"
+              >
+                <ImageIcon className="w-4 h-4 mr-2" />
+                샘플 이미지 선택
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
+              <DialogHeader className="pb-4">
+                <DialogTitle className="text-xl font-semibold text-gray-900">
+                  {label} 샘플 선택
+                </DialogTitle>
+              </DialogHeader>
+              <div className="overflow-y-auto px-1">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+                  {sampleImages.map((sample) => (
+                    <div
+                      key={sample.id}
+                      className="cursor-pointer group"
+                      onClick={() => handleSampleSelect(sample.src)}
+                    >
+                      <div className="relative aspect-square overflow-hidden rounded-xl border-2 border-gray-200 group-hover:border-pink-400 transition-all duration-200 shadow-sm group-hover:shadow-md">
+                        <Image
+                          src={sample.src}
+                          alt={sample.alt}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                        />
+                      </div>
+                      <p className="text-xs text-center mt-2 text-gray-600 group-hover:text-gray-900 transition-colors truncate">
+                        {sample.alt}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       )}
     </div>
   );

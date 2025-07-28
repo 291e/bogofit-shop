@@ -22,12 +22,6 @@ export default function MusinsaProductCard({
   const discountRates = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60]; // 5% 단위 할인률
   const discountRate = discountRates[product.id % discountRates.length]; // 상품 ID로 일관된 할인율
 
-  // 할인 전 가격을 천원 단위로 맞춤
-  const calculatedOriginalPrice = Math.floor(
-    product.price * (1 + discountRate / 100)
-  );
-  const originalPrice = Math.ceil(calculatedOriginalPrice / 1000) * 1000; // 천원 단위로 올림
-
   const hasDiscount = discountRate > 0;
 
   const handleLikeClick = (e: React.MouseEvent) => {
@@ -111,15 +105,6 @@ export default function MusinsaProductCard({
               {product.price.toLocaleString()}원
             </span>
           </div>
-
-          {/* 원래 가격 (할인이 있을 때만) */}
-          {hasDiscount && (
-            <div className="mt-1">
-              <span className="text-[11px] text-gray-400 line-through font-pretendard">
-                {originalPrice.toLocaleString()}원
-              </span>
-            </div>
-          )}
         </div>
       </div>
     </div>

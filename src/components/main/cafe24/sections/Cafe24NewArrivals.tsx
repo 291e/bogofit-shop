@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Product } from "@/types/product";
 import MusinsaProductCard from "@/components/product/MusinsaProductCard";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,6 @@ export function Cafe24NewArrivals({ products }: Cafe24NewArrivalsProps) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-blue-500" />
               <h2 className="text-2xl font-bold text-gray-900">신상품</h2>
             </div>
             <div className="hidden sm:block">
@@ -85,13 +84,6 @@ export function Cafe24NewArrivals({ products }: Cafe24NewArrivalsProps) {
           {displayedProducts.map((product) => (
             <div key={product.id} className="relative">
               <MusinsaProductCard product={product} />
-
-              {/* NEW 배지 */}
-              <div className="absolute top-2 left-2 z-10">
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
-                  NEW
-                </div>
-              </div>
             </div>
           ))}
         </div>

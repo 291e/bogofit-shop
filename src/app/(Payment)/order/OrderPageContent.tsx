@@ -480,7 +480,7 @@ export default function OrderPageContent() {
                             size="sm"
                             variant="outline"
                             className="border-orange-300 text-orange-700 hover:bg-orange-100"
-                            onClick={() => router.push("/auth/login")}
+                            onClick={() => router.push("/login")}
                           >
                             로그인하기
                           </Button>
@@ -488,7 +488,7 @@ export default function OrderPageContent() {
                             size="sm"
                             variant="outline"
                             className="border-orange-300 text-orange-700 hover:bg-orange-100"
-                            onClick={() => router.push("/auth/register")}
+                            onClick={() => router.push("/register")}
                           >
                             회원가입하기
                           </Button>

@@ -121,20 +121,8 @@ export function PurchaseButton({
     }
   };
 
-  const totalPrice = productPrice * quantity;
-
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* 총 가격 표시 */}
-      <div className="text-center">
-        <p className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
-          총 {totalPrice.toLocaleString()}원
-        </p>
-        <p className="text-xs sm:text-sm text-gray-500">
-          {productPrice.toLocaleString()}원 × {quantity}개
-        </p>
-      </div>
-
       {/* 비회원 안내 메시지 */}
       {!user?.id && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">

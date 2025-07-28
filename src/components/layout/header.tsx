@@ -67,7 +67,7 @@ export default function Header() {
             <div className="flex items-center gap-3 lg:gap-6">
               <Link href="/" className="flex items-center">
                 <Image
-                  src="/logo.png"
+                  src="/logo.svg"
                   alt="BOGOFIT"
                   width={48}
                   height={48}
@@ -77,17 +77,25 @@ export default function Header() {
 
               {/* 브랜드 정보 - 데스크톱만 표시 */}
               <div className="hidden lg:flex flex-col justify-center">
-                <div className="flex items-center gap-3 text-base">
+                <div className="flex items-center gap-3 text-base line-seed-kr select-none">
                   <span className="font-bold text-gray-900">BOGOFIT</span>
                   <span className="text-gray-500">BEAUTY</span>
                   <span className="text-gray-300 text-sm">|</span>
                   <span className="text-gray-500">AI STYLING</span>
                 </div>
-                <div className="flex items-center gap-6 mt-1 text-sm">
-                  <span className="text-[#FF84CD] font-medium">추천</span>
-                  <span className="text-gray-600">랭킹</span>
-                  <span className="text-gray-600">세일</span>
-                  <span className="text-gray-600">브랜드</span>
+                <div className="flex items-center gap-6 mt-1 text-sm line-seed-kr">
+                  <Link href="#" className="text-[#FF84CD] font-medium">
+                    추천
+                  </Link>
+                  <Link href="#" className="text-gray-600">
+                    랭킹
+                  </Link>
+                  <Link href="#" className="text-gray-600">
+                    세일
+                  </Link>
+                  <Link href="#" className="text-gray-600">
+                    브랜드
+                  </Link>
                 </div>
               </div>
             </div>

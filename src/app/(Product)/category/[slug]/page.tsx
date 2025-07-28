@@ -19,150 +19,10 @@ import {
   ProductsResponse,
   Product,
 } from "@/types/product";
+import { subCategoryMap, categoryMap } from "@/contents/Category/subCategories";
 import { useState } from "react";
 
 const LIMIT = 30;
-const categoryMap: Record<string, string> = {
-  top: "상의",
-  bottom: "하의",
-  outer: "아우터",
-  onepiece: "원피스",
-};
-
-// 세부 카테고리 데이터
-const subCategoryMap: Record<
-  string,
-  Array<{ name: string; keyword: string; image: string }>
-> = {
-  top: [
-    { name: "후드", keyword: "후드", image: "/images/categories/hood.jpg" },
-    {
-      name: "맨투맨",
-      keyword: "맨투맨",
-      image: "/images/categories/sweatshirt.jpg",
-    },
-    { name: "니트", keyword: "니트", image: "/images/categories/knit.jpg" },
-    { name: "셔츠", keyword: "셔츠", image: "/images/categories/shirt.jpg" },
-    {
-      name: "긴소매티셔츠",
-      keyword: "긴소매",
-      image: "/images/categories/longsleeve.jpg",
-    },
-    {
-      name: "블라우스",
-      keyword: "블라우스",
-      image: "/images/categories/blouse.jpg",
-    },
-    { name: "조끼", keyword: "조끼", image: "/images/categories/vest.jpg" },
-    {
-      name: "반소매티셔츠",
-      keyword: "반소매",
-      image: "/images/categories/shortsleeve.jpg",
-    },
-    {
-      name: "민소매",
-      keyword: "민소매",
-      image: "/images/categories/sleeveless.jpg",
-    },
-    {
-      name: "티셔츠",
-      keyword: "티셔츠",
-      image: "/images/categories/tshirt.jpg",
-    },
-  ],
-  bottom: [
-    {
-      name: "청바지",
-      keyword: "청바지",
-      image: "/images/categories/jeans.jpg",
-    },
-    {
-      name: "면바지",
-      keyword: "면바지",
-      image: "/images/categories/cotton-pants.jpg",
-    },
-    {
-      name: "슬랙스",
-      keyword: "슬랙스",
-      image: "/images/categories/slacks.jpg",
-    },
-    {
-      name: "조거팬츠",
-      keyword: "조거",
-      image: "/images/categories/jogger.jpg",
-    },
-    {
-      name: "반바지",
-      keyword: "반바지",
-      image: "/images/categories/shorts.jpg",
-    },
-    {
-      name: "레깅스",
-      keyword: "레깅스",
-      image: "/images/categories/leggings.jpg",
-    },
-    {
-      name: "스커트",
-      keyword: "스커트",
-      image: "/images/categories/skirt.jpg",
-    },
-    {
-      name: "트레이닝팬츠",
-      keyword: "트레이닝",
-      image: "/images/categories/training.jpg",
-    },
-  ],
-  outer: [
-    { name: "코트", keyword: "코트", image: "/images/categories/coat.jpg" },
-    { name: "자켓", keyword: "자켓", image: "/images/categories/jacket.jpg" },
-    { name: "패딩", keyword: "패딩", image: "/images/categories/padding.jpg" },
-    { name: "점퍼", keyword: "점퍼", image: "/images/categories/jumper.jpg" },
-    {
-      name: "가디건",
-      keyword: "가디건",
-      image: "/images/categories/cardigan.jpg",
-    },
-    { name: "집업", keyword: "집업", image: "/images/categories/zipup.jpg" },
-    {
-      name: "블레이저",
-      keyword: "블레이저",
-      image: "/images/categories/blazer.jpg",
-    },
-    {
-      name: "트렌치코트",
-      keyword: "트렌치",
-      image: "/images/categories/trench.jpg",
-    },
-  ],
-  onepiece: [
-    {
-      name: "미니원피스",
-      keyword: "미니",
-      image: "/images/categories/mini-dress.jpg",
-    },
-    {
-      name: "미디원피스",
-      keyword: "미디",
-      image: "/images/categories/midi-dress.jpg",
-    },
-    {
-      name: "맥시원피스",
-      keyword: "맥시",
-      image: "/images/categories/maxi-dress.jpg",
-    },
-    {
-      name: "셔츠원피스",
-      keyword: "셔츠원피스",
-      image: "/images/categories/shirt-dress.jpg",
-    },
-    {
-      name: "니트원피스",
-      keyword: "니트원피스",
-      image: "/images/categories/knit-dress.jpg",
-    },
-    { name: "튜닉", keyword: "튜닉", image: "/images/categories/tunic.jpg" },
-  ],
-};
 
 export default function CategoryProductsPage() {
   const params = useParams();
@@ -260,44 +120,47 @@ export default function CategoryProductsPage() {
         </div>
       </div>
 
-      {/* 세부 카테고리 */}
+      {/* 세부 카테고리 - Figma 디자인 적용 */}
       {subCategories.length > 0 && (
         <div className="mb-4 md:mb-6">
-          <div className="overflow-x-auto overflow-y-hidden">
-            <div
-              className="flex justify-between pb-2 px-1"
-              style={{ minWidth: "max-content" }}
-            >
-              {subCategories.map((subCategory) => (
-                <button
-                  key={subCategory.keyword}
-                  onClick={() => handleSubCategoryClick(subCategory.keyword)}
-                  className={`flex-shrink-0 flex flex-col items-center gap-1 md:gap-2 p-2 md:p-3 rounded-lg transition-all duration-200 touch-manipulation ${
-                    selectedSubCategory === subCategory.keyword
-                      ? "bg-blue-50 border-2 border-blue-200 scale-95 md:scale-100"
-                      : "bg-gray-50 border-2 border-transparent hover:bg-gray-100 active:scale-95"
-                  }`}
-                >
-                  <div className="w-12 h-12 md:w-16 md:h-16 lg:w-18 lg:h-18 bg-white rounded-lg overflow-hidden shadow-sm">
-                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <span className="text-xs md:text-sm text-gray-500 font-medium">
-                        {subCategory.name.charAt(0)}
-                      </span>
-                    </div>
-                  </div>
-                  <span
-                    className={`text-xs md:text-sm font-medium leading-tight text-center max-w-[60px] md:max-w-[80px] truncate ${
-                      selectedSubCategory === subCategory.keyword
-                        ? "text-blue-600"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {subCategory.name}
-                  </span>
-                </button>
-              ))}
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
+            {subCategories.map((subCategory) => (
+              <button
+                key={subCategory.keyword}
+                onClick={() => handleSubCategoryClick(subCategory.keyword)}
+                className={`h-[50px] border border-[#e5e6e8] text-sm font-normal text-[#000c22] transition-all duration-200 hover:bg-[#f9cfb7] active:scale-95 cursor-pointer line-seed-kr ${
+                  selectedSubCategory === subCategory.keyword
+                    ? "bg-[#ff84cd] text-white"
+                    : "bg-white"
+                }`}
+              >
+                {subCategory.name}
+              </button>
+            ))}
           </div>
+
+          {/* 선택된 카테고리 정보 (모바일용) */}
+          {selectedSubCategory && (
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 sm:hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">
+                  선택된 카테고리:{" "}
+                  <span className="font-medium text-[#000c22]">
+                    {selectedSubCategory}
+                  </span>
+                </span>
+                <button
+                  onClick={() => {
+                    setSelectedSubCategory("");
+                    setFilters((prev) => ({ ...prev, search: "" }));
+                  }}
+                  className="text-xs text-gray-500 hover:text-red-600 underline"
+                >
+                  초기화
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

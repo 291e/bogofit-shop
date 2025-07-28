@@ -57,18 +57,6 @@ export function Cafe24FeaturedProducts({
     );
   }
 
-  // 추천 이유 배열 (랜덤으로 표시할 수 있도록)
-  const recommendationReasons = [
-    "취향저격 아이템",
-    "인기 급상승",
-    "회원님 맞춤",
-    "이번주 PICK",
-    "MD 추천",
-    "트렌드 아이템",
-    "스타일링 추천",
-    "신상 추천",
-  ];
-
   return (
     <div className="bg-white py-8">
       <div className="container mx-auto px-4">
@@ -96,27 +84,10 @@ export function Cafe24FeaturedProducts({
 
         {/* 상품 그리드 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          {displayedProducts.map((product, index) => {
-            const reason =
-              recommendationReasons[index % recommendationReasons.length];
-
+          {displayedProducts.map((product) => {
             return (
               <div key={product.id} className="relative">
                 <MusinsaProductCard product={product} />
-
-                {/* 추천 배지 */}
-                <div className="absolute top-2 left-2 z-10">
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
-                    추천
-                  </div>
-                </div>
-
-                {/* 추천 이유 배지 */}
-                <div className="absolute bottom-2 left-2 z-10">
-                  <div className="bg-white/90 backdrop-blur-sm text-gray-700 text-xs px-2 py-1 rounded shadow">
-                    {reason}
-                  </div>
-                </div>
               </div>
             );
           })}
@@ -144,18 +115,6 @@ export function Cafe24FeaturedProducts({
             </Button>
           </div>
         )}
-
-        {/* 개인화 추천 정보 섹션 */}
-        <div className="mt-8 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Crown className="w-5 h-5 text-purple-500" />
-            <h3 className="font-semibold text-gray-900">개인화 추천</h3>
-          </div>
-          <p className="text-sm text-gray-600">
-            회원님의 취향과 최근 트렌드를 분석해 엄선한 상품들입니다. 더 많은
-            맞춤 추천을 원하시면 관심 상품을 찜해보세요!
-          </p>
-        </div>
       </div>
     </div>
   );

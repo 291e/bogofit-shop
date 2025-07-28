@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Product } from "@/types/product";
 import MusinsaProductCard from "@/components/product/MusinsaProductCard";
 import { Button } from "@/components/ui/button";
@@ -55,13 +55,6 @@ export function Cafe24SpecialOffers({ products }: Cafe24SpecialOffersProps) {
     );
   }
 
-  // 할인율 계산 (임시로 랜덤 할인율 적용)
-  const calculateDiscount = (index: number) => {
-    const discountRates = [30, 40, 50, 60]; // 미리 정의된 할인율들
-    const rate = discountRates[index % discountRates.length];
-    return { rate };
-  };
-
   return (
     <div className="bg-gradient-to-r from-red-50 to-pink-50 py-8">
       <div className="container mx-auto px-4">
@@ -69,12 +62,11 @@ export function Cafe24SpecialOffers({ products }: Cafe24SpecialOffersProps) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <Zap className="w-6 h-6 text-red-500" />
               <h2 className="text-2xl font-bold text-gray-900">특가 상품</h2>
             </div>
             <div className="hidden sm:block">
               <span className="text-sm text-gray-600 bg-red-100 px-3 py-1 rounded-full">
-                🔥 놓치면 후회하는 특가
+                놓치면 후회하는 특가
               </span>
             </div>
           </div>
@@ -89,26 +81,10 @@ export function Cafe24SpecialOffers({ products }: Cafe24SpecialOffersProps) {
 
         {/* 상품 그리드 */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          {displayedProducts.map((product, index) => {
-            const { rate } = calculateDiscount(index);
-
+          {displayedProducts.map((product) => {
             return (
               <div key={product.id} className="relative">
                 <MusinsaProductCard product={product} />
-
-                {/* 할인율 배지 */}
-                <div className="absolute top-2 left-2 z-10">
-                  <div className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
-                    {rate}%
-                  </div>
-                </div>
-
-                {/* SALE 배지 */}
-                <div className="absolute top-2 right-2 z-10">
-                  <div className="bg-gradient-to-r from-yellow-400 to-red-500 text-white text-xs font-bold px-2 py-1 rounded animate-pulse">
-                    SALE
-                  </div>
-                </div>
               </div>
             );
           })}

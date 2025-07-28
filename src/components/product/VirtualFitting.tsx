@@ -18,7 +18,6 @@ import {
   humanSamples,
   garmentSamples,
   lowerSamples,
-  backgroundSamples,
 } from "@/contents/VirtualFitting/sampleImages";
 
 interface VirtualFittingProps {
@@ -602,20 +601,20 @@ export default function VirtualFitting({
     <div className="w-full max-w-6xl mx-auto">
       {/* 가상 피팅 헤더 (항상 표시) */}
       <Card
-        className="mb-4"
+        className="mb-6"
         style={{
-          background: "linear-gradient(270deg, #a855f7, #ec4899)",
+          background: "linear-gradient(270deg, #FF84CD, #F9CFB7)",
           backgroundSize: "200% 200%", // 이동 거리 확보
           animation: "gradientShift 8s ease-in-out infinite", // 더 부드럽게
         }}
       >
         <CardHeader
-          className="cursor-pointer "
+          className="cursor-pointer gap-0"
           onClick={() => setIsOpen(!isOpen)}
         >
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-white">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-[#FF84CD] to-[#F9CFB7] rounded-full flex items-center justify-center">
                 <Play className="w-4 h-4 text-white" />
               </div>
               가상 피팅
@@ -643,7 +642,7 @@ export default function VirtualFitting({
         <div
           className={`transition-all duration-700 ease-in-out ${
             showResults
-              ? "flex flex-col md:grid md:grid-cols-2 gap-6"
+              ? "flex flex-col md:grid md:grid-cols-2 gap-2"
               : "grid grid-cols-1"
           }`}
         >
@@ -667,21 +666,24 @@ export default function VirtualFitting({
               )}
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex flex-col md:flex-row gap-6 md:gap-8">
-                {/* 필수 파일들 */}
-                <div className="flex-1 space-y-3">
-                  <FileDropzone
-                    onDrop={(file) => handleFileChange("human_file", file)}
-                    preview={previews.human_file}
-                    label="사람 이미지"
-                    required
-                    description="최소한 상반신이 포함된 사진을 업로드해주세요"
-                    sampleImages={humanSamples}
-                    onSampleSelect={(imageSrc) =>
-                      handleSampleSelect("human_file", imageSrc)
-                    }
-                    onClear={() => handleFileChange("human_file", null)}
-                  />
+              {/* 3컬럼 파일 업로드 영역 - 최적화된 레이아웃 */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+                {/* 사람 이미지 */}
+                <div className="flex flex-col space-y-3">
+                  <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
+                    <FileDropzone
+                      onDrop={(file) => handleFileChange("human_file", file)}
+                      preview={previews.human_file}
+                      label="사람 이미지"
+                      required
+                      description="최소한 상반신이 포함된 사진을 업로드해주세요"
+                      sampleImages={humanSamples}
+                      onSampleSelect={(imageSrc) =>
+                        handleSampleSelect("human_file", imageSrc)
+                      }
+                      onClear={() => handleFileChange("human_file", null)}
+                    />
+                  </div>
 
                   {/* 사람 이미지 오류 메시지 */}
                   {fileErrors.human_file && (
@@ -695,27 +697,33 @@ export default function VirtualFitting({
                       </div>
                     </div>
                   )}
+                </div>
 
-                  <FileDropzone
-                    onDrop={(file) => handleFileChange("garment_file", file)}
-                    preview={
-                      previews.garment_file ||
-                      (currentImage &&
-                      (productCategory === "상의" ||
-                        productCategory === "아우터" ||
-                        productCategory === "원피스") &&
-                      !files.garment_file // 파일이 해제되지 않은 경우만 currentImage 표시
-                        ? currentImage
-                        : "")
-                    }
-                    label="상의 이미지"
-                    required
-                    sampleImages={garmentSamples}
-                    onSampleSelect={(imageSrc) =>
-                      handleSampleSelect("garment_file", imageSrc)
-                    }
-                    onClear={() => handleFileChange("garment_file", null)}
-                  />
+                {/* 상의 이미지 */}
+                <div className="flex flex-col space-y-3">
+                  <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
+                    <FileDropzone
+                      onDrop={(file) => handleFileChange("garment_file", file)}
+                      preview={
+                        previews.garment_file ||
+                        (currentImage &&
+                        (productCategory === "상의" ||
+                          productCategory === "아우터" ||
+                          productCategory === "원피스") &&
+                        !files.garment_file
+                          ? currentImage
+                          : "")
+                      }
+                      label="상의 이미지"
+                      required
+                      description="&nbsp;"
+                      sampleImages={garmentSamples}
+                      onSampleSelect={(imageSrc) =>
+                        handleSampleSelect("garment_file", imageSrc)
+                      }
+                      onClear={() => handleFileChange("garment_file", null)}
+                    />
+                  </div>
 
                   {/* 상의 이미지 오류 메시지 */}
                   {fileErrors.garment_file && (
@@ -731,26 +739,28 @@ export default function VirtualFitting({
                   )}
                 </div>
 
-                {/* 선택 파일들 */}
-                <div className="flex-1 space-y-3">
-                  <FileDropzone
-                    onDrop={(file) => handleFileChange("lower_file", file)}
-                    preview={
-                      previews.lower_file ||
-                      (currentImage &&
-                      productCategory === "하의" &&
-                      !files.lower_file // 파일이 해제되지 않은 경우만 currentImage 표시
-                        ? currentImage
-                        : "")
-                    }
-                    label="하의 이미지 (선택)"
-                    description="&nbsp;"
-                    sampleImages={lowerSamples}
-                    onSampleSelect={(imageSrc) =>
-                      handleSampleSelect("lower_file", imageSrc)
-                    }
-                    onClear={() => handleFileChange("lower_file", null)}
-                  />
+                {/* 하의 이미지 */}
+                <div className="flex flex-col space-y-3">
+                  <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
+                    <FileDropzone
+                      onDrop={(file) => handleFileChange("lower_file", file)}
+                      preview={
+                        previews.lower_file ||
+                        (currentImage &&
+                        productCategory === "하의" &&
+                        !files.lower_file
+                          ? currentImage
+                          : "")
+                      }
+                      label="하의 이미지 (선택)"
+                      description="&nbsp;"
+                      sampleImages={lowerSamples}
+                      onSampleSelect={(imageSrc) =>
+                        handleSampleSelect("lower_file", imageSrc)
+                      }
+                      onClear={() => handleFileChange("lower_file", null)}
+                    />
+                  </div>
 
                   {/* 하의 이미지 오류 메시지 */}
                   {fileErrors.lower_file && (
@@ -764,107 +774,39 @@ export default function VirtualFitting({
                       </div>
                     </div>
                   )}
-
-                  {/* 배경 이미지 업로드 - 일시적으로 비활성화 */}
-                  {false && ( // TODO: 서버 오류 수정 후 true로 변경
-                    <>
-                      <FileDropzone
-                        onDrop={(file) =>
-                          handleFileChange("background_file", file)
-                        }
-                        preview={previews.background_file}
-                        label="배경 이미지 (선택)"
-                        description="처리 시간이 더 오래 걸릴 수 있습니다"
-                        sampleImages={backgroundSamples}
-                        onSampleSelect={(imageSrc) =>
-                          handleSampleSelect("background_file", imageSrc)
-                        }
-                        onClear={() =>
-                          handleFileChange("background_file", null)
-                        }
-                      />
-
-                      {/* 배경 이미지 오류 메시지 */}
-                      {fileErrors.background_file && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <div className="flex items-start space-x-2">
-                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-red-800">
-                              <p className="font-medium">업로드 오류</p>
-                              <p className="mt-1">
-                                {fileErrors.background_file}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 배경 이미지 사용 시 주의사항 */}
-                      {files.background_file && (
-                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                          <div className="flex items-start space-x-2">
-                            <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-yellow-800">
-                              <p className="font-medium">
-                                배경 이미지 사용 시 주의사항:
-                              </p>
-                              <ul className="mt-1 space-y-1 text-xs">
-                                <li>
-                                  • 처리 시간이 최대 2분까지 소요될 수 있습니다
-                                </li>
-                                <li>
-                                  • 서버 오류 발생 시 배경 이미지를 제거하고
-                                  다시 시도해주세요
-                                </li>
-                              </ul>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleFileChange("background_file", null)
-                                }
-                                className="mt-2 h-6 text-xs bg-white"
-                              >
-                                배경 이미지 제거
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* 배경 이미지 비활성화 안내 */}
-                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="flex items-start space-x-2">
-                      <AlertTriangle className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-gray-700">
-                        <p className="font-medium">
-                          배경 이미지 기능 일시 중단
-                        </p>
-                        <p className="mt-1 text-xs">
-                          서버 안정성을 위해 배경 이미지 업로드 기능을
-                          일시적으로 비활성화했습니다.
-                          <br />
-                          기본 가상 피팅 기능은 정상적으로 사용 가능합니다.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
 
-              {/* 파일 업로드 도움말 */}
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="text-sm text-blue-800">
-                  <p className="font-medium mb-2">📝 파일 업로드 가이드</p>
-                  <ul className="space-y-1 text-xs">
-                    <li>• 지원 형식: JPG, PNG, WEBP</li>
-                    <li>• 사람 이미지: 최소한 상반신이 포함된 선명한 사진</li>
-                    <li>
-                      • 의류 이미지: 배경이 깔끔하고 의류가 잘 보이는 사진
-                    </li>
-                  </ul>
+              {/* 안내 섹션 - flex 열로 배치 */}
+              <div className="flex flex-col gap-4">
+                {/* 파일 업로드 가이드 */}
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium mb-2">📝 파일 업로드 가이드</p>
+                    <ul className="space-y-1 text-xs">
+                      <li>• 지원 형식: JPG, PNG, WEBP</li>
+                      <li>• 사람 이미지: 최소한 상반신이 포함된 선명한 사진</li>
+                      <li>
+                        • 의류 이미지: 배경이 깔끔하고 의류가 잘 보이는 사진
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* 배경 이미지 기능 일시 중단 안내 */}
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-gray-700">
+                      <p className="font-medium">배경 이미지 기능 일시 중단</p>
+                      <p className="mt-1 text-xs">
+                        서버 안정성을 위해 배경 이미지 업로드 기능을 일시적으로
+                        비활성화했습니다.
+                        <br />
+                        기본 가상 피팅 기능은 정상적으로 사용 가능합니다.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -947,110 +889,85 @@ export default function VirtualFitting({
             </CardContent>
           </Card>
 
-          {/* 결과 섹션 (슬라이드 애니메이션) */}
+          {/* 결과 섹션 - 레이아웃 없이 이미지만 표시 */}
           {showResults && (
-            <Card
+            <div
               className={`transition-all duration-700 ease-in-out transform order-2 ${
                 showResults
                   ? "translate-x-0 opacity-100 md:translate-x-2"
                   : "translate-x-full opacity-0"
               }`}
             >
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">결과</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col gap-6">
-                  {/* 로딩 상태 표시 */}
-                  {isProcessing && !generatedImage && (
-                    <div className="space-y-3">
-                      <h3 className="font-medium">
-                        이미지 생성 중... {progress}%
-                      </h3>
-                      <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                        <div className="w-full max-w-xs">
-                          <Progress value={progress} className="w-full h-3" />
-                        </div>
-                        <p className="text-sm text-gray-600 text-center">
-                          AI가 가상 피팅 이미지를 생성하고 있습니다.
-                          <br />
-                          잠시만 기다려주세요...
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 생성된 이미지 */}
-                  {generatedImage && (
-                    <div className="space-y-3">
-                      <h3 className="font-medium">생성된 이미지</h3>
-                      <div className="relative">
-                        {/* Next.js Image 대신 일반 img 태그 사용 (외부 도메인 이슈 회피) */}
-                        <img
-                          src={generatedImage}
-                          alt="생성된 이미지"
-                          className=" mx-auto w-full max-w-sm h-auto"
-                          style={{ maxHeight: "400px", objectFit: "contain" }}
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="absolute top-2 right-2"
-                          onClick={() => window.open(generatedImage, "_blank")}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 비디오 생성 로딩 상태 */}
-                  {isProEnabled &&
-                    generatedImage &&
-                    isProcessing &&
-                    !generatedVideo && (
-                      <div className="space-y-3">
-                        <h3 className="font-medium">
-                          비디오 생성 중... {progress}%
-                        </h3>
-                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                          <div className="w-full max-w-xs">
-                            <Progress value={progress} className="w-full h-3" />
-                          </div>
-                          <p className="text-sm text-gray-600 text-center">
-                            AI가 비디오를 생성하고 있습니다...
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                  {/* 생성된 비디오 */}
-                  {generatedVideo && (
-                    <div className="space-y-3">
-                      <h3 className="font-medium">생성된 비디오</h3>
-                      <div className="relative">
-                        <video
-                          src={generatedVideo}
-                          controls
-                          loop
-                          muted
-                          autoPlay
-                          className="w-full max-w-sm rounded-lg shadow-lg mx-auto"
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="absolute top-2 right-2"
-                          onClick={() => window.open(generatedVideo, "_blank")}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+              {/* 로딩 상태 표시 */}
+              {isProcessing && !generatedImage && (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <div className="w-full max-w-xs">
+                    <Progress value={progress} className="w-full h-3" />
+                  </div>
+                  <p className="text-sm text-gray-600 text-center">
+                    AI가 가상 피팅 이미지를 생성하고 있습니다.
+                    <br />
+                    잠시만 기다려주세요... {progress}%
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+
+              {/* 생성된 이미지 */}
+              {generatedImage && (
+                <div className="relative">
+                  <img
+                    src={generatedImage}
+                    alt="생성된 이미지"
+                    className="w-full h-auto rounded-lg shadow-lg"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white"
+                    onClick={() => window.open(generatedImage, "_blank")}
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* 비디오 생성 로딩 상태 */}
+              {isProEnabled &&
+                generatedImage &&
+                isProcessing &&
+                !generatedVideo && (
+                  <div className="flex flex-col items-center justify-center py-8 space-y-4 mt-6">
+                    <div className="w-full max-w-xs">
+                      <Progress value={progress} className="w-full h-3" />
+                    </div>
+                    <p className="text-sm text-gray-600 text-center">
+                      AI가 비디오를 생성하고 있습니다... {progress}%
+                    </p>
+                  </div>
+                )}
+
+              {/* 생성된 비디오 */}
+              {generatedVideo && (
+                <div className="relative mt-6">
+                  <video
+                    src={generatedVideo}
+                    controls
+                    loop
+                    muted
+                    autoPlay
+                    className="w-full rounded-lg shadow-lg"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white"
+                    onClick={() => window.open(generatedVideo, "_blank")}
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

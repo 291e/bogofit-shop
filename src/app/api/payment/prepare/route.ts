@@ -211,7 +211,6 @@ export async function POST(req: NextRequest) {
 
     if (
       typeof amount !== "number" ||
-      amount < 1000 ||
       !method ||
       typeof method !== "string" ||
       !productId ||

@@ -172,7 +172,7 @@ export default function ProductDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* 상품 이미지 섹션 */}
             <div className="space-y-6">
-              <div className="relative aspect-square rounded-2xl overflow-hidden bg-white shadow-xl">
+              <div className="relative aspect-square">
                 <Image
                   src={currentImage}
                   alt={product.title}
@@ -206,7 +206,7 @@ export default function ProductDetail() {
                 {/* 위시리스트 버튼 */}
                 <button
                   onClick={() => setIsWishlisted(!isWishlisted)}
-                  className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-200 group"
+                  className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-all duration-200 group"
                 >
                   <Heart
                     className={`w-6 h-6 transition-all duration-200 ${
@@ -230,7 +230,7 @@ export default function ProductDetail() {
                           <div
                             key={actualIndex}
                             onClick={() => setSelectedImageIndex(actualIndex)}
-                            className={`aspect-square rounded-lg overflow-hidden bg-white shadow-md cursor-pointer hover:shadow-lg transition-all duration-200 ${
+                            className={`aspect-square rounded-lg overflow-hidden bg-white cursor-pointer hover:shadow-lg transition-all duration-200 ${
                               selectedImageIndex === actualIndex
                                 ? "ring-2 ring-pink-500 shadow-lg scale-105"
                                 : ""
@@ -294,7 +294,7 @@ export default function ProductDetail() {
             {/* 상품 정보 섹션 */}
             <div id="product-info" className="space-y-8">
               {/* 브랜드 및 공유 */}
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-center">
                 <Link href="/" className="flex items-center space-x-2 group">
                   <span
                     className="rounded-full border-2 border-pink-200 
@@ -313,7 +313,7 @@ export default function ProductDetail() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   {/* 브랜드명 및 스토어명 */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-gray-600">
                     {product.brand?.name && (
                       <span className="font-medium text-pink-600">
                         {product.brand.name}
@@ -343,7 +343,7 @@ export default function ProductDetail() {
                     )}
                   </div>
 
-                  <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+                  <h1 className="text-xl text-gray-900 leading-tight">
                     {product.title}
                   </h1>
                 </div>
@@ -374,10 +374,10 @@ export default function ProductDetail() {
               </div>
 
               {/* 가격 */}
-              <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 border border-pink-200">
+              <div className="">
                 <div className="space-y-2">
                   <div className="flex items-baseline gap-3">
-                    <span className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">
+                    <span className="text-2xl font-bold">
                       {finalPrice.toLocaleString()}원
                     </span>
                     {selectedVariant && selectedVariant.priceDiff !== 0 && (
@@ -399,13 +399,9 @@ export default function ProductDetail() {
               {/* 상품 옵션 */}
               {Object.keys(groupedVariants).length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-gray-900">상품 옵션</h3>
                   {Object.entries(groupedVariants).map(
                     ([optionName, variants]) => (
                       <div key={optionName} className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">
-                          {optionName}
-                        </label>
                         <Select
                           value={selectedVariant?.id.toString() || ""}
                           onValueChange={(value) => {
@@ -461,33 +457,50 @@ export default function ProductDetail() {
               )}
 
               {/* 수량 선택 */}
-              <div className="space-y-2">
+              <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-gray-700">
                   수량
                 </label>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                     disabled={quantity <= 1}
                   >
                     -
                   </button>
-                  <span className="w-12 text-center font-semibold text-lg">
+                  <span className="w-12 text-center font-semibold text-sm">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
                   >
                     +
                   </button>
                 </div>
               </div>
 
+              {/* 구매 버튼 */}
+              <div className="sticky ">
+                <PurchaseButton
+                  productId={Number(params.id)}
+                  productTitle={product.title}
+                  productPrice={finalPrice}
+                  quantity={quantity}
+                  selectedOption={
+                    selectedVariant
+                      ? `${selectedVariant.optionName}: ${selectedVariant.optionValue}`
+                      : ""
+                  }
+                  hasOptions={Object.keys(groupedVariants).length > 0}
+                  isOutOfStock={isOutOfStock}
+                  variantId={effectiveVariantId}
+                />
+              </div>
+
               {/* 배송 및 서비스 정보 */}
-              <div className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
-                <h3 className="font-bold text-gray-900">배송 & 서비스</h3>
+              <div className="bg-white space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -517,34 +530,6 @@ export default function ProductDetail() {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* 상품 설명 (간략 설명) */}
-              {product.detailDescription && (
-                <div className="bg-white rounded-xl p-6 border border-gray-200 space-y-3">
-                  <h3 className="font-bold text-gray-900">상품 설명</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {product.detailDescription}
-                  </p>
-                </div>
-              )}
-
-              {/* 구매 버튼 */}
-              <div className="sticky bottom-4 bg-white/95 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 shadow-lg">
-                <PurchaseButton
-                  productId={Number(params.id)}
-                  productTitle={product.title}
-                  productPrice={finalPrice}
-                  quantity={quantity}
-                  selectedOption={
-                    selectedVariant
-                      ? `${selectedVariant.optionName}: ${selectedVariant.optionValue}`
-                      : ""
-                  }
-                  hasOptions={Object.keys(groupedVariants).length > 0}
-                  isOutOfStock={isOutOfStock}
-                  variantId={effectiveVariantId}
-                />
               </div>
             </div>
           </div>
