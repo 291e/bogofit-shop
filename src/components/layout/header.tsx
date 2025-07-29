@@ -15,6 +15,7 @@ import { SearchBar } from "./header/SearchBar";
 
 // 데이터 import
 import { navLinks } from "@/contents/Header/navLinks";
+import { Badge } from "../ui/badge";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -76,14 +77,17 @@ export default function Header() {
               </Link>
 
               {/* 브랜드 정보 - 데스크톱만 표시 */}
-              <div className="hidden lg:flex flex-col justify-center">
-                <div className="flex items-center gap-3 text-base line-seed-kr select-none">
+              <div className="flex flex-col justify-center">
+                <div className="flex-col md:flex-row flex items-start md:items-center gap-0 md:gap-3 text-base line-seed-kr select-none">
                   <span className="font-bold text-gray-900">BOGOFIT</span>
-                  <span className="text-gray-500">BEAUTY</span>
-                  <span className="text-gray-300 text-sm">|</span>
-                  <span className="text-gray-500">AI STYLING</span>
+                  <Badge
+                    variant="outline"
+                    className="pt-1 bg-[#ff84cd] text-white"
+                  >
+                    입어보고 쇼핑하는 AI 전문쇼핑몰
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-6 mt-1 text-sm line-seed-kr">
+                <div className="hidden md:flex items-center gap-6 mt-1 text-sm line-seed-kr">
                   <Link
                     href="/recommend"
                     className="text-[#FF84CD] font-medium"
@@ -104,7 +108,7 @@ export default function Header() {
             </div>
 
             {/* 우측: 사용자 액션 (데스크톱) */}
-            <div className="hidden lg:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-4">
               {/* 검색바 */}
               <SearchBar className="w-64 xl:w-72" />
 
@@ -129,7 +133,7 @@ export default function Header() {
             </div>
 
             {/* 모바일 액션 버튼들 */}
-            <div className="flex lg:hidden items-center gap-2">
+            <div className="flex md:hidden items-center gap-2">
               {mounted && <SearchBar isMobile={true} />}
               {mounted && isAuthenticated && <CartButton cart={cart} />}
               <Button
@@ -227,7 +231,6 @@ export default function Header() {
                       className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#D74FDF] hover:bg-pink-50 rounded-lg transition-colors"
                       onClick={() => setOpen(false)}
                     >
-                      <span className="w-4 h-4 text-center">📋</span>
                       마이페이지
                     </Link>
                     <button
@@ -237,7 +240,6 @@ export default function Header() {
                       }}
                       className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors w-full text-left"
                     >
-                      <span className="w-4 h-4 text-center">🚪</span>
                       로그아웃
                     </button>
                   </div>

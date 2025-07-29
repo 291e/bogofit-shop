@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import OrderHistory from "@/components/myPage/OrderHistory";
 import CouponList from "@/components/myPage/CouponList";
 import AddressBook from "@/components/myPage/AddressBook";
@@ -58,7 +59,21 @@ const menuSections = [
 ];
 
 export default function MyPage() {
+  const searchParams = useSearchParams();
   const [selected, setSelected] = useState("order");
+
+  // URL 쿼리 파라미터에서 section을 읽어서 초기 selected 설정
+  useEffect(() => {
+    const section = searchParams.get("section");
+    if (
+      section &&
+      ["order", "coupon", "address", "recent", "profile", "logout"].includes(
+        section
+      )
+    ) {
+      setSelected(section);
+    }
+  }, [searchParams]);
 
   let Content = null;
   if (selected === "order") Content = <OrderHistory />;

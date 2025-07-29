@@ -137,9 +137,10 @@ export function Cafe24HeroBanner() {
                         src={slide.image}
                         alt={slide.alt}
                         fill
-                        className="object-contain"
+                        className="object-cover"
                         priority={slide.priority || slideIndex === 0}
-                        quality={100}
+                        sizes="33vw"
+                        quality={90}
                       />
 
                       {/* 개별 이미지 오버레이 */}
@@ -148,13 +149,6 @@ export function Cafe24HeroBanner() {
                       {/* 개별 이미지 텍스트 */}
                       <div className="absolute inset-0 flex items-end justify-center p-4">
                         <div className="text-center text-white">
-                          {/* 할인율 */}
-                          {slide.discount && (
-                            <div className="inline-block bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold mb-2 animate-pulse">
-                              {slide.discount}
-                            </div>
-                          )}
-
                           {/* 제목 */}
                           <h3 className="text-lg md:text-2xl lg:text-3xl font-bold mb-2 leading-tight drop-shadow-lg">
                             {slide.title}
@@ -166,7 +160,7 @@ export function Cafe24HeroBanner() {
                           </h4>
 
                           {/* 설명 */}
-                          <p className="text-xs md:text-sm lg:text-base mb-4 opacity-90 leading-relaxed drop-shadow-sm line-clamp-2">
+                          <p className="text-xs md:text-sm lg:text-base mb-4 opacity-90 leading-relaxed drop-shadow-sm line-clamp-2 hidden sm:block">
                             {slide.description}
                           </p>
                         </div>

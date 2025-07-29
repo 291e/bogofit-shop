@@ -2,8 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import MusinsaProductCard from "@/components/product/MusinsaProductCard";
+import ProductFilters from "@/components/product/ProductFilters";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Product } from "@/types/product";
+import { Product, ProductFilters as ProductFiltersType } from "@/types/product";
 import { useState } from "react";
 import {
   ShoppingBag,
@@ -12,20 +13,77 @@ import {
   PartyPopper,
   DollarSign,
 } from "lucide-react";
+import { subCategoryMap, categoryMap } from "@/contents/Category/subCategories";
 
 const LIMIT = 30;
+
+// 메인 카테고리 4가지
+const mainCategories = [
+  { key: "top", label: "상의", koLabel: "상의" },
+  { key: "bottom", label: "하의", koLabel: "하의" },
+  { key: "outer", label: "아우터", koLabel: "아우터" },
+  { key: "onepiece", label: "원피스", koLabel: "원피스" },
+];
 
 export default function SalePage() {
   const [activeTab, setActiveTab] = useState<"hot" | "today" | "weekend">(
     "hot"
   );
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
+  const [filters, setFilters] = useState<ProductFiltersType>({
+    sortBy: "newest",
+    showSoldOut: false,
+  });
+
+  // 선택된 메인 카테고리의 세부 카테고리들
+  const subCategories = selectedMainCategory
+    ? subCategoryMap[selectedMainCategory] || []
+    : [];
+  const categoryKo = selectedMainCategory
+    ? categoryMap[selectedMainCategory] || ""
+    : "";
 
   // 핫딜 상품 (베스트 + 랜덤)
   const { data: hotProducts = [], isLoading: hotLoading } = useQuery<Product[]>(
     {
-      queryKey: ["sale", "hot"],
+      queryKey: [
+        "sale",
+        "hot",
+        selectedMainCategory,
+        selectedSubCategory,
+        filters,
+      ],
       queryFn: async () => {
-        const res = await fetch(`/api/products?badge=BEST&random=${LIMIT}`);
+        const params = new URLSearchParams({
+          limit: LIMIT.toString(),
+          badge: "BEST",
+        });
+
+        // 카테고리 필터 적용
+        if (categoryKo) params.append("category", categoryKo);
+        if (selectedSubCategory) params.append("search", selectedSubCategory);
+
+        // 필터 적용
+        if (filters.sortBy) params.append("sortBy", filters.sortBy);
+        if (filters.showSoldOut !== undefined)
+          params.append("showSoldOut", filters.showSoldOut.toString());
+        if (filters.minPrice)
+          params.append("minPrice", filters.minPrice.toString());
+        if (filters.maxPrice)
+          params.append("maxPrice", filters.maxPrice.toString());
+
+        // 랜덤 파라미터는 필터가 없을 때만 적용
+        if (
+          !categoryKo &&
+          !selectedSubCategory &&
+          !filters.minPrice &&
+          !filters.maxPrice
+        ) {
+          params.append("random", LIMIT.toString());
+        }
+
+        const res = await fetch(`/api/products?${params.toString()}`);
         if (!res.ok) throw new Error("핫딜 상품을 불러오지 못했습니다.");
         const data = await res.json();
         return data.products || [];
@@ -37,9 +95,33 @@ export default function SalePage() {
   const { data: todayProducts = [], isLoading: todayLoading } = useQuery<
     Product[]
   >({
-    queryKey: ["sale", "today"],
+    queryKey: [
+      "sale",
+      "today",
+      selectedMainCategory,
+      selectedSubCategory,
+      filters,
+    ],
     queryFn: async () => {
-      const res = await fetch(`/api/products?badge=NEW&limit=${LIMIT}`);
+      const params = new URLSearchParams({
+        limit: LIMIT.toString(),
+        badge: "NEW",
+      });
+
+      // 카테고리 필터 적용
+      if (categoryKo) params.append("category", categoryKo);
+      if (selectedSubCategory) params.append("search", selectedSubCategory);
+
+      // 필터 적용
+      if (filters.sortBy) params.append("sortBy", filters.sortBy);
+      if (filters.showSoldOut !== undefined)
+        params.append("showSoldOut", filters.showSoldOut.toString());
+      if (filters.minPrice)
+        params.append("minPrice", filters.minPrice.toString());
+      if (filters.maxPrice)
+        params.append("maxPrice", filters.maxPrice.toString());
+
+      const res = await fetch(`/api/products?${params.toString()}`);
       if (!res.ok) throw new Error("오늘의 딜 상품을 불러오지 못했습니다.");
       const data = await res.json();
       return data.products || [];
@@ -50,9 +132,32 @@ export default function SalePage() {
   const { data: weekendProducts = [], isLoading: weekendLoading } = useQuery<
     Product[]
   >({
-    queryKey: ["sale", "weekend"],
+    queryKey: [
+      "sale",
+      "weekend",
+      selectedMainCategory,
+      selectedSubCategory,
+      filters,
+    ],
     queryFn: async () => {
-      const res = await fetch(`/api/products?sortBy=price_low&limit=${LIMIT}`);
+      const params = new URLSearchParams({
+        limit: LIMIT.toString(),
+        sortBy: "price_low",
+      });
+
+      // 카테고리 필터 적용
+      if (categoryKo) params.append("category", categoryKo);
+      if (selectedSubCategory) params.append("search", selectedSubCategory);
+
+      // 추가 필터 적용
+      if (filters.showSoldOut !== undefined)
+        params.append("showSoldOut", filters.showSoldOut.toString());
+      if (filters.minPrice)
+        params.append("minPrice", filters.minPrice.toString());
+      if (filters.maxPrice)
+        params.append("maxPrice", filters.maxPrice.toString());
+
+      const res = await fetch(`/api/products?${params.toString()}`);
       if (!res.ok) throw new Error("주말 특가 상품을 불러오지 못했습니다.");
       const data = await res.json();
       return data.products || [];
@@ -73,6 +178,30 @@ export default function SalePage() {
   };
 
   const { products, isLoading } = getCurrentData();
+
+  // 메인 카테고리 선택 핸들러
+  const handleMainCategoryClick = (categoryKey: string) => {
+    if (selectedMainCategory === categoryKey) {
+      // 이미 선택된 카테고리를 클릭하면 해제
+      setSelectedMainCategory("");
+      setSelectedSubCategory("");
+    } else {
+      // 새로운 카테고리 선택
+      setSelectedMainCategory(categoryKey);
+      setSelectedSubCategory(""); // 세부 카테고리 초기화
+    }
+  };
+
+  // 세부 카테고리 선택 핸들러
+  const handleSubCategoryClick = (keyword: string) => {
+    if (selectedSubCategory === keyword) {
+      // 이미 선택된 카테고리를 클릭하면 해제
+      setSelectedSubCategory("");
+    } else {
+      // 새로운 카테고리 선택
+      setSelectedSubCategory(keyword);
+    }
+  };
 
   const getTabInfo = () => {
     switch (activeTab) {
@@ -213,6 +342,61 @@ export default function SalePage() {
             주말 특가
           </button>
         </div>
+      </div>
+
+      {/* 메인 카테고리 선택 */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">
+          카테고리 선택
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {mainCategories.map((category) => (
+            <button
+              key={category.key}
+              onClick={() => handleMainCategoryClick(category.key)}
+              className={`h-12 rounded-lg border-2 text-sm font-medium transition-all duration-200 ${
+                selectedMainCategory === category.key
+                  ? "border-red-500 bg-red-500 text-white"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-red-500 hover:bg-red-50"
+              }`}
+            >
+              {category.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 세부 카테고리 선택 */}
+      {subCategories.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">
+            세부 카테고리
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
+            {subCategories.map((subCategory) => (
+              <button
+                key={subCategory.keyword}
+                onClick={() => handleSubCategoryClick(subCategory.keyword)}
+                className={`h-[50px] border border-[#e5e6e8] text-sm font-normal text-[#000c22] transition-all duration-200 hover:bg-[#f9cfb7] active:scale-95 cursor-pointer line-seed-kr ${
+                  selectedSubCategory === subCategory.keyword
+                    ? "bg-red-500 text-white"
+                    : "bg-white"
+                }`}
+              >
+                {subCategory.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 필터 */}
+      <div className="mb-6">
+        <ProductFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          products={products}
+        />
       </div>
 
       {/* 탭 설명 */}

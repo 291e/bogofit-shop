@@ -18,7 +18,10 @@ export default function Footer() {
             <span className="text-lg font-bold tracking-wide">BOGOFIT</span>
           </div>
           <span className="text-gray-500">
-            해외직구, 쉽고 빠르게 BOGOFIT에서!
+            반품없이 쉽고 빠르게 입어보는 BOGOFIT!
+          </span>
+          <span className="text-xs text-gray-400 max-w-[270px]">
+            저렴한 전 세계 인기 상품을 한 곳에서 !
           </span>
           <span className="text-xs text-gray-400 max-w-[270px]">
             전 세계 인기 상품을 한 곳에서, 믿을 수 있는 구매대행 서비스
@@ -48,9 +51,18 @@ export default function Footer() {
         <div className="flex-1 flex flex-col gap-1">
           <span className="font-semibold mb-1">고객센터</span>
           <span>
-            1:1 문의{" "}
+            상품 문의{" "}
             <Link
-              href="mailto:help@bogofit.com"
+              href="mailto:bogofit@naver.com"
+              className="text-blue-600 hover:underline ml-1"
+            >
+              bogofit@naver.com
+            </Link>
+          </span>
+          <span>
+            입점 문의{" "}
+            <Link
+              href="mailto:bogofit@naver.com"
               className="text-blue-600 hover:underline ml-1"
             >
               metabank@naver.com

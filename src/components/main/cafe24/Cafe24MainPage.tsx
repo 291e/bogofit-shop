@@ -1,6 +1,6 @@
 import React from "react";
 import { Cafe24HeroBanner } from "./sections/Cafe24HeroBanner";
-import { Cafe24CategoryGrid } from "./sections/Cafe24CategoryGrid";
+// import { Cafe24CategoryGrid } from "./sections/Cafe24CategoryGrid";
 import { Cafe24FeaturedProducts } from "./sections/Cafe24FeaturedProducts";
 import { Cafe24NewArrivals } from "./sections/Cafe24NewArrivals";
 import { Cafe24BestSellers } from "./sections/Cafe24BestSellers";
@@ -123,9 +123,9 @@ const Cafe24MainPage: React.FC = async () => {
       <Cafe24HeroBanner />
 
       {/* 빠른 카테고리 */}
-      <section>
+      {/* <section>
         <Cafe24CategoryGrid />
-      </section>
+      </section> */}
 
       {/* 베스트 상품 */}
       <section>

@@ -14,14 +14,25 @@
 }
 
 @font-face {
-  font-family: "LINESeedKR-Th";
-  src: url("/fonts/LINESeedKR-Th.woff") format("woff");
-  font-weight: 300;
+  font-family: "LINESeedKR-Rg";
+  src: url("/fonts/LINESeedKR-Rg.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "LINESeedKR-Bd";
+  src: url("/fonts/LINESeedKR-Bd.woff") format("woff");
+  font-weight: 700;
   font-style: normal;
 }
 
 .line-seed-kr {
-  font-family: "LINESeedKR-Th", sans-serif;
+  font-family: "LINESeedKR-Rg", sans-serif;
+}
+
+.line-seed-kr-bd {
+  font-family: "LINESeedKR-Bd", sans-serif;
 }
 
 @custom-variant dark (&:is(.dark *));
