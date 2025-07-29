@@ -89,6 +89,12 @@ const swaggerDefinition = {
             enum: ["ACTIVE", "INACTIVE", "SOLD_OUT", "DISCONTINUED"],
             description: "상품 상태",
           },
+          shippingType: {
+            type: "string",
+            enum: ["DOMESTIC", "OVERSEAS"],
+            description: "배송 타입 (DOMESTIC: 국내, OVERSEAS: 해외)",
+            default: "OVERSEAS",
+          },
           brandId: {
             type: "string",
             description: "브랜드 ID",
@@ -578,6 +584,236 @@ const swaggerDefinition = {
           },
         },
       },
+      SmsRequest: {
+        type: "object",
+        properties: {
+          sender: {
+            type: "string",
+            description: "발신자 전화번호 (최대 16bytes, 사전 등록 필요)",
+            example: "025114560",
+          },
+          receiver: {
+            type: "string",
+            description: "수신자 전화번호 (컴마로 구분하여 최대 1천명)",
+            example: "01012345678,01087654321",
+          },
+          msg: {
+            type: "string",
+            description: "메시지 내용 (1~2,000Byte)",
+            example: "안녕하세요! 테스트 메시지입니다.",
+          },
+          msgType: {
+            type: "string",
+            enum: ["SMS", "LMS", "MMS"],
+            description: "메시지 타입 (생략시 자동 판단)",
+          },
+          title: {
+            type: "string",
+            description: "문자 제목 (LMS, MMS만 허용, 1~44Byte)",
+          },
+          destination: {
+            type: "string",
+            description: "%고객명% 치환용 데이터",
+          },
+          rdate: {
+            type: "string",
+            description: "예약일 (YYYYMMDD)",
+          },
+          rtime: {
+            type: "string",
+            description: "예약시간 (HHII)",
+          },
+          testmodeYn: {
+            type: "string",
+            enum: ["Y", "N"],
+            description: "테스트 모드",
+          },
+        },
+        required: ["sender", "receiver", "msg"],
+      },
+
+      SmsResponse: {
+        type: "object",
+        properties: {
+          success: {
+            type: "boolean",
+            description: "요청 성공 여부",
+          },
+          data: {
+            type: "object",
+            properties: {
+              result_code: {
+                type: "number",
+                description: "결과 코드 (1: 성공)",
+              },
+              message: {
+                type: "string",
+                description: "결과 메시지",
+              },
+              msg_id: {
+                type: "number",
+                description: "메시지 고유 ID",
+              },
+              success_cnt: {
+                type: "number",
+                description: "요청 성공 건수",
+              },
+              error_cnt: {
+                type: "number",
+                description: "요청 실패 건수",
+              },
+              msg_type: {
+                type: "string",
+                description: "실제 전송된 메시지 타입",
+              },
+            },
+          },
+          message: {
+            type: "string",
+            description: "응답 메시지",
+          },
+        },
+      },
+
+      SmsRemainResponse: {
+        type: "object",
+        properties: {
+          success: {
+            type: "boolean",
+            description: "요청 성공 여부",
+          },
+          data: {
+            type: "object",
+            properties: {
+              result_code: {
+                type: "number",
+                description: "결과 코드 (1: 성공)",
+              },
+              message: {
+                type: "string",
+                description: "결과 메시지",
+              },
+              SMS_CNT: {
+                type: "number",
+                description: "단문(SMS) 발송 가능 건수",
+              },
+              LMS_CNT: {
+                type: "number",
+                description: "장문(LMS) 발송 가능 건수",
+              },
+              MMS_CNT: {
+                type: "number",
+                description: "그림문자(MMS) 발송 가능 건수",
+              },
+            },
+          },
+        },
+      },
+
+      SmsHistoryResponse: {
+        type: "object",
+        properties: {
+          success: {
+            type: "boolean",
+            description: "요청 성공 여부",
+          },
+          data: {
+            type: "object",
+            properties: {
+              result_code: {
+                type: "number",
+                description: "결과 코드 (1: 성공)",
+              },
+              message: {
+                type: "string",
+                description: "결과 메시지",
+              },
+              current_page: {
+                type: "number",
+                description: "현재 페이지",
+              },
+              total_count: {
+                type: "number",
+                description: "전체 건수",
+              },
+              list: {
+                type: "array",
+                description: "발송 내역 목록",
+                items: {
+                  type: "object",
+                  properties: {
+                    mid: {
+                      type: "number",
+                      description: "메시지 ID",
+                    },
+                    user_id: {
+                      type: "string",
+                      description: "사용자 ID",
+                    },
+                    sender: {
+                      type: "string",
+                      description: "발신번호",
+                    },
+                    receiver: {
+                      type: "string",
+                      description: "수신번호",
+                    },
+                    msg: {
+                      type: "string",
+                      description: "메시지 내용",
+                    },
+                    msg_type: {
+                      type: "string",
+                      description: "메시지 타입",
+                    },
+                    reserve_date: {
+                      type: "string",
+                      description: "예약일시",
+                    },
+                    reg_date: {
+                      type: "string",
+                      description: "등록일시",
+                    },
+                    send_date: {
+                      type: "string",
+                      description: "발송일시",
+                    },
+                    result_code: {
+                      type: "number",
+                      description: "발송결과 코드",
+                    },
+                    result_message: {
+                      type: "string",
+                      description: "발송결과 메시지",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          pagination: {
+            type: "object",
+            properties: {
+              current_page: {
+                type: "number",
+                description: "현재 페이지",
+              },
+              total_count: {
+                type: "number",
+                description: "전체 건수",
+              },
+              per_page: {
+                type: "number",
+                description: "페이지당 건수",
+              },
+              total_pages: {
+                type: "number",
+                description: "전체 페이지 수",
+              },
+            },
+          },
+        },
+      },
     },
   },
   tags: [
@@ -620,6 +856,10 @@ const swaggerDefinition = {
     {
       name: "Payment",
       description: "결제 관리 API",
+    },
+    {
+      name: "SMS",
+      description: "ALIGO SMS 문자 발송 API",
     },
   ],
 };

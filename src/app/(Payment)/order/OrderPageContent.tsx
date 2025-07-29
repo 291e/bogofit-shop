@@ -24,6 +24,7 @@ import {
   Plus,
 } from "lucide-react";
 import { CheckoutButton } from "@/components/payment/Checkout";
+import { Product } from "@/types/product";
 
 // 다음 주소 API 타입 정의
 interface DaumPostcodeData {
@@ -64,6 +65,9 @@ export default function OrderPageContent() {
   const finalProductPrice = defaultProductPrice;
   const finalQuantity = defaultQuantity;
   const finalSelectedOption = defaultSelectedOption;
+
+  // 상품 상세 정보 상태
+  const [product, setProduct] = useState<Product | null>(null);
 
   // 폼 상태
   const [orderForm, setOrderForm] = useState({
@@ -183,6 +187,25 @@ export default function OrderPageContent() {
       )}`;
     }
   };
+
+  // 상품 정보 가져오기
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!finalProductId) return;
+
+      try {
+        const response = await fetch(`/api/products/${finalProductId}`);
+        if (response.ok) {
+          const productData = await response.json();
+          setProduct(productData);
+        }
+      } catch (error) {
+        console.error("상품 정보를 가져오는데 실패했습니다:", error);
+      }
+    };
+
+    fetchProduct();
+  }, [finalProductId]);
 
   // 사용자 정보로 초기값 설정
   useEffect(() => {
@@ -382,17 +405,25 @@ export default function OrderPageContent() {
 
   // 폼 유효성 체크만 하는 함수 (alert 없음)
   const isFormValid = () => {
-    return (
+    const basicValidation =
       orderForm.ordererName.trim() !== "" &&
       orderForm.ordererPhone.trim() !== "" &&
       orderForm.recipientName.trim() !== "" &&
       orderForm.recipientPhone.trim() !== "" &&
       orderForm.address.trim() !== "" &&
-      orderForm.customsInfo.recipientNameEn.trim() !== "" &&
-      orderForm.customsInfo.personalCustomsCode.trim() !== "" &&
       orderForm.agreements.terms &&
-      orderForm.agreements.privacy
-    );
+      orderForm.agreements.privacy;
+
+    // 해외 상품인 경우에만 통관 정보 검증
+    if (product?.shippingType === "OVERSEAS") {
+      return (
+        basicValidation &&
+        orderForm.customsInfo.recipientNameEn.trim() !== "" &&
+        orderForm.customsInfo.personalCustomsCode.trim() !== ""
+      );
+    }
+
+    return basicValidation;
   };
 
   // 실제 유효성 검사 및 alert를 띄우는 함수 (CheckoutButton에서만 사용)
@@ -417,14 +448,19 @@ export default function OrderPageContent() {
       alert("배송 주소를 입력해주세요.");
       return false;
     }
-    if (!orderForm.customsInfo.recipientNameEn.trim()) {
-      alert("받는 분 영문명을 입력해주세요.");
-      return false;
+
+    // 해외 상품인 경우에만 통관 정보 검증
+    if (product?.shippingType === "OVERSEAS") {
+      if (!orderForm.customsInfo.recipientNameEn.trim()) {
+        alert("받는 분 영문명을 입력해주세요.");
+        return false;
+      }
+      if (!orderForm.customsInfo.personalCustomsCode.trim()) {
+        alert("개인통관고유부호를 입력해주세요.");
+        return false;
+      }
     }
-    if (!orderForm.customsInfo.personalCustomsCode.trim()) {
-      alert("개인통관고유부호를 입력해주세요.");
-      return false;
-    }
+
     if (!orderForm.agreements.terms || !orderForm.agreements.privacy) {
       alert("필수 약관에 동의해주세요.");
       return false;
@@ -570,7 +606,7 @@ export default function OrderPageContent() {
                         onChange={(e) =>
                           handleInputChange("ordererPhone", e.target.value)
                         }
-                        placeholder="010-0000-0000"
+                        placeholder="연락처를 입력하세요."
                         maxLength={13}
                       />
                     </div>
@@ -995,63 +1031,68 @@ export default function OrderPageContent() {
                 </CardContent>
               </Card>
 
-              {/* 통관 정보 (필수) */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-pink-600" />
-                    통관 정보 *
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>해외배송 상품입니다.</strong> 통관을 위해 아래
-                      정보를 필수로 입력해주세요.
-                    </p>
-                  </div>
+              {/* 통관 정보 (해외 상품일 경우에만 표시) */}
+              {product?.shippingType === "OVERSEAS" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-pink-600" />
+                      통관 정보 *
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        <strong>해외배송 상품입니다.</strong> 통관을 위해 아래
+                        정보를 필수로 입력해주세요.
+                      </p>
+                    </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="recipientNameEn">받는 분 영문명 *</Label>
-                      <Input
-                        id="recipientNameEn"
-                        value={orderForm.customsInfo.recipientNameEn}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "customsInfo.recipientNameEn",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Recipient Name (English)"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        여권이나 신분증에 기재된 영문명과 동일하게 입력해주세요
-                      </p>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="recipientNameEn">
+                          받는 분 영문명 *
+                        </Label>
+                        <Input
+                          id="recipientNameEn"
+                          value={orderForm.customsInfo.recipientNameEn}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "customsInfo.recipientNameEn",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Recipient Name (English)"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          여권이나 신분증에 기재된 영문명과 동일하게
+                          입력해주세요
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="personalCustomsCode">
+                          개인통관고유부호 *
+                        </Label>
+                        <Input
+                          id="personalCustomsCode"
+                          value={orderForm.customsInfo.personalCustomsCode}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "customsInfo.personalCustomsCode",
+                              e.target.value
+                            )
+                          }
+                          placeholder="P000000000000"
+                          maxLength={13}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          관세청 개인통관고유부호 (P로 시작하는 13자리)
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="personalCustomsCode">
-                        개인통관고유부호 *
-                      </Label>
-                      <Input
-                        id="personalCustomsCode"
-                        value={orderForm.customsInfo.personalCustomsCode}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "customsInfo.personalCustomsCode",
-                            e.target.value
-                          )
-                        }
-                        placeholder="P000000000000"
-                        maxLength={13}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        관세청 개인통관고유부호 (P로 시작하는 13자리)
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* 약관 동의 */}
               <Card>

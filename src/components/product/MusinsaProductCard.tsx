@@ -95,15 +95,21 @@ export default function MusinsaProductCard({
           </Link>
 
           {/* 가격 정보 */}
-          <div className="flex items-center space-x-1">
-            {hasDiscount && (
-              <span className="text-[13px] font-semibold text-red-500 font-pretendard">
-                {discountRate}%
-              </span>
-            )}
-            <span className="text-[13px] font-semibold text-black font-pretendard">
-              {product.price.toLocaleString()}원
+          <div className="flex items-center justify-between">
+            {/* 배송 타입 */}
+            <span className="text-[11px] font-medium text-gray-600 bg-gray-100 px-0 py-0.5 rounded font-pretendard">
+              {product.shippingType === "DOMESTIC" ? "국내" : "해외"}
             </span>
+            <div className="flex items-center space-x-1">
+              {hasDiscount && (
+                <span className="text-[13px] font-semibold text-red-500 font-pretendard">
+                  {discountRate}%
+                </span>
+              )}
+              <span className="text-[13px] font-semibold text-black font-pretendard">
+                {product.price.toLocaleString()}원
+              </span>
+            </div>
           </div>
         </div>
       </div>

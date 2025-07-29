@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { SmsNotificationService, isTestMode } from "@/lib/sms-notifications";
 
 const prisma = new PrismaClient();
 
@@ -115,6 +116,18 @@ export async function POST(req: NextRequest) {
       });
 
       console.log(`[API/user/upsert] 새 사용자 생성: ${newUser.id}`);
+
+      // 🚀 회원가입 환영 SMS 발송 (비동기, 실패해도 가입은 성공)
+      if (newUser.phoneNumber && newUser.name) {
+        SmsNotificationService.sendWelcomeSms({
+          customerPhone: newUser.phoneNumber,
+          customerName: newUser.name,
+          testMode: isTestMode,
+        }).catch((error) => {
+          console.error("[SMS] 회원가입 환영 SMS 발송 실패:", error);
+        });
+      }
+
       return NextResponse.json({
         success: true,
         action: "created",

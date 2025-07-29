@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { SmsNotificationService, isTestMode } from "@/lib/sms-notifications";
 
 const apiSecretKey = process.env.TOSS_SECRET_KEY;
 const encryptedApiSecretKey =
@@ -106,17 +107,31 @@ export async function POST(request: Request) {
       console.error("Toss Payments API Error:", errorData);
 
       // 결제 실패 시 Payment와 Order 모두 FAILED로 업데이트
-      await prisma.$transaction(async (tx) => {
+      const failedOrderData = await prisma.$transaction(async (tx) => {
         await tx.payment.update({
           where: { orderId },
           data: { status: "FAILED" },
         });
 
-        await tx.order.update({
+        const failedOrder = await tx.order.update({
           where: { id: orderId },
           data: { status: "FAILED" },
         });
+
+        return failedOrder;
       });
+
+      // 🚀 결제 실패 SMS 발송 (비동기)
+      if (failedOrderData.ordererPhone) {
+        SmsNotificationService.sendPaymentFailedSms({
+          customerPhone: failedOrderData.ordererPhone,
+          customerName: failedOrderData.ordererName || "고객",
+          orderId: failedOrderData.id,
+          testMode: isTestMode,
+        }).catch((error) => {
+          console.error("[SMS] 결제 실패 SMS 발송 실패:", error);
+        });
+      }
 
       return NextResponse.json(
         {
@@ -132,7 +147,7 @@ export async function POST(request: Request) {
     console.log("Toss Payments API Success Response:", result);
 
     // 결제 성공 시 Payment와 Order 모두 COMPLETED로 업데이트
-    await prisma.$transaction(async (tx) => {
+    const orderData = await prisma.$transaction(async (tx) => {
       await tx.payment.update({
         where: { orderId },
         data: {
@@ -142,11 +157,57 @@ export async function POST(request: Request) {
         },
       });
 
-      await tx.order.update({
+      const updatedOrder = await tx.order.update({
         where: { id: orderId },
         data: { status: "COMPLETED" },
+        include: {
+          items: {
+            include: {
+              product: true,
+            },
+          },
+        },
       });
+
+      return updatedOrder;
     });
+
+    // 🚀 결제 완료 SMS 발송 (비동기, 실패해도 결제는 성공)
+    if (orderData.ordererPhone) {
+      const productNames = orderData.items
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((item: any) => item.product?.name || "상품")
+        .join(", ");
+
+      // 고객에게 주문 완료 SMS 발송
+      SmsNotificationService.sendOrderCompletedSms({
+        customerPhone: orderData.ordererPhone,
+        customerName: orderData.ordererName || "고객",
+        orderId: orderData.id,
+        amount: result.totalAmount || orderData.totalAmount,
+        recipientName:
+          orderData.recipientName || orderData.ordererName || "수령인",
+        address: `${orderData.address1} ${orderData.address2 || ""}`.trim(),
+        testMode: isTestMode,
+      }).catch((error) => {
+        console.error("[SMS] 주문 완료 SMS 발송 실패:", error);
+      });
+
+      // 비즈니스 사용자에게 새 주문 알림 (설정된 경우)
+      const businessPhone = process.env.BUSINESS_NOTIFICATION_PHONE;
+      if (businessPhone) {
+        SmsNotificationService.sendBusinessOrderNotification({
+          businessPhone,
+          orderId: orderData.id,
+          productName: productNames,
+          amount: result.totalAmount || orderData.totalAmount,
+          customerName: orderData.ordererName || "고객",
+          testMode: isTestMode,
+        }).catch((error) => {
+          console.error("[SMS] 비즈니스 주문 알림 SMS 발송 실패:", error);
+        });
+      }
+    }
 
     return NextResponse.json(result);
   } catch (error) {

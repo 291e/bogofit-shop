@@ -27,6 +27,8 @@ export interface Brand {
   description?: string;
 }
 
+export type ShippingType = "DOMESTIC" | "OVERSEAS";
+
 export interface Product {
   id: number;
   brandId?: number;
@@ -46,6 +48,7 @@ export interface Product {
   detailImage?: string;
   thumbnailImages?: string[];
   status?: "PENDING" | "APPROVED" | "REJECTED" | "DRAFT";
+  shippingType?: ShippingType; // 배송 타입 (국내/해외)
   totalSales?: number;
   totalSold?: number;
   approvedAt?: string;

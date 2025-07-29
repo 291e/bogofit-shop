@@ -202,6 +202,7 @@ model Product  {
   detailImage     String?      // 상세 영역 첫 이미지 (단일)
   thumbnailImages String[]     // 썸네일 배열(Postgres text[])
   status ProductStatus @default(PENDING)
+  shippingType ShippingType @default(OVERSEAS) // 배송 지역 (기존 상품은 모두 해외)
   totalSales Int @default(0)
   totalSold Int @default(0)
   approvedAt DateTime?
@@ -220,6 +221,11 @@ enum ProductStatus {
   APPROVED
   REJECTED
   DRAFT
+}
+
+enum ShippingType {
+  DOMESTIC  // 국내 배송
+  OVERSEAS  // 해외 배송
 }
 
 model ProductVariant {
