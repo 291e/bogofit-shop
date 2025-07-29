@@ -3,6 +3,81 @@ import { prisma } from "@/lib/prisma";
 import { ProductStatus, Prisma } from "@prisma/client";
 import { checkBusinessAuth } from "@/lib/businessAuth";
 
+/**
+ * @swagger
+ * /api/business/products:
+ *   get:
+ *     tags:
+ *       - Business
+ *     summary: 비즈니스 상품 목록 조회
+ *     description: 현재 인증된 비즈니스의 상품 목록을 조회합니다.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 페이지 번호
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: 페이지당 상품 수
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: 검색어 (상품명, 설명)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, INACTIVE, SOLD_OUT, DISCONTINUED, ALL]
+ *         description: 상품 상태 필터
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: 카테고리 필터
+ *     responses:
+ *       200:
+ *         description: 상품 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *       401:
+ *         description: 인증 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(request: NextRequest) {
   try {
     // 공통 인증 체크 (인증 없이 고정 브랜드 사용)

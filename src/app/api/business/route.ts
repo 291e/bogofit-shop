@@ -45,7 +45,36 @@ const mockBusiness: Business = {
   ],
 };
 
-// 비즈니스 정보 조회
+/**
+ * @swagger
+ * /api/business:
+ *   get:
+ *     tags:
+ *       - Business
+ *     summary: 비즈니스 정보 조회
+ *     description: 현재 인증된 사용자의 비즈니스 정보를 조회합니다.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 비즈니스 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Business'
+ *       401:
+ *         description: 인증 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: 비즈니스 정보를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -67,7 +96,75 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 비즈니스 등록
+/**
+ * @swagger
+ * /api/business:
+ *   post:
+ *     tags:
+ *       - Business
+ *     summary: 비즈니스 생성
+ *     description: 새로운 비즈니스를 생성합니다.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               businessName:
+ *                 type: string
+ *                 description: 비즈니스명
+ *               businessNumber:
+ *                 type: string
+ *                 description: 사업자 번호
+ *               businessType:
+ *                 type: string
+ *                 enum: [BRAND, SELLER, DISTRIBUTOR]
+ *                 description: 비즈니스 유형
+ *               description:
+ *                 type: string
+ *                 description: 비즈니스 설명
+ *               location:
+ *                 type: string
+ *                 description: 위치
+ *               website:
+ *                 type: string
+ *                 description: 웹사이트 URL
+ *               contactEmail:
+ *                 type: string
+ *                 format: email
+ *                 description: 연락처 이메일
+ *               contactPhone:
+ *                 type: string
+ *                 description: 연락처 전화번호
+ *             required:
+ *               - businessName
+ *               - businessNumber
+ *               - businessType
+ *               - contactEmail
+ *               - contactPhone
+ *     responses:
+ *       201:
+ *         description: 비즈니스 생성 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Business'
+ *       400:
+ *         description: 잘못된 요청 데이터
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: 인증 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -109,7 +206,68 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 비즈니스 정보 수정
+/**
+ * @swagger
+ * /api/business:
+ *   put:
+ *     tags:
+ *       - Business
+ *     summary: 비즈니스 정보 수정
+ *     description: 현재 인증된 사용자의 비즈니스 정보를 수정합니다.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               businessName:
+ *                 type: string
+ *                 description: 비즈니스명
+ *               description:
+ *                 type: string
+ *                 description: 비즈니스 설명
+ *               location:
+ *                 type: string
+ *                 description: 위치
+ *               website:
+ *                 type: string
+ *                 description: 웹사이트 URL
+ *               contactEmail:
+ *                 type: string
+ *                 format: email
+ *                 description: 연락처 이메일
+ *               contactPhone:
+ *                 type: string
+ *                 description: 연락처 전화번호
+ *     responses:
+ *       200:
+ *         description: 비즈니스 정보 수정 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Business'
+ *       400:
+ *         description: 잘못된 요청 데이터
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: 인증 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: 비즈니스 정보를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function PUT(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");

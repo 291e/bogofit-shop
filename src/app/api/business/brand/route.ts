@@ -2,7 +2,47 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkBusinessAuth } from "@/lib/businessAuth";
 
-// 브랜드 정보 조회
+/**
+ * @swagger
+ * /api/business/brand:
+ *   get:
+ *     tags:
+ *       - Brand
+ *     summary: 브랜드 정보 조회
+ *     description: 현재 인증된 비즈니스의 브랜드 정보를 조회합니다.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 브랜드 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 brand:
+ *                   $ref: '#/components/schemas/Brand'
+ *       401:
+ *         description: 인증 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: 브랜드 정보를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET() {
   try {
     const [user, errorResponse] = await checkBusinessAuth();
@@ -48,7 +88,81 @@ export async function GET() {
   }
 }
 
-// 브랜드 정보 수정
+/**
+ * @swagger
+ * /api/business/brand:
+ *   put:
+ *     tags:
+ *       - Brand
+ *     summary: 브랜드 정보 수정
+ *     description: 현재 인증된 비즈니스의 브랜드 정보를 수정합니다.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 브랜드명
+ *               logo:
+ *                 type: string
+ *                 description: 브랜드 로고 URL
+ *               description:
+ *                 type: string
+ *                 description: 브랜드 설명
+ *               businessNumber:
+ *                 type: string
+ *                 description: 사업자 번호
+ *               bankAccount:
+ *                 type: string
+ *                 description: 계좌번호
+ *               bankCode:
+ *                 type: string
+ *                 description: 은행코드
+ *               accountHolder:
+ *                 type: string
+ *                 description: 예금주명
+ *     responses:
+ *       200:
+ *         description: 브랜드 정보 수정 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 brand:
+ *                   $ref: '#/components/schemas/Brand'
+ *       400:
+ *         description: 잘못된 요청 데이터
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: 인증 실패
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: 브랜드 정보를 찾을 수 없음
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function PUT(request: NextRequest) {
   try {
     const [user, errorResponse] = await checkBusinessAuth();
