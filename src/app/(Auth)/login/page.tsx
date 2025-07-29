@@ -303,7 +303,7 @@ function LoginPage() {
                       <ul className="mt-1 space-y-1">
                         <li>• 입점 브랜드/매장 관리자만 사용 가능</li>
                         <li>• 디바이스 ID는 보안을 위해 필수입니다</li>
-                        <li>• 계정 문의: business@bogofit.com</li>
+                        <li>• 계정 문의: metabank@naver.com</li>
                       </ul>
                     </div>
                   </div>

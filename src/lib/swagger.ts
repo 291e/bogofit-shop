@@ -181,24 +181,43 @@ const swaggerDefinition = {
         type: "object",
         properties: {
           id: {
-            type: "string",
+            type: "integer",
             description: "브랜드 ID",
           },
           name: {
             type: "string",
             description: "브랜드명",
           },
+          slug: {
+            type: "string",
+            description: "브랜드 슬러그",
+          },
           description: {
             type: "string",
             description: "브랜드 설명",
+            nullable: true,
           },
           logo: {
             type: "string",
             description: "브랜드 로고 URL",
+            nullable: true,
+          },
+          status: {
+            type: "string",
+            enum: ["PENDING", "APPROVED", "REJECTED", "SUSPENDED"],
+            description: "브랜드 상태",
           },
           isActive: {
             type: "boolean",
             description: "활성 상태",
+          },
+          productCount: {
+            type: "integer",
+            description: "상품 개수",
+          },
+          userCount: {
+            type: "integer",
+            description: "소속 사용자 수",
           },
           createdAt: {
             type: "string",

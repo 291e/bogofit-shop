@@ -84,16 +84,19 @@ export default function Header() {
                   <span className="text-gray-500">AI STYLING</span>
                 </div>
                 <div className="flex items-center gap-6 mt-1 text-sm line-seed-kr">
-                  <Link href="#" className="text-[#FF84CD] font-medium">
+                  <Link
+                    href="/recommend"
+                    className="text-[#FF84CD] font-medium"
+                  >
                     추천
                   </Link>
-                  <Link href="#" className="text-gray-600">
+                  <Link href="/ranking" className="text-gray-600">
                     랭킹
                   </Link>
-                  <Link href="#" className="text-gray-600">
+                  <Link href="/sale" className="text-gray-600">
                     세일
                   </Link>
-                  <Link href="#" className="text-gray-600">
+                  <Link href="/brands" className="text-gray-600">
                     브랜드
                   </Link>
                 </div>

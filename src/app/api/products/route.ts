@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
@@ -106,22 +106,47 @@ export async function GET(request: Request) {
     const showSoldOut = searchParams.get("showSoldOut") === "true";
 
     // 필터 조건 구성
-    const where: {
-      isActive: boolean;
-      OR?: Array<{
-        title?: { contains: string; mode: "insensitive" };
-        description?: { contains: string; mode: "insensitive" };
-        brand?: { name?: { contains: string; mode: "insensitive" } };
-      }>;
-      category?: string;
-      price?: {
-        gte?: number;
-        lte?: number;
-      };
-      badge?: string;
-    } = {
+    const where: Prisma.ProductWhereInput = {
       isActive: true,
     };
+
+    // soldout 상품 제외 (데이터베이스 레벨에서 처리)
+    if (!showSoldOut) {
+      where.OR = where.OR || [];
+      // variant가 없는 상품 OR variant가 있지만 품절이 아닌 상품
+      const soldOutFilter = {
+        OR: [
+          // variant가 없는 상품
+          {
+            variants: {
+              none: {},
+            },
+          },
+          // variant가 있지만 품절이 아닌 옵션이 하나라도 있는 상품
+          {
+            variants: {
+              some: {
+                optionValue: {
+                  not: {
+                    contains: "품절",
+                  },
+                },
+              },
+            },
+          },
+        ],
+      };
+
+      // 기존 OR 조건과 soldout 필터를 AND로 결합
+      if (where.OR.length > 0) {
+        const existingOr = where.OR;
+        delete where.OR;
+        where.AND = [{ OR: existingOr }, soldOutFilter];
+      } else {
+        delete where.OR;
+        Object.assign(where, soldOutFilter);
+      }
+    }
 
     if (search) {
       where.OR = [
@@ -261,13 +286,9 @@ export async function GET(request: Request) {
       };
     });
 
-    // 품절 상품 필터링 (클라이언트 사이드에서 처리)
-    const filteredProducts = showSoldOut
-      ? productsWithRating
-      : productsWithRating.filter((product) => !product.isSoldOut);
-
+    // soldout 상품은 이미 데이터베이스 레벨에서 제외됨
     return NextResponse.json({
-      products: filteredProducts,
+      products: productsWithRating,
       total: totalCount,
       page,
       totalPages: Math.ceil(totalCount / limit),
