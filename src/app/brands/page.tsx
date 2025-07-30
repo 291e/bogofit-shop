@@ -49,11 +49,11 @@ export default function BrandsPage() {
   const { data: popularProducts = [], isLoading: popularLoading } = useQuery<
     Product[]
   >({
-    queryKey: ["brands", "popular", selectedBrandInfo?.slug],
+    queryKey: ["brands", "popular", selectedBrandInfo?.name],
     queryFn: async () => {
       let url = `/api/products?badge=BEST&limit=${LIMIT}`;
       if (selectedBrandInfo) {
-        // 브랜드별 필터링 (브랜드명으로 검색)
+        // 브랜드명으로 검색 (브랜드명과 스토어명 모두 매칭)
         url = `/api/products?search=${encodeURIComponent(
           selectedBrandInfo.name
         )}&badge=BEST&limit=${LIMIT}`;
@@ -69,10 +69,11 @@ export default function BrandsPage() {
   // 신생 브랜드 상품
   const { data: newProducts = [], isLoading: newLoading } = useQuery<Product[]>(
     {
-      queryKey: ["brands", "new", selectedBrandInfo?.slug],
+      queryKey: ["brands", "new", selectedBrandInfo?.name],
       queryFn: async () => {
         let url = `/api/products?badge=NEW&limit=${LIMIT}`;
         if (selectedBrandInfo) {
+          // 브랜드명으로 검색 (브랜드명과 스토어명 모두 매칭)
           url = `/api/products?search=${encodeURIComponent(
             selectedBrandInfo.name
           )}&badge=NEW&limit=${LIMIT}`;
@@ -90,10 +91,11 @@ export default function BrandsPage() {
   const { data: premiumProducts = [], isLoading: premiumLoading } = useQuery<
     Product[]
   >({
-    queryKey: ["brands", "premium", selectedBrandInfo?.slug],
+    queryKey: ["brands", "premium", selectedBrandInfo?.name],
     queryFn: async () => {
       let url = `/api/products?sortBy=price_high&limit=${LIMIT}`;
       if (selectedBrandInfo) {
+        // 브랜드명으로 검색 (브랜드명과 스토어명 모두 매칭)
         url = `/api/products?search=${encodeURIComponent(
           selectedBrandInfo.name
         )}&sortBy=price_high&limit=${LIMIT}`;

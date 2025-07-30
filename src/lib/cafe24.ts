@@ -13,27 +13,45 @@ export class Cafe24OAuth {
   private config: Cafe24OAuthConfig;
 
   constructor() {
+    // 카페24 공식 문서에 따른 환경변수 검증
+    const mallId = process.env.CAFE24_MALL_ID || "";
+    const clientId = process.env.CAFE24_CLIENT_ID || "";
+    const clientSecret = process.env.CAFE24_CLIENT_SECRET || "";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
+
     this.config = {
-      mallId: process.env.CAFE24_MALL_ID || "",
-      clientId: process.env.CAFE24_CLIENT_ID || "",
-      clientSecret: process.env.CAFE24_CLIENT_SECRET || "",
-      redirectUri: `${process.env.NEXT_PUBLIC_BASE_URL}/api/cafe24/oauth/callback`,
-      baseUrl: `https://${process.env.CAFE24_MALL_ID}.cafe24api.com/api/v2`,
+      mallId,
+      clientId,
+      clientSecret,
+      redirectUri: `${baseUrl}/api/cafe24/oauth/callback`,
+      baseUrl: `https://${mallId}.cafe24api.com/api/v2`, // API 호출용
     };
 
-    if (
-      !this.config.mallId ||
-      !this.config.clientId ||
-      !this.config.clientSecret
-    ) {
-      console.error("❌ Cafe24 OAuth 환경 변수가 설정되지 않았습니다:");
-      console.error("- CAFE24_MALL_ID:", this.config.mallId ? "✓" : "❌");
-      console.error("- CAFE24_CLIENT_ID:", this.config.clientId ? "✓" : "❌");
-      console.error(
-        "- CAFE24_CLIENT_SECRET:",
-        this.config.clientSecret ? "✓" : "❌"
+    // 필수 환경변수 검증
+    if (!mallId || !clientId || !clientSecret || !baseUrl) {
+      const missing = [];
+      if (!mallId) missing.push("CAFE24_MALL_ID");
+      if (!clientId) missing.push("CAFE24_CLIENT_ID");
+      if (!clientSecret) missing.push("CAFE24_CLIENT_SECRET");
+      if (!baseUrl) missing.push("NEXT_PUBLIC_BASE_URL");
+
+      throw new Error(
+        `카페24 OAuth 필수 환경변수가 설정되지 않았습니다: ${missing.join(
+          ", "
+        )}`
       );
     }
+
+    console.log("✅ 카페24 OAuth 설정 완료");
+    console.log(`- Mall ID: ${mallId}`);
+    console.log(`- Redirect URI: ${this.config.redirectUri}`);
+  }
+
+  /**
+   * OAuth 설정 정보 조회
+   */
+  getConfig(): Cafe24OAuthConfig {
+    return { ...this.config };
   }
 
   /**
@@ -57,7 +75,16 @@ export class Cafe24OAuth {
       sessionStorage.setItem("cafe24_oauth_state", state);
     }
 
-    return `${this.config.baseUrl}/oauth/authorize?${params.toString()}`;
+    // 카페24 공식 OAuth 인증 엔드포인트
+    const authUrl = `https://${
+      this.config.mallId
+    }.cafe24.com/api/v2/oauth/authorize?${params.toString()}`;
+
+    console.log("🔗 카페24 OAuth 인증 URL 생성");
+    console.log(`- URL: ${authUrl}`);
+    console.log(`- Scopes: ${scopes.join(", ")}`);
+
+    return authUrl;
   }
 
   /**
@@ -83,7 +110,14 @@ export class Cafe24OAuth {
         redirect_uri: this.config.redirectUri,
       };
 
-      const response = await fetch(`${this.config.baseUrl}/oauth/token`, {
+      // 카페24 공식 토큰 엔드포인트
+      const tokenUrl = `https://${this.config.mallId}.cafe24api.com/api/v2/oauth/token`;
+
+      console.log("🔗 카페24 토큰 교환 요청");
+      console.log(`- URL: ${tokenUrl}`);
+      console.log(`- Grant Type: ${tokenRequest.grant_type}`);
+
+      const response = await fetch(tokenUrl, {
         method: "POST",
         headers: {
           Authorization: `Basic ${this.getBasicAuthHeader()}`,

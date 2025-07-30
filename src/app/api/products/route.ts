@@ -28,12 +28,22 @@ const prisma = new PrismaClient();
  *         name: search
  *         schema:
  *           type: string
- *         description: 상품명, 설명, 상점명 검색어
+ *         description: 상품명, 설명, 브랜드명, 스토어명 검색어
  *       - in: query
  *         name: category
  *         schema:
  *           type: string
  *         description: 카테고리 필터
+ *       - in: query
+ *         name: brand
+ *         schema:
+ *           type: string
+ *         description: 브랜드 정확 매칭 필터
+ *       - in: query
+ *         name: storeName
+ *         schema:
+ *           type: string
+ *         description: 스토어명 정확 매칭 필터
  *       - in: query
  *         name: minPrice
  *         schema:
@@ -100,6 +110,8 @@ export async function GET(request: Request) {
     // 검색 및 필터 파라미터
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
+    const brand = searchParams.get("brand") || "";
+    const storeName = searchParams.get("storeName") || "";
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const sortBy = searchParams.get("sortBy") || "newest";
@@ -153,11 +165,24 @@ export async function GET(request: Request) {
         { title: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
         { brand: { name: { contains: search, mode: "insensitive" } } },
+        { storeName: { contains: search, mode: "insensitive" } },
       ];
     }
 
     if (category) {
       where.category = category;
+    }
+
+    // 브랜드 정확 매칭
+    if (brand) {
+      where.brand = {
+        name: { equals: brand, mode: "insensitive" },
+      };
+    }
+
+    // 스토어명 정확 매칭
+    if (storeName) {
+      where.storeName = { equals: storeName, mode: "insensitive" };
     }
 
     if (minPrice || maxPrice) {

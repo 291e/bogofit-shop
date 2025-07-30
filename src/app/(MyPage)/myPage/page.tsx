@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import OrderHistory from "@/components/myPage/OrderHistory";
 import CouponList from "@/components/myPage/CouponList";
@@ -58,7 +58,7 @@ const menuSections = [
   },
 ];
 
-export default function MyPage() {
+function MyPageContent() {
   const searchParams = useSearchParams();
   const [selected, setSelected] = useState("order");
 
@@ -117,5 +117,19 @@ export default function MyPage() {
       {/* 컨텐츠 */}
       <section className="flex-1 min-w-0">{Content}</section>
     </main>
+  );
+}
+
+export default function MyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-5xl mx-auto py-12 px-4 flex justify-center items-center">
+          <div className="text-gray-500">로딩 중...</div>
+        </div>
+      }
+    >
+      <MyPageContent />
+    </Suspense>
   );
 }

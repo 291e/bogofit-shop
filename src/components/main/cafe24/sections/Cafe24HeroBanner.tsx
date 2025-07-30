@@ -108,7 +108,7 @@ export function Cafe24HeroBanner() {
     <div className="w-full pb-8">
       {/* 슬라이드 컨테이너 - 이미지 크기에 맞춤 */}
       <div
-        className="relative h-[400px] md:h-[500px] container mx-auto overflow-hidden "
+        className="relative h-[400px] md:h-[700px] container mx-auto overflow-hidden "
         role="region"
         aria-label="메인 배너 슬라이드"
         tabIndex={0}

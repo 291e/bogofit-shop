@@ -1,14 +1,28 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, Prisma, BrandStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+
+interface BrandData {
+  id: string | number;
+  name: string;
+  slug: string;
+  logo: string | null;
+  description: string | null;
+  productCount: number;
+  userCount: number;
+  status: string;
+  isActive: boolean;
+  createdAt: string | Date;
+  type: "official" | "store";
+}
 
 /**
  * @swagger
  * /api/brands:
  *   get:
  *     summary: 브랜드 목록 조회
- *     description: 활성화된 승인된 브랜드 목록을 조회합니다.
+ *     description: 공식 입점 브랜드와 스토어네임을 통합하여 브랜드 목록을 조회합니다.
  *     tags:
  *       - Brands
  *     parameters:
@@ -17,12 +31,6 @@ const prisma = new PrismaClient();
  *         schema:
  *           type: string
  *         description: 브랜드명 검색
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [PENDING, APPROVED, REJECTED, SUSPENDED]
- *         description: 브랜드 상태 필터
  *       - in: query
  *         name: sortBy
  *         schema:
@@ -55,47 +63,14 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
-    const status = searchParams.get("status") || "APPROVED"; // 기본값은 승인된 브랜드만
     const sortBy = searchParams.get("sortBy") || "name";
 
-    // 검색 조건 구성
-    const where: Prisma.BrandWhereInput = {
-      isActive: true,
-    };
-
-    // 상태가 지정된 경우
-    if (status && status !== "ALL") {
-      where.status = status as BrandStatus;
-    }
-
-    // 검색어가 있는 경우
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    // 정렬 조건
-    let orderBy: Prisma.BrandOrderByWithRelationInput = { name: "asc" };
-    switch (sortBy) {
-      case "productCount":
-        // 상품 개수로 정렬할 때는 별도 처리 필요
-        orderBy = { name: "asc" }; // 기본값으로 설정하고 나중에 정렬
-        break;
-      case "createdAt":
-        orderBy = { createdAt: "desc" };
-        break;
-      case "name":
-      default:
-        orderBy = { name: "asc" };
-        break;
-    }
-
-    // 브랜드 목록 조회
-    const brands = await prisma.brand.findMany({
-      where,
-      orderBy,
+    // 1. Brand 테이블에서 공식 입점 브랜드들 가져오기
+    const officialBrands = await prisma.brand.findMany({
+      where: {
+        isActive: true,
+        status: "APPROVED",
+      },
       select: {
         id: true,
         name: true,
@@ -118,35 +93,104 @@ export async function GET(request: Request) {
       },
     });
 
-    // 전체 브랜드 수
-    const total = await prisma.brand.count({ where });
+    // 2. Product 테이블에서 고유한 storeName과 상품 개수 가져오기
+    const storeNameGroups = await prisma.product.groupBy({
+      by: ["storeName"],
+      where: {
+        isActive: true,
+        storeName: {
+          not: null,
+        },
+        NOT: {
+          storeName: "",
+        },
+      },
+      _count: {
+        id: true,
+      },
+    });
 
-    // 브랜드 데이터 가공
-    let processedBrands = brands.map((brand) => ({
-      id: brand.id,
-      name: brand.name,
-      slug: brand.slug,
-      logo: brand.logo,
-      description: brand.description,
-      status: brand.status,
-      isActive: brand.isActive,
-      productCount: brand._count.products,
-      userCount: brand._count.users,
-      createdAt: brand.createdAt,
-    }));
+    // 3. 통합 브랜드 맵 생성 (중복 제거)
+    const brandMap = new Map<string, BrandData>();
 
-    // 상품 개수로 정렬
-    if (sortBy === "productCount") {
-      processedBrands = processedBrands.sort(
-        (a, b) => b.productCount - a.productCount
+    // 공식 브랜드 추가
+    officialBrands.forEach((brand) => {
+      brandMap.set(brand.name.toLowerCase(), {
+        id: brand.id,
+        name: brand.name,
+        slug: brand.slug,
+        logo: brand.logo,
+        description: brand.description,
+        productCount: brand._count.products,
+        userCount: brand._count.users,
+        status: brand.status,
+        isActive: brand.isActive,
+        createdAt: brand.createdAt,
+        type: "official", // 공식 브랜드 구분
+      });
+    });
+
+    // storeName 브랜드 추가 (기존 브랜드와 중복되면 상품 개수만 업데이트)
+    storeNameGroups.forEach((group, index) => {
+      const storeName = group.storeName || "";
+      const key = storeName.toLowerCase();
+
+      if (brandMap.has(key)) {
+        // 이미 공식 브랜드로 존재하면 상품 개수 합산
+        const existing = brandMap.get(key);
+        if (existing) {
+          existing.productCount += group._count.id;
+        }
+      } else {
+        // 새로운 storeName 브랜드 추가
+        brandMap.set(key, {
+          id: `store_${index + 1000}`, // 충돌 방지를 위한 ID
+          name: storeName,
+          slug: storeName.toLowerCase().replace(/\s+/g, "-"),
+          logo: null,
+          description: `${storeName} 브랜드의 상품들`,
+          productCount: group._count.id,
+          userCount: 0,
+          status: "APPROVED" as const,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          type: "store", // 스토어 브랜드 구분
+        });
+      }
+    });
+
+    // 4. 맵을 배열로 변환
+    let processedBrands = Array.from(brandMap.values());
+
+    // 5. 검색어 필터링
+    if (search) {
+      processedBrands = processedBrands.filter((brand) =>
+        brand.name.toLowerCase().includes(search.toLowerCase())
       );
+    }
+
+    // 6. 정렬 처리
+    switch (sortBy) {
+      case "productCount":
+        processedBrands.sort((a, b) => b.productCount - a.productCount);
+        break;
+      case "createdAt":
+        processedBrands.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        break;
+      case "name":
+      default:
+        processedBrands.sort((a, b) => a.name.localeCompare(b.name));
+        break;
     }
 
     return NextResponse.json({
       success: true,
       data: {
         brands: processedBrands,
-        total,
+        total: processedBrands.length,
       },
     });
   } catch (error) {
