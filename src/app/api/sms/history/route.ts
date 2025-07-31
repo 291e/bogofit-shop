@@ -60,23 +60,23 @@ import { SmsListRequest } from "@/types/sms";
  *                   properties:
  *                     result_code:
  *                       type: number
- *                       description: 결과 코드 (1: 성공)
+ *                       description: "결과 코드 (1: 성공)"
  *                       example: 1
  *                     message:
  *                       type: string
- *                       description: 결과 메시지
+ *                       description: "결과 메시지"
  *                       example: ""
  *                     current_page:
  *                       type: number
- *                       description: 현재 페이지
+ *                       description: "현재 페이지"
  *                       example: 1
  *                     total_count:
  *                       type: number
- *                       description: 전체 건수
+ *                       description: "전체 건수"
  *                       example: 150
  *                     list:
  *                       type: array
- *                       description: 발송 내역 목록
+ *                       description: "발송 내역 목록"
  *                       items:
  *                         type: object
  *                         properties:

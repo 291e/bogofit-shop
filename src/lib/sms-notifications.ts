@@ -40,7 +40,7 @@ export const SMS_TEMPLATES = {
     `[BogoFit] ${data.customerName}님, 배송이 완료되었습니다!\n` +
     `주문번호: ${data.orderId}\n` +
     `상품 리뷰 작성 시 적립금 500원을 드립니다.\n` +
-    `리뷰 작성하기: ${process.env.NEXT_PUBLIC_APP_URL}/myPage`,
+    `리뷰 작성하기: ${process.env.NEXT_PUBLIC_BASE_URL}/myPage`,
 
   // 비즈니스 - 새 주문 알림
   BUSINESS_NEW_ORDER: (data: {

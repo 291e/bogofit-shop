@@ -247,7 +247,7 @@ export async function PUT(
           }님, 배송이 완료되었습니다!\n` +
             `주문번호: ${existingOrder.id}\n` +
             `상품 리뷰 작성 시 적립금 500원을 드립니다.\n` +
-            `리뷰 작성하기: ${process.env.NEXT_PUBLIC_APP_URL}/myPage`,
+            `리뷰 작성하기: ${process.env.NEXT_PUBLIC_BASE_URL}/myPage`,
           {
             title: "배송 완료 안내",
             testMode: isTestMode,

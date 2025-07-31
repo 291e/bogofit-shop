@@ -42,15 +42,15 @@ import { createAligoClient, AligoClient } from "@/lib/aligo";
  *                   properties:
  *                     result_code:
  *                       type: number
- *                       description: 결과 코드 (1: 성공)
+ *                       description: "결과 코드 (1: 성공)"
  *                       example: 1
  *                     message:
  *                       type: string
- *                       description: 결과 메시지
+ *                       description: "결과 메시지"
  *                       example: ""
  *                     cancel_date:
  *                       type: string
- *                       description: 취소 완료 일시
+ *                       description: "취소 완료 일시"
  *                       example: "2024-12-30 10:07:00"
  *                 message:
  *                   type: string

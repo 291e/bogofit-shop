@@ -1,199 +1,293 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useMutation } from "@apollo/client";
 import { CREATE_ACCOUNT } from "@/graphql/mutations";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function RegisterPage() {
+import { useRegisterForm } from "@/hooks/useRegisterForm";
+import { useEmailVerification } from "@/hooks/useEmailVerification";
+
+import { RegisterFormStep } from "@/components/auth/RegisterFormStep";
+import { EmailVerificationStep } from "@/components/auth/EmailVerificationStep";
+import { RegisterSuccessStep } from "@/components/auth/RegisterSuccessStep";
+import { TermsAgreementModal } from "@/components/auth/TermsAgreementModal";
+
+type RegisterStep = "form" | "verification" | "success";
+
+interface TermsAgreement {
+  terms: boolean;
+  privacy: boolean;
+  marketing: boolean;
+}
+
+function RegisterPageContent() {
   const router = useRouter();
-  const [userId, setUserId] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const searchParams = useSearchParams();
+
+  // Custom Hooks
+  const { formData, updateField, validateForm } = useRegisterForm();
+  const {
+    isEmailSent,
+    isEmailVerified,
+    verificationCode,
+    loading: emailLoading,
+    error: emailError,
+    success: emailSuccess,
+    setVerificationCode,
+    sendVerificationEmail,
+    verifyEmailCode,
+  } = useEmailVerification();
+
+  // UI 상태
+  const [step, setStep] = useState<RegisterStep>("form");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [createAccount, { loading }] = useMutation(CREATE_ACCOUNT, {
+  // 약관 동의 상태
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [termsAgreement, setTermsAgreement] = useState<TermsAgreement>({
+    terms: false,
+    privacy: false,
+    marketing: false,
+  });
+
+  const hasAgreedToTerms = termsAgreement.terms && termsAgreement.privacy;
+
+  // GraphQL Mutation
+  const [createAccount] = useMutation(CREATE_ACCOUNT, {
     onCompleted: async (data) => {
       if (data?.createAccount?.success) {
-        setSuccess("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
+        await saveAdditionalUserInfo(data.createAccount.user?.id);
+        setStep("success");
+        setSuccess("🎉 회원가입이 완료되었습니다! 환영합니다!");
         setError("");
-        // 2초 후 로그인 페이지로 이동
+        // 3초 후 로그인 페이지로 이동
         setTimeout(() => {
           router.replace("/login");
-        }, 2000);
+        }, 3000);
       } else {
         setError(data?.createAccount?.message || "회원가입에 실패했습니다.");
         setSuccess("");
       }
+      setLoading(false);
     },
     onError: (err) => {
       setError(err.message || "회원가입 중 오류가 발생했습니다.");
       setSuccess("");
+      setLoading(false);
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 추가 사용자 정보 저장 (뮤테이션 외 정보들)
+  const saveAdditionalUserInfo = async (userId: string) => {
+    try {
+      // TODO: 추가 정보를 저장하는 API 또는 GraphQL 뮤테이션 호출
+      console.log("추가 사용자 정보:", {
+        userId,
+        name: formData.name,
+        phoneNumber: formData.phoneNumber,
+        gender: formData.gender,
+        birthDate: formData.birthDate,
+        profile: formData.profile,
+        zipCode: formData.zipCode,
+        address: formData.address,
+        addressDetail: formData.addressDetail,
+        termsAgreement,
+      });
+    } catch (error) {
+      console.error("추가 정보 저장 실패:", error);
+    }
+  };
+
+  // 회원가입 실행
+  const handleCreateAccount = useCallback(() => {
+    setLoading(true);
+    createAccount({
+      variables: {
+        userId: formData.userId,
+        email: formData.email,
+        password: formData.password,
+      },
+    });
+  }, [createAccount, formData.userId, formData.email, formData.password]);
+
+  // 이메일 링크를 통한 인증 완료 처리
+  useEffect(() => {
+    const verified = searchParams.get("verified");
+    if (verified === "true" && step === "form") {
+      console.log("📧 이메일 링크를 통한 인증 완료 감지");
+      setStep("verification");
+      setSuccess("✅ 이메일 인증이 완료되었습니다! 회원가입을 진행합니다.");
+
+      // 1초 후 자동으로 회원가입 진행
+      setTimeout(() => {
+        handleCreateAccount();
+      }, 1000);
+    }
+  }, [searchParams, step, handleCreateAccount]);
+
+  // 폼 제출 핸들러
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    // 필수 입력값 검증
-    if (!userId || !email || !password || !confirmPassword) {
-      setError("모든 필드를 입력해주세요.");
+    const validation = validateForm();
+    if (!validation.isValid) {
+      setError(validation.errors[0]);
       return;
     }
 
-    // 아이디 유효성 검사
-    if (userId.length < 4) {
-      setError("아이디는 4자 이상이어야 합니다.");
+    if (!hasAgreedToTerms) {
+      setError("필수 약관에 동의해주세요.");
       return;
     }
 
-    // 이메일 유효성 검사
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("올바른 이메일 형식을 입력해주세요.");
-      return;
-    }
-
-    // 비밀번호 유효성 검사
-    if (password.length < 6) {
-      setError("비밀번호는 6자 이상이어야 합니다.");
-      return;
-    }
-
-    // 비밀번호 확인
-    if (password !== confirmPassword) {
-      setError("비밀번호가 일치하지 않습니다.");
-      return;
-    }
-
-    createAccount({
-      variables: {
-        userId,
-        email,
-        password,
-      },
-    });
+    // 기본 정보 입력 완료 → 이메일 인증 단계로 이동
+    setStep("verification");
+    setSuccess("기본 정보 입력이 완료되었습니다. 이메일 인증을 진행해주세요.");
   };
+
+  // 이메일 인증 코드 전송
+  const handleSendVerification = async () => {
+    await sendVerificationEmail(formData.email, formData.name, formData.userId);
+  };
+
+  // 이메일 인증 코드 확인
+  const handleVerifyCode = async () => {
+    const success = await verifyEmailCode(formData.email, verificationCode);
+    if (success) {
+      // 인증 완료 후 회원가입 진행
+      setTimeout(() => {
+        handleCreateAccount();
+      }, 1000);
+    }
+  };
+
+  // 약관 동의 핸들러
+  const handleTermsAgree = (agreements: TermsAgreement) => {
+    setTermsAgreement(agreements);
+  };
+
+  // 단계별 제목과 설명
+  const getStepInfo = () => {
+    switch (step) {
+      case "form":
+        return {
+          title: "회원가입",
+          description: "BOGOFIT에 오신 것을 환영합니다",
+        };
+      case "verification":
+        return {
+          title: "이메일 인증",
+          description: "회원가입을 완료하려면 이메일 인증이 필요합니다",
+        };
+      case "success":
+        return {
+          title: "회원가입 완료",
+          description: "환영합니다! 곧 로그인 페이지로 이동합니다",
+        };
+    }
+  };
+
+  const stepInfo = getStepInfo();
+  const currentLoading = loading || emailLoading;
+  const currentError = error || emailError;
+  const currentSuccess = success || emailSuccess;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* 헤더 */}
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            회원가입
+            {stepInfo.title}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            BOGOFIT에 오신 것을 환영합니다
+            {stepInfo.description}
           </p>
+
+          {/* 진행 단계 표시 */}
+          <div className="mt-4 flex justify-center">
+            <div className="flex space-x-2">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  step === "form" ? "bg-indigo-600" : "bg-gray-300"
+                }`}
+              />
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  step === "verification" ? "bg-indigo-600" : "bg-gray-300"
+                }`}
+              />
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  step === "success" ? "bg-indigo-600" : "bg-gray-300"
+                }`}
+              />
+            </div>
+          </div>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md flex flex-col gap-4">
-            <div>
-              <label htmlFor="userId" className="sr-only">
-                아이디
-              </label>
-              <Input
-                id="userId"
-                name="userId"
-                type="text"
-                required
-                placeholder="아이디 (4자 이상)"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                autoComplete="username"
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="sr-only">
-                이메일
-              </label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="이메일"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                비밀번호
-              </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                placeholder="비밀번호 (6자 이상)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="sr-only">
-                비밀번호 확인
-              </label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                placeholder="비밀번호 확인"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-                disabled={loading}
-              />
-            </div>
-          </div>
 
-          {error && (
-            <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-md">
-              {error}
-            </div>
-          )}
+        {/* 단계별 컴포넌트 렌더링 */}
+        {step === "form" && (
+          <RegisterFormStep
+            formData={formData}
+            updateField={updateField}
+            onSubmit={handleFormSubmit}
+            loading={currentLoading}
+            error={currentError}
+            success={currentSuccess}
+            onTermsClick={() => setTermsModalOpen(true)}
+            hasAgreedToTerms={hasAgreedToTerms}
+          />
+        )}
 
-          {success && (
-            <div className="text-green-500 text-sm text-center bg-green-50 p-3 rounded-md">
-              {success}
-            </div>
-          )}
+        {step === "verification" && (
+          <EmailVerificationStep
+            email={formData.email}
+            verificationCode={verificationCode}
+            setVerificationCode={setVerificationCode}
+            isEmailSent={isEmailSent}
+            isEmailVerified={isEmailVerified}
+            loading={currentLoading}
+            error={currentError}
+            success={currentSuccess}
+            onSendVerification={handleSendVerification}
+            onVerifyCode={handleVerifyCode}
+            onGoBack={() => setStep("form")}
+          />
+        )}
 
-          <div className="space-y-3">
-            <Button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              disabled={loading}
-            >
-              {loading ? "회원가입 중..." : "회원가입"}
-            </Button>
+        {step === "success" && <RegisterSuccessStep success={currentSuccess} />}
 
-            <div className="text-center text-sm">
-              <span className="text-gray-500">이미 계정이 있으신가요?</span>{" "}
-              <Link
-                href="/login"
-                className="text-indigo-600 hover:text-indigo-500 font-medium"
-              >
-                로그인
-              </Link>
-            </div>
-          </div>
-        </form>
+        {/* 약관 동의 모달 */}
+        <TermsAgreementModal
+          open={termsModalOpen}
+          onOpenChange={setTermsModalOpen}
+          onAgree={handleTermsAgree}
+          initialAgreements={termsAgreement}
+        />
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">페이지를 불러오는 중...</p>
+          </div>
+        </div>
+      }
+    >
+      <RegisterPageContent />
+    </Suspense>
   );
 }

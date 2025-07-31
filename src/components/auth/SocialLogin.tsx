@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 interface SocialLoginProps {
   className?: string;
@@ -118,28 +119,40 @@ export default function SocialLogin({ className }: SocialLoginProps) {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
+      <div className="mt-6 flex gap-3">
         <button
           onClick={() => handleSocialLoginClick("google")}
           disabled={loading || !config.googleClientId}
-          className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+          className="w-full flex justify-center items-center hover:opacity-80 disabled:opacity-50 transition-opacity cursor-pointer"
           title={
             !config.googleClientId
               ? "Google Client ID가 설정되지 않았습니다"
               : ""
           }
         >
-          Google
+          <Image
+            src="/auth/google.svg"
+            alt="Google로 로그인"
+            width={179}
+            height={40}
+            className="h-10 w-auto"
+          />
         </button>
         <button
           onClick={() => handleSocialLoginClick("kakao")}
           disabled={loading || !config.kakaoClientId}
-          className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+          className="w-full flex justify-center items-center hover:opacity-80 disabled:opacity-50 transition-opacity cursor-pointer"
           title={
             !config.kakaoClientId ? "Kakao Client ID가 설정되지 않았습니다" : ""
           }
         >
-          Kakao
+          <Image
+            src="/auth/kakao.svg"
+            alt="Kakao로 로그인"
+            width={512}
+            height={125}
+            className="h-10 w-auto"
+          />
         </button>
       </div>
 

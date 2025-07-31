@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import SocialLogin from "@/components/auth/SocialLogin";
+import ResetPasswordModal from "@/components/auth/ResetPasswordModal";
 import { useAuth } from "@/providers/AuthProvider";
 import Link from "next/link";
 import { User, Building2 } from "lucide-react";
@@ -36,6 +37,9 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("user");
+
+  // 비밀번호 초기화 모달 상태
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
   const [loginMutation] = useMutation(LOGIN);
 
@@ -198,6 +202,17 @@ function LoginPage() {
                       {loading ? "로그인 중..." : "로그인"}
                     </Button>
 
+                    <div className="flex items-center justify-start">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-sm text-blue-600 hover:text-blue-500"
+                        onClick={() => setResetPasswordOpen(true)}
+                      >
+                        비밀번호를 잊으셨나요?
+                      </Button>
+                    </div>
+
                     <Link href="/register" className="w-full block">
                       <Button
                         type="button"
@@ -312,6 +327,12 @@ function LoginPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* 비밀번호 초기화 모달 */}
+        <ResetPasswordModal
+          open={resetPasswordOpen}
+          onOpenChange={setResetPasswordOpen}
+        />
       </div>
     </div>
   );

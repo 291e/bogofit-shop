@@ -25,28 +25,28 @@ import { SmsSendRequest } from "@/types/sms";
  *                 example: "025114560"
  *               receiver:
  *                 type: string
- *                 description: 수신자 전화번호 (컴마로 구분하여 최대 1천명)
+ *                 description: "수신자 전화번호 (컴마로 구분하여 최대 1천명)"
  *                 example: "01012345678,01087654321"
  *               msg:
  *                 type: string
- *                 description: 메시지 내용 (1~2,000Byte)
+ *                 description: "메시지 내용 (1~2,000Byte)"
  *                 example: "안녕하세요! 테스트 메시지입니다."
  *               msgType:
  *                 type: string
  *                 enum: [SMS, LMS, MMS]
- *                 description: 메시지 타입 (생략시 자동 판단)
+ *                 description: "메시지 타입 (생략시 자동 판단)"
  *                 example: "SMS"
  *               title:
  *                 type: string
- *                 description: 문자 제목 (LMS, MMS만 허용, 1~44Byte)
+ *                 description: "문자 제목 (LMS, MMS만 허용, 1~44Byte)"
  *                 example: "공지사항"
  *               destination:
  *                 type: string
- *                 description: "%고객명%" 치환용 데이터
+ *                 description: "\"%고객명%\" 치환용 데이터"
  *                 example: "01012345678|홍길동,01087654321|김영희"
  *               rdate:
  *                 type: string
- *                 description: 예약일 (YYYYMMDD, 현재일 이상)
+ *                 description: "예약일 (YYYYMMDD, 현재일 이상)"
  *                 example: "20241230"
  *               rtime:
  *                 type: string
@@ -84,11 +84,11 @@ import { SmsSendRequest } from "@/types/sms";
  *                   properties:
  *                     result_code:
  *                       type: number
- *                       description: 결과 코드 (1: 성공)
+ *                       description: "결과 코드 (1: 성공)"
  *                       example: 1
  *                     message:
  *                       type: string
- *                       description: 결과 메시지
+ *                       description: "결과 메시지"
  *                       example: ""
  *                     msg_id:
  *                       type: number
