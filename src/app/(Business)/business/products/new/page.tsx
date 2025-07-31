@@ -34,14 +34,17 @@ import {
 interface ProductFormData {
   // Product 테이블 매핑 필드
   title: string; // Product.title
-  detailDescription: string; // Product.detailDescription (간략 설명)
   description: string; // Product.description (Tiptap 에디터 - 상세 설명)
-  price: number; // Product.price
+  price: number; // Product.price (원가)
+  discountAmount: number; // 할인 금액
+  discountPercent: number; // 할인 퍼센트
+  finalPrice: number; // 최종 판매가 (price - discountAmount)
   category: string; // Product.category
   subCategory: string; // Product.subCategory (세부 카테고리)
-  storeName: string; // Product.storeName
-  badge: string; // Product.badge (선택사항)
+  badges: string[]; // Product.badge (다중 선택)
   isActive: boolean; // Product.isActive
+  shippingType: string; // Product.shippingType
+  status: string; // Product.status
 
   // 이미지 관련 (파일 업로드)
   mainImage: File | null; // Product.imageUrl (메인 이미지)
@@ -63,14 +66,17 @@ export default function ProductCreatePage() {
 
   const [formData, setFormData] = useState<ProductFormData>({
     title: "",
-    detailDescription: "",
     description: "",
     price: 0,
+    discountAmount: 0,
+    discountPercent: 0,
+    finalPrice: 0,
     category: "",
     subCategory: "",
-    storeName: "",
-    badge: "",
+    badges: [],
     isActive: true,
+    shippingType: "OVERSEAS", // 기본값
+    status: "DRAFT", // 기본값
     mainImage: null,
     thumbnailImages: [],
     hasOptions: false,
@@ -81,11 +87,53 @@ export default function ProductCreatePage() {
 
   const handleInputChange = (
     field: keyof ProductFormData,
-    value: string | number | boolean | File | null | File[]
+    value: string | number | boolean | File | null | File[] | string[]
   ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
+    }));
+  };
+
+  // 할인 계산 로직
+  const handlePriceChange = (newPrice: number) => {
+    const discountAmount = formData.discountAmount;
+    const finalPrice = Math.max(0, newPrice - discountAmount);
+    const discountPercent =
+      newPrice > 0 ? Math.round((discountAmount / newPrice) * 100) : 0;
+
+    setFormData((prev) => ({
+      ...prev,
+      price: newPrice,
+      finalPrice,
+      discountPercent,
+    }));
+  };
+
+  const handleDiscountAmountChange = (newDiscountAmount: number) => {
+    const price = formData.price;
+    const finalPrice = Math.max(0, price - newDiscountAmount);
+    const discountPercent =
+      price > 0 ? Math.round((newDiscountAmount / price) * 100) : 0;
+
+    setFormData((prev) => ({
+      ...prev,
+      discountAmount: newDiscountAmount,
+      finalPrice,
+      discountPercent,
+    }));
+  };
+
+  const handleDiscountPercentChange = (newDiscountPercent: number) => {
+    const price = formData.price;
+    const discountAmount = Math.round((price * newDiscountPercent) / 100);
+    const finalPrice = Math.max(0, price - discountAmount);
+
+    setFormData((prev) => ({
+      ...prev,
+      discountPercent: newDiscountPercent,
+      discountAmount,
+      finalPrice,
     }));
   };
 
@@ -110,6 +158,23 @@ export default function ProductCreatePage() {
       (_, i) => i !== index
     );
     handleInputChange("thumbnailImages", newThumbnails);
+  };
+
+  // 뱃지 관리 함수들
+  const toggleBadge = (badge: string) => {
+    const currentBadges = formData.badges;
+    const isSelected = currentBadges.includes(badge);
+
+    if (isSelected) {
+      // 선택 해제
+      handleInputChange(
+        "badges",
+        currentBadges.filter((b) => b !== badge)
+      );
+    } else {
+      // 선택 추가
+      handleInputChange("badges", [...currentBadges, badge]);
+    }
   };
 
   // 옵션 관리 함수들
@@ -296,14 +361,17 @@ export default function ProductCreatePage() {
       // 2단계: 상품 생성 (이미지 없이 먼저 생성)
       const productData = {
         title: formData.title,
-        detailDescription: formData.detailDescription || null,
         description: formData.description,
-        price: formData.price,
+        price: formData.finalPrice, // 최종 판매가를 price로 저장
+        originalPrice: formData.price, // 원가를 별도 저장
+        discountAmount: formData.discountAmount,
+        discountPercent: formData.discountPercent,
         category: formData.category,
         subCategory: formData.subCategory || null,
-        storeName: formData.storeName,
-        badge: formData.badge || null,
+        badges: formData.badges, // 배열로 전송
         isActive: formData.isActive,
+        shippingType: formData.shippingType,
+        status: formData.status,
         imageUrl: "", // 일단 빈 문자열로 생성
         detailImage: detailImageUrl || null, // TiptapEditor에서 업로드된 이미지 URL
         variants: formData.hasOptions ? formData.variants : [],
@@ -383,33 +451,8 @@ export default function ProductCreatePage() {
                     id="title"
                     value={formData.title}
                     onChange={(e) => handleInputChange("title", e.target.value)}
-                    placeholder="상품명을 입력하세요"
+                    placeholder="예: 아디다스 울트라부스트 22 러닝화"
                     required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="storeName">업체명 *</Label>
-                  <Input
-                    id="storeName"
-                    value={formData.storeName}
-                    onChange={(e) =>
-                      handleInputChange("storeName", e.target.value)
-                    }
-                    placeholder="업체명을 입력하세요"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="detailDescription">간략 설명</Label>
-                  <Input
-                    id="detailDescription"
-                    value={formData.detailDescription}
-                    onChange={(e) =>
-                      handleInputChange("detailDescription", e.target.value)
-                    }
-                    placeholder="상품의 간략한 설명을 입력하세요"
                   />
                 </div>
 
@@ -427,7 +470,19 @@ export default function ProductCreatePage() {
                       );
                       setDetailImageUrl(imageUrl);
                     }}
-                    placeholder="상품에 대한 자세한 설명을 작성해주세요..."
+                    placeholder="📝 상품의 매력을 고객에게 전달해보세요!
+
+🔥 제품 특징:
+• 예: 최신 Boost 미드솔 기술이 적용된 프리미엄 러닝화
+• 뛰어난 쿠셔닝과 에너지 리턴으로 장거리 러닝 최적화
+• 통기성 뛰어난 Primeknit 어퍼 소재 사용
+
+📏 상세 정보:
+• 사이즈: 230mm~290mm (5mm 단위)
+• 소재: Primeknit 어퍼, Boost 미드솔, Continental 러버 아웃솔
+• 중량: 약 320g (275mm 기준)
+
+🖼️ 툴바의 이미지 버튼을 눌러 제품 착용샷, 디테일 사진 등을 추가해주세요!"
                   />
                   {detailImageUrl && (
                     <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
@@ -446,22 +501,66 @@ export default function ProductCreatePage() {
               <CardHeader>
                 <CardTitle>가격 정보</CardTitle>
                 <CardDescription>
-                  상품의 가격 정보를 설정해주세요
+                  상품의 가격 및 할인 정보를 설정해주세요
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">판매가 *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) =>
-                      handleInputChange("price", Number(e.target.value))
-                    }
-                    placeholder="0"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">원가 *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) =>
+                        handlePriceChange(Number(e.target.value))
+                      }
+                      placeholder="예: 189000"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="discountAmount">할인 금액</Label>
+                    <Input
+                      id="discountAmount"
+                      type="number"
+                      value={formData.discountAmount}
+                      onChange={(e) =>
+                        handleDiscountAmountChange(Number(e.target.value))
+                      }
+                      placeholder="예: 30000"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="discountPercent">할인율 (%)</Label>
+                    <Input
+                      id="discountPercent"
+                      type="number"
+                      value={formData.discountPercent}
+                      onChange={(e) =>
+                        handleDiscountPercentChange(Number(e.target.value))
+                      }
+                      placeholder="예: 15"
+                      max="100"
+                      min="0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="finalPrice">최종 판매가</Label>
+                    <Input
+                      id="finalPrice"
+                      type="number"
+                      value={formData.finalPrice}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                    <p className="text-sm text-gray-500">
+                      자동 계산됨 (원가 - 할인금액)
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -484,7 +583,7 @@ export default function ProductCreatePage() {
                       className="flex items-center gap-2"
                     >
                       <Upload className="h-4 w-4" />
-                      이미지 선택
+                      메인 이미지 선택
                     </Button>
                     <input
                       ref={mainImageRef}
@@ -558,130 +657,6 @@ export default function ProductCreatePage() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* 상품 옵션 설정 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>상품 옵션 설정</CardTitle>
-                <CardDescription>상품 옵션을 설정해주세요</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* 옵션 사용 여부 */}
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="hasOptions">옵션 사용</Label>
-                  <Switch
-                    id="hasOptions"
-                    checked={formData.hasOptions}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("hasOptions", checked)
-                    }
-                  />
-                </div>
-
-                {formData.hasOptions && (
-                  <div className="space-y-4">
-                    {/* 옵션 추가 버튼 */}
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">옵션 품목</h4>
-                      <Button type="button" onClick={addVariant} size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        품목 추가
-                      </Button>
-                    </div>
-
-                    {/* 옵션 목록 */}
-                    {formData.variants.map((variant) => (
-                      <div
-                        key={variant.id}
-                        className="border rounded-lg p-4 space-y-3"
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                          <div>
-                            <Label>옵션명</Label>
-                            <Input
-                              value={variant.optionName}
-                              onChange={(e) =>
-                                updateVariant(
-                                  variant.id,
-                                  "optionName",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="색상, 사이즈 등"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>옵션값</Label>
-                            <Input
-                              value={variant.optionValue}
-                              onChange={(e) =>
-                                updateVariant(
-                                  variant.id,
-                                  "optionValue",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="빨강, XL 등"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>추가금액</Label>
-                            <Input
-                              type="number"
-                              value={variant.priceDiff}
-                              onChange={(e) =>
-                                updateVariant(
-                                  variant.id,
-                                  "priceDiff",
-                                  Number(e.target.value)
-                                )
-                              }
-                              placeholder="0"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>재고</Label>
-                            <Input
-                              type="number"
-                              value={variant.stock}
-                              onChange={(e) =>
-                                updateVariant(
-                                  variant.id,
-                                  "stock",
-                                  Number(e.target.value)
-                                )
-                              }
-                              placeholder="0"
-                            />
-                          </div>
-
-                          <div className="flex items-end">
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => removeVariant(variant.id)}
-                              className="w-full"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    {formData.variants.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        옵션 품목을 추가해주세요
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           {/* 사이드바 */}
@@ -742,23 +717,46 @@ export default function ProductCreatePage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="badge">뱃지</Label>
+                  <Label>뱃지 (다중 선택)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {productBadges.map((badge) => (
+                      <div
+                        key={badge}
+                        className={`
+                          border rounded-lg p-2 cursor-pointer text-center text-sm transition-colors
+                          ${
+                            formData.badges.includes(badge)
+                              ? "bg-blue-100 border-blue-500 text-blue-700"
+                              : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                          }
+                        `}
+                        onClick={() => toggleBadge(badge)}
+                      >
+                        {badge}
+                      </div>
+                    ))}
+                  </div>
+                  {formData.badges.length > 0 && (
+                    <p className="text-sm text-gray-500">
+                      선택됨: {formData.badges.join(", ")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="shippingType">배송 타입</Label>
                   <Select
-                    value={formData.badge || "none"}
+                    value={formData.shippingType}
                     onValueChange={(value) =>
-                      handleInputChange("badge", value === "none" ? "" : value)
+                      handleInputChange("shippingType", value)
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="뱃지 선택 (선택사항)" />
+                      <SelectValue placeholder="배송 타입 선택" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">없음</SelectItem>
-                      {productBadges.map((badge) => (
-                        <SelectItem key={badge} value={badge}>
-                          {badge}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="DOMESTIC">국내 배송</SelectItem>
+                      <SelectItem value="OVERSEAS">해외 배송</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -776,6 +774,135 @@ export default function ProductCreatePage() {
               </CardContent>
             </Card>
 
+            {/* 상품 옵션 설정 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>상품 옵션</CardTitle>
+                <CardDescription>상품 옵션을 설정해주세요</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* 옵션 사용 여부 */}
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="hasOptions">옵션 사용</Label>
+                  <Switch
+                    id="hasOptions"
+                    checked={formData.hasOptions}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("hasOptions", checked)
+                    }
+                  />
+                </div>
+
+                {formData.hasOptions && (
+                  <div className="space-y-4">
+                    {/* 옵션 추가 버튼 */}
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium">옵션 품목</h4>
+                      <Button type="button" onClick={addVariant} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        품목 추가
+                      </Button>
+                    </div>
+
+                    {/* 옵션 목록 */}
+                    {formData.variants.map((variant) => (
+                      <div
+                        key={variant.id}
+                        className="border rounded-lg p-3 space-y-3"
+                      >
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs">옵션명</Label>
+                              <Input
+                                value={variant.optionName}
+                                onChange={(e) =>
+                                  updateVariant(
+                                    variant.id,
+                                    "optionName",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="예: 색상"
+                                className="text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">옵션값</Label>
+                              <Input
+                                value={variant.optionValue}
+                                onChange={(e) =>
+                                  updateVariant(
+                                    variant.id,
+                                    "optionValue",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="예: 블랙"
+                                className="text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs">추가금액</Label>
+                              <Input
+                                type="number"
+                                value={variant.priceDiff}
+                                onChange={(e) =>
+                                  updateVariant(
+                                    variant.id,
+                                    "priceDiff",
+                                    Number(e.target.value)
+                                  )
+                                }
+                                placeholder="예: 5000"
+                                className="text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">재고</Label>
+                              <Input
+                                type="number"
+                                value={variant.stock}
+                                onChange={(e) =>
+                                  updateVariant(
+                                    variant.id,
+                                    "stock",
+                                    Number(e.target.value)
+                                  )
+                                }
+                                placeholder="예: 100"
+                                className="text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeVariant(variant.id)}
+                            className="w-full"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            삭제
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {formData.variants.length === 0 && (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        옵션 품목을 추가해주세요
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* 등록 버튼 */}
             <div className="space-y-2">
               <Button
@@ -785,7 +912,7 @@ export default function ProductCreatePage() {
                   loading ||
                   !formData.title ||
                   !formData.category ||
-                  !formData.storeName
+                  formData.price <= 0
                 }
               >
                 {loading ? "등록 중..." : "상품 등록"}

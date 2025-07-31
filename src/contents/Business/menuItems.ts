@@ -76,7 +76,7 @@ export const businessMenuItems: MenuItem[] = [
     icon: FileText,
   },
   {
-    name: "브랜드 설정",
+    name: "업체 정보",
     href: "/business/settings/brand",
     icon: Settings,
   },

@@ -176,8 +176,8 @@ export default function BrandSettingsPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">브랜드 설정</h1>
-            <p className="text-gray-600">브랜드 정보를 불러오는 중...</p>
+            <h1 className="text-2xl font-bold text-gray-900">업체 정보</h1>
+            <p className="text-gray-600">업체 정보를 불러오는 중...</p>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -203,8 +203,8 @@ export default function BrandSettingsPage() {
       {/* 헤더 */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">브랜드 설정</h1>
-          <p className="text-gray-600">브랜드 이름과 로고를 관리하세요</p>
+          <h1 className="text-2xl font-bold text-gray-900">업체 정보</h1>
+          <p className="text-gray-600">업체 이름과 로고를 관리하세요</p>
         </div>
         <Button onClick={handleSave} disabled={isLoading}>
           <Save className="h-4 w-4 mr-2" />
@@ -218,36 +218,36 @@ export default function BrandSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              브랜드 정보
+              업체 정보
             </CardTitle>
             <CardDescription>
-              고객에게 표시될 브랜드 정보를 입력하세요.
+              고객에게 표시될 업체 정보를 입력하세요.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name">브랜드명 *</Label>
+              <Label htmlFor="name">업체명 *</Label>
               <Input
                 id="name"
                 value={brandInfo.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="브랜드명을 입력하세요"
+                placeholder="업체명을 입력하세요"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">브랜드 소개</Label>
+              <Label htmlFor="description">업체 소개</Label>
               <Textarea
                 id="description"
                 value={brandInfo.description || ""}
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                placeholder="브랜드에 대한 간단한 소개를 입력하세요"
+                placeholder="업체에 대한 간단한 소개를 입력하세요"
                 rows={4}
               />
               <p className="text-sm text-gray-500">
-                이 설명은 상품 페이지와 브랜드 소개에서 고객에게 표시됩니다.
+                이 설명은 상품 페이지와 업체 소개에서 고객에게 표시됩니다.
               </p>
             </div>
 
@@ -316,10 +316,10 @@ export default function BrandSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
-              브랜드 로고
+              업체 로고
             </CardTitle>
             <CardDescription>
-              고객에게 표시될 브랜드 로고를 업로드하세요.
+              고객에게 표시될 업체 로고를 업로드하세요.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -328,7 +328,7 @@ export default function BrandSettingsPage() {
               <div className="aspect-square bg-gray-50 rounded-lg border border-dashed border-gray-300 p-4">
                 <img
                   src={brandInfo.logo}
-                  alt="브랜드 로고"
+                  alt="업체 로고"
                   className="w-full h-full object-contain"
                 />
               </div>
