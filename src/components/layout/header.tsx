@@ -206,12 +206,16 @@ export default function Header() {
                   <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center">
                       <span className="text-white font-medium text-sm">
-                        {user.userId.charAt(0).toUpperCase()}
+                        {(
+                          user?.userId?.charAt(0) ||
+                          user?.email?.charAt(0) ||
+                          "U"
+                        ).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 text-sm truncate">
-                        {user.userId}님
+                        {user?.userId || user?.email || "사용자"}님
                       </p>
                       <p className="text-xs text-gray-500">환영합니다!</p>
                     </div>

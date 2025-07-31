@@ -19,6 +19,7 @@ export interface SendEmailOptions {
   html?: string;
   text?: string;
   react?: React.ReactElement;
+  attachments?: { filename: string; content: Buffer }[];
 }
 
 export const sendEmail = async ({
@@ -27,6 +28,7 @@ export const sendEmail = async ({
   html,
   text,
   react,
+  attachments,
 }: SendEmailOptions) => {
   try {
     const fromEmail = `${EMAIL_CONFIG.fromName} <${EMAIL_CONFIG.from}>`;
@@ -35,6 +37,11 @@ export const sendEmail = async ({
       `📩 Sending email to: ${Array.isArray(to) ? to.join(", ") : to}`
     );
     console.log(`📋 Subject: ${subject}`);
+    if (attachments?.length) {
+      console.log(
+        `📎 Attachments: ${attachments.map((a) => a.filename).join(", ")}`
+      );
+    }
 
     const result = await resend.emails.send({
       from: fromEmail,
@@ -43,6 +50,10 @@ export const sendEmail = async ({
       html,
       text,
       react,
+      attachments: attachments?.map((att) => ({
+        filename: att.filename,
+        content: att.content,
+      })),
     });
 
     console.log(`✅ Resend API 응답:`, result);

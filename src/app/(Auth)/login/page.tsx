@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/card";
 import SocialLogin from "@/components/auth/SocialLogin";
 import ResetPasswordModal from "@/components/auth/ResetPasswordModal";
+import BrandInquiryModal from "@/components/auth/BrandInquiryModal";
 import { useAuth } from "@/providers/AuthProvider";
 import Link from "next/link";
-import { User, Building2 } from "lucide-react";
+import { User, Building2, Store } from "lucide-react";
 
 function LoginPage() {
   const router = useRouter();
@@ -40,6 +41,9 @@ function LoginPage() {
 
   // 비밀번호 초기화 모달 상태
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+
+  // 브랜드 입점 문의 모달 상태
+  const [brandInquiryOpen, setBrandInquiryOpen] = useState(false);
 
   const [loginMutation] = useMutation(LOGIN);
 
@@ -89,8 +93,8 @@ function LoginPage() {
     }
 
     try {
-      // 실제 환경에서는 별도의 비즈니스 로그인 mutation을 사용하거나
-      // 기존 mutation에 isBusiness, deviceId 파라미터를 추가할 수 있습니다
+      console.log("🏢 사업자 로그인 시도:", { businessUserId, deviceId });
+
       const { data } = await loginMutation({
         variables: {
           userId: businessUserId,
@@ -100,21 +104,30 @@ function LoginPage() {
         },
       });
 
+      console.log("🏢 사업자 로그인 응답:", data);
+
       if (data?.login?.success && data.login.token) {
+        console.log("✅ 사업자 로그인 성공");
+
         // 사업자 로그인 성공 시 사용자 정보에 isBusiness: true 설정
         const businessUser = {
           ...data.login.user,
           isBusiness: true,
         };
 
+        console.log("👤 사업자 사용자 정보:", businessUser);
+
         authLogin(data.login.token, businessUser);
 
+        console.log("🔄 /business로 리다이렉트 시도");
         // 사업자는 무조건 비즈니스 대시보드로 리다이렉트
         router.replace("/business");
       } else {
+        console.error("❌ 사업자 로그인 실패:", data);
         setError(data?.login?.message || "사업자 로그인에 실패했습니다.");
       }
     } catch (err: unknown) {
+      console.error("❌ 사업자 로그인 에러:", err);
       setError(
         (err as Error).message || "사업자 로그인 중 오류가 발생했습니다."
       );
@@ -318,10 +331,26 @@ function LoginPage() {
                       <ul className="mt-1 space-y-1">
                         <li>• 입점 브랜드/매장 관리자만 사용 가능</li>
                         <li>• 디바이스 ID는 보안을 위해 필수입니다</li>
-                        <li>• 계정 문의: metabank@naver.com</li>
+                        <li>• 계정 문의: bogofit@naver.com</li>
                       </ul>
                     </div>
                   </div>
+                </div>
+
+                {/* 브랜드 입점 문의 버튼 */}
+                <div className="mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300"
+                    onClick={() => setBrandInquiryOpen(true)}
+                  >
+                    <Store className="h-4 w-4 mr-2" />
+                    브랜드 입점 문의
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2 text-center">
+                    새로운 브랜드의 BogoFit 입점을 원하시나요?
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -332,6 +361,12 @@ function LoginPage() {
         <ResetPasswordModal
           open={resetPasswordOpen}
           onOpenChange={setResetPasswordOpen}
+        />
+
+        {/* 브랜드 입점 문의 모달 */}
+        <BrandInquiryModal
+          open={brandInquiryOpen}
+          onOpenChange={setBrandInquiryOpen}
         />
       </div>
     </div>

@@ -28,11 +28,11 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
           {/* 사용자 프로필 아바타 */}
           <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center">
             <span className="text-white font-medium text-sm">
-              {user.userId.charAt(0).toUpperCase()}
+              {(user?.userId?.charAt(0) || "U").toUpperCase()}
             </span>
           </div>
           <span className="font-medium text-gray-900 hidden xl:inline">
-            {user.userId}님
+            {user?.userId || "사용자"}님
           </span>
         </Button>
       </DropdownMenuTrigger>
@@ -41,7 +41,7 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-semibold leading-none">
-              {user.userId}님
+              {user?.userId || "사용자"}님
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               보고핏과 함께해요!
