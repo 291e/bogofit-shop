@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
             isActive: productData.isActive !== false,
             detailImage: productData.detailImage || null,
             thumbnailImages: productData.thumbnailImages || [],
-            status: "DRAFT", // 새로 등록된 상품은 DRAFT 상태
+            status: "APPROVED", // 새로 등록된 상품은 승인완료 상태
           },
         });
 

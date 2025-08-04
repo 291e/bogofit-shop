@@ -342,11 +342,11 @@ function LoginPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300"
+                    className="w-full bg-red-500 border-red-500 text-white hover:bg-red-50 hover:border-red-700"
                     onClick={() => setBrandInquiryOpen(true)}
                   >
                     <Store className="h-4 w-4 mr-2" />
-                    브랜드 입점 문의
+                    브랜드 입점 신청하기
                   </Button>
                   <p className="text-xs text-gray-500 mt-2 text-center">
                     새로운 브랜드의 BogoFit 입점을 원하시나요?

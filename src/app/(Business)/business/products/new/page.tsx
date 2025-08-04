@@ -44,7 +44,6 @@ interface ProductFormData {
   badges: string[]; // Product.badge (다중 선택)
   isActive: boolean; // Product.isActive
   shippingType: string; // Product.shippingType
-  status: string; // Product.status
 
   // 이미지 관련 (파일 업로드)
   mainImage: File | null; // Product.imageUrl (메인 이미지)
@@ -59,6 +58,7 @@ export default function ProductCreatePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [detailImageUrl, setDetailImageUrl] = useState<string>(""); // TiptapEditor에서 업로드된 이미지 URL
+  const [isEditorUploading, setIsEditorUploading] = useState(false); // TiptapEditor 이미지 업로드 상태
 
   // 파일 입력 참조
   const mainImageRef = useRef<HTMLInputElement>(null);
@@ -76,7 +76,6 @@ export default function ProductCreatePage() {
     badges: [],
     isActive: true,
     shippingType: "OVERSEAS", // 기본값
-    status: "DRAFT", // 기본값
     mainImage: null,
     thumbnailImages: [],
     hasOptions: false,
@@ -328,6 +327,13 @@ export default function ProductCreatePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 에디터에서 이미지 업로드 중인지 확인
+    if (isEditorUploading) {
+      alert("이미지 업로드가 진행 중입니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -363,21 +369,16 @@ export default function ProductCreatePage() {
         title: formData.title,
         description: formData.description,
         price: formData.finalPrice, // 최종 판매가를 price로 저장
-        originalPrice: formData.price, // 원가를 별도 저장
-        discountAmount: formData.discountAmount,
-        discountPercent: formData.discountPercent,
         category: formData.category,
         subCategory: formData.subCategory || null,
-        badges: formData.badges, // 배열로 전송
+        badge: formData.badges.length > 0 ? formData.badges.join(", ") : null, // 배열을 문자열로 변환
         isActive: formData.isActive,
-        shippingType: formData.shippingType,
-        status: formData.status,
         imageUrl: "", // 일단 빈 문자열로 생성
         detailImage: detailImageUrl || null, // TiptapEditor에서 업로드된 이미지 URL
         variants: formData.hasOptions ? formData.variants : [],
       };
 
-      console.log("상품 생성 중...");
+      console.log("상품 생성 중...", productData);
       const productResponse = await fetch("/api/business/products", {
         method: "POST",
         headers: {
@@ -387,7 +388,11 @@ export default function ProductCreatePage() {
       });
 
       if (!productResponse.ok) {
-        throw new Error("상품 생성 실패");
+        const errorData = await productResponse.json();
+        console.error("상품 생성 실패 응답:", errorData);
+        throw new Error(
+          `상품 생성 실패: ${errorData.error || productResponse.statusText}`
+        );
       }
 
       const productResult = await productResponse.json();
@@ -469,6 +474,9 @@ export default function ProductCreatePage() {
                         imageUrl
                       );
                       setDetailImageUrl(imageUrl);
+                    }}
+                    onUploadStateChange={(uploading) => {
+                      setIsEditorUploading(uploading);
                     }}
                     placeholder="📝 상품의 매력을 고객에게 전달해보세요!
 
@@ -743,24 +751,6 @@ export default function ProductCreatePage() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="shippingType">배송 타입</Label>
-                  <Select
-                    value={formData.shippingType}
-                    onValueChange={(value) =>
-                      handleInputChange("shippingType", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="배송 타입 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="DOMESTIC">국내 배송</SelectItem>
-                      <SelectItem value="OVERSEAS">해외 배송</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="flex items-center justify-between">
                   <Label htmlFor="isActive">상품 활성화</Label>
                   <Switch
@@ -910,12 +900,17 @@ export default function ProductCreatePage() {
                 className="w-full"
                 disabled={
                   loading ||
+                  isEditorUploading ||
                   !formData.title ||
                   !formData.category ||
                   formData.price <= 0
                 }
               >
-                {loading ? "등록 중..." : "상품 등록"}
+                {loading
+                  ? "등록 중..."
+                  : isEditorUploading
+                    ? "이미지 업로드 중..."
+                    : "상품 등록"}
               </Button>
               <Button
                 type="button"

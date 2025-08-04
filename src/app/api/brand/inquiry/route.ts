@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/resend";
+import { SmsNotificationService, isTestMode } from "@/lib/sms-notifications";
 
 interface BrandInquiryData {
   // 회사 정보
@@ -517,6 +518,34 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, message: "이메일 전송에 실패했습니다." },
         { status: 500 }
+      );
+    }
+
+    // 사업자에게 브랜드 입점 문의 SMS 알림 발송 (설정된 경우)
+    const businessPhone = process.env.BUSINESS_NOTIFICATION_PHONE;
+    if (businessPhone) {
+      const inquiryTime = new Date().toLocaleString("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      SmsNotificationService.sendBrandInquiryNotification({
+        businessPhone,
+        brandName: data.brandName!,
+        companyName: data.companyName!,
+        contactName: data.contactName!,
+        contactPhone: data.companyPhone!,
+        inquiryTime,
+        testMode: isTestMode,
+      }).catch((error) => {
+        console.error("[SMS] 브랜드 입점 문의 알림 SMS 발송 실패:", error);
+      });
+    } else {
+      console.warn(
+        "⚠️ BUSINESS_NOTIFICATION_PHONE 환경변수가 설정되지 않아 SMS 알림을 발송하지 않습니다."
       );
     }
 

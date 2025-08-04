@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Menu, User } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -20,6 +21,7 @@ import { Badge } from "../ui/badge";
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   // 단일 인증 훅 사용
   const { user, isAuthenticated, logout } = useAuth();
@@ -90,17 +92,42 @@ export default function Header() {
                 <div className="hidden md:flex items-center gap-6 mt-1 text-sm line-seed-kr">
                   <Link
                     href="/recommend"
-                    className="text-[#FF84CD] font-medium"
+                    className={
+                      pathname === "/recommend"
+                        ? "text-[#FF84CD] font-medium"
+                        : "text-gray-600 hover:text-[#FF84CD] transition-colors"
+                    }
                   >
                     추천
                   </Link>
-                  <Link href="/ranking" className="text-gray-600">
+                  <Link
+                    href="/ranking"
+                    className={
+                      pathname === "/ranking"
+                        ? "text-[#FF84CD] font-medium"
+                        : "text-gray-600 hover:text-[#FF84CD] transition-colors"
+                    }
+                  >
                     랭킹
                   </Link>
-                  <Link href="/sale" className="text-gray-600">
+                  <Link
+                    href="/sale"
+                    className={
+                      pathname === "/sale"
+                        ? "text-[#FF84CD] font-medium"
+                        : "text-gray-600 hover:text-[#FF84CD] transition-colors"
+                    }
+                  >
                     세일
                   </Link>
-                  <Link href="/brands" className="text-gray-600">
+                  <Link
+                    href="/brands"
+                    className={
+                      pathname === "/brands"
+                        ? "text-[#FF84CD] font-medium"
+                        : "text-gray-600 hover:text-[#FF84CD] transition-colors"
+                    }
+                  >
                     브랜드
                   </Link>
                 </div>
@@ -190,7 +217,11 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex items-center px-3 py-3 text-base font-medium text-gray-700 hover:text-[#D74FDF] hover:bg-pink-50 rounded-lg transition-colors"
+                  className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${
+                    pathname === link.href
+                      ? "text-[#FF84CD] bg-pink-50"
+                      : "text-gray-700 hover:text-[#FF84CD] hover:bg-pink-50"
+                  }`}
                   onClick={() => setOpen(false)}
                 >
                   {link.label}
@@ -225,14 +256,22 @@ export default function Header() {
                   <div className="space-y-1">
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#D74FDF] hover:bg-pink-50 rounded-lg transition-colors"
+                      className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        pathname === "/profile"
+                          ? "text-[#FF84CD] bg-pink-50"
+                          : "text-gray-600 hover:text-[#FF84CD] hover:bg-pink-50"
+                      }`}
                       onClick={() => setOpen(false)}
                     >
                       <User className="w-4 h-4" />내 정보 수정
                     </Link>
                     <Link
                       href="/myPage"
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#D74FDF] hover:bg-pink-50 rounded-lg transition-colors"
+                      className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        pathname === "/myPage"
+                          ? "text-[#FF84CD] bg-pink-50"
+                          : "text-gray-600 hover:text-[#FF84CD] hover:bg-pink-50"
+                      }`}
                       onClick={() => setOpen(false)}
                     >
                       마이페이지

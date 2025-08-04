@@ -28,6 +28,7 @@ interface TiptapEditorProps {
   content: string;
   onChange: (content: string) => void;
   onDetailImageUpload?: (imageUrl: string) => void; // 첫 번째 이미지만 detailImage로 전달
+  onUploadStateChange?: (isUploading: boolean) => void; // 업로드 상태 변경 콜백
   placeholder?: string;
 }
 
@@ -35,10 +36,12 @@ export default function TiptapEditor({
   content,
   onChange,
   onDetailImageUpload,
+  onUploadStateChange,
   placeholder,
 }: TiptapEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isFirstImage, setIsFirstImage] = useState<boolean>(true); // 첫 번째 이미지 여부 추적
+  const [isUploading, setIsUploading] = useState<boolean>(false); // 이미지 업로드 중 상태
 
   const editor = useEditor({
     extensions: [
@@ -123,7 +126,16 @@ export default function TiptapEditor({
 
   const handleImageUpload = useCallback(
     async (file: File) => {
+      if (isUploading) {
+        console.log("이미 업로드 중입니다.");
+        return;
+      }
+
+      setIsUploading(true);
+      onUploadStateChange?.(true);
       try {
+        console.log("이미지 업로드 시작:", file.name);
+
         // S3에 이미지 업로드
         const imageUrl = await uploadImageToS3(file);
 
@@ -141,10 +153,29 @@ export default function TiptapEditor({
         console.log("에디터 이미지 추가 완료:", imageUrl);
       } catch (error) {
         console.error("이미지 업로드 실패:", error);
-        alert("이미지 업로드에 실패했습니다: " + error);
+
+        // 에러 메시지를 에디터에 표시 (폼 제출 방해 없이)
+        if (editor) {
+          editor
+            .chain()
+            .focus()
+            .insertContent(
+              `<p style="color: red;">⚠️ 이미지 업로드 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}</p>`
+            )
+            .run();
+        }
+      } finally {
+        setIsUploading(false);
+        onUploadStateChange?.(false);
       }
     },
-    [editor, isFirstImage, onDetailImageUpload]
+    [
+      editor,
+      isFirstImage,
+      onDetailImageUpload,
+      onUploadStateChange,
+      isUploading,
+    ]
   );
 
   const addImage = useCallback(() => {
@@ -217,6 +248,7 @@ export default function TiptapEditor({
       <div className="flex flex-wrap items-center gap-1 p-3 border-b border-gray-200 bg-gray-50">
         {/* 실행 취소/다시 실행 */}
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().undo().run()}
@@ -225,6 +257,7 @@ export default function TiptapEditor({
           <Undo className="h-4 w-4" />
         </Button>
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => editor.chain().focus().redo().run()}
@@ -237,6 +270,7 @@ export default function TiptapEditor({
 
         {/* 텍스트 포맷팅 */}
         <Button
+          type="button"
           variant={editor.isActive("bold") ? "default" : "ghost"}
           size="sm"
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -244,6 +278,7 @@ export default function TiptapEditor({
           <Bold className="h-4 w-4" />
         </Button>
         <Button
+          type="button"
           variant={editor.isActive("italic") ? "default" : "ghost"}
           size="sm"
           onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -251,6 +286,7 @@ export default function TiptapEditor({
           <Italic className="h-4 w-4" />
         </Button>
         <Button
+          type="button"
           variant={editor.isActive("underline") ? "default" : "ghost"}
           size="sm"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
@@ -262,6 +298,7 @@ export default function TiptapEditor({
 
         {/* 리스트 */}
         <Button
+          type="button"
           variant={editor.isActive("bulletList") ? "default" : "ghost"}
           size="sm"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -269,6 +306,7 @@ export default function TiptapEditor({
           <List className="h-4 w-4" />
         </Button>
         <Button
+          type="button"
           variant={editor.isActive("orderedList") ? "default" : "ghost"}
           size="sm"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -280,6 +318,7 @@ export default function TiptapEditor({
 
         {/* 정렬 */}
         <Button
+          type="button"
           variant={editor.isActive({ textAlign: "left" }) ? "default" : "ghost"}
           size="sm"
           onClick={() => editor.chain().focus().setTextAlign("left").run()}
@@ -287,6 +326,7 @@ export default function TiptapEditor({
           <AlignLeft className="h-4 w-4" />
         </Button>
         <Button
+          type="button"
           variant={
             editor.isActive({ textAlign: "center" }) ? "default" : "ghost"
           }
@@ -296,6 +336,7 @@ export default function TiptapEditor({
           <AlignCenter className="h-4 w-4" />
         </Button>
         <Button
+          type="button"
           variant={
             editor.isActive({ textAlign: "right" }) ? "default" : "ghost"
           }
@@ -308,11 +349,21 @@ export default function TiptapEditor({
         <Separator orientation="vertical" className="h-6 mx-1" />
 
         {/* 링크 & 이미지 */}
-        <Button variant="ghost" size="sm" onClick={setLink}>
+        <Button type="button" variant="ghost" size="sm" onClick={setLink}>
           <LinkIcon className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={addImage}>
-          <ImageIcon className="h-4 w-4" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={addImage}
+          disabled={isUploading}
+        >
+          {isUploading ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
         </Button>
       </div>
 

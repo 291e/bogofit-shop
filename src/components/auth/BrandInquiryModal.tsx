@@ -281,7 +281,7 @@ export default function BrandInquiryModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Store className="h-5 w-5" />
-            브랜드 입점 문의
+            브랜드 입점 신청하기
           </DialogTitle>
           <DialogDescription>
             BogoFit에 브랜드를 입점하기 위한 정보를 입력해주세요. 담당자가 검토

@@ -185,6 +185,14 @@ export async function POST(request: Request) {
         customerName: orderData.ordererName || "고객",
         orderId: orderData.id,
         amount: result.totalAmount || orderData.totalAmount,
+        productName: productNames,
+        orderDate: new Date().toLocaleString("ko-KR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         recipientName:
           orderData.recipientName || orderData.ordererName || "수령인",
         address: `${orderData.address1} ${orderData.address2 || ""}`.trim(),

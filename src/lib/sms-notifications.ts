@@ -7,13 +7,18 @@ export const SMS_TEMPLATES = {
     customerName: string;
     orderId: string;
     amount: number;
+    productName: string;
+    orderDate: string;
     recipientName: string;
     address: string;
   }) =>
     `[BogoFit] ${data.customerName}님, 주문이 완료되었습니다!\n` +
     `주문번호: ${data.orderId}\n` +
+    `상품명: ${data.productName}\n` +
+    `주문일시: ${data.orderDate}\n` +
     `결제금액: ${data.amount.toLocaleString()}원\n` +
-    `배송지: ${data.recipientName} / ${data.address}\n` +
+    `주문자: ${data.recipientName}\n` +
+    `배송지: ${data.address}\n` +
     `감사합니다!`,
 
   // 결제 실패
@@ -26,19 +31,26 @@ export const SMS_TEMPLATES = {
   SHIPPING_STARTED: (data: {
     customerName: string;
     orderId: string;
+    productName?: string;
     trackingNumber?: string;
     courierCompany?: string;
   }) =>
     `[BogoFit] ${data.customerName}님, 주문하신 상품이 발송되었습니다!\n` +
     `주문번호: ${data.orderId}\n` +
+    `${data.productName ? `상품명: ${data.productName}\n` : ""}` +
     `${data.trackingNumber ? `운송장번호: ${data.trackingNumber}\n` : ""}` +
     `${data.courierCompany ? `택배사: ${data.courierCompany}\n` : ""}` +
     `1-2일 내 도착 예정입니다.`,
 
   // 배송 완료
-  DELIVERY_COMPLETED: (data: { customerName: string; orderId: string }) =>
+  DELIVERY_COMPLETED: (data: {
+    customerName: string;
+    orderId: string;
+    productName?: string;
+  }) =>
     `[BogoFit] ${data.customerName}님, 배송이 완료되었습니다!\n` +
     `주문번호: ${data.orderId}\n` +
+    `${data.productName ? `상품명: ${data.productName}\n` : ""}` +
     `상품 리뷰 작성 시 적립금 500원을 드립니다.\n` +
     `리뷰 작성하기: ${process.env.NEXT_PUBLIC_BASE_URL}/myPage`,
 
@@ -55,6 +67,22 @@ export const SMS_TEMPLATES = {
     `금액: ${data.amount.toLocaleString()}원\n` +
     `주문자: ${data.customerName}\n` +
     `확인해주세요.`,
+
+  // 비즈니스 - 브랜드 입점 문의 알림
+  BRAND_INQUIRY_NOTIFICATION: (data: {
+    brandName: string;
+    companyName: string;
+    contactName: string;
+    contactPhone: string;
+    inquiryTime: string;
+  }) =>
+    `[BogoFit] 브랜드 입점 문의가 접수되었습니다.\n` +
+    `브랜드: ${data.brandName}\n` +
+    `회사: ${data.companyName}\n` +
+    `담당자: ${data.contactName}\n` +
+    `연락처: ${data.contactPhone}\n` +
+    `접수시간: ${data.inquiryTime}\n` +
+    `이메일을 확인해주세요.`,
 
   // 회원가입 환영
   WELCOME_USER: (data: { customerName: string }) =>
@@ -126,6 +154,8 @@ export class SmsNotificationService {
     customerName: string;
     orderId: string;
     amount: number;
+    productName: string;
+    orderDate: string;
     recipientName: string;
     address: string;
     testMode?: boolean;
@@ -134,6 +164,8 @@ export class SmsNotificationService {
       customerName: data.customerName,
       orderId: data.orderId,
       amount: data.amount,
+      productName: data.productName,
+      orderDate: data.orderDate,
       recipientName: data.recipientName,
       address: data.address,
     });
@@ -195,6 +227,7 @@ export class SmsNotificationService {
     customerPhone: string;
     customerName: string;
     orderId: string;
+    productName?: string;
     trackingNumber?: string;
     courierCompany?: string;
     testMode?: boolean;
@@ -202,6 +235,7 @@ export class SmsNotificationService {
     const message = SMS_TEMPLATES.SHIPPING_STARTED({
       customerName: data.customerName,
       orderId: data.orderId,
+      productName: data.productName,
       trackingNumber: data.trackingNumber,
       courierCompany: data.courierCompany,
     });
@@ -209,6 +243,54 @@ export class SmsNotificationService {
     return this.sendSms(data.customerPhone, message, {
       testMode: data.testMode,
       title: "상품 발송 안내",
+    });
+  }
+
+  /**
+   * 배송 완료 SMS 발송
+   */
+  static async sendDeliveryCompletedSms(data: {
+    customerPhone: string;
+    customerName: string;
+    orderId: string;
+    productName?: string;
+    testMode?: boolean;
+  }): Promise<boolean> {
+    const message = SMS_TEMPLATES.DELIVERY_COMPLETED({
+      customerName: data.customerName,
+      orderId: data.orderId,
+      productName: data.productName,
+    });
+
+    return this.sendSms(data.customerPhone, message, {
+      testMode: data.testMode,
+      title: "배송 완료 안내",
+    });
+  }
+
+  /**
+   * 브랜드 입점 문의 알림 SMS 발송
+   */
+  static async sendBrandInquiryNotification(data: {
+    businessPhone: string;
+    brandName: string;
+    companyName: string;
+    contactName: string;
+    contactPhone: string;
+    inquiryTime: string;
+    testMode?: boolean;
+  }): Promise<boolean> {
+    const message = SMS_TEMPLATES.BRAND_INQUIRY_NOTIFICATION({
+      brandName: data.brandName,
+      companyName: data.companyName,
+      contactName: data.contactName,
+      contactPhone: data.contactPhone,
+      inquiryTime: data.inquiryTime,
+    });
+
+    return this.sendSms(data.businessPhone, message, {
+      testMode: data.testMode,
+      title: "브랜드 입점 문의",
     });
   }
 

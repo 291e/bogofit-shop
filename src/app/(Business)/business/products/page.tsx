@@ -38,6 +38,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
 import {
   Plus,
   Search,
@@ -46,17 +47,29 @@ import {
   Trash2,
   Eye,
   Package,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { ProductStatus } from "@/types/business";
+import ProductDetailModal from "@/components/business/ProductDetailModal";
 
 export default function BusinessProductsPage() {
-  const { products, loading, deleteProduct } = useBusinessProducts();
+  const {
+    products,
+    loading,
+    deleteProduct,
+    refetch: refreshProducts,
+  } = useBusinessProducts();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProductStatus | "ALL">(
     "ALL"
   );
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null
+  );
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
 
   // 필터링된 상품 목록
   const filteredProducts = products.filter((product) => {
@@ -82,13 +95,63 @@ export default function BusinessProductsPage() {
     }
   };
 
+  const handleStatusChange = async (
+    productId: string,
+    newStatus: ProductStatus
+  ) => {
+    setStatusUpdating(productId);
+    try {
+      const response = await fetch(
+        `/api/business/products/${productId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "상태 변경에 실패했습니다.");
+      }
+
+      const result = await response.json();
+      console.log("상태 변경 성공:", result.message);
+
+      // 상품 목록 새로고침
+      await refreshProducts();
+    } catch (error) {
+      console.error("상품 상태 변경 실패:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "상태 변경 중 오류가 발생했습니다."
+      );
+    } finally {
+      setStatusUpdating(null);
+    }
+  };
+
+  const handleViewDetail = (productId: string) => {
+    setSelectedProductId(productId);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedProductId(null);
+  };
+
   const getStatusBadge = (status: ProductStatus) => {
     const statusConfig = {
+      APPROVED: { label: "상품 활성화", variant: "default" as const },
+      INACTIVE: { label: "상품 비활성화", variant: "outline" as const },
+      // 기존 상태들은 호환성을 위해 유지하되 사용하지 않음
       DRAFT: { label: "임시저장", variant: "secondary" as const },
       PENDING: { label: "승인대기", variant: "default" as const },
-      APPROVED: { label: "승인완료", variant: "default" as const },
       REJECTED: { label: "승인거부", variant: "destructive" as const },
-      INACTIVE: { label: "비활성화", variant: "outline" as const },
     };
 
     const config = statusConfig[status];
@@ -114,7 +177,7 @@ export default function BusinessProductsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/business/products/create">
+          <Link href="/business/products/new">
             <Plus className="h-4 w-4 mr-2" />
             상품 등록
           </Link>
@@ -139,7 +202,7 @@ export default function BusinessProductsPage() {
             <div className="flex items-center gap-2">
               <Package className="h-4 w-4 text-green-600" />
               <div>
-                <p className="text-sm font-medium">승인완료</p>
+                <p className="text-sm font-medium">활성화 상품</p>
                 <p className="text-2xl font-bold">
                   {products.filter((p) => p.status === "APPROVED").length}
                 </p>
@@ -150,24 +213,11 @@ export default function BusinessProductsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-yellow-600" />
+              <Package className="h-4 w-4 text-gray-600" />
               <div>
-                <p className="text-sm font-medium">승인대기</p>
+                <p className="text-sm font-medium">비활성화 상품</p>
                 <p className="text-2xl font-bold">
-                  {products.filter((p) => p.status === "PENDING").length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-red-600" />
-              <div>
-                <p className="text-sm font-medium">승인거부</p>
-                <p className="text-2xl font-bold">
-                  {products.filter((p) => p.status === "REJECTED").length}
+                  {products.filter((p) => p.status === "INACTIVE").length}
                 </p>
               </div>
             </div>
@@ -201,11 +251,8 @@ export default function BusinessProductsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">모든 상태</SelectItem>
-                <SelectItem value="DRAFT">임시저장</SelectItem>
-                <SelectItem value="PENDING">승인대기</SelectItem>
-                <SelectItem value="APPROVED">승인완료</SelectItem>
-                <SelectItem value="REJECTED">승인거부</SelectItem>
-                <SelectItem value="INACTIVE">비활성화</SelectItem>
+                <SelectItem value="APPROVED">상품 활성화</SelectItem>
+                <SelectItem value="INACTIVE">상품 비활성화</SelectItem>
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -309,7 +356,39 @@ export default function BusinessProductsPage() {
                         {product.stockQuantity}
                       </span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(product.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(product.status)}
+                        <Select
+                          value={product.status}
+                          onValueChange={(newStatus) =>
+                            handleStatusChange(
+                              product.id,
+                              newStatus as ProductStatus
+                            )
+                          }
+                          disabled={statusUpdating === product.id}
+                        >
+                          <SelectTrigger className="w-32 h-8">
+                            <RefreshCw
+                              className={`h-3 w-3 ${
+                                statusUpdating === product.id
+                                  ? "animate-spin"
+                                  : ""
+                              }`}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="APPROVED">
+                              상품 활성화
+                            </SelectItem>
+                            <SelectItem value="INACTIVE">
+                              상품 비활성화
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {new Date(product.createdAt).toLocaleDateString()}
                     </TableCell>
@@ -321,11 +400,11 @@ export default function BusinessProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/business/products/${product.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              상세보기
-                            </Link>
+                          <DropdownMenuItem
+                            onClick={() => handleViewDetail(product.id)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            상세보기
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link
@@ -388,6 +467,15 @@ export default function BusinessProductsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* 상품 상세정보 모달 */}
+      {selectedProductId && (
+        <ProductDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={handleCloseDetailModal}
+          productId={selectedProductId}
+        />
+      )}
     </div>
   );
 }
