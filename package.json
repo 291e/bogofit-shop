@@ -8,7 +8,11 @@
     "start": "next build && next start",
     "lint": "next lint",
     "email:dev": "email dev",
-    "email:export": "email export"
+    "email:export": "email export",
+    "script:increase-prices": "npx tsx scripts/increase-product-prices.ts",
+    "script:rollback-prices": "npx tsx scripts/rollback-price-increase.ts",
+    "script:update-store": "npx tsx scripts/update-store-name.ts",
+    "script:remove-duplicates": "npx tsx scripts/remove-duplicate-products.ts"
   },
   "dependencies": {
     "@apollo/client": "^3.13.8",

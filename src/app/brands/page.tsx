@@ -5,8 +5,8 @@ import MusinsaProductCard from "@/components/product/MusinsaProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product } from "@/types/product";
 import { useState } from "react";
-import Link from "next/link";
 import { Store, Crown, Sparkles, Gem, Star, Handshake } from "lucide-react";
+import BrandInquiryModal from "@/components/auth/BrandInquiryModal";
 
 const LIMIT = 30;
 
@@ -28,6 +28,7 @@ export default function BrandsPage() {
     "popular"
   );
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [isBrandInquiryModalOpen, setIsBrandInquiryModalOpen] = useState(false);
 
   // 브랜드 목록 조회
   const { data: brands = [], isLoading: brandsLoading } = useQuery<Brand[]>({
@@ -286,13 +287,13 @@ export default function BrandsPage() {
             보고핏과 함께 성장할 첫 번째 브랜드가 되어보세요! 우리는 새로운
             브랜드를 환영합니다.
           </p>
-          <Link
-            href="/business"
+          <button
+            onClick={() => setIsBrandInquiryModalOpen(true)}
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF84CD] text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
           >
             <Handshake className="w-5 h-5" />
             브랜드 입점 신청하기
-          </Link>
+          </button>
         </div>
       )}
 
@@ -419,14 +420,20 @@ export default function BrandsPage() {
           <p className="text-sm text-gray-600 mb-3">
             새로운 브랜드의 입점을 환영합니다. 함께 성장해요!
           </p>
-          <Link
-            href="/business"
+          <button
+            onClick={() => setIsBrandInquiryModalOpen(true)}
             className="inline-block px-6 py-2 bg-[#FF84CD] text-white rounded-lg hover:bg-pink-600 transition-colors text-sm font-medium"
           >
             브랜드 입점 신청
-          </Link>
+          </button>
         </div>
       )}
+
+      {/* 브랜드 입점 문의 모달 */}
+      <BrandInquiryModal
+        open={isBrandInquiryModalOpen}
+        onOpenChange={setIsBrandInquiryModalOpen}
+      />
     </div>
   );
 }

@@ -468,6 +468,29 @@ export default function OrderPageContent() {
     return true;
   };
 
+  // 모든 약관 동의 상태 확인
+  const isAllAgreementsChecked = () => {
+    return (
+      orderForm.agreements.terms &&
+      orderForm.agreements.privacy &&
+      orderForm.agreements.thirdParty
+    );
+  };
+
+  // 모든 약관 동의/해제 처리
+  const handleAllAgreements = () => {
+    const shouldCheckAll = !isAllAgreementsChecked();
+
+    setOrderForm((prev) => ({
+      ...prev,
+      agreements: {
+        terms: shouldCheckAll,
+        privacy: shouldCheckAll,
+        thirdParty: shouldCheckAll,
+      },
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -1097,7 +1120,18 @@ export default function OrderPageContent() {
               {/* 약관 동의 */}
               <Card>
                 <CardHeader>
-                  <CardTitle>약관 동의</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>약관 동의</CardTitle>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAllAgreements}
+                      className="text-sm"
+                    >
+                      {isAllAgreementsChecked() ? "모두 해제" : "모두 동의"}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center space-x-2">

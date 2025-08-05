@@ -61,7 +61,7 @@ export default function VirtualFitting({
   const [status, setStatus] = useState("");
   const [generatedImage, setGeneratedImage] = useState("");
   const [generatedVideo, setGeneratedVideo] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [showResults, setShowResults] = useState(false);
 
   // 파일 업로드 오류 상태 추가
@@ -867,8 +867,8 @@ export default function VirtualFitting({
                     status.includes("상반신")
                       ? "bg-red-50 border border-red-200"
                       : status.includes("완료")
-                      ? "bg-green-50 border border-green-200"
-                      : "bg-blue-50 border border-blue-200"
+                        ? "bg-green-50 border border-green-200"
+                        : "bg-blue-50 border border-blue-200"
                   }`}
                 >
                   <p
@@ -878,8 +878,8 @@ export default function VirtualFitting({
                       status.includes("상반신")
                         ? "text-red-800"
                         : status.includes("완료")
-                        ? "text-green-800"
-                        : "text-blue-800"
+                          ? "text-green-800"
+                          : "text-blue-800"
                     }`}
                   >
                     {status}

@@ -159,7 +159,7 @@ export async function POST(request: Request) {
 
       const updatedOrder = await tx.order.update({
         where: { id: orderId },
-        data: { status: "COMPLETED" },
+        data: { status: "PAID" },
         include: {
           items: {
             include: {
@@ -176,7 +176,7 @@ export async function POST(request: Request) {
     if (orderData.ordererPhone) {
       const productNames = orderData.items
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((item: any) => item.product?.name || "상품")
+        .map((item: any) => item.product?.title || "상품")
         .join(", ");
 
       // 고객에게 주문 완료 SMS 발송
