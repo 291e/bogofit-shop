@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { SmsNotificationService, isTestMode } from "@/lib/sms-notifications";
 
 const prisma = new PrismaClient();
 
@@ -158,6 +159,54 @@ export async function POST(
     console.log(
       `[환불 신청] 주문 ID: ${orderId}, 환불 ID: ${refundId}, 사용자: ${userIdHeader}, 사유: ${reason}, 설명: ${description}`
     );
+
+    // 🚀 환불 신청 SMS 발송 (비동기, 실패해도 환불 신청은 성공)
+    if (order.ordererPhone) {
+      const productNames = order.items
+        .map((item) => item.product?.title || "상품")
+        .join(", ");
+
+      // 고객에게 환불 신청 SMS 발송
+      SmsNotificationService.sendRefundRequestedSms({
+        customerPhone: order.ordererPhone,
+        customerName: order.ordererName || "고객",
+        orderId: orderId,
+        productName: productNames,
+        amount: order.totalAmount,
+        refundDate: new Date().toLocaleString("ko-KR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        reason: reason,
+        testMode: isTestMode,
+      }).catch((error) => {
+        console.error("[SMS] 환불 신청 SMS 발송 실패:", error);
+      });
+
+      // 비즈니스 사용자에게 환불 신청 알림 (설정된 경우)
+      const businessPhone = process.env.BUSINESS_NOTIFICATION_PHONE;
+      if (businessPhone) {
+        SmsNotificationService.sendSms(
+          businessPhone,
+          `[BogoFit] 환불 신청이 접수되었습니다.\n` +
+            `주문번호: ${orderId}\n` +
+            `상품: ${productNames}\n` +
+            `환불금액: ${order.totalAmount.toLocaleString()}원\n` +
+            `고객: ${order.ordererName || "고객"}\n` +
+            `사유: ${reason}\n` +
+            `처리해주세요.`,
+          {
+            testMode: isTestMode,
+            title: "환불 신청 알림",
+          }
+        ).catch((error) => {
+          console.error("[SMS] 비즈니스 환불 신청 알림 SMS 발송 실패:", error);
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

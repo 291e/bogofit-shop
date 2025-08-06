@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { SmsNotificationService, isTestMode } from "@/lib/sms-notifications";
 
 /**
  * @swagger
@@ -299,6 +300,52 @@ export async function POST(
     console.log(
       `[주문 취소] 주문 ID: ${orderId}, 사용자: ${userIdHeader}, 결제 취소: ${!!cancelResult}`
     );
+
+    // 🚀 주문 취소 SMS 발송 (비동기, 실패해도 취소는 성공)
+    if (order.ordererPhone) {
+      const productNames = order.items
+        .map((item) => item.product?.title || "상품")
+        .join(", ");
+
+      // 고객에게 주문 취소 SMS 발송
+      SmsNotificationService.sendOrderCanceledSms({
+        customerPhone: order.ordererPhone,
+        customerName: order.ordererName || "고객",
+        orderId: orderId,
+        productName: productNames,
+        amount: order.totalAmount,
+        cancelDate: new Date().toLocaleString("ko-KR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        testMode: isTestMode,
+      }).catch((error) => {
+        console.error("[SMS] 주문 취소 SMS 발송 실패:", error);
+      });
+
+      // 비즈니스 사용자에게 주문 취소 알림 (설정된 경우)
+      const businessPhone = process.env.BUSINESS_NOTIFICATION_PHONE;
+      if (businessPhone) {
+        SmsNotificationService.sendSms(
+          businessPhone,
+          `[BogoFit] 주문이 취소되었습니다.\n` +
+            `주문번호: ${orderId}\n` +
+            `상품: ${productNames}\n` +
+            `취소금액: ${order.totalAmount.toLocaleString()}원\n` +
+            `고객: ${order.ordererName || "고객"}\n` +
+            `확인해주세요.`,
+          {
+            testMode: isTestMode,
+            title: "주문 취소 알림",
+          }
+        ).catch((error) => {
+          console.error("[SMS] 비즈니스 주문 취소 알림 SMS 발송 실패:", error);
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -51,7 +51,7 @@ TOSS_SECRET_KEY="test_sk_your_secret_key"               # 서버 키 (Private)
 ### 4. SMS 알림 (ALIGO)
 
 ```bash
-# ALIGO SMS API
+# ALIGO SMS API (기존 알림용)
 ALIGO_API_KEY="your_aligo_api_key"
 ALIGO_USER_ID="your_aligo_user_id"
 
@@ -61,7 +61,23 @@ BUSINESS_NOTIFICATION_PHONE="01012345678"              # 비즈니스 알림 수
 SMS_TEST_MODE="true"                                   # 개발: true, 프로덕션: false
 ```
 
-### 5. Cafe24 연동
+### 5. Twilio SMS 인증 (Verify API)
+
+```bash
+# Twilio Verify API (문자인증 전용)
+TWILIO_ACCOUNT_SID="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"   # Twilio 계정 SID (AC로 시작)
+TWILIO_AUTH_TOKEN="your_twilio_auth_token"              # Twilio 인증 토큰
+TWILIO_VERIFY_SERVICE_SID="VAxxxxxxxxxxxxxxxxxxxxxx"    # Verify 서비스 SID (VA로 시작)
+TWILIO_PHONE_NUMBER="+1234567890"                       # 일반 SMS용 (선택사항)
+TWILIO_TEST_MODE="true"                                 # 개발: true, 프로덕션: false
+
+# 주의사항:
+# - Account SID는 AC로 시작하는 34자리 문자열
+# - Verify Service SID는 VA로 시작하는 34자리 문자열
+# - 테스트 모드에서는 실제 SMS 발송 없음
+```
+
+### 6. Cafe24 연동
 
 ```bash
 # Cafe24 쇼핑몰 연동
@@ -74,7 +90,7 @@ NEXT_PUBLIC_CAFE24_MALL_ID="your-mall-id"
 NEXT_PUBLIC_CAFE24_CLIENT_ID="your-cafe24-client-id"
 ```
 
-### 6. AWS S3 (이미지 저장소)
+### 7. AWS S3 (이미지 저장소)
 
 ```bash
 # AWS 설정
@@ -84,7 +100,7 @@ AWS_SECRET_ACCESS_KEY="your-aws-secret-key"
 AWS_S3_BUCKET="bogofit-images"
 ```
 
-### 7. 기타 설정
+### 8. 기타 설정
 
 ```bash
 # 애플리케이션 기본 URL
@@ -183,13 +199,11 @@ npm run dev
 ### 자주 발생하는 문제
 
 1. **"Environment variable not found"**
-
    - `.env.local` 파일이 프로젝트 루트에 있는지 확인
    - 변수 이름에 오타가 없는지 확인
    - 서버 재시작
 
 2. **클라이언트에서 환경 변수 접근 안됨**
-
    - `NEXT_PUBLIC_` 접두사 추가 필요
    - 서버 재시작 후 확인
 

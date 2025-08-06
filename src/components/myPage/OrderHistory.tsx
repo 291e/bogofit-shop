@@ -43,7 +43,7 @@ export default function OrderHistory() {
 
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [showExchangeDialog, setShowExchangeDialog] = useState(false);
 
   const paymentMethodMap = {
     CARD: "신용카드",
@@ -60,12 +60,9 @@ export default function OrderHistory() {
     return payment.order?.status === "PAID";
   };
 
-  // 환불 신청 가능 여부 확인 (SHIPPING 또는 COMPLETED 상태일 때)
-  const canRequestRefund = (payment: Payment) => {
-    return (
-      payment.order?.status === "SHIPPING" ||
-      payment.order?.status === "COMPLETED"
-    );
+  // 교환/반품 신청 가능 여부 확인 (COMPLETED 상태일 때만)
+  const canRequestExchange = (payment: Payment) => {
+    return payment.order?.status === "COMPLETED";
   };
 
   // 주문 취소 요청
@@ -86,26 +83,26 @@ export default function OrderHistory() {
     }
   };
 
-  // 환불 신청 요청
-  const handleRequestRefund = async () => {
+  // 교환/반품 신청 요청
+  const handleRequestExchange = async () => {
     if (!selectedPayment) return;
 
     try {
       const result = await refundOrderAsync({
         orderId: selectedPayment.orderId,
         data: {
-          reason: "고객 변심",
-          description: "상품에 대한 환불을 요청합니다.",
+          reason: "교환/반품 요청",
+          description: "상품에 대한 교환 또는 반품을 요청합니다.",
         },
       });
-      alert(result.message || "환불 신청이 접수되었습니다.");
-      setShowRefundDialog(false);
+      alert(result.message || "교환/반품 신청이 접수되었습니다.");
+      setShowExchangeDialog(false);
       setSelectedPayment(null);
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "환불 신청 중 오류가 발생했습니다.";
+          : "교환/반품 신청 중 오류가 발생했습니다.";
       alert(errorMessage);
     }
   };
@@ -231,7 +228,7 @@ export default function OrderHistory() {
                       취소
                     </Button>
                   )}
-                  {canRequestRefund(payment) && (
+                  {canRequestExchange(payment) && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -239,12 +236,12 @@ export default function OrderHistory() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedPayment(payment);
-                        setShowRefundDialog(true);
+                        setShowExchangeDialog(true);
                       }}
                       disabled={isRefunding}
                     >
                       <RotateCcw className="w-3 h-3 mr-1" />
-                      환불
+                      교환/반품
                     </Button>
                   )}
                 </div>
@@ -256,7 +253,7 @@ export default function OrderHistory() {
 
       {/* 상세 주문 내역 모달 */}
       <Dialog
-        open={!!selectedPayment && !showCancelDialog && !showRefundDialog}
+        open={!!selectedPayment && !showCancelDialog && !showExchangeDialog}
         onOpenChange={() => setSelectedPayment(null)}
       >
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
@@ -493,7 +490,7 @@ export default function OrderHistory() {
 
               {/* 주문 관리 액션 */}
               {(canCancelOrder(selectedPayment) ||
-                canRequestRefund(selectedPayment)) && (
+                canRequestExchange(selectedPayment)) && (
                 <>
                   <div className="space-y-3">
                     <h3 className="font-semibold flex items-center gap-2">
@@ -512,15 +509,15 @@ export default function OrderHistory() {
                           주문 취소
                         </Button>
                       )}
-                      {canRequestRefund(selectedPayment) && (
+                      {canRequestExchange(selectedPayment) && (
                         <Button
                           variant="outline"
                           className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                          onClick={() => setShowRefundDialog(true)}
+                          onClick={() => setShowExchangeDialog(true)}
                           disabled={isRefunding}
                         >
                           <RotateCcw className="w-4 h-4 mr-2" />
-                          환불 신청
+                          교환/반품 신청
                         </Button>
                       )}
                     </div>
@@ -529,9 +526,9 @@ export default function OrderHistory() {
                         • 주문 후 24시간 이내에만 취소 가능합니다.
                       </p>
                     )}
-                    {canRequestRefund(selectedPayment) && (
+                    {canRequestExchange(selectedPayment) && (
                       <p className="text-xs text-gray-500">
-                        • 배송 완료 후 7일 이내에 환불 신청이 가능합니다.
+                        • 배송 완료 후 7일 이내에 교환/반품 신청이 가능합니다.
                       </p>
                     )}
                   </div>
@@ -601,11 +598,11 @@ export default function OrderHistory() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 환불 신청 확인 다이얼로그 */}
+      {/* 교환/반품 신청 확인 다이얼로그 */}
       <AlertDialog
-        open={showRefundDialog}
+        open={showExchangeDialog}
         onOpenChange={(open) => {
-          setShowRefundDialog(open);
+          setShowExchangeDialog(open);
           if (!open) {
             setSelectedPayment(null);
           }
@@ -615,10 +612,10 @@ export default function OrderHistory() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <RotateCcw className="w-5 h-5 text-blue-600" />
-              환불 신청 확인
+              교환/반품 신청 확인
             </AlertDialogTitle>
             <AlertDialogDescription>
-              환불 신청을 진행하시겠습니까?
+              교환 또는 반품 신청을 진행하시겠습니까?
               <br />
               <span className="font-medium text-gray-900">
                 주문번호: {selectedPayment?.orderId}
@@ -629,23 +626,24 @@ export default function OrderHistory() {
               </span>
               <br />
               <br />
-              <strong>환불 안내:</strong>
+              <strong>교환/반품 안내:</strong>
               <br />
-              • 상품을 받으신 상태에서만 환불 신청이 가능합니다.
+              • 배송 완료된 상품에 대해서만 교환/반품 신청이 가능합니다.
               <br />
-              • 환불 신청 후 상품 회수가 완료되면 영업일 기준 3-5일 내
-              환불됩니다.
-              <br />• 변심에 의한 환불 시 배송비는 고객 부담입니다.
+              • 교환/반품 신청 후 상품 회수가 완료되면 처리됩니다.
+              <br />
+              • 반품의 경우 영업일 기준 3-5일 내 환불됩니다.
+              <br />• 단순 변심에 의한 교환/반품 시 배송비는 고객 부담입니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isRefunding}>취소</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleRequestRefund}
+              onClick={handleRequestExchange}
               disabled={isRefunding}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {isRefunding ? "처리 중..." : "환불 신청"}
+              {isRefunding ? "처리 중..." : "교환/반품 신청"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

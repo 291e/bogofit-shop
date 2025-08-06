@@ -601,7 +601,7 @@ export default function VirtualFitting({
     <div className="w-full max-w-6xl mx-auto">
       {/* 가상 피팅 헤더 (항상 표시) */}
       <Card
-        className="mb-6"
+        className="mb-6 py-4"
         style={{
           background: "linear-gradient(270deg, #FF84CD, #F9CFB7)",
           backgroundSize: "200% 200%", // 이동 거리 확보
@@ -609,7 +609,7 @@ export default function VirtualFitting({
         }}
       >
         <CardHeader
-          className="cursor-pointer gap-0"
+          className="cursor-pointer gap-0 "
           onClick={() => setIsOpen(!isOpen)}
         >
           <CardTitle className="flex items-center justify-between">
@@ -839,7 +839,8 @@ export default function VirtualFitting({
                     !!fileErrors.lower_file ||
                     !!fileErrors.background_file
                   }
-                  className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                  className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 h-14 md:text-base lg:text-lg"
+                  size="lg"
                 >
                   {isProcessing ? (
                     <div className="flex flex-col items-center w-full">

@@ -1,245 +1,443 @@
-// 임시 인증번호 저장소 (메모리 기반)
-// 실제 프로덕션에서는 Redis나 데이터베이스 사용 권장
+/**
+ * 문자인증 코드 저장소
+ * 인증 코드와 관련 정보를 임시 저장하는 서비스
+ */
 
-// 이메일 인증 타입 정의
+// 인증 타입 정의
 export type VerificationType =
-  | "signup" // 회원가입 이메일 인증
-  | "password-reset" // 비밀번호 초기화 인증
-  | "email-change" // 이메일 주소 변경 인증
-  | "account-deletion" // 계정 삭제 확인 인증
-  | "profile-update"; // 중요한 프로필 정보 수정 인증
+  | "signup"
+  | "password-reset"
+  | "email-change"
+  | "account-deletion"
+  | "profile-update";
 
-interface VerificationEntry {
+// 인증 정보 인터페이스
+interface VerificationData {
+  phoneNumber: string;
   code: string;
-  userId: string;
-  email: string;
-  type: VerificationType;
-  expiresAt: number; // timestamp
+  createdAt: Date;
+  expiresAt: Date;
   attempts: number;
-  metadata?: Record<string, unknown>; // 각 인증 타입별 메타데이터
+  verified: boolean;
+  purpose?: string;
 }
 
-class VerificationStore {
-  private store = new Map<string, VerificationEntry>();
-  private readonly MAX_ATTEMPTS = 5;
-  private readonly EXPIRY_MINUTES = 30; // 개발환경 테스트를 위해 30분으로 연장
-  private initialized = false;
+// 저장소 인터페이스
+interface VerificationStore {
+  set(
+    key: string,
+    data: VerificationData,
+    ttlSeconds?: number
+  ): Promise<void> | void;
+  get(key: string): Promise<VerificationData | null> | VerificationData | null;
+  delete(key: string): Promise<void> | void;
+  cleanup(): Promise<void> | void;
+}
+
+// 저장소 통계 인터페이스
+interface StoreStats {
+  totalEntries: number;
+  entries: Array<{
+    key: string;
+    phoneNumber: string;
+    createdAt: Date;
+    expiresAt: Date;
+    attempts: number;
+    verified: boolean;
+  }>;
+}
+
+/**
+ * In-Memory 인증 코드 저장소
+ * 개발/테스트용, 프로덕션에서는 Redis 사용 권장
+ */
+class InMemoryVerificationStore implements VerificationStore {
+  private store = new Map<string, VerificationData>();
+  private cleanupInterval: NodeJS.Timeout;
 
   constructor() {
-    if (!this.initialized) {
-      console.log(
-        `🏗️ [VERIFICATION STORE] New VerificationStore instance created`
-      );
-      console.log(
-        `⏰ [VERIFICATION STORE] Code expiry time: ${this.EXPIRY_MINUTES} minutes`
-      );
-      console.log(`🔢 [VERIFICATION STORE] Max attempts: ${this.MAX_ATTEMPTS}`);
-      this.initialized = true;
-    }
+    // 1분마다 만료된 데이터 정리
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup();
+    }, 60 * 1000);
   }
 
-  // 인증번호 저장
-  saveCode(
-    email: string,
-    code: string,
-    userId: string,
-    type: VerificationType = "password-reset",
-    metadata?: Record<string, unknown>
-  ): void {
-    const key = this.getKey(email, type);
-    const expiresAt = Date.now() + this.EXPIRY_MINUTES * 60 * 1000;
-
-    console.log(`💾 Saving verification code for: ${email} (${type})`);
-    console.log(`🔑 Generated key: ${key}`);
-    console.log(`🎫 Code: ${code} -> ${code.toUpperCase()}`);
-
-    this.store.set(key, {
-      code: code.toUpperCase(),
-      userId,
-      email,
-      type,
-      expiresAt,
-      attempts: 0,
-      metadata,
-    });
-
-    console.log(`✅ Verification code saved for ${email} (${type}): ${code}`);
-    console.log(`⏰ Expires at: ${new Date(expiresAt).toLocaleString()}`);
-    console.log(`📦 Current store size: ${this.store.size}`);
-    console.log(`📦 All keys: [${Array.from(this.store.keys()).join(", ")}]`);
-    if (metadata) {
-      console.log(`📋 Metadata:`, metadata);
-    }
+  set(key: string, data: VerificationData): void {
+    this.store.set(key, data);
+    console.log(
+      `[VerificationStore] 저장: ${key} (만료: ${data.expiresAt.toISOString()})`
+    );
   }
 
-  // 인증번호 검증
-  verifyCode(
-    email: string,
-    inputCode: string,
-    type: VerificationType = "password-reset"
-  ): {
-    success: boolean;
-    message: string;
-    userId?: string;
-    metadata?: Record<string, unknown>;
-  } {
-    const key = this.getKey(email, type);
-    console.log(
-      `🔍 Verifying email: ${email} with code: ${inputCode} for type: ${type}`
-    );
-    console.log(`🔑 Looking for key: ${key}`);
-    console.log(
-      `📦 Current store keys: [${Array.from(this.store.keys()).join(", ")}]`
-    );
+  get(key: string): VerificationData | null {
+    const data = this.store.get(key);
 
-    const entry = this.store.get(key);
-
-    if (!entry) {
-      console.log(`❌ No entry found for key: ${key}`);
-      console.log(`🔍 Possible causes:`);
-      console.log(`   1. Server restarted (development hot reload)`);
-      console.log(`   2. Code expired (30 minutes)`);
-      console.log(`   3. Wrong email or verification type`);
-      console.log(`   4. Code was already used successfully`);
-
-      return {
-        success: false,
-        message:
-          "인증번호를 찾을 수 없습니다. 개발환경에서는 서버 재시작으로 인해 인증번호가 초기화될 수 있습니다. 새로운 인증번호를 요청해주세요.",
-      };
+    if (!data) {
+      return null;
     }
 
     // 만료 확인
-    if (Date.now() > entry.expiresAt) {
+    if (data.expiresAt < new Date()) {
       this.store.delete(key);
-      return {
-        success: false,
-        message: "인증번호가 만료되었습니다. 다시 요청해주세요.",
-      };
+      console.log(`[VerificationStore] 만료된 데이터 삭제: ${key}`);
+      return null;
     }
 
-    // 시도 횟수 확인
-    if (entry.attempts >= this.MAX_ATTEMPTS) {
-      this.store.delete(key);
-      return {
-        success: false,
-        message: "인증 시도 횟수를 초과했습니다. 다시 요청해주세요.",
-      };
+    return data;
+  }
+
+  delete(key: string): void {
+    const deleted = this.store.delete(key);
+    if (deleted) {
+      console.log(`[VerificationStore] 삭제: ${key}`);
+    }
+  }
+
+  cleanup(): void {
+    const now = new Date();
+    let cleanedCount = 0;
+
+    for (const [key, data] of this.store.entries()) {
+      if (data.expiresAt < now) {
+        this.store.delete(key);
+        cleanedCount++;
+      }
     }
 
-    // 시도 횟수 증가
-    entry.attempts++;
-
-    // 인증번호 확인
-    if (entry.code !== inputCode.toUpperCase()) {
-      return {
-        success: false,
-        message: `인증번호가 올바르지 않습니다. (${this.MAX_ATTEMPTS - entry.attempts}회 남음)`,
-      };
+    if (cleanedCount > 0) {
+      console.log(
+        `[VerificationStore] 만료된 데이터 ${cleanedCount}개 정리 완료`
+      );
     }
+  }
 
-    // 성공 시 삭제
-    this.store.delete(key);
-    console.log(`✅ Verification successful for ${email} (${type})`);
-
+  // 개발/디버깅용
+  getStats(): StoreStats {
     return {
-      success: true,
-      message: "인증이 완료되었습니다.",
-      userId: entry.userId,
-      metadata: entry.metadata,
+      totalEntries: this.store.size,
+      entries: Array.from(this.store.entries()).map(([key, data]) => ({
+        key,
+        phoneNumber: data.phoneNumber,
+        createdAt: data.createdAt,
+        expiresAt: data.expiresAt,
+        attempts: data.attempts,
+        verified: data.verified,
+      })),
     };
   }
 
-  // 인증번호 삭제
-  deleteCode(email: string, type: VerificationType = "password-reset"): void {
-    const key = this.getKey(email, type);
-    this.store.delete(key);
+  // 정리
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+    this.store.clear();
+  }
+}
+
+/**
+ * 인증 결과 인터페이스
+ */
+interface VerificationResult {
+  success: boolean;
+  message: string;
+  remainingAttempts?: number;
+}
+
+/**
+ * 코드 생성 결과 인터페이스
+ */
+interface CodeGenerationResult {
+  code: string;
+  expiresAt: Date;
+}
+
+/**
+ * 인증 코드 관리 서비스
+ */
+export class VerificationCodeService {
+  private store: VerificationStore;
+  private readonly CODE_EXPIRY_MINUTES = 5; // 인증 코드 유효 시간
+  private readonly MAX_ATTEMPTS = 3; // 최대 시도 횟수
+  private readonly RESEND_COOLDOWN_SECONDS = 60; // 재발송 쿨다운
+
+  constructor(store?: VerificationStore) {
+    this.store = store || new InMemoryVerificationStore();
   }
 
-  // 만료된 코드 정리 (메모리 관리)
-  cleanup(): void {
-    const now = Date.now();
-    let cleanupCount = 0;
+  /**
+   * 인증 코드 생성 및 저장
+   */
+  async generateAndStoreCode(
+    phoneNumber: string,
+    purpose: string = "verification"
+  ): Promise<CodeGenerationResult | null> {
+    try {
+      // 기존 코드가 있는지 확인
+      const key = this.getKey(phoneNumber, purpose);
+      const existing = await this.store.get(key);
 
-    for (const [key, entry] of this.store.entries()) {
-      if (now > entry.expiresAt) {
-        this.store.delete(key);
-        cleanupCount++;
+      // 재발송 쿨다운 확인
+      if (existing && !this.canResend(existing)) {
+        const remainingSeconds = Math.ceil(
+          (existing.createdAt.getTime() +
+            this.RESEND_COOLDOWN_SECONDS * 1000 -
+            Date.now()) /
+            1000
+        );
+        throw new Error(`재발송은 ${remainingSeconds}초 후에 가능합니다.`);
       }
-    }
 
-    if (cleanupCount > 0) {
-      console.log(`🧹 Cleaned up ${cleanupCount} expired verification codes`);
-    }
-  }
-
-  private getKey(email: string, type: string): string {
-    return `${type}:${email.toLowerCase()}`;
-  }
-
-  // Store 상태 디버깅 메서드
-  public debugStore(): void {
-    console.log(`🔍 [DEBUG] ===== STORE STATE DEBUG =====`);
-    console.log(`📦 Store size: ${this.store.size}`);
-    console.log(`🗝️ All keys: [${Array.from(this.store.keys()).join(", ")}]`);
-    console.log(`⏰ Current time: ${new Date().toLocaleString()}`);
-
-    if (this.store.size === 0) {
-      console.log(`❌ STORE IS EMPTY! This might be the problem.`);
-    }
-
-    this.store.forEach((entry, key) => {
-      const isExpired = Date.now() > entry.expiresAt;
-      console.log(`🔑 Key: ${key}`);
-      console.log(`   📝 Code: ${entry.code}`);
-      console.log(`   👤 UserId: ${entry.userId}`);
-      console.log(`   📧 Email: ${entry.email}`);
-      console.log(`   🏷️ Type: ${entry.type}`);
-      console.log(
-        `   ⏰ Expires: ${new Date(entry.expiresAt).toLocaleString()}`
+      // 6자리 랜덤 숫자 코드 생성
+      const code = this.generateCode();
+      const now = new Date();
+      const expiresAt = new Date(
+        now.getTime() + this.CODE_EXPIRY_MINUTES * 60 * 1000
       );
-      console.log(`   ❌ Expired: ${isExpired}`);
-      console.log(`   🔢 Attempts: ${entry.attempts}/${this.MAX_ATTEMPTS}`);
-      if (entry.metadata) {
-        console.log(`   📋 Metadata:`, entry.metadata);
-      }
-    });
-    console.log(`🔍 [DEBUG] ===== END STORE DEBUG =====`);
+
+      const verificationData: VerificationData = {
+        phoneNumber,
+        code,
+        createdAt: now,
+        expiresAt,
+        attempts: 0,
+        verified: false,
+        purpose,
+      };
+
+      await this.store.set(key, verificationData);
+
+      console.log(`[VerificationService] 코드 생성: ${phoneNumber} -> ${code}`);
+
+      return { code, expiresAt };
+    } catch (error) {
+      console.error("[VerificationService] 코드 생성 실패:", error);
+      return null;
+    }
   }
 
-  // 디버그용 - 저장된 코드 확인
-  getStoredCodes(): Array<{
-    email: string;
-    code: string;
-    type: string;
-    expiresAt: string;
-    attempts: number;
-  }> {
-    const codes = [];
-    for (const [key, entry] of this.store.entries()) {
-      console.log(key, entry);
-      codes.push({
-        email: entry.email,
-        code: entry.code,
-        type: entry.type,
-        expiresAt: new Date(entry.expiresAt).toLocaleString(),
-        attempts: entry.attempts,
-      });
+  /**
+   * 인증 코드 확인
+   */
+  async verifyCode(
+    phoneNumber: string,
+    inputCode: string,
+    purpose: string = "verification"
+  ): Promise<VerificationResult> {
+    try {
+      const key = this.getKey(phoneNumber, purpose);
+      const data = await this.store.get(key);
+
+      if (!data) {
+        return {
+          success: false,
+          message: "인증 코드가 만료되었거나 존재하지 않습니다.",
+        };
+      }
+
+      // 이미 인증된 경우
+      if (data.verified) {
+        return {
+          success: false,
+          message: "이미 사용된 인증 코드입니다.",
+        };
+      }
+
+      // 최대 시도 횟수 초과
+      if (data.attempts >= this.MAX_ATTEMPTS) {
+        await this.store.delete(key);
+        return {
+          success: false,
+          message:
+            "인증 시도 횟수가 초과되었습니다. 새로운 인증 코드를 요청해주세요.",
+        };
+      }
+
+      // 시도 횟수 증가
+      data.attempts++;
+      await this.store.set(key, data);
+
+      // 코드 검증
+      if (data.code !== inputCode) {
+        const remainingAttempts = this.MAX_ATTEMPTS - data.attempts;
+        return {
+          success: false,
+          message: "잘못된 인증 코드입니다.",
+          remainingAttempts,
+        };
+      }
+
+      // 인증 성공
+      data.verified = true;
+      await this.store.set(key, data);
+
+      console.log(`[VerificationService] 인증 성공: ${phoneNumber}`);
+
+      return {
+        success: true,
+        message: "인증이 완료되었습니다.",
+      };
+    } catch (error) {
+      console.error("[VerificationService] 코드 확인 실패:", error);
+      return {
+        success: false,
+        message: "인증 확인 중 오류가 발생했습니다.",
+      };
     }
-    return codes;
+  }
+
+  /**
+   * 인증 상태 확인
+   */
+  async isVerified(
+    phoneNumber: string,
+    purpose: string = "verification"
+  ): Promise<boolean> {
+    try {
+      const key = this.getKey(phoneNumber, purpose);
+      const data = await this.store.get(key);
+      return data?.verified === true;
+    } catch (error) {
+      console.error("[VerificationService] 인증 상태 확인 실패:", error);
+      return false;
+    }
+  }
+
+  /**
+   * 인증 데이터 삭제
+   */
+  async clearVerification(
+    phoneNumber: string,
+    purpose: string = "verification"
+  ): Promise<void> {
+    const key = this.getKey(phoneNumber, purpose);
+    await this.store.delete(key);
+  }
+
+  /**
+   * 이메일 기반 인증 코드 저장 (계정 삭제, 이메일 변경 등)
+   */
+  async saveCode(
+    email: string,
+    code: string,
+    userId?: string,
+    purpose: VerificationType = "signup",
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    try {
+      const key = this.getKey(email, purpose);
+      const now = new Date();
+      const expiresAt = new Date(
+        now.getTime() + this.CODE_EXPIRY_MINUTES * 60 * 1000
+      );
+
+      const verificationData: VerificationData = {
+        phoneNumber: email, // 이메일을 phoneNumber 필드에 저장 (호환성)
+        code,
+        createdAt: now,
+        expiresAt,
+        attempts: 0,
+        verified: false,
+        purpose,
+      };
+
+      await this.store.set(key, verificationData);
+
+      console.log(
+        `[VerificationService] 이메일 인증 코드 저장: ${email} -> ${code} (userId: ${userId || "N/A"}) (metadata: ${JSON.stringify(metadata)})`
+      );
+    } catch (error) {
+      console.error("[VerificationService] 이메일 인증 코드 저장 실패:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 인증 코드 삭제 (이메일 기반)
+   */
+  async deleteCode(
+    email: string,
+    purpose: VerificationType = "signup"
+  ): Promise<void> {
+    try {
+      const key = this.getKey(email, purpose);
+      await this.store.delete(key);
+
+      console.log(
+        `[VerificationService] 인증 코드 삭제: ${email} (${purpose})`
+      );
+    } catch (error) {
+      console.error("[VerificationService] 인증 코드 삭제 실패:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 개발/디버깅용 - 저장소 상태 조회
+   */
+  getStoreStats(): StoreStats | { message: string } {
+    if (this.store instanceof InMemoryVerificationStore) {
+      return this.store.getStats();
+    }
+    return { message: "Redis 저장소는 통계를 지원하지 않습니다." };
+  }
+
+  /**
+   * 개발/디버깅용 - 저장소 상태 출력 (콘솔용)
+   */
+  debugStore(): void {
+    const stats = this.getStoreStats();
+    console.log("🔍 [VerificationStore Debug]", JSON.stringify(stats, null, 2));
+  }
+
+  /**
+   * 인증 코드 생성 (6자리 숫자)
+   */
+  private generateCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  /**
+   * 저장소 키 생성
+   */
+  private getKey(phoneNumber: string, purpose: string): string {
+    const normalized = phoneNumber.replace(/[\s\-\(\)]/g, "");
+    return `verification:${purpose}:${normalized}`;
+  }
+
+  /**
+   * 재발송 가능 여부 확인
+   */
+  private canResend(data: VerificationData): boolean {
+    const cooldownMs = this.RESEND_COOLDOWN_SECONDS * 1000;
+    const timeSinceCreated = Date.now() - data.createdAt.getTime();
+    return timeSinceCreated >= cooldownMs;
   }
 }
 
 // 싱글톤 인스턴스
-export const verificationStore = new VerificationStore();
+let verificationService: VerificationCodeService;
 
-// 정기적 정리 (5분마다)
-if (typeof window === "undefined") {
-  // 서버에서만 실행
-  setInterval(
-    () => {
-      verificationStore.cleanup();
-    },
-    5 * 60 * 1000
-  );
+/**
+ * 인증 코드 서비스 인스턴스 반환
+ */
+export function getVerificationService(): VerificationCodeService {
+  if (!verificationService) {
+    verificationService = new VerificationCodeService();
+  }
+  return verificationService;
 }
+
+/**
+ * 테스트 모드 확인
+ */
+export const isVerificationTestMode = (): boolean => {
+  return process.env.VERIFICATION_TEST_MODE === "true";
+};
+
+/**
+ * 싱글톤 인스턴스 (named export)
+ */
+export const verificationStore = getVerificationService();
+
+export default VerificationCodeService;

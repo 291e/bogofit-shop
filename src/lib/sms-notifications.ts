@@ -95,6 +95,38 @@ export const SMS_TEMPLATES = {
     `[BogoFit] ${data.customerName}님\n` +
     `비밀번호 재설정 코드: ${data.code}\n` +
     `(5분간 유효)`,
+
+  // 주문 취소
+  ORDER_CANCELED: (data: {
+    customerName: string;
+    orderId: string;
+    productName: string;
+    amount: number;
+    cancelDate: string;
+  }) =>
+    `[BogoFit] ${data.customerName}님, 주문이 취소되었습니다.\n` +
+    `주문번호: ${data.orderId}\n` +
+    `상품명: ${data.productName}\n` +
+    `취소금액: ${data.amount.toLocaleString()}원\n` +
+    `취소일시: ${data.cancelDate}\n` +
+    `환불은 영업일 기준 3-5일 내 처리됩니다.`,
+
+  // 환불 신청
+  REFUND_REQUESTED: (data: {
+    customerName: string;
+    orderId: string;
+    productName: string;
+    amount: number;
+    refundDate: string;
+    reason?: string;
+  }) =>
+    `[BogoFit] ${data.customerName}님, 환불 신청이 접수되었습니다.\n` +
+    `주문번호: ${data.orderId}\n` +
+    `상품명: ${data.productName}\n` +
+    `환불금액: ${data.amount.toLocaleString()}원\n` +
+    `신청일시: ${data.refundDate}\n` +
+    `${data.reason ? `사유: ${data.reason}\n` : ""}` +
+    `검토 후 영업일 기준 3-5일 내 처리됩니다.`,
 } as const;
 
 // SMS 발송 유틸리티 함수
@@ -309,6 +341,60 @@ export class SmsNotificationService {
     return this.sendSms(data.customerPhone, message, {
       testMode: data.testMode,
       title: "회원가입 환영",
+    });
+  }
+
+  /**
+   * 주문 취소 SMS 발송
+   */
+  static async sendOrderCanceledSms(data: {
+    customerPhone: string;
+    customerName: string;
+    orderId: string;
+    productName: string;
+    amount: number;
+    cancelDate: string;
+    testMode?: boolean;
+  }): Promise<boolean> {
+    const message = SMS_TEMPLATES.ORDER_CANCELED({
+      customerName: data.customerName,
+      orderId: data.orderId,
+      productName: data.productName,
+      amount: data.amount,
+      cancelDate: data.cancelDate,
+    });
+
+    return this.sendSms(data.customerPhone, message, {
+      testMode: data.testMode,
+      title: "주문 취소",
+    });
+  }
+
+  /**
+   * 환불 신청 SMS 발송
+   */
+  static async sendRefundRequestedSms(data: {
+    customerPhone: string;
+    customerName: string;
+    orderId: string;
+    productName: string;
+    amount: number;
+    refundDate: string;
+    reason?: string;
+    testMode?: boolean;
+  }): Promise<boolean> {
+    const message = SMS_TEMPLATES.REFUND_REQUESTED({
+      customerName: data.customerName,
+      orderId: data.orderId,
+      productName: data.productName,
+      amount: data.amount,
+      refundDate: data.refundDate,
+      reason: data.reason,
+    });
+
+    return this.sendSms(data.customerPhone, message, {
+      testMode: data.testMode,
+      title: "환불 신청",
     });
   }
 }
