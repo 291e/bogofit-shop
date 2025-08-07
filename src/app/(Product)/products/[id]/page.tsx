@@ -121,18 +121,21 @@ export default function ProductDetail() {
   const isOutOfStock = selectedVariant
     ? selectedVariant.optionValue.includes("품절")
     : product.variants && product.variants.length > 0
-    ? product.variants.every((v) => v.optionValue.includes("품절"))
-    : false;
+      ? product.variants.every((v) => v.optionValue.includes("품절"))
+      : false;
 
   // 옵션별로 그룹화
   const groupedVariants =
-    product.variants?.reduce((acc, variant) => {
-      if (!acc[variant.optionName]) {
-        acc[variant.optionName] = [];
-      }
-      acc[variant.optionName].push(variant);
-      return acc;
-    }, {} as Record<string, ProductVariant[]>) || {};
+    product.variants?.reduce(
+      (acc, variant) => {
+        if (!acc[variant.optionName]) {
+          acc[variant.optionName] = [];
+        }
+        acc[variant.optionName].push(variant);
+        return acc;
+      },
+      {} as Record<string, ProductVariant[]>
+    ) || {};
 
   // 옵션이 없는 상품의 경우 기본 variant ID 설정 (첫 번째 variant 또는 product.id 사용)
   const effectiveVariantId =
@@ -177,7 +180,7 @@ export default function ProductDetail() {
                   src={currentImage}
                   alt={product.title}
                   fill
-                  className="object-contain p-8"
+                  className="object-contain"
                   priority
                 />
 
@@ -232,7 +235,7 @@ export default function ProductDetail() {
                             onClick={() => setSelectedImageIndex(actualIndex)}
                             className={`aspect-square rounded-lg overflow-hidden bg-white cursor-pointer hover:shadow-lg transition-all duration-200 ${
                               selectedImageIndex === actualIndex
-                                ? "ring-2 ring-pink-500 shadow-lg scale-105"
+                                ? "ring-2 ring-pink-200 scale-105"
                                 : ""
                             }`}
                           >
@@ -241,7 +244,7 @@ export default function ProductDetail() {
                               alt={`${product.title} 이미지 ${actualIndex + 1}`}
                               width={100}
                               height={100}
-                              className="w-full h-full object-contain p-2"
+                              className="w-full h-full object-contain"
                             />
                           </div>
                         );

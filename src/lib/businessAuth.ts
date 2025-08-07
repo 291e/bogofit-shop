@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // 테스트용 고정 브랜드 ID (개발 편의성을 위해)
@@ -113,6 +113,195 @@ export async function checkBusinessAuth(): Promise<
  */
 export function getFixedBrandId(): number {
   return FIXED_BRAND_ID;
+}
+
+/**
+ * x-user-id 헤더에서 사용자 ID 추출
+ */
+function extractUserIdFromHeader(request: NextRequest): string | null {
+  const userId = request.headers.get("x-user-id");
+  if (!userId) {
+    console.error("[BusinessAuth] x-user-id 헤더가 없습니다");
+    return null;
+  }
+
+  console.log("[BusinessAuth] 사용자 ID 추출:", userId);
+  return userId;
+}
+
+/**
+ * x-user-data 헤더에서 추가 사용자 정보 추출 (선택적)
+ */
+function extractUserDataFromHeader(
+  request: NextRequest
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Record<string, any> | null {
+  const userData = request.headers.get("x-user-data");
+  if (userData) {
+    try {
+      return JSON.parse(decodeURIComponent(userData));
+    } catch (e) {
+      console.error("[BusinessAuth] x-user-data 파싱 실패:", e);
+    }
+  }
+  return null;
+}
+
+/**
+ * 사용자용 브랜드를 생성하는 함수
+ * @param userId 사용자 ID
+ * @param userName 사용자 이름
+ * @returns 생성된 브랜드 정보
+ */
+export async function createBrandForUser(userId: string, userName: string) {
+  const brandName = `${userName}의 브랜드`;
+  const slug = `${userName.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
+
+  const brand = await prisma.brand.create({
+    data: {
+      name: brandName,
+      slug: slug,
+      description: `${userName}님의 브랜드입니다`,
+      logo: "/logo.png",
+      status: "APPROVED",
+      isActive: true,
+      businessNumber: "",
+      commissionRate: 0.05,
+      bankAccount: "",
+      bankCode: "",
+      accountHolder: userName,
+    },
+  });
+
+  console.log(
+    `[BusinessAuth] 브랜드 생성 완료: ${brand.name} (ID: ${brand.id})`
+  );
+  return brand;
+}
+
+/**
+ * 헤더 기반 실제 사용자 인증
+ */
+export async function getUserBusinessInfo(
+  request: NextRequest
+): Promise<BusinessUser | BusinessAuthError> {
+  try {
+    // x-user-id 헤더에서 사용자 ID 추출
+    const userId = extractUserIdFromHeader(request);
+    if (!userId) {
+      return { error: "사용자 ID가 필요합니다", status: 401 };
+    }
+
+    // 추가 사용자 데이터 추출 (선택적)
+    const additionalUserData = extractUserDataFromHeader(request);
+
+    // 로컬 DB에서 사용자 조회
+    let user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        brand: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            status: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    // 사용자가 없으면 생성 (추가 데이터 활용)
+    if (!user) {
+      const userData = additionalUserData || {};
+      const userName = userData.userId || userData.name || userId;
+      const userEmail = userData.email || `${userId}@business.com`;
+      const isBusiness =
+        userData.isBusiness !== undefined ? userData.isBusiness : true;
+
+      console.log(
+        `[BusinessAuth] 새 사용자 생성: ${userId} (isBusiness: ${isBusiness})`
+      );
+      user = await prisma.user.create({
+        data: {
+          id: userId,
+          userId: userName,
+          email: userEmail,
+          name: userName,
+          isBusiness: isBusiness,
+        },
+        include: {
+          brand: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+              isActive: true,
+            },
+          },
+        },
+      });
+    }
+
+    // 비즈니스 사용자가 아니면 에러
+    if (!user.isBusiness) {
+      return { error: "비즈니스 계정이 아닙니다", status: 403 };
+    }
+
+    // 브랜드가 없으면 생성
+    let brand = user.brand;
+    if (!brand) {
+      console.log(`[BusinessAuth] 사용자 ${user.id}용 브랜드 생성`);
+      brand = await createBrandForUser(user.id, user.name || user.userId);
+
+      // 사용자에게 브랜드 연결
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { brandId: brand.id },
+      });
+    }
+
+    return {
+      id: user.id,
+      userId: user.userId,
+      name: user.name || user.userId,
+      email: user.email,
+      isBusiness: user.isBusiness,
+      brandId: brand.id,
+      brand: {
+        id: brand.id,
+        name: brand.name,
+        slug: brand.slug,
+        status: brand.status,
+        isActive: brand.isActive,
+      },
+    };
+  } catch (error) {
+    console.error("[BusinessAuth] 오류:", error);
+    return { error: "인증 처리 중 오류가 발생했습니다", status: 500 };
+  }
+}
+
+/**
+ * 헤더 기반 비즈니스 인증 체크
+ */
+export async function checkHeaderBusinessAuth(
+  request: NextRequest
+): Promise<[BusinessUser | null, NextResponse | null]> {
+  const authResult = await getUserBusinessInfo(request);
+
+  if ("error" in authResult) {
+    return [
+      null,
+      NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.status }
+      ),
+    ];
+  }
+
+  return [authResult, null];
 }
 
 /**

@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkBusinessAuth } from "@/lib/businessAuth";
+import { checkHeaderBusinessAuth } from "@/lib/businessAuth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // 공통 인증 체크 (인증 없이 고정 브랜드 사용)
-    const [user, errorResponse] = await checkBusinessAuth();
+    // 헤더 기반 사용자 인증
+    const [user, errorResponse] = await checkHeaderBusinessAuth(request);
     if (errorResponse) return errorResponse;
 
     // 현재 날짜 기준 계산

@@ -115,6 +115,7 @@ export async function GET(request: Request) {
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const sortBy = searchParams.get("sortBy") || "newest";
+    const order = searchParams.get("order") || "desc"; // asc 또는 desc
     const showSoldOut = searchParams.get("showSoldOut") === "true";
 
     // 필터 조건 구성
@@ -227,9 +228,13 @@ export async function GET(request: Request) {
       });
     }
 
-    // badge 필터 처리
+    // badge 필터 처리 - 콤마로 구분된 badge 문자열에서 포함 여부 확인
     if (searchParams.get("badge")) {
-      where.badge = searchParams.get("badge")!;
+      const badgeFilter = searchParams.get("badge")!;
+      where.badge = {
+        contains: badgeFilter,
+        mode: "insensitive",
+      };
     }
 
     // 정렬 조건
@@ -242,7 +247,13 @@ export async function GET(request: Request) {
         orderBy = { price: "desc" };
         break;
       case "name":
-        orderBy = { title: "asc" };
+        orderBy = { title: order === "desc" ? "desc" : "asc" };
+        break;
+      case "price":
+        orderBy = { price: order === "desc" ? "desc" : "asc" };
+        break;
+      case "createdAt":
+        orderBy = { createdAt: order === "desc" ? "desc" : "asc" };
         break;
       case "newest":
       default:

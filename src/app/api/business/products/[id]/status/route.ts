@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ProductStatus } from "@prisma/client";
-import { checkBusinessAuth } from "@/lib/businessAuth";
+import { checkHeaderBusinessAuth } from "@/lib/businessAuth";
 
 // 상품 상태 변경
 export async function PUT(
@@ -9,7 +9,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const [user, errorResponse] = await checkBusinessAuth();
+    const [user, errorResponse] = await checkHeaderBusinessAuth(request);
     if (errorResponse) return errorResponse;
 
     const resolvedParams = await params;

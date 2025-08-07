@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
-import { checkBusinessAuth } from "@/lib/businessAuth";
+import { checkHeaderBusinessAuth } from "@/lib/businessAuth";
 import { SmsNotificationService, isTestMode } from "@/lib/sms-notifications";
 
 /**
@@ -108,7 +108,7 @@ export async function PUT(
 ) {
   try {
     // 비즈니스 사용자 인증 확인
-    const [user, errorResponse] = await checkBusinessAuth();
+    const [user, errorResponse] = await checkHeaderBusinessAuth(request);
     if (errorResponse) return errorResponse;
 
     const resolvedParams = await params;

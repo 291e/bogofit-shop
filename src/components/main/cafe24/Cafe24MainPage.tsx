@@ -14,7 +14,7 @@ async function fetchBestSellers(): Promise<Product[]> {
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/products?badge=BEST`,
+      }/api/products?badge=BEST&sortBy=createdAt&order=desc`,
       {
         next: { revalidate: 300 }, // 5분 캐시
       }
@@ -22,6 +22,10 @@ async function fetchBestSellers(): Promise<Product[]> {
 
     if (!response.ok) throw new Error("Failed to fetch best sellers");
     const data = await response.json();
+    console.log("🏆 베스트셀러 데이터:", data.products?.length || 0, "개");
+    if (data.products?.length > 0) {
+      console.log("첫 번째 베스트셀러:", data.products[0]);
+    }
     return data.products || [];
   } catch (error) {
     console.error("Error fetching best sellers:", error);
@@ -34,7 +38,7 @@ async function fetchNewArrivals(): Promise<Product[]> {
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/products?badge=NEW`,
+      }/api/products?badge=NEW&sortBy=createdAt&order=desc`,
       {
         next: { revalidate: 300 }, // 5분 캐시
       }
@@ -42,6 +46,10 @@ async function fetchNewArrivals(): Promise<Product[]> {
 
     if (!response.ok) throw new Error("Failed to fetch new arrivals");
     const data = await response.json();
+    console.log("🆕 신상품 데이터:", data.products?.length || 0, "개");
+    if (data.products?.length > 0) {
+      console.log("첫 번째 신상품:", data.products[0]);
+    }
     return data.products || [];
   } catch (error) {
     console.error("Error fetching new arrivals:", error);

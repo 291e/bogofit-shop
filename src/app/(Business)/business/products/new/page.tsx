@@ -31,6 +31,14 @@ import {
   subCategoryMap,
 } from "@/contents/Business/productFormData";
 
+interface OptionGroup {
+  id: number;
+  name: string; // 옵션명 (예: "사이즈", "색상")
+  values: string[]; // 옵션값들 (예: ["S", "M", "L"])
+  priceDiffs: { [value: string]: number }; // 각 값별 추가금액
+  stocks: { [value: string]: number }; // 각 값별 재고
+}
+
 interface ProductFormData {
   // Product 테이블 매핑 필드
   title: string; // Product.title
@@ -49,13 +57,53 @@ interface ProductFormData {
   mainImage: File | null; // Product.imageUrl (메인 이미지)
   thumbnailImages: File[]; // Product.thumbnailImages (썸네일들)
 
-  // 옵션 관련 (ProductVariant 테이블로 처리)
+  // 옵션 관련 (그룹별 관리)
   hasOptions: boolean;
-  variants: ProductVariant[];
+  optionGroups: OptionGroup[];
+  variants: ProductVariant[]; // 실제 저장될 때는 여전히 기존 구조 사용
 }
 
 export default function ProductCreatePage() {
   const router = useRouter();
+
+  // 공통 사용자 정보 가져오기 함수
+  const getUserInfo = () => {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (authStorage) {
+      try {
+        const authData = JSON.parse(authStorage);
+        const user = authData.state?.user;
+        return {
+          id: user?.id || "test-user",
+          userData: user
+            ? {
+                userId: user.userId,
+                email: user.email,
+                name: user.userId,
+                isBusiness: user.isBusiness,
+              }
+            : null,
+        };
+      } catch (e) {
+        console.error("auth-storage 파싱 실패:", e);
+      }
+    }
+    return { id: "test-user", userData: null };
+  };
+
+  // 공통 헤더 생성 함수
+  const getAuthHeaders = () => {
+    const { id, userData } = getUserInfo();
+    const headers: Record<string, string> = {
+      "x-user-id": id,
+    };
+
+    if (userData) {
+      headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+    }
+
+    return headers;
+  };
   const [loading, setLoading] = useState(false);
   const [detailImageUrl, setDetailImageUrl] = useState<string>(""); // TiptapEditor에서 업로드된 이미지 URL
   const [isEditorUploading, setIsEditorUploading] = useState(false); // TiptapEditor 이미지 업로드 상태
@@ -79,6 +127,7 @@ export default function ProductCreatePage() {
     mainImage: null,
     thumbnailImages: [],
     hasOptions: false,
+    optionGroups: [],
     variants: [],
   });
 
@@ -94,45 +143,32 @@ export default function ProductCreatePage() {
     }));
   };
 
-  // 할인 계산 로직
+  // 할인 계산 로직 - 원가와 최종가를 직접 입력받고 할인금액/할인율 자동 계산
   const handlePriceChange = (newPrice: number) => {
-    const discountAmount = formData.discountAmount;
-    const finalPrice = Math.max(0, newPrice - discountAmount);
+    const finalPrice = formData.finalPrice;
+    const discountAmount = Math.max(0, newPrice - finalPrice);
     const discountPercent =
       newPrice > 0 ? Math.round((discountAmount / newPrice) * 100) : 0;
 
     setFormData((prev) => ({
       ...prev,
       price: newPrice,
-      finalPrice,
-      discountPercent,
-    }));
-  };
-
-  const handleDiscountAmountChange = (newDiscountAmount: number) => {
-    const price = formData.price;
-    const finalPrice = Math.max(0, price - newDiscountAmount);
-    const discountPercent =
-      price > 0 ? Math.round((newDiscountAmount / price) * 100) : 0;
-
-    setFormData((prev) => ({
-      ...prev,
-      discountAmount: newDiscountAmount,
-      finalPrice,
-      discountPercent,
-    }));
-  };
-
-  const handleDiscountPercentChange = (newDiscountPercent: number) => {
-    const price = formData.price;
-    const discountAmount = Math.round((price * newDiscountPercent) / 100);
-    const finalPrice = Math.max(0, price - discountAmount);
-
-    setFormData((prev) => ({
-      ...prev,
-      discountPercent: newDiscountPercent,
       discountAmount,
-      finalPrice,
+      discountPercent,
+    }));
+  };
+
+  const handleFinalPriceChange = (newFinalPrice: number) => {
+    const price = formData.price;
+    const discountAmount = Math.max(0, price - newFinalPrice);
+    const discountPercent =
+      price > 0 ? Math.round((discountAmount / price) * 100) : 0;
+
+    setFormData((prev) => ({
+      ...prev,
+      finalPrice: newFinalPrice,
+      discountAmount,
+      discountPercent,
     }));
   };
 
@@ -176,40 +212,130 @@ export default function ProductCreatePage() {
     }
   };
 
-  // 옵션 관리 함수들
-  const addVariant = () => {
-    const newVariant: ProductVariant = {
+  // 옵션 그룹 관리 함수들
+  const addOptionGroup = () => {
+    const newGroup: OptionGroup = {
       id: Date.now(),
-      optionName: "",
-      optionValue: "",
-      priceDiff: 0,
-      stock: 0,
+      name: "",
+      values: [],
+      priceDiffs: {},
+      stocks: {},
     };
 
     setFormData((prev) => ({
       ...prev,
-      variants: [...prev.variants, newVariant],
+      optionGroups: [...prev.optionGroups, newGroup],
     }));
   };
 
-  const removeVariant = (variantId: number) => {
+  const removeOptionGroup = (groupId: number) => {
     setFormData((prev) => ({
       ...prev,
-      variants: prev.variants.filter((variant) => variant.id !== variantId),
+      optionGroups: prev.optionGroups.filter((group) => group.id !== groupId),
     }));
   };
 
-  const updateVariant = (
-    variantId: number,
-    field: keyof ProductVariant,
-    value: string | number
+  const updateOptionGroupName = (groupId: number, name: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      optionGroups: prev.optionGroups.map((group) =>
+        group.id === groupId ? { ...group, name } : group
+      ),
+    }));
+  };
+
+  const addOptionValue = (groupId: number, value: string) => {
+    if (!value.trim()) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      optionGroups: prev.optionGroups.map((group) =>
+        group.id === groupId
+          ? {
+              ...group,
+              values: [...group.values, value.trim()],
+              priceDiffs: { ...group.priceDiffs, [value.trim()]: 0 },
+              stocks: { ...group.stocks, [value.trim()]: 0 },
+            }
+          : group
+      ),
+    }));
+  };
+
+  const removeOptionValue = (groupId: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      optionGroups: prev.optionGroups.map((group) =>
+        group.id === groupId
+          ? {
+              ...group,
+              values: group.values.filter((v) => v !== value),
+              priceDiffs: Object.fromEntries(
+                Object.entries(group.priceDiffs).filter(([k]) => k !== value)
+              ),
+              stocks: Object.fromEntries(
+                Object.entries(group.stocks).filter(([k]) => k !== value)
+              ),
+            }
+          : group
+      ),
+    }));
+  };
+
+  const updateOptionValuePriceDiff = (
+    groupId: number,
+    value: string,
+    priceDiff: number
   ) => {
     setFormData((prev) => ({
       ...prev,
-      variants: prev.variants.map((variant) =>
-        variant.id === variantId ? { ...variant, [field]: value } : variant
+      optionGroups: prev.optionGroups.map((group) =>
+        group.id === groupId
+          ? {
+              ...group,
+              priceDiffs: { ...group.priceDiffs, [value]: priceDiff },
+            }
+          : group
       ),
     }));
+  };
+
+  const updateOptionValueStock = (
+    groupId: number,
+    value: string,
+    stock: number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      optionGroups: prev.optionGroups.map((group) =>
+        group.id === groupId
+          ? {
+              ...group,
+              stocks: { ...group.stocks, [value]: stock },
+            }
+          : group
+      ),
+    }));
+  };
+
+  // 옵션 그룹을 ProductVariant 배열로 변환하는 함수
+  const convertGroupsToVariants = (): ProductVariant[] => {
+    const variants: ProductVariant[] = [];
+    let variantId = 1;
+
+    formData.optionGroups.forEach((group) => {
+      group.values.forEach((value) => {
+        variants.push({
+          id: variantId++,
+          optionName: group.name,
+          optionValue: value,
+          priceDiff: group.priceDiffs[value] || 0,
+          stock: group.stocks[value] || 0,
+        });
+      });
+    });
+
+    return variants;
   };
 
   // S3 이미지 업로드 함수 (새로운 API 사용)
@@ -375,7 +501,7 @@ export default function ProductCreatePage() {
         isActive: formData.isActive,
         imageUrl: "", // 일단 빈 문자열로 생성
         detailImage: detailImageUrl || null, // TiptapEditor에서 업로드된 이미지 URL
-        variants: formData.hasOptions ? formData.variants : [],
+        variants: formData.hasOptions ? convertGroupsToVariants() : [],
       };
 
       console.log("상품 생성 중...", productData);
@@ -383,6 +509,7 @@ export default function ProductCreatePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(productData),
       });
@@ -463,22 +590,23 @@ export default function ProductCreatePage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="description">상세 설명</Label>
-                  <TiptapEditor
-                    content={formData.description}
-                    onChange={(content) =>
-                      handleInputChange("description", content)
-                    }
-                    onDetailImageUpload={(imageUrl) => {
-                      console.log(
-                        "TiptapEditor에서 첫 번째 이미지 업로드됨:",
-                        imageUrl
-                      );
-                      setDetailImageUrl(imageUrl);
-                    }}
-                    onUploadStateChange={(uploading) => {
-                      setIsEditorUploading(uploading);
-                    }}
-                    placeholder="📝 상품의 매력을 고객에게 전달해보세요!
+                  <div className="max-h-80 overflow-y-auto border rounded-md p-1">
+                    <TiptapEditor
+                      content={formData.description}
+                      onChange={(content) =>
+                        handleInputChange("description", content)
+                      }
+                      onDetailImageUpload={(imageUrl) => {
+                        console.log(
+                          "TiptapEditor에서 첫 번째 이미지 업로드됨:",
+                          imageUrl
+                        );
+                        setDetailImageUrl(imageUrl);
+                      }}
+                      onUploadStateChange={(uploading) => {
+                        setIsEditorUploading(uploading);
+                      }}
+                      placeholder="📝 상품의 매력을 고객에게 전달해보세요!
 
 🔥 제품 특징:
 • 예: 최신 Boost 미드솔 기술이 적용된 프리미엄 러닝화
@@ -491,7 +619,8 @@ export default function ProductCreatePage() {
 • 중량: 약 320g (275mm 기준)
 
 🖼️ 툴바의 이미지 버튼을 눌러 제품 착용샷, 디테일 사진 등을 추가해주세요!"
-                  />
+                    />
+                  </div>
                   {detailImageUrl && (
                     <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
                       <p className="text-sm text-green-700">
@@ -529,16 +658,31 @@ export default function ProductCreatePage() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="finalPrice">최종 판매가 *</Label>
+                    <Input
+                      id="finalPrice"
+                      type="number"
+                      value={formData.finalPrice}
+                      onChange={(e) =>
+                        handleFinalPriceChange(Number(e.target.value))
+                      }
+                      placeholder="예: 159000"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="discountAmount">할인 금액</Label>
                     <Input
                       id="discountAmount"
                       type="number"
                       value={formData.discountAmount}
-                      onChange={(e) =>
-                        handleDiscountAmountChange(Number(e.target.value))
-                      }
-                      placeholder="예: 30000"
+                      readOnly
+                      className="bg-gray-50"
                     />
+                    <p className="text-sm text-gray-500">
+                      자동 계산됨 (원가 - 최종 판매가)
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -547,27 +691,10 @@ export default function ProductCreatePage() {
                       id="discountPercent"
                       type="number"
                       value={formData.discountPercent}
-                      onChange={(e) =>
-                        handleDiscountPercentChange(Number(e.target.value))
-                      }
-                      placeholder="예: 15"
-                      max="100"
-                      min="0"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="finalPrice">최종 판매가</Label>
-                    <Input
-                      id="finalPrice"
-                      type="number"
-                      value={formData.finalPrice}
                       readOnly
                       className="bg-gray-50"
                     />
-                    <p className="text-sm text-gray-500">
-                      자동 계산됨 (원가 - 할인금액)
-                    </p>
+                    <p className="text-sm text-gray-500">자동 계산됨</p>
                   </div>
                 </div>
               </CardContent>
@@ -785,109 +912,148 @@ export default function ProductCreatePage() {
 
                 {formData.hasOptions && (
                   <div className="space-y-4">
-                    {/* 옵션 추가 버튼 */}
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">옵션 품목</h4>
-                      <Button type="button" onClick={addVariant} size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        품목 추가
-                      </Button>
-                    </div>
-
-                    {/* 옵션 목록 */}
-                    {formData.variants.map((variant) => (
+                    {/* 옵션 그룹 목록 */}
+                    {formData.optionGroups.map((group) => (
                       <div
-                        key={variant.id}
-                        className="border rounded-lg p-3 space-y-3"
+                        key={group.id}
+                        className="border rounded-lg p-4 space-y-4"
                       >
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label className="text-xs">옵션명</Label>
-                              <Input
-                                value={variant.optionName}
-                                onChange={(e) =>
-                                  updateVariant(
-                                    variant.id,
-                                    "optionName",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="예: 색상"
-                                className="text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">옵션값</Label>
-                              <Input
-                                value={variant.optionValue}
-                                onChange={(e) =>
-                                  updateVariant(
-                                    variant.id,
-                                    "optionValue",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="예: 블랙"
-                                className="text-sm"
-                              />
-                            </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1 mr-4">
+                            <Label className="text-sm font-medium">
+                              옵션명
+                            </Label>
+                            <Input
+                              value={group.name}
+                              onChange={(e) =>
+                                updateOptionGroupName(group.id, e.target.value)
+                              }
+                              placeholder="예: 사이즈, 색상"
+                              className="mt-1"
+                            />
                           </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label className="text-xs">추가금액</Label>
-                              <Input
-                                type="number"
-                                value={variant.priceDiff}
-                                onChange={(e) =>
-                                  updateVariant(
-                                    variant.id,
-                                    "priceDiff",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                placeholder="예: 5000"
-                                className="text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">재고</Label>
-                              <Input
-                                type="number"
-                                value={variant.stock}
-                                onChange={(e) =>
-                                  updateVariant(
-                                    variant.id,
-                                    "stock",
-                                    Number(e.target.value)
-                                  )
-                                }
-                                placeholder="예: 100"
-                                className="text-sm"
-                              />
-                            </div>
-                          </div>
-
                           <Button
                             type="button"
                             variant="destructive"
                             size="sm"
-                            onClick={() => removeVariant(variant.id)}
-                            className="w-full"
+                            onClick={() => removeOptionGroup(group.id)}
                           >
-                            <X className="h-4 w-4 mr-1" />
-                            삭제
+                            <X className="h-4 w-4" />
                           </Button>
+                        </div>
+
+                        {/* 옵션값 추가 */}
+                        <div>
+                          <Label className="text-sm font-medium">옵션값</Label>
+                          <div className="mt-2 space-y-2">
+                            {group.values.map((value, valueIndex) => (
+                              <div
+                                key={valueIndex}
+                                className="flex items-center gap-2 p-2 bg-gray-50 rounded"
+                              >
+                                <span className="flex-1 font-medium">
+                                  {value}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-gray-500">
+                                      추가금액
+                                    </span>
+                                    <Input
+                                      type="number"
+                                      value={group.priceDiffs[value] || 0}
+                                      onChange={(e) =>
+                                        updateOptionValuePriceDiff(
+                                          group.id,
+                                          value,
+                                          Number(e.target.value)
+                                        )
+                                      }
+                                      className="w-20 h-7 text-xs"
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-gray-500">
+                                      재고
+                                    </span>
+                                    <Input
+                                      type="number"
+                                      value={group.stocks[value] || 0}
+                                      onChange={(e) =>
+                                        updateOptionValueStock(
+                                          group.id,
+                                          value,
+                                          Number(e.target.value)
+                                        )
+                                      }
+                                      className="w-16 h-7 text-xs"
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      removeOptionValue(group.id, value)
+                                    }
+                                    className="h-7 w-7 p-0"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="옵션값 입력 (예: S, M, L)"
+                                className="flex-1"
+                                onKeyPress={(e) => {
+                                  if (e.key === "Enter") {
+                                    const input = e.target as HTMLInputElement;
+                                    addOptionValue(group.id, input.value);
+                                    input.value = "";
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={(e) => {
+                                  const input = (
+                                    e.target as HTMLButtonElement
+                                  ).parentElement?.querySelector("input");
+                                  if (input?.value) {
+                                    addOptionValue(group.id, input.value);
+                                    input.value = "";
+                                  }
+                                }}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
 
-                    {formData.variants.length === 0 && (
-                      <div className="text-center py-4 text-gray-500 text-sm">
-                        옵션 품목을 추가해주세요
+                    {formData.optionGroups.length === 0 && (
+                      <div className="text-center py-6 text-gray-500 text-sm">
+                        옵션 그룹을 추가해주세요
                       </div>
                     )}
+
+                    {/* 옵션 그룹 추가 버튼 - 맨 아래에 위치 */}
+                    <Button
+                      type="button"
+                      onClick={addOptionGroup}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      옵션 그룹 추가
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -903,7 +1069,8 @@ export default function ProductCreatePage() {
                   isEditorUploading ||
                   !formData.title ||
                   !formData.category ||
-                  formData.price <= 0
+                  formData.price <= 0 ||
+                  formData.finalPrice <= 0
                 }
               >
                 {loading

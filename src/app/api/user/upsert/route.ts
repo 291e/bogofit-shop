@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { SmsNotificationService, isTestMode } from "@/lib/sms-notifications";
+import { createBrandForUser } from "@/lib/businessAuth";
 
 const prisma = new PrismaClient();
 
@@ -73,6 +74,20 @@ export async function POST(req: NextRequest) {
 
     if (existingUser) {
       // 기존 사용자가 있으면 업데이트만 수행
+      let brandId = user.brandId || existingUser.brandId;
+
+      // isBusiness가 true이고 브랜드가 없으면 브랜드 생성
+      if (user.isBusiness && !brandId) {
+        const newBrand = await createBrandForUser(
+          existingUser.id,
+          user.name || user.userId
+        );
+        brandId = newBrand.id;
+        console.log(
+          `[API/user/upsert] 기존 사용자용 브랜드 생성: ${newBrand.name} (ID: ${newBrand.id})`
+        );
+      }
+
       const updatedUser = await prisma.user.update({
         where: { id: existingUser.id },
         data: {
@@ -82,7 +97,7 @@ export async function POST(req: NextRequest) {
           name: user.name || user.userId,
           isAdmin: user.isAdmin || false,
           isBusiness: user.isBusiness || false,
-          brandId: user.brandId || null,
+          brandId: brandId,
           gradeId: user.gradeId || null,
           gender: user.gender || null,
           birthDate: user.birthDate ? new Date(user.birthDate) : null,
@@ -97,7 +112,19 @@ export async function POST(req: NextRequest) {
         user: updatedUser,
       });
     } else {
-      // 새 사용자 생성
+      // 새 사용자 생성 시 브랜드 생성 여부 체크
+      let brandId = user.brandId || null;
+      if (user.isBusiness && !brandId) {
+        const newBrand = await createBrandForUser(
+          user.id,
+          user.name || user.userId
+        );
+        brandId = newBrand.id;
+        console.log(
+          `[API/user/upsert] 새 사용자용 브랜드 생성: ${newBrand.name} (ID: ${newBrand.id})`
+        );
+      }
+
       const newUser = await prisma.user.create({
         data: {
           id: user.id,
@@ -108,7 +135,7 @@ export async function POST(req: NextRequest) {
           name: user.name || user.userId,
           isAdmin: user.isAdmin || false,
           isBusiness: user.isBusiness || false,
-          brandId: user.brandId || null,
+          brandId: brandId,
           gradeId: user.gradeId || null,
           gender: user.gender || null,
           birthDate: user.birthDate ? new Date(user.birthDate) : null,

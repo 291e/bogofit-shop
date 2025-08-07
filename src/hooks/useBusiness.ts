@@ -20,6 +20,35 @@ export const useBusiness = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 공통 헤더 생성 함수
+  const getAuthHeaders = () => {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (authStorage) {
+      try {
+        const authData = JSON.parse(authStorage);
+        const user = authData.state?.user;
+        const headers: Record<string, string> = {
+          "x-user-id": user?.id || "test-user",
+        };
+
+        if (user) {
+          const userData = {
+            userId: user.userId,
+            email: user.email,
+            name: user.userId,
+            isBusiness: user.isBusiness,
+          };
+          headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+        }
+
+        return headers;
+      } catch (e) {
+        console.error("auth-storage 파싱 실패:", e);
+      }
+    }
+    return { "x-user-id": "test-user" };
+  };
+
   const fetchBusiness = async () => {
     if (!user?.isBusiness) {
       setLoading(false);
@@ -31,7 +60,7 @@ export const useBusiness = () => {
       const response = await fetch("/api/business", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
       });
 
@@ -55,7 +84,7 @@ export const useBusiness = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(input),
       });
@@ -82,7 +111,7 @@ export const useBusiness = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(input),
       });
@@ -123,13 +152,42 @@ export const useBusinessStats = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 공통 헤더 생성 함수
+  const getAuthHeaders = () => {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (authStorage) {
+      try {
+        const authData = JSON.parse(authStorage);
+        const user = authData.state?.user;
+        const headers: Record<string, string> = {
+          "x-user-id": user?.id || "test-user",
+        };
+
+        if (user) {
+          const userData = {
+            userId: user.userId,
+            email: user.email,
+            name: user.userId,
+            isBusiness: user.isBusiness,
+          };
+          headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+        }
+
+        return headers;
+      } catch (e) {
+        console.error("auth-storage 파싱 실패:", e);
+      }
+    }
+    return { "x-user-id": "test-user" };
+  };
+
   const fetchStats = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/business/stats", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
       });
 
@@ -163,13 +221,52 @@ export const useBusinessProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 공통 사용자 정보 가져오기 함수
+  const getUserInfo = () => {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (authStorage) {
+      try {
+        const authData = JSON.parse(authStorage);
+        const user = authData.state?.user;
+        return {
+          id: user?.id || "test-user",
+          userData: user
+            ? {
+                userId: user.userId,
+                email: user.email,
+                name: user.userId,
+                isBusiness: user.isBusiness,
+              }
+            : null,
+        };
+      } catch (e) {
+        console.error("auth-storage 파싱 실패:", e);
+      }
+    }
+    return { id: "test-user", userData: null };
+  };
+
+  // 공통 헤더 생성 함수
+  const getAuthHeaders = () => {
+    const { id, userData } = getUserInfo();
+    const headers: Record<string, string> = {
+      "x-user-id": id,
+    };
+
+    if (userData) {
+      headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+    }
+
+    return headers;
+  };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/business/products", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
       });
 
@@ -192,7 +289,7 @@ export const useBusinessProducts = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(input),
       });
@@ -216,7 +313,7 @@ export const useBusinessProducts = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(input),
       });
@@ -240,9 +337,7 @@ export const useBusinessProducts = () => {
     try {
       const response = await fetch(`/api/business/products/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -276,13 +371,42 @@ export const useBusinessOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 공통 헤더 생성 함수
+  const getAuthHeaders = () => {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (authStorage) {
+      try {
+        const authData = JSON.parse(authStorage);
+        const user = authData.state?.user;
+        const headers: Record<string, string> = {
+          "x-user-id": user?.id || "test-user",
+        };
+
+        if (user) {
+          const userData = {
+            userId: user.userId,
+            email: user.email,
+            name: user.userId,
+            isBusiness: user.isBusiness,
+          };
+          headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+        }
+
+        return headers;
+      } catch (e) {
+        console.error("auth-storage 파싱 실패:", e);
+      }
+    }
+    return { "x-user-id": "test-user" };
+  };
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/business/orders", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
       });
 
@@ -308,7 +432,7 @@ export const useBusinessOrders = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({ status }),
       });

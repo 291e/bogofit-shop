@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -26,6 +26,45 @@ interface BrandInfo {
 }
 
 export default function BrandSettingsPage() {
+  // 공통 사용자 정보 가져오기 함수
+  const getUserInfo = () => {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (authStorage) {
+      try {
+        const authData = JSON.parse(authStorage);
+        const user = authData.state?.user;
+        return {
+          id: user?.id || "test-user",
+          userData: user
+            ? {
+                userId: user.userId,
+                email: user.email,
+                name: user.userId,
+                isBusiness: user.isBusiness,
+              }
+            : null,
+        };
+      } catch (e) {
+        console.error("auth-storage 파싱 실패:", e);
+      }
+    }
+    return { id: "test-user", userData: null };
+  };
+
+  // 공통 헤더 생성 함수
+  const getAuthHeaders = useCallback(() => {
+    const { id, userData } = getUserInfo();
+    const headers: Record<string, string> = {
+      "x-user-id": id,
+    };
+
+    if (userData) {
+      headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+    }
+
+    return headers;
+  }, []);
+
   const [brandInfo, setBrandInfo] = useState<BrandInfo>({
     name: "",
     description: "",
@@ -39,7 +78,10 @@ export default function BrandSettingsPage() {
     const fetchBrandInfo = async () => {
       try {
         setIsLoadingData(true);
-        const response = await fetch("/api/business/brand");
+
+        const response = await fetch("/api/business/brand", {
+          headers: getAuthHeaders(),
+        });
 
         if (!response.ok) {
           throw new Error("브랜드 정보를 불러올 수 없습니다");
@@ -67,7 +109,7 @@ export default function BrandSettingsPage() {
     };
 
     fetchBrandInfo();
-  }, []);
+  }, [getAuthHeaders]);
 
   // 입력 필드 변경 핸들러
   const handleInputChange = (field: keyof BrandInfo, value: string) => {
@@ -85,6 +127,7 @@ export default function BrandSettingsPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(brandInfo),
       });
@@ -136,14 +179,16 @@ export default function BrandSettingsPage() {
             body: JSON.stringify({
               fileName: file.name,
               fileType: file.type,
+              fileSize: file.size,
               folder: "brand-logo",
             }),
           }
         );
 
         const presignedData = await presignedResponse.json();
-        if (!presignedData.success) {
-          throw new Error("업로드 URL 생성 실패");
+        if (!presignedResponse.ok || !presignedData.success) {
+          console.error("Presigned URL 생성 실패:", presignedData);
+          throw new Error(presignedData.error || "업로드 URL 생성 실패");
         }
 
         // 2. S3에 직접 업로드
@@ -156,17 +201,23 @@ export default function BrandSettingsPage() {
         });
 
         if (!uploadResponse.ok) {
-          throw new Error("파일 업로드 실패");
+          const errorText = await uploadResponse.text();
+          console.error("S3 업로드 실패:", errorText);
+          throw new Error(`파일 업로드 실패: ${uploadResponse.status}`);
         }
 
         // 3. 로고 URL 상태 업데이트
-        const logoUrl = presignedData.data.fileUrl;
+        const logoUrl = presignedData.data.s3Url;
         setBrandInfo((prev) => ({ ...prev, logo: logoUrl }));
 
         console.log("로고 업로드 성공:", logoUrl);
       } catch (error) {
         console.error("로고 업로드 실패:", error);
-        alert("로고 업로드 중 오류가 발생했습니다.");
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "로고 업로드 중 오류가 발생했습니다.";
+        alert(errorMessage);
       }
     }
   };
