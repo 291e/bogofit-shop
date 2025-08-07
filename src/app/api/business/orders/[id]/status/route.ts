@@ -218,10 +218,17 @@ export async function PUT(
     // 🚀 배송 시작 SMS 발송
     if (newStatus === "SHIPPING" && existingOrder.ordererPhone) {
       try {
+        // 상품명 생성
+        const productNames = existingOrder.items
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((item: any) => item.product?.title || "상품")
+          .join(", ");
+
         const smsSent = await SmsNotificationService.sendShippingStartedSms({
           customerPhone: existingOrder.ordererPhone,
           customerName: existingOrder.ordererName || "고객",
           orderId: existingOrder.id,
+          productName: productNames,
           trackingNumber: trackingNumber || undefined,
           courierCompany: courierCompany || undefined,
           testMode: isTestMode,
@@ -240,19 +247,19 @@ export async function PUT(
     // 🚀 배송 완료 SMS 발송
     if (newStatus === "COMPLETED" && existingOrder.ordererPhone) {
       try {
-        const smsSent = await SmsNotificationService.sendSms(
-          existingOrder.ordererPhone,
-          `[BogoFit] ${
-            existingOrder.ordererName || "고객"
-          }님, 배송이 완료되었습니다!\n` +
-            `주문번호: ${existingOrder.id}\n` +
-            `상품 리뷰 작성 시 적립금 500원을 드립니다.\n` +
-            `리뷰 작성하기: ${process.env.NEXT_PUBLIC_BASE_URL}/myPage`,
-          {
-            title: "배송 완료 안내",
-            testMode: isTestMode,
-          }
-        );
+        // 상품명 생성
+        const productNames = existingOrder.items
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((item: any) => item.product?.title || "상품")
+          .join(", ");
+
+        const smsSent = await SmsNotificationService.sendDeliveryCompletedSms({
+          customerPhone: existingOrder.ordererPhone,
+          customerName: existingOrder.ordererName || "고객",
+          orderId: existingOrder.id,
+          productName: productNames,
+          testMode: isTestMode,
+        });
 
         smsStatus = smsSent ? "sent" : "failed";
         console.log(

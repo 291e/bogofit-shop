@@ -159,7 +159,7 @@ export async function POST(request: Request) {
 
       const updatedOrder = await tx.order.update({
         where: { id: orderId },
-        data: { status: "COMPLETED" },
+        data: { status: "PAID" },
         include: {
           items: {
             include: {
@@ -176,7 +176,7 @@ export async function POST(request: Request) {
     if (orderData.ordererPhone) {
       const productNames = orderData.items
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((item: any) => item.product?.name || "상품")
+        .map((item: any) => item.product?.title || "상품")
         .join(", ");
 
       // 고객에게 주문 완료 SMS 발송
@@ -185,6 +185,14 @@ export async function POST(request: Request) {
         customerName: orderData.ordererName || "고객",
         orderId: orderData.id,
         amount: result.totalAmount || orderData.totalAmount,
+        productName: productNames,
+        orderDate: new Date().toLocaleString("ko-KR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         recipientName:
           orderData.recipientName || orderData.ordererName || "수령인",
         address: `${orderData.address1} ${orderData.address2 || ""}`.trim(),

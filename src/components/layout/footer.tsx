@@ -1,105 +1,132 @@
-import { Logo } from "@/components/ui/logo";
-import { 
-  Facebook,  
-  Instagram, 
-  Youtube, 
-  Mail, 
-  Phone, 
-} from "lucide-react";
+import { Instagram, Facebook, Youtube } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
-export function Footer() {
+export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-white">
-      {/* Main Footer */}
-      <div className="container mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Company Info */}
-          <div className="lg:col-span-1">
-            <div className="flex items-center space-x-3 mb-4">
-              <Logo useImage={true} className="h-18 w-18" imageSrc="/Logo/BOGOFIT LOGO.png" imageAlt="BOGOFIT Logo" />
-              <div>
-                <h4 className="text-lg font-bold">BOGOFIT</h4>
-                <p className="text-sm text-gray-400">Fashion & Lifestyle</p>
-              </div>
-            </div>
-            <p className="text-gray-300 mb-3 leading-relaxed text-sm">
-              해외직구, 쉽고 빠르게 BOGOFIT에서!
-            </p>
-            <p className="text-gray-300 mb-4 leading-relaxed text-sm">
-              전 세계 인기 상품을 한 곳에서, 믿을 수 있는 구매대행 서비스
-            </p>
-            <div className="flex space-x-3">
-              <a href="#" className="text-gray-400 hover:text-fuchsia-400 transition-colors duration-200 p-1.5 rounded-lg hover:bg-gray-800">
-                <Facebook className="h-4 w-4" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-fuchsia-400 transition-colors duration-200 p-1.5 rounded-lg hover:bg-gray-800">
-                <Instagram className="h-4 w-4" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-fuchsia-400 transition-colors duration-200 p-1.5 rounded-lg hover:bg-gray-800">
-                <Youtube className="h-4 w-4" />
-              </a>
-            </div>
+    <footer className="w-full bg-white border-t text-gray-700 text-sm mt-16 pt-10 pb-6 px-4 md:px-0">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8 md:gap-0 px-4 ">
+        {/* 브랜드/소개 */}
+        <div className="flex-1 flex flex-col gap-2 mb-6 md:mb-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Image
+              src="/BOGOFIT.svg"
+              alt="BOGOFIT 로고"
+              width={32}
+              height={32}
+            />
+            <span className="text-lg font-bold tracking-wide">BOGOFIT</span>
           </div>
-
-          {/* Menu */}
-          <div>
-            <h4 className="font-semibold mb-4 text-base">메뉴</h4>
-            <ul className="space-y-2 text-gray-300 text-sm">
-              <li><a href="#" className="hover:text-fuchsia-400 transition-colors duration-200 flex items-center group">
-                <span className="w-1 h-1 bg-fuchsia-400 rounded-full mr-2 group-hover:scale-150 transition-transform duration-200"></span>
-                회사소개
-              </a></li>
-              <li><a href="#" className="hover:text-fuchsia-400 transition-colors duration-200 flex items-center group">
-                <span className="w-1 h-1 bg-fuchsia-400 rounded-full mr-2 group-hover:scale-150 transition-transform duration-200"></span>
-                이용약관
-              </a></li>
-              <li><a href="#" className="hover:text-fuchsia-400 transition-colors duration-200 flex items-center group">
-                <span className="w-1 h-1 bg-fuchsia-400 rounded-full mr-2 group-hover:scale-150 transition-transform duration-200"></span>
-                개인정보처리방침
-              </a></li>
-            </ul>
-          </div>
-
-          {/* Customer Center */}
-          <div>
-            <h4 className="font-semibold mb-4 text-base">고객센터</h4>
-            <ul className="space-y-3 text-gray-300">
-              <li className="flex items-center space-x-2 group">
-                <div className="p-1.5 rounded-lg bg-gray-800 group-hover:bg-fuchsia-600 transition-colors duration-200">
-                  <Mail className="h-3.5 w-3.5" />
-                </div>
-                <span className="text-sm">1:1 문의 metabank@naver.com</span>
-              </li>
-              <li className="flex items-center space-x-2 group">
-                <div className="p-1.5 rounded-lg bg-gray-800 group-hover:bg-fuchsia-600 transition-colors duration-200">
-                  <Phone className="h-3.5 w-3.5" />
-                </div>
-                <span className="text-sm">042-385-1008 (평일 10:00~18:00)</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Company Information */}
-          <div>
-            <h4 className="font-semibold mb-4 text-base">회사정보</h4>
-            <ul className="space-y-2 text-gray-300 text-sm">
-              <li>상호: (주)메타뱅크 | 대표: 소요환</li>
-              <li>사업자등록번호: 755-86-02418</li>
-              <li>주소: 대전광역시 대덕구 한남로 70 한남대캠퍼스혁신파크 B동 205호</li>
-              <li>통신판매번호: 2023-대전유성-1388</li>
-            </ul>
-          </div>
+          <span className="text-gray-500">
+            반품없이 쉽고 빠르게 입어보는 BOGOFIT!
+          </span>
+          <span className="text-xs text-gray-400 max-w-[270px]">
+            전 세계 인기 상품을 한 곳에서, 믿을 수 있는 구매대행 서비스
+          </span>
+          <span className="text-xs text-gray-400 max-w-[270px]">
+            해외배송, 믿을 수 있는 구매대행 서비스
+          </span>
         </div>
 
-        {/* Bottom Section */}
-        <div className="border-t border-gray-700 mt-8 pt-6">
-          <div className="flex flex-col md:flex-row items-center justify-center">
-            <div className="text-gray-400 text-sm">
-              <p>&copy; 2025 BOGOFIT SHOP. All rights reserved.</p>
-            </div>
-          </div>
+        {/* 주요 메뉴 */}
+        <div className="flex-1 flex flex-col gap-1">
+          <span className="font-semibold mb-1">메뉴</span>
+          <Link
+            href="https://www.metabank3d.com/"
+            className="hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            회사소개
+          </Link>
+          <Link href="/agreement" className="hover:underline">
+            이용약관
+          </Link>
+          <Link href="/privacy" className="hover:underline">
+            개인정보처리방침
+          </Link>
         </div>
+
+        {/* 고객센터 */}
+        <div className="flex-1 flex flex-col gap-1">
+          <span className="font-semibold mb-1">고객센터</span>
+          <span>
+            상품 문의{" "}
+            <Link
+              href="mailto:bogofit@naver.com"
+              className="text-blue-600 hover:underline ml-1"
+            >
+              bogofit@naver.com
+            </Link>
+          </span>
+          <span>
+            입점 문의{" "}
+            <Link
+              href="mailto:bogofit@naver.com"
+              className="text-blue-600 hover:underline ml-1"
+            >
+              metabank@naver.com
+            </Link>
+          </span>
+          <span>
+            042-385-1008{" "}
+            <span className="text-xs text-gray-400 ml-1">
+              (평일 10:00~18:00)
+            </span>
+          </span>
+        </div>
+
+        {/* 회사정보 */}
+        <div className="flex-1  flex flex-col gap-1 text-xs text-gray-500 mt-4 md:mt-0">
+          <span className="font-semibold text-sm text-gray-700 mb-1">
+            회사정보
+          </span>
+          <span>상호: (주)메타뱅크 | 대표: 소요환</span>
+          <span>사업자등록번호: 755-86-02418</span>
+          <span>
+            주소: 대전광역시 대덕구 한남로 70 한남대캠퍼스혁신파크 B동 205호
+          </span>
+        </div>
+      </div>
+
+      {/* 구분선 */}
+      <div className="w-full border-t my-6 border-gray-200" />
+
+      {/* 하단: 소셜/저작권 */}
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:justify-between items-center gap-2 md:gap-0">
+        <div className="flex gap-3 mb-2 md:mb-0">
+          <Link href="https://www.youtube.com/@bogofit">
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 group-hover:bg-black transition-colors shadow hover:scale-110">
+              <Youtube className="w-4 h-4 text-red-500 group-hover:text-white transition-colors" />
+            </span>
+          </Link>
+          <Link
+            href="https://instagram.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="인스타그램"
+            className="group"
+          >
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 group-hover:bg-pink-500 transition-colors shadow hover:scale-110">
+              <Instagram className="w-4 h-4 text-pink-500 group-hover:text-white transition-colors" />
+            </span>
+          </Link>
+          <Link
+            href="https://facebook.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="페이스북"
+            className="group"
+          >
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 group-hover:bg-blue-600 transition-colors shadow hover:scale-110">
+              <Facebook className="w-4 h-4 text-blue-600 group-hover:text-white transition-colors" />
+            </span>
+          </Link>
+        </div>
+        <span className="text-xs text-gray-400">
+          © 2025 BOGOFIT SHOP. All rights reserved.
+        </span>
       </div>
     </footer>
   );
-} 
+}

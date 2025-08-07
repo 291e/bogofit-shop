@@ -125,6 +125,12 @@ export async function GET(req: NextRequest) {
               tel: payment.order.ordererTel,
             }
           : null,
+        // 주문 정보
+        order: payment.order
+          ? {
+              status: payment.order.status,
+            }
+          : null,
         // 배송지 정보
         shipping: payment.order
           ? {

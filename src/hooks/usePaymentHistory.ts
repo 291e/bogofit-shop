@@ -6,7 +6,7 @@ export interface Payment {
   orderId: string;
   amount: number;
   method: string;
-  status: "FAIL" | "PENDING" | "COMPLETED";
+  status: "FAIL" | "PENDING" | "COMPLETED" | "SHIPPING" | "PAID";
   createdAt: string;
   approvedAt?: string | null;
   product: {
@@ -20,6 +20,15 @@ export interface Payment {
     email: string | null;
     phone: string | null;
     tel: string | null;
+  } | null;
+  order: {
+    status:
+      | "PENDING"
+      | "PAID"
+      | "SHIPPING"
+      | "COMPLETED"
+      | "CANCELED"
+      | "FAILED";
   } | null;
   shipping: {
     recipientName: string | null;

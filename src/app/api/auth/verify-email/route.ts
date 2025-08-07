@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     verificationStore.debugStore();
 
     // 인증번호 검증
-    const verificationResult = verificationStore.verifyCode(
+    const verificationResult = await verificationStore.verifyCode(
       email,
       code,
       type as VerificationType
@@ -71,8 +71,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: verificationResult.message,
-      userId: verificationResult.userId,
-      metadata: verificationResult.metadata, // 각 인증 타입별 추가 데이터
       verificationType: type,
     });
   } catch (error) {
