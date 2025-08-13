@@ -682,6 +682,7 @@ export default function VirtualFitting({
                         handleSampleSelect("human_file", imageSrc)
                       }
                       onClear={() => handleFileChange("human_file", null)}
+                      type="model"
                     />
                   </div>
 
@@ -722,6 +723,7 @@ export default function VirtualFitting({
                         handleSampleSelect("garment_file", imageSrc)
                       }
                       onClear={() => handleFileChange("garment_file", null)}
+                      type="clothing"
                     />
                   </div>
 
@@ -759,6 +761,7 @@ export default function VirtualFitting({
                         handleSampleSelect("lower_file", imageSrc)
                       }
                       onClear={() => handleFileChange("lower_file", null)}
+                      type="clothing"
                     />
                   </div>
 

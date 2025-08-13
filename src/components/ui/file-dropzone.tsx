@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
@@ -22,6 +23,7 @@ interface FileDropzoneProps {
   sampleImages: SampleImage[];
   onSampleSelect: (imageSrc: string) => void;
   onClear?: () => void;
+  type?: "model" | "clothing"; // 모델 이미지인지 상의/하의인지 구분
 }
 
 export function FileDropzone({
@@ -33,6 +35,7 @@ export function FileDropzone({
   sampleImages,
   onSampleSelect,
   onClear,
+  type = "clothing", // 기본값은 상의/하의
 }: FileDropzoneProps) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
@@ -112,8 +115,8 @@ export function FileDropzone({
                   isDragActive
                     ? "border-pink-500 bg-pink-50 shadow-lg"
                     : required
-                    ? "border-gray-300 hover:border-pink-400 hover:shadow-md"
-                    : "border-gray-200 hover:border-gray-300"
+                      ? "border-gray-300 hover:border-pink-400 hover:shadow-md"
+                      : "border-gray-200 hover:border-gray-300"
                 }`
           }`}
         >
@@ -150,7 +153,9 @@ export function FileDropzone({
                 <p className="text-base font-medium text-gray-700 mb-1">
                   {isDragActive
                     ? "여기에 파일을 드롭하세요"
-                    : "이미지를 업로드하세요"}
+                    : type === "model"
+                      ? "자신의 이미지를 업로드하세요."
+                      : "이미지를 업로드하세요."}
                 </p>
                 <p className="text-sm text-gray-500">
                   클릭하거나 드래그하여 업로드
@@ -166,7 +171,7 @@ export function FileDropzone({
 
       {/* 샘플 이미지 선택 버튼 */}
       {sampleImages.length > 0 && (
-        <div className="mt-3">
+        <div className="mt-3 ">
           <Dialog>
             <DialogTrigger asChild>
               <Button
@@ -178,14 +183,14 @@ export function FileDropzone({
                 샘플 이미지 선택
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
-              <DialogHeader className="pb-4">
+            <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
+              <DialogHeader className="pb-4 flex-shrink-0">
                 <DialogTitle className="text-xl font-semibold text-gray-900">
                   {label} 샘플 선택
                 </DialogTitle>
               </DialogHeader>
-              <div className="overflow-y-auto px-1">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+              <div className="flex-1 overflow-y-auto px-1 min-h-0">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-4">
                   {sampleImages.map((sample) => (
                     <div
                       key={sample.id}
@@ -198,7 +203,7 @@ export function FileDropzone({
                           alt={sample.alt}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                         />
                       </div>
                       <p className="text-xs text-center mt-2 text-gray-600 group-hover:text-gray-900 transition-colors truncate">
@@ -207,6 +212,13 @@ export function FileDropzone({
                     </div>
                   ))}
                 </div>
+              </div>
+              <div className="flex-shrink-0 pt-4 border-t border-gray-200">
+                <DialogClose asChild>
+                  <Button variant="outline" className="w-full">
+                    선택 완료
+                  </Button>
+                </DialogClose>
               </div>
             </DialogContent>
           </Dialog>

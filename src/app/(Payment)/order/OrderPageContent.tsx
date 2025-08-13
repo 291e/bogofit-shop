@@ -197,7 +197,10 @@ export default function OrderPageContent() {
         const response = await fetch(`/api/products/${finalProductId}`);
         if (response.ok) {
           const productData = await response.json();
-          setProduct(productData);
+          console.log("가져온 상품 정보:", productData);
+          console.log("shippingType:", productData.product?.shippingType);
+          // API 응답이 {product: {...}} 형태이므로 product 객체를 추출
+          setProduct(productData.product || productData);
         }
       } catch (error) {
         console.error("상품 정보를 가져오는데 실패했습니다:", error);
@@ -768,7 +771,7 @@ export default function OrderPageContent() {
                                     e.target.value
                                   )
                                 }
-                                placeholder="010-0000-0000"
+                                placeholder="연락처를 입력하세요."
                                 maxLength={13}
                               />
                             </div>
@@ -1055,7 +1058,15 @@ export default function OrderPageContent() {
               </Card>
 
               {/* 통관 정보 (해외 상품일 경우에만 표시) */}
-              {product && product.shippingType === "OVERSEAS" && (
+              {(() => {
+                console.log("통관 정보 조건 체크:", {
+                  product: !!product,
+                  shippingType: product?.shippingType,
+                  isOverseas: product?.shippingType === "OVERSEAS",
+                });
+                // 상품 정보가 있고 shippingType이 OVERSEAS인 경우에만 표시
+                return product && product.shippingType === "OVERSEAS";
+              })() && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">

@@ -20,12 +20,8 @@ export default function Footer() {
           <span className="text-gray-500">
             반품없이 쉽고 빠르게 입어보는 BOGOFIT!
           </span>
-          <span className="text-xs text-gray-400 max-w-[270px]">
-            전 세계 인기 상품을 한 곳에서, 믿을 수 있는 구매대행 서비스
-          </span>
-          <span className="text-xs text-gray-400 max-w-[270px]">
-            해외배송, 믿을 수 있는 구매대행 서비스
-          </span>
+          <span className="text-gray-500">전 세계 인기 상품을 한 곳에서</span>
+          <span className="text-gray-500">믿을 수 있는 해외배송 서비스</span>
         </div>
 
         {/* 주요 메뉴 */}

@@ -528,7 +528,7 @@ export default function ProductDetail() {
                       <RefreshCw className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">교환/환불</p>
+                      <p className="font-semibold text-sm">교환/반품</p>
                       <p className="text-xs text-gray-500">7일 이내</p>
                     </div>
                   </div>
@@ -623,13 +623,13 @@ export default function ProductDetail() {
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                   className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
-                  title="배송/교환/환불"
+                  title="배송/교환/반품"
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-lg flex items-center justify-center">
                     <div className="w-3 h-2 bg-white rounded-sm"></div>
                   </div>
                   <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    배송/교환/환불
+                    배송/교환/반품
                   </div>
                 </button>
               </nav>
@@ -704,11 +704,11 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* 배송/교환/환불 정보 */}
+          {/* 배송/교환/반품 정보 */}
           <div id="shipping-info" className="max-w-6xl mx-auto mt-16 mb-16">
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 text-center">
-                배송/교환/환불
+                배송/교환/반품
               </h2>
               <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
             </div>
@@ -729,11 +729,11 @@ export default function ProductDetail() {
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <RefreshCw className="w-5 h-5 text-blue-500" />
-                    교환/환불
+                    교환/반품
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>• 교환/환불 기간: 상품 수령 후 7일 이내</p>
-                    <p>• 교환/환불 비용: 고객 부담</p>
+                    <p>• 교환/반품 기간: 상품 수령 후 7일 이내</p>
+                    <p>• 교환/반품 비용: 고객 부담</p>
                     <p>• 단순변심 시 왕복배송비 부담</p>
                     <p>• 불량품/오배송 시 무료 교환</p>
                   </div>
@@ -744,9 +744,9 @@ export default function ProductDetail() {
                     주의사항
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>• 착용 후 교환/환불 불가</p>
-                    <p>• 세탁 후 교환/환불 불가</p>
-                    <p>• 상품 택 제거 시 교환/환불 불가</p>
+                    <p>• 착용 후 교환/반품 불가</p>
+                    <p>• 세탁 후 교환/반품 불가</p>
+                    <p>• 상품 택 제거 시 교환/반품 불가</p>
                     <p>• 고객 과실로 인한 손상 시 불가</p>
                   </div>
                 </div>

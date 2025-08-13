@@ -229,8 +229,10 @@ export async function GET(request: Request) {
     }
 
     // badge 필터 처리 - 콤마로 구분된 badge 문자열에서 포함 여부 확인
-    if (searchParams.get("badge")) {
-      const badgeFilter = searchParams.get("badge")!;
+    const badgeFilter = searchParams.get("badge");
+    const dateSeed = searchParams.get("dateSeed");
+
+    if (badgeFilter) {
       where.badge = {
         contains: badgeFilter,
         mode: "insensitive",
@@ -255,6 +257,9 @@ export async function GET(request: Request) {
       case "createdAt":
         orderBy = { createdAt: order === "desc" ? "desc" : "asc" };
         break;
+      case "popular":
+        orderBy = { viewCount: "desc" };
+        break;
       case "newest":
       default:
         orderBy = { createdAt: "desc" };
@@ -264,63 +269,164 @@ export async function GET(request: Request) {
     // 전체 상품 수 조회 (필터 조건 적용)
     const totalCount = await prisma.product.count({ where });
 
-    // 상품 조회 (페이지네이션 적용)
-    const products = await prisma.product.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy,
-      include: {
-        brand: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            logo: true,
+    // dateSeed가 있으면 24시간 기준 일관된 랜덤 순서 생성
+    let products;
+    if (dateSeed && badgeFilter) {
+      // dateSeed를 기반으로 일관된 랜덤 순서 생성
+      const seed = dateSeed.split("-").join("");
+      const seedNumber = parseInt(seed, 10);
+
+      // badge가 포함된 상품들을 먼저 조회
+      const badgeProducts = await prisma.product.findMany({
+        where,
+        orderBy: { createdAt: "desc" }, // 최신순 정렬
+        include: {
+          brand: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logo: true,
+            },
+          },
+          variants: {
+            select: {
+              id: true,
+              optionName: true,
+              optionValue: true,
+              priceDiff: true,
+            },
+          },
+          reviews: {
+            select: {
+              rating: true,
+            },
           },
         },
-        variants: {
-          select: {
-            id: true,
-            optionName: true,
-            optionValue: true,
-            priceDiff: true,
+      });
+
+      // badge 상품이 충분하지 않으면 랜덤 상품으로 보충
+      if (badgeProducts.length < limit) {
+        const remainingCount = limit - badgeProducts.length;
+
+        // badge가 없는 상품들을 조회
+        const randomProducts = await prisma.product.findMany({
+          where: {
+            ...where,
+            badge: {
+              not: {
+                contains: badgeFilter,
+              },
+            },
+          },
+          take: remainingCount * 2, // 더 많이 가져와서 랜덤 선택
+          include: {
+            brand: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                logo: true,
+              },
+            },
+            variants: {
+              select: {
+                id: true,
+                optionName: true,
+                optionValue: true,
+                priceDiff: true,
+              },
+            },
+            reviews: {
+              select: {
+                rating: true,
+              },
+            },
+          },
+        });
+
+        // dateSeed 기반으로 일관된 랜덤 선택
+        const shuffled = [...randomProducts].sort((a, b) => {
+          const hashA = (a.id + seedNumber) % 1000;
+          const hashB = (b.id + seedNumber) % 1000;
+          return hashA - hashB;
+        });
+
+        // badge 상품과 랜덤 상품 합치기
+        products = [...badgeProducts, ...shuffled.slice(0, remainingCount)];
+      } else {
+        // badge 상품이 충분하면 그대로 사용
+        products = badgeProducts.slice(0, limit);
+      }
+    } else {
+      // 일반 조회 (기존 로직)
+      products = await prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        include: {
+          brand: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logo: true,
+            },
+          },
+          variants: {
+            select: {
+              id: true,
+              optionName: true,
+              optionValue: true,
+              priceDiff: true,
+            },
+          },
+          reviews: {
+            select: {
+              rating: true,
+            },
           },
         },
-        reviews: {
-          select: {
-            rating: true,
-          },
-        },
-      },
-    });
+      });
+    }
 
-    // 평균 평점 계산
-    const productsWithRating = products.map((product) => {
-      const avgRating =
-        product.reviews.length > 0
-          ? product.reviews.reduce((sum, review) => sum + review.rating, 0) /
-            product.reviews.length
-          : 0;
+    // 중복 제거 및 평균 평점 계산
+    const seenTitles = new Set<string>();
+    const productsWithRating = products
+      .map((product) => {
+        const avgRating =
+          product.reviews.length > 0
+            ? product.reviews.reduce((sum, review) => sum + review.rating, 0) /
+              product.reviews.length
+            : 0;
 
-      // 품절 여부 확인
-      const isSoldOut =
-        product.variants && product.variants.length > 0
-          ? product.variants.every((variant) =>
-              variant.optionValue.includes("품절")
-            )
-          : false;
+        // 품절 여부 확인
+        const isSoldOut =
+          product.variants && product.variants.length > 0
+            ? product.variants.every((variant) =>
+                variant.optionValue.includes("품절")
+              )
+            : false;
 
-      return {
-        ...product,
-        avgRating: Math.round(avgRating * 10) / 10,
-        reviewCount: product.reviews.length,
-        isSoldOut,
-        // storeName 우선, 없으면 브랜드명 사용 (업체명 ≠ 브랜드명)
-        storeName: product.storeName || product.brand?.name || "보고핏",
-        reviews: undefined,
-      };
-    });
+        return {
+          ...product,
+          avgRating: Math.round(avgRating * 10) / 10,
+          reviewCount: product.reviews.length,
+          isSoldOut,
+          // storeName 우선, 없으면 브랜드명 사용 (업체명 ≠ 브랜드명)
+          storeName: product.storeName || product.brand?.name || "보고핏",
+          reviews: undefined,
+        };
+      })
+      .filter((product) => {
+        // 같은 제목의 상품이 이미 있으면 제외
+        if (seenTitles.has(product.title)) {
+          return false;
+        }
+        seenTitles.add(product.title);
+        return true;
+      });
 
     // soldout 상품은 이미 데이터베이스 레벨에서 제외됨
     return NextResponse.json({

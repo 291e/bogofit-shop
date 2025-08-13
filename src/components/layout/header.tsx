@@ -15,7 +15,6 @@ import { CartButton } from "./header/CartButton";
 import { SearchBar } from "./header/SearchBar";
 
 // 데이터 import
-import { navLinks } from "@/contents/Header/navLinks";
 import { Badge } from "../ui/badge";
 
 export default function Header() {
@@ -213,20 +212,50 @@ export default function Header() {
 
             {/* 메뉴 항목들 */}
             <div className="flex-1 px-4 py-2 space-y-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${
-                    pathname === link.href
-                      ? "text-[#FF84CD] bg-pink-50"
-                      : "text-gray-700 hover:text-[#FF84CD] hover:bg-pink-50"
-                  }`}
-                  onClick={() => setOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              <Link
+                href="/recommend"
+                className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${
+                  pathname === "/recommend"
+                    ? "text-[#FF84CD] bg-pink-50"
+                    : "text-gray-700 hover:text-[#FF84CD] hover:bg-pink-50"
+                }`}
+                onClick={() => setOpen(false)}
+              >
+                추천
+              </Link>
+              <Link
+                href="/ranking"
+                className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${
+                  pathname === "/ranking"
+                    ? "text-[#FF84CD] bg-pink-50"
+                    : "text-gray-700 hover:text-[#FF84CD] hover:bg-pink-50"
+                }`}
+                onClick={() => setOpen(false)}
+              >
+                랭킹
+              </Link>
+              <Link
+                href="/sale"
+                className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${
+                  pathname === "/sale"
+                    ? "text-[#FF84CD] bg-pink-50"
+                    : "text-gray-700 hover:text-[#FF84CD] hover:bg-pink-50"
+                }`}
+                onClick={() => setOpen(false)}
+              >
+                세일
+              </Link>
+              <Link
+                href="/brands"
+                className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${
+                  pathname === "/brands"
+                    ? "text-[#FF84CD] bg-pink-50"
+                    : "text-gray-700 hover:text-[#FF84CD] hover:bg-pink-50"
+                }`}
+                onClick={() => setOpen(false)}
+              >
+                브랜드
+              </Link>
             </div>
 
             {/* 사용자 정보 */}

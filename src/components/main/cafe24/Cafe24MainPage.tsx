@@ -18,7 +18,7 @@ async function fetchBestSellers(): Promise<Product[]> {
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/products?badge=BEST&sortBy=createdAt&order=desc&dateSeed=${dateSeed}`,
+      }/api/products?badge=BEST&random=60&dateSeed=${dateSeed}`,
       {
         next: { revalidate: 86400 }, // 24시간 캐시
       }
@@ -39,12 +39,16 @@ async function fetchBestSellers(): Promise<Product[]> {
 
 async function fetchNewArrivals(): Promise<Product[]> {
   try {
+    // 24시간마다 변경되는 랜덤 시드 생성 (날짜 기반)
+    const today = new Date();
+    const dateSeed = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/products?badge=NEW&sortBy=createdAt&order=desc`,
+      }/api/products?badge=NEW&random=60&dateSeed=${dateSeed}`,
       {
-        next: { revalidate: 300 }, // 5분 캐시
+        next: { revalidate: 86400 }, // 24시간 캐시
       }
     );
 
@@ -67,12 +71,16 @@ async function fetchRandomProducts(): Promise<{
   featuredProducts: Product[];
 }> {
   try {
+    // 24시간마다 변경되는 랜덤 시드 생성 (날짜 기반)
+    const today = new Date();
+    const dateSeed = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/products?random=60`, // 60개 가져와서 30개씩 나누기
+      }/api/products?random=60&dateSeed=${dateSeed}`, // 60개 가져와서 30개씩 나누기
       {
-        next: { revalidate: 300 }, // 5분 캐시
+        next: { revalidate: 86400 }, // 24시간 캐시
       }
     );
 
@@ -80,8 +88,16 @@ async function fetchRandomProducts(): Promise<{
     const data = await response.json();
     const products = data.products || [];
 
-    // 랜덤하게 섞어서 앞의 30개는 Special, 뒤의 30개는 Featured로 분리
-    const shuffled = [...products].sort(() => Math.random() - 0.5);
+    // dateSeed 기반으로 일관된 랜덤 분할
+    const seed = dateSeed.split("-").join("");
+    const seedNumber = parseInt(seed, 10);
+
+    // seed 기반으로 일관된 분할 (앞의 30개는 Special, 뒤의 30개는 Featured)
+    const shuffled = [...products].sort((a, b) => {
+      const hashA = (a.id + seedNumber) % 1000;
+      const hashB = (b.id + seedNumber) % 1000;
+      return hashA - hashB;
+    });
 
     return {
       specialOffers: shuffled.slice(0, 30),

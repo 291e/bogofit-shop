@@ -14,7 +14,7 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(2); // 페이지 3부터 무한 스크롤 시작
   const observerRef = useRef<HTMLDivElement>(null);
 
   // 반응형 열 개수 계산
@@ -59,7 +59,11 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
       if (newProducts.length === 0) {
         setHasMore(false);
       } else {
-        setProducts((prev) => [...prev, ...newProducts]);
+        // 임시로 중복 제거 로직 비활성화 (무한 스크롤 테스트용)
+        setProducts((prev) => {
+          // 모든 새 상품을 추가 (중복 제거 없이)
+          return [...prev, ...newProducts];
+        });
         setPage((prev) => prev + 1);
       }
     } catch (error) {
@@ -133,9 +137,9 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
 
       {/* 상품 그리드 */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {products.map((product) => (
+        {products.map((product, index) => (
           <MusinsaProductCard
-            key={`${product.id}-${Math.random()}`} // 중복 키 방지
+            key={`${product.id}-${index}`} // 안정적인 키 생성
             product={product}
           />
         ))}
