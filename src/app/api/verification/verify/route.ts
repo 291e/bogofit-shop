@@ -240,29 +240,46 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * 전화번호 정규화 함수
+ * 전화번호 정규화 함수 (다국가 지원)
  */
 function normalizePhoneNumber(phoneNumber: string): string | null {
   try {
     // 모든 공백, 하이픈, 괄호 제거
     const cleaned = phoneNumber.replace(/[\s\-\(\)]/g, "");
 
-    // 이미 +82로 시작하면 그대로 반환
-    if (cleaned.startsWith("+82")) {
+    // 이미 국가 코드가 포함된 경우 그대로 반환
+    if (cleaned.startsWith("+")) {
       return cleaned;
     }
 
-    // 82로 시작하면 + 추가
-    if (cleaned.startsWith("82")) {
-      return "+" + cleaned;
+    // 지원하는 국가 코드들
+    const supportedCountries = [
+      { code: "+82", prefix: "82" }, // 한국
+      { code: "+1", prefix: "1" }, // 미국/캐나다
+      { code: "+44", prefix: "44" }, // 영국
+      { code: "+61", prefix: "61" }, // 호주
+      { code: "+81", prefix: "81" }, // 일본
+      { code: "+86", prefix: "86" }, // 중국
+      { code: "+52", prefix: "52" }, // 멕시코
+      { code: "+62", prefix: "62" }, // 인도네시아
+      { code: "+971", prefix: "971" }, // 아랍에미리트
+      { code: "+84", prefix: "84" }, // 베트남
+      { code: "+855", prefix: "855" }, // 캄보디아
+    ];
+
+    // 국가 코드로 시작하는지 확인
+    for (const country of supportedCountries) {
+      if (cleaned.startsWith(country.prefix)) {
+        return country.code + cleaned.substring(country.prefix.length);
+      }
     }
 
-    // 0으로 시작하는 한국 번호면 +82로 변환
+    // 한국의 경우 0으로 시작하면 제거하고 +82 추가
     if (cleaned.startsWith("0")) {
       return "+82" + cleaned.substring(1);
     }
 
-    // 그 외의 경우 +82 추가 (한국 번호로 가정)
+    // 기본값으로 한국 번호로 처리
     return "+82" + cleaned;
   } catch (error) {
     console.error("전화번호 정규화 실패:", error);

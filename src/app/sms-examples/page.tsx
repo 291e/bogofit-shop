@@ -63,9 +63,10 @@ export default function SmsExamplesPage() {
         <Alert className="mb-8 border-blue-200 bg-blue-50">
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-800">
-            <strong>사용법:</strong> 각 시나리오를 선택하고 전화번호를 입력한 후
-            인증을 진행해보세요. 테스트 모드에서는 실제 SMS가 발송되지 않으며,
-            브라우저 콘솔(F12)에서 인증 코드를 확인할 수 있습니다.
+            <strong>사용법:</strong> 각 시나리오를 선택하고 전화번호를
+            입력해보세요. 각 SMS 인증 컴포넌트에서 국가를 선택할 수 있습니다.
+            테스트 모드에서는 실제 SMS가 발송되지 않으며, 브라우저 콘솔(F12)에서
+            인증 코드를 확인할 수 있습니다.
           </AlertDescription>
         </Alert>
 
@@ -457,6 +458,7 @@ function CustomHookExample() {
 
   const sms = useSmsVerification({
     purpose: "hook-example",
+    defaultCountry: "+82", // 기본값으로 한국 설정
     onVerified: (phoneNumber) => {
       alert(`훅 방식 인증 완료: ${phoneNumber}`);
     },

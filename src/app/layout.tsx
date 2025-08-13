@@ -53,11 +53,11 @@ export const metadata: Metadata = {
     "bogofitshop",
   ],
   authors: [{ name: "BOGOFIT" }],
-  metadataBase: new URL("https://shop.bogofit.kr"),
+  metadataBase: new URL("https://bogofit.kr"),
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    url: "https://shop.bogofit.kr",
+    url: "https://bogofit.kr",
     siteName: "BOGOFIT SHOP",
     title: "BOGOFIT SHOP",
     description: "다양한 브랜드와 상품을 한 곳에서!",
@@ -94,7 +94,7 @@ export const metadata: Metadata = {
   },
   verification: {
     other: {
-      "naver-site-verification": "b903d57bde1cd284c21172ef3dfedf902e98f185",
+      "naver-site-verification": "667ea235d07a508ff2d2b0f8bf3fa55602c720a4",
     },
   },
 };

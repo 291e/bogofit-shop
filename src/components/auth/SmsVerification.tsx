@@ -14,6 +14,13 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Smartphone,
   Clock,
   Shield,
@@ -22,7 +29,10 @@ import {
   RefreshCw,
   Send,
 } from "lucide-react";
-import { useSmsVerification } from "@/hooks/useSmsVerification";
+import {
+  useSmsVerification,
+  SUPPORTED_COUNTRIES,
+} from "@/hooks/useSmsVerification";
 
 // 컴포넌트 Props 인터페이스
 interface SmsVerificationProps {
@@ -33,6 +43,7 @@ interface SmsVerificationProps {
   className?: string;
   autoFocus?: boolean;
   showPhoneInput?: boolean;
+  defaultCountry?: string;
 }
 
 // 인증 단계
@@ -46,6 +57,7 @@ export default function SmsVerification({
   className = "",
   autoFocus = true,
   showPhoneInput = true,
+  defaultCountry = "+82",
 }: SmsVerificationProps) {
   // UI 상태 관리 (컴포넌트 전용)
   const [step, setStep] = useState<VerificationStep>(
@@ -53,10 +65,17 @@ export default function SmsVerification({
   );
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
   const [verificationCode, setVerificationCode] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
+
+  // 선택된 국가 정보
+  const selectedCountryInfo = SUPPORTED_COUNTRIES.find(
+    (country) => country.code === selectedCountry
+  );
 
   // SMS 인증 훅 사용
   const smsVerification = useSmsVerification({
     purpose,
+    defaultCountry: selectedCountry,
     onVerified: (phone) => {
       setStep("verified");
       onVerified?.(phone);
@@ -89,58 +108,49 @@ export default function SmsVerification({
    * 전화번호 형식 검증
    */
   const validatePhoneNumber = (phone: string): boolean => {
-    const cleaned = phone.replace(/[\s\-\(\)]/g, "");
-    // 한국 전화번호 패턴: 010, 011, 016, 017, 018, 019로 시작하는 11자리
-    const koreanPhonePattern = /^(01[0-9])\d{8}$/;
-    // 또는 +82로 시작하는 국제 형식
-    const internationalPattern = /^\+82(1[0-9])\d{8}$/;
-
-    return (
-      koreanPhonePattern.test(cleaned) || internationalPattern.test(cleaned)
-    );
+    return smsVerification.validatePhoneNumber(phone, selectedCountry);
   };
 
   /**
    * 전화번호 포맷팅
    */
   const formatPhoneNumber = (phone: string): string => {
-    const cleaned = phone.replace(/[\s\-\(\)]/g, "");
-
-    if (cleaned.startsWith("+82")) {
-      return cleaned;
-    }
-
-    if (cleaned.startsWith("82")) {
-      return "+" + cleaned;
-    }
-
-    if (cleaned.startsWith("0")) {
-      return cleaned.replace(/^0/, "+82");
-    }
-
-    if (cleaned.length === 10) {
-      return "+82" + cleaned;
-    }
-
-    return phone;
+    return smsVerification.normalizePhoneNumber(phone, selectedCountry);
   };
 
   /**
    * 인증 코드 발송
    */
   const sendVerificationCode = async () => {
-    if (!validatePhoneNumber(phoneNumber)) {
+    console.log("🔍 sendVerificationCode 시작");
+    console.log("📱 전화번호:", phoneNumber);
+    console.log("🌍 선택된 국가:", selectedCountry);
+
+    // 숫자만 추출하여 유효성 검사
+    const numbers = phoneNumber.replace(/-/g, "");
+    console.log("🔢 숫자만 추출:", numbers);
+
+    if (!validatePhoneNumber(numbers)) {
+      console.log("❌ 전화번호 유효성 검사 실패");
       smsVerification.clearError();
       // 로컬 에러는 훅의 에러 시스템을 사용
-      onError?.("올바른 전화번호를 입력해주세요. (예: 010-1234-5678)");
+      onError?.(
+        `올바른 전화번호를 입력해주세요. (예: ${selectedCountryInfo?.example || "010-1234-5678"})`
+      );
       return;
     }
 
-    const success = await smsVerification.sendCode(
-      formatPhoneNumber(phoneNumber)
-    );
+    console.log("✅ 전화번호 유효성 검사 통과");
+    console.log("🚀 smsVerification.sendCode 호출 시작");
+
+    const success = await smsVerification.sendCode(phoneNumber);
+    console.log("📤 sendCode 결과:", success);
+
     if (success) {
+      console.log("✅ 인증 코드 발송 성공");
       // onCodeSent 콜백에서 step이 "code"로 변경됨
+    } else {
+      console.log("❌ 인증 코드 발송 실패");
     }
   };
 
@@ -155,7 +165,7 @@ export default function SmsVerification({
     }
 
     const success = await smsVerification.verifyCode(
-      formatPhoneNumber(phoneNumber),
+      phoneNumber,
       verificationCode
     );
     if (success) {
@@ -217,6 +227,31 @@ export default function SmsVerification({
         {/* 전화번호 입력 단계 */}
         {step === "phone" && showPhoneInput && (
           <div className="space-y-4">
+            {/* 국가 선택 */}
+            <div className="space-y-2">
+              <Label htmlFor="country-select">국가</Label>
+              <Select
+                value={selectedCountry}
+                onValueChange={setSelectedCountry}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="국가를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_COUNTRIES.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      <div className="flex items-center gap-2">
+                        <span>{country.flag}</span>
+                        <span>{country.name}</span>
+                        <span className="text-gray-500">({country.code})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 전화번호 입력 */}
             <div className="space-y-2">
               <Label htmlFor="phoneNumber">전화번호</Label>
               <Input
@@ -224,13 +259,37 @@ export default function SmsVerification({
                 ref={phoneInputRef}
                 type="tel"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="010-1234-5678"
+                onChange={(e) => {
+                  // 숫자와 하이픈만 허용
+                  const cleaned = e.target.value.replace(/[^\d\-]/g, "");
+                  // 하이픈을 제거하고 숫자만 추출
+                  const numbers = cleaned.replace(/-/g, "");
+                  // 자동 포맷팅 적용
+                  const formatted = smsVerification.formatPhoneNumber(
+                    numbers,
+                    selectedCountry
+                  );
+                  setPhoneNumber(formatted);
+                }}
+                onKeyDown={(e) => {
+                  // 하이픈 직접 입력 방지
+                  if (e.key === "-") {
+                    e.preventDefault();
+                  }
+                }}
+                placeholder={selectedCountryInfo?.example || "010-1234-5678"}
                 className="text-center text-lg"
+                maxLength={15}
               />
             </div>
+
             <Button
-              onClick={sendVerificationCode}
+              onClick={() => {
+                console.log("🔘 버튼 클릭됨");
+                console.log("📱 현재 전화번호:", phoneNumber);
+                console.log("🔄 로딩 상태:", smsVerification.state.isLoading);
+                sendVerificationCode();
+              }}
               disabled={smsVerification.state.isLoading || !phoneNumber.trim()}
               className="w-full bg-pink-600 hover:bg-pink-700"
             >

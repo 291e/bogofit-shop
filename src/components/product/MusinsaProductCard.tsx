@@ -97,7 +97,13 @@ export default function MusinsaProductCard({
           {/* 가격 정보 */}
           <div className="flex items-center justify-between">
             {/* 배송 타입 */}
-            <span className="text-[11px] font-medium text-gray-600 bg-gray-100 px-0 py-0.5 rounded font-pretendard">
+            <span
+              className={`text-[11px] font-medium px-0 py-0.5 rounded font-pretendard ${
+                product.shippingType === "DOMESTIC"
+                  ? "text-blue-600 bg-blue-100"
+                  : "text-red-600 bg-red-100"
+              }`}
+            >
               {product.shippingType === "DOMESTIC" ? "국내" : "해외"}
             </span>
             <div className="flex items-center space-x-1">

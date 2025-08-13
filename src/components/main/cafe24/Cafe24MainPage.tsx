@@ -11,12 +11,16 @@ import { Product } from "@/types/product";
 // 상품 데이터 패칭 함수들
 async function fetchBestSellers(): Promise<Product[]> {
   try {
+    // 24시간마다 변경되는 랜덤 시드 생성 (날짜 기반)
+    const today = new Date();
+    const dateSeed = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/products?badge=BEST&sortBy=createdAt&order=desc`,
+      }/api/products?badge=BEST&sortBy=createdAt&order=desc&dateSeed=${dateSeed}`,
       {
-        next: { revalidate: 300 }, // 5분 캐시
+        next: { revalidate: 86400 }, // 24시간 캐시
       }
     );
 

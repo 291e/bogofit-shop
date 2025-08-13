@@ -674,7 +674,7 @@ export default function VirtualFitting({
                     <FileDropzone
                       onDrop={(file) => handleFileChange("human_file", file)}
                       preview={previews.human_file}
-                      label="사람 이미지"
+                      label="모델 이미지"
                       required
                       description="최소한 상반신이 포함된 사진을 업로드해주세요"
                       sampleImages={humanSamples}

@@ -1055,7 +1055,7 @@ export default function OrderPageContent() {
               </Card>
 
               {/* 통관 정보 (해외 상품일 경우에만 표시) */}
-              {product?.shippingType === "OVERSEAS" && (
+              {product && product.shippingType === "OVERSEAS" && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">

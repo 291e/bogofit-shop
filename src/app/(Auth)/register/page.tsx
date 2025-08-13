@@ -12,8 +12,17 @@ import { RegisterFormStep } from "@/components/auth/RegisterFormStep";
 import { EmailVerificationStep } from "@/components/auth/EmailVerificationStep";
 import { RegisterSuccessStep } from "@/components/auth/RegisterSuccessStep";
 import { TermsAgreementModal } from "@/components/auth/TermsAgreementModal";
+import SmsVerification from "@/components/auth/SmsVerification";
+import { ArrowLeft } from "lucide-react";
 
-type RegisterStep = "form" | "verification" | "success";
+type RegisterStep =
+  | "form"
+  | "verification-choice"
+  | "email-verification"
+  | "sms-verification"
+  | "success";
+
+type VerificationMethod = "email" | "sms";
 
 interface TermsAgreement {
   terms: boolean;
@@ -41,6 +50,8 @@ function RegisterPageContent() {
 
   // UI 상태
   const [step, setStep] = useState<RegisterStep>("form");
+  const [selectedVerificationMethod, setSelectedVerificationMethod] =
+    useState<VerificationMethod | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -95,6 +106,7 @@ function RegisterPageContent() {
         address: formData.address,
         addressDetail: formData.addressDetail,
         termsAgreement,
+        verificationMethod: selectedVerificationMethod,
       });
     } catch (error) {
       console.error("추가 정보 저장 실패:", error);
@@ -118,7 +130,8 @@ function RegisterPageContent() {
     const verified = searchParams.get("verified");
     if (verified === "true" && step === "form") {
       console.log("📧 이메일 링크를 통한 인증 완료 감지");
-      setStep("verification");
+      setSelectedVerificationMethod("email");
+      setStep("email-verification");
       setSuccess("✅ 이메일 인증이 완료되었습니다! 회원가입을 진행합니다.");
 
       // 1초 후 자동으로 회원가입 진행
@@ -145,9 +158,19 @@ function RegisterPageContent() {
       return;
     }
 
-    // 기본 정보 입력 완료 → 이메일 인증 단계로 이동
-    setStep("verification");
-    setSuccess("기본 정보 입력이 완료되었습니다. 이메일 인증을 진행해주세요.");
+    // 기본 정보 입력 완료 → 인증 방식 선택 단계로 이동
+    setStep("verification-choice");
+    setSuccess("기본 정보 입력이 완료되었습니다. 인증 방식을 선택해주세요.");
+  };
+
+  // 인증 방식 선택 핸들러
+  const handleVerificationMethodSelect = (method: VerificationMethod) => {
+    setSelectedVerificationMethod(method);
+    if (method === "email") {
+      setStep("email-verification");
+    } else {
+      setStep("sms-verification");
+    }
   };
 
   // 이메일 인증 코드 전송
@@ -166,6 +189,18 @@ function RegisterPageContent() {
     }
   };
 
+  // SMS 인증 완료 핸들러
+  const handleSmsVerified = (phoneNumber: string) => {
+    console.log("📱 SMS 인증 완료:", phoneNumber);
+    // 전화번호 정보 업데이트
+    updateField("phoneNumber", phoneNumber);
+
+    // 인증 완료 후 회원가입 진행
+    setTimeout(() => {
+      handleCreateAccount();
+    }, 1000);
+  };
+
   // 약관 동의 핸들러
   const handleTermsAgree = (agreements: TermsAgreement) => {
     setTermsAgreement(agreements);
@@ -179,10 +214,20 @@ function RegisterPageContent() {
           title: "회원가입",
           description: "BOGOFIT에 오신 것을 환영합니다",
         };
-      case "verification":
+      case "verification-choice":
+        return {
+          title: "인증 방식 선택",
+          description: "본인 확인을 위한 인증 방식을 선택해주세요",
+        };
+      case "email-verification":
         return {
           title: "이메일 인증",
           description: "회원가입을 완료하려면 이메일 인증이 필요합니다",
+        };
+      case "sms-verification":
+        return {
+          title: "휴대폰 인증",
+          description: "회원가입을 완료하려면 휴대폰 인증이 필요합니다",
         };
       case "success":
         return {
@@ -219,7 +264,11 @@ function RegisterPageContent() {
               />
               <div
                 className={`w-2 h-2 rounded-full ${
-                  step === "verification" ? "bg-indigo-600" : "bg-gray-300"
+                  step === "verification-choice" ||
+                  step === "email-verification" ||
+                  step === "sms-verification"
+                    ? "bg-indigo-600"
+                    : "bg-gray-300"
                 }`}
               />
               <div
@@ -245,7 +294,67 @@ function RegisterPageContent() {
           />
         )}
 
-        {step === "verification" && (
+        {step === "verification-choice" && (
+          <div className="space-y-6">
+            {/* 에러 메시지 */}
+            {currentError && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                <p className="text-sm text-red-600">{currentError}</p>
+              </div>
+            )}
+
+            {/* 성공 메시지 */}
+            {currentSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                <p className="text-sm text-green-600">{currentSuccess}</p>
+              </div>
+            )}
+
+            {/* 인증 방식 선택 */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                {/* 이메일 인증 버튼 */}
+                <button
+                  onClick={() => handleVerificationMethodSelect("email")}
+                  className="flex items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">📧</div>
+                    <div className="font-medium text-gray-900">이메일 인증</div>
+                    <div className="text-sm text-gray-600">
+                      {formData.email}로 인증 코드 발송
+                    </div>
+                  </div>
+                </button>
+
+                {/* 휴대폰 인증 버튼 */}
+                <button
+                  onClick={() => handleVerificationMethodSelect("sms")}
+                  className="flex items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-2">📱</div>
+                    <div className="font-medium text-gray-900">휴대폰 인증</div>
+                    <div className="text-sm text-gray-600">
+                      SMS로 인증 코드 발송
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {/* 뒤로가기 버튼 */}
+              <button
+                onClick={() => setStep("form")}
+                className="w-full text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2 justify-center"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                기본 정보 입력으로 돌아가기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === "email-verification" && (
           <EmailVerificationStep
             email={formData.email}
             verificationCode={verificationCode}
@@ -257,8 +366,44 @@ function RegisterPageContent() {
             success={currentSuccess}
             onSendVerification={handleSendVerification}
             onVerifyCode={handleVerifyCode}
-            onGoBack={() => setStep("form")}
+            onGoBack={() => setStep("verification-choice")}
           />
+        )}
+
+        {step === "sms-verification" && (
+          <div className="space-y-4">
+            {/* 에러 메시지 */}
+            {currentError && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                <p className="text-sm text-red-600">{currentError}</p>
+              </div>
+            )}
+
+            {/* 성공 메시지 */}
+            {currentSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                <p className="text-sm text-green-600">{currentSuccess}</p>
+              </div>
+            )}
+
+            {/* SMS 인증 컴포넌트 */}
+            <SmsVerification
+              purpose="signup"
+              onVerified={handleSmsVerified}
+              onError={(error) => setError(error)}
+              showPhoneInput={true}
+              autoFocus={true}
+            />
+
+            {/* 뒤로가기 버튼 */}
+            <button
+              onClick={() => setStep("verification-choice")}
+              className="w-full text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2 justify-center"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              인증 방식 선택으로 돌아가기
+            </button>
+          </div>
         )}
 
         {step === "success" && <RegisterSuccessStep success={currentSuccess} />}
