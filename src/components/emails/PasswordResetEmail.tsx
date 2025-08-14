@@ -13,6 +13,7 @@ export interface PasswordResetEmailProps {
   userName: string;
   temporaryPassword: string;
   userId: string;
+  email: string;
   appUrl: string;
 }
 
@@ -20,6 +21,7 @@ export const PasswordResetEmail = ({
   userName,
   temporaryPassword,
   userId,
+  email,
   appUrl,
 }: PasswordResetEmailProps) => {
   return (
@@ -37,8 +39,9 @@ export const PasswordResetEmail = ({
       <Section style={sectionStyle}>
         <Heading style={greetingStyle}>안녕하세요, {userName}님!</Heading>
         <Text style={textStyle}>
-          요청하신 비밀번호 초기화가 완료되었습니다. 아래 임시 비밀번호로
-          로그인해 주세요.
+          요청하신 비밀번호 초기화가 완료되었습니다. 아래 버튼을 클릭하여
+          비밀번호를 초기화하면 임시 비밀번호 <strong>0000</strong>으로 로그인할
+          수 있습니다.
         </Text>
       </Section>
 
@@ -65,10 +68,13 @@ export const PasswordResetEmail = ({
         </Section>
       </Section>
 
-      {/* 로그인 버튼 */}
+      {/* 비밀번호 초기화 버튼 */}
       <Section style={buttonSectionStyle}>
-        <Button href={`${appUrl}/login`} style={buttonStyle}>
-          🚀 로그인하기
+        <Button
+          href={`${appUrl}/reset-password/complete?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(email)}`}
+          style={buttonStyle}
+        >
+          🔐 비밀번호 초기화하기
         </Button>
       </Section>
 

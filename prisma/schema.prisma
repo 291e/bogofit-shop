@@ -299,6 +299,9 @@ model Order {
   // 비회원 구매 플래그
   isGuestOrder   Boolean   @default(false)
 
+  // 교환/반품 관련
+  exchangeRefunds ExchangeRefund[]
+
   // 브랜드, 정산
   brandId Int?
   brand Brand? @relation(fields: [brandId], references: [id])
@@ -315,6 +318,45 @@ enum OrderStatus {
   COMPLETED
   CANCELED
   FAILED
+}
+
+enum ExchangeRefundType {
+  EXCHANGE   // 교환
+  REFUND     // 반품/환불
+}
+
+enum ExchangeRefundStatus {
+  PENDING    // 접수 대기
+  REVIEWING  // 검토 중
+  APPROVED   // 승인
+  REJECTED   // 거부
+  PROCESSING // 처리 중
+  COMPLETED  // 완료
+}
+
+model ExchangeRefund {
+  id          String              @id @default(cuid())
+  order       Order               @relation(fields: [orderId], references: [id])
+  orderId     String
+  type        ExchangeRefundType
+  status      ExchangeRefundStatus @default(PENDING)
+  
+  // 신청자 정보
+  applicantName  String
+  applicantPhone String
+  applicantEmail String?
+  
+  // 신청 내용
+  reason         String
+  description    String?
+  
+  // 처리 정보
+  adminNotes     String?
+  processedAt    DateTime?
+  processedBy    String?  // 처리한 관리자 ID
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model OrderItem {

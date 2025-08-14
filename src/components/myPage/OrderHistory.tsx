@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { usePaymentHistory, Payment } from "@/hooks/usePaymentHistory";
 import { useOrderActions } from "@/hooks/useOrderActions";
+import { useUser } from "@/hooks/useUser";
 import Image from "next/image";
 import {
   Dialog,
@@ -38,12 +39,50 @@ import {
 
 export default function OrderHistory() {
   const { data: payments, isLoading, error } = usePaymentHistory();
-  const { cancelOrderAsync, refundOrderAsync, isCanceling, isRefunding } =
-    useOrderActions();
+  const { cancelOrderAsync, isCanceling } = useOrderActions();
+  const { user } = useUser();
 
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [showExchangeDialog, setShowExchangeDialog] = useState(false);
+  const [showExchangeForm, setShowExchangeForm] = useState(false);
+  const [showRefundForm, setShowRefundForm] = useState(false);
+  const [isSubmittingExchange, setIsSubmittingExchange] = useState(false);
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
+  const [exchangeStatuses, setExchangeStatuses] = useState<{
+    [key: string]: "none" | "pending" | "completed";
+  }>({});
+  const [exchangeForm, setExchangeForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    reason: "",
+    description: "",
+    requestType: "exchange" as "exchange" | "refund",
+  });
+  const [refundForm, setRefundForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    reason: "",
+    description: "",
+  });
+
+  // 연락처 자동 포맷팅 함수
+  const formatPhoneNumber = (value: string) => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^\d]/g, "");
+
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(
+        7,
+        11
+      )}`;
+    }
+  };
 
   const paymentMethodMap = {
     CARD: "신용카드",
@@ -83,28 +122,166 @@ export default function OrderHistory() {
     }
   };
 
-  // 교환/반품 신청 요청
-  const handleRequestExchange = async () => {
-    if (!selectedPayment) return;
+  // 교환/반품 신청서 제출
+  const handleSubmitExchangeForm = async () => {
+    if (
+      !selectedPayment ||
+      !exchangeForm.name ||
+      !exchangeForm.phone ||
+      !exchangeForm.reason
+    ) {
+      alert("필수 정보를 모두 입력해주세요.");
+      return;
+    }
+
+    if (!user?.id) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    setIsSubmittingExchange(true);
 
     try {
-      const result = await refundOrderAsync({
-        orderId: selectedPayment.orderId,
-        data: {
-          reason: "교환/반품 요청",
-          description: "상품에 대한 교환 또는 반품을 요청합니다.",
-        },
-      });
-      alert(result.message || "교환/반품 신청이 접수되었습니다.");
-      setShowExchangeDialog(false);
-      setSelectedPayment(null);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "교환/반품 신청 중 오류가 발생했습니다.";
-      alert(errorMessage);
+      const response = await fetch(
+        `/api/orders/${selectedPayment.orderId}/refund`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": user.id,
+          },
+          body: JSON.stringify({
+            reason: exchangeForm.reason,
+            description: exchangeForm.description,
+            applicantName: exchangeForm.name,
+            applicantPhone: exchangeForm.phone,
+            applicantEmail: exchangeForm.email,
+            requestType: exchangeForm.requestType,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(
+          result.message || "교환/반품 신청서가 성공적으로 전송되었습니다."
+        );
+
+        // 상태를 접수 중으로 변경
+        setExchangeStatuses((prev) => ({
+          ...prev,
+          [selectedPayment.orderId]: "pending",
+        }));
+
+        setShowExchangeForm(false);
+        setSelectedPayment(null);
+
+        // 폼 초기화
+        setExchangeForm({
+          name: "",
+          phone: "",
+          email: "",
+          reason: "",
+          description: "",
+          requestType: "exchange",
+        });
+      } else {
+        alert(result.error || "교환/반품 신청에 실패했습니다.");
+      }
+    } catch (error: unknown) {
+      console.log(error);
+      alert(
+        "교환/반품 신청 중 오류가 발생했습니다. 직접 bogofit@naver.com으로 문의해주세요."
+      );
+    } finally {
+      setIsSubmittingExchange(false);
     }
+  };
+
+  // 환불 신청서 제출
+  const handleSubmitRefundForm = async () => {
+    if (
+      !selectedPayment ||
+      !refundForm.name ||
+      !refundForm.phone ||
+      !refundForm.reason
+    ) {
+      alert("필수 정보를 모두 입력해주세요.");
+      return;
+    }
+
+    if (!user?.id) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    setIsSubmittingRefund(true);
+
+    try {
+      const response = await fetch(
+        `/api/orders/${selectedPayment.orderId}/refund`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": user.id,
+          },
+          body: JSON.stringify({
+            reason: refundForm.reason,
+            description: refundForm.description,
+            applicantName: refundForm.name,
+            applicantPhone: refundForm.phone,
+            applicantEmail: refundForm.email,
+            requestType: "refund",
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(result.message || "환불 신청서가 성공적으로 전송되었습니다.");
+
+        // 상태를 접수 중으로 변경
+        setExchangeStatuses((prev) => ({
+          ...prev,
+          [selectedPayment.orderId]: "pending",
+        }));
+
+        setShowRefundForm(false);
+        setSelectedPayment(null);
+
+        // 폼 초기화
+        setRefundForm({
+          name: "",
+          phone: "",
+          email: "",
+          reason: "",
+          description: "",
+        });
+      } else {
+        alert(result.error || "환불 신청에 실패했습니다.");
+      }
+    } catch (error: unknown) {
+      console.log(error);
+      alert(
+        "환불 신청 중 오류가 발생했습니다. 직접 bogofit@naver.com으로 문의해주세요."
+      );
+    } finally {
+      setIsSubmittingRefund(false);
+    }
+  };
+
+  // 교환/반품 상태 조회
+  const getExchangeStatus = (orderId: string) => {
+    // 로컬 상태에서 먼저 확인 (신청 직후)
+    if (exchangeStatuses[orderId]) {
+      return exchangeStatuses[orderId];
+    }
+
+    // TODO: 실제 API에서 교환/반품 상태 조회 (useEffect에서 처리)
+    return "none";
   };
 
   if (isLoading) {
@@ -229,20 +406,43 @@ export default function OrderHistory() {
                     </Button>
                   )}
                   {canRequestExchange(payment) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs h-7 px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedPayment(payment);
-                        setShowExchangeDialog(true);
-                      }}
-                      disabled={isRefunding}
-                    >
-                      <RotateCcw className="w-3 h-3 mr-1" />
-                      교환/반품
-                    </Button>
+                    <>
+                      {getExchangeStatus(payment.orderId) === "pending" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 px-2 text-orange-600 border-orange-200 bg-orange-50"
+                          disabled
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" />
+                          접수 중
+                        </Button>
+                      ) : getExchangeStatus(payment.orderId) === "completed" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 px-2 text-green-600 border-green-200 bg-green-50"
+                          disabled
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" />
+                          교환/반품 완료
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPayment(payment);
+                            setShowExchangeForm(true);
+                          }}
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" />
+                          교환/반품
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -253,7 +453,12 @@ export default function OrderHistory() {
 
       {/* 상세 주문 내역 모달 */}
       <Dialog
-        open={!!selectedPayment && !showCancelDialog && !showExchangeDialog}
+        open={
+          !!selectedPayment &&
+          !showCancelDialog &&
+          !showExchangeForm &&
+          !showRefundForm
+        }
         onOpenChange={() => setSelectedPayment(null)}
       >
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
@@ -510,15 +715,48 @@ export default function OrderHistory() {
                         </Button>
                       )}
                       {canRequestExchange(selectedPayment) && (
-                        <Button
-                          variant="outline"
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                          onClick={() => setShowExchangeDialog(true)}
-                          disabled={isRefunding}
-                        >
-                          <RotateCcw className="w-4 h-4 mr-2" />
-                          교환/반품 신청
-                        </Button>
+                        <>
+                          {getExchangeStatus(selectedPayment.orderId) ===
+                          "pending" ? (
+                            <Button
+                              variant="outline"
+                              className="text-orange-600 border-orange-200 bg-orange-50"
+                              disabled
+                            >
+                              <RotateCcw className="w-4 h-4 mr-2" />
+                              접수 중
+                            </Button>
+                          ) : getExchangeStatus(selectedPayment.orderId) ===
+                            "completed" ? (
+                            <Button
+                              variant="outline"
+                              className="text-green-600 border-green-200 bg-green-50"
+                              disabled
+                            >
+                              <RotateCcw className="w-4 h-4 mr-2" />
+                              교환/반품 완료
+                            </Button>
+                          ) : (
+                            <>
+                              <Button
+                                variant="outline"
+                                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                onClick={() => setShowExchangeForm(true)}
+                              >
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                교환/반품 신청
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="text-green-600 border-green-200 hover:bg-green-50"
+                                onClick={() => setShowRefundForm(true)}
+                              >
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                환불 신청
+                              </Button>
+                            </>
+                          )}
+                        </>
                       )}
                     </div>
                     {canCancelOrder(selectedPayment) && (
@@ -528,7 +766,7 @@ export default function OrderHistory() {
                     )}
                     {canRequestExchange(selectedPayment) && (
                       <p className="text-xs text-gray-500">
-                        • 배송 완료 후 7일 이내에 교환/반품 신청이 가능합니다.
+                        • 배송 완료 후 30일 이내에 교환/반품 신청이 가능합니다.
                       </p>
                     )}
                   </div>
@@ -598,56 +836,429 @@ export default function OrderHistory() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 교환/반품 신청 확인 다이얼로그 */}
-      <AlertDialog
-        open={showExchangeDialog}
+      {/* 교환/반품 신청서 모달 */}
+      <Dialog
+        open={showExchangeForm}
         onOpenChange={(open) => {
-          setShowExchangeDialog(open);
+          setShowExchangeForm(open);
           if (!open) {
             setSelectedPayment(null);
+            // 폼 초기화
+            setExchangeForm({
+              name: "",
+              phone: "",
+              email: "",
+              reason: "",
+              description: "",
+              requestType: "exchange",
+            });
           }
         }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
               <RotateCcw className="w-5 h-5 text-blue-600" />
-              교환/반품 신청 확인
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              교환 또는 반품 신청을 진행하시겠습니까?
-              <br />
-              <span className="font-medium text-gray-900">
-                주문번호: {selectedPayment?.orderId}
-              </span>
-              <br />
-              <span className="font-medium text-gray-900">
-                결제금액: {selectedPayment?.amount.toLocaleString()}원
-              </span>
-              <br />
-              <br />
-              <strong>교환/반품 안내:</strong>
-              <br />
-              • 배송 완료된 상품에 대해서만 교환/반품 신청이 가능합니다.
-              <br />
-              • 교환/반품 신청 후 상품 회수가 완료되면 처리됩니다.
-              <br />
-              • 반품의 경우 영업일 기준 3-5일 내 환불됩니다.
-              <br />• 단순 변심에 의한 교환/반품 시 배송비는 고객 부담입니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isRefunding}>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRequestExchange}
-              disabled={isRefunding}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isRefunding ? "처리 중..." : "교환/반품 신청"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              교환/반품 신청서
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedPayment && (
+            <div className="space-y-6">
+              {/* 주문 정보 */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold mb-2">주문 정보</h3>
+                <div className="text-sm space-y-1">
+                  <p>
+                    <span className="text-gray-500">주문번호:</span>{" "}
+                    {selectedPayment.orderId}
+                  </p>
+                  <p>
+                    <span className="text-gray-500">상품명:</span>{" "}
+                    {selectedPayment.product?.title || "상품명 없음"}
+                  </p>
+                  <p>
+                    <span className="text-gray-500">결제금액:</span>{" "}
+                    {selectedPayment.amount.toLocaleString()}원
+                  </p>
+                  <p>
+                    <span className="text-gray-500">주문일:</span>{" "}
+                    {selectedPayment.createdAt.slice(0, 10)}
+                  </p>
+                </div>
+              </div>
+
+              {/* 신청자 정보 */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">신청자 정보</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      이름 *
+                    </label>
+                    <input
+                      type="text"
+                      value={exchangeForm.name}
+                      onChange={(e) =>
+                        setExchangeForm((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="신청자 이름"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      연락처 *
+                    </label>
+                    <input
+                      type="tel"
+                      value={exchangeForm.phone}
+                      onChange={(e) =>
+                        setExchangeForm((prev) => ({
+                          ...prev,
+                          phone: formatPhoneNumber(e.target.value),
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="010-0000-0000"
+                      maxLength={13}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    이메일
+                  </label>
+                  <input
+                    type="email"
+                    value={exchangeForm.email}
+                    onChange={(e) =>
+                      setExchangeForm((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="example@email.com"
+                  />
+                </div>
+              </div>
+
+              {/* 신청 내용 */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">신청 내용</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    신청 유형 *
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="exchange"
+                        checked={exchangeForm.requestType === "exchange"}
+                        onChange={(e) =>
+                          setExchangeForm((prev) => ({
+                            ...prev,
+                            requestType: e.target.value as
+                              | "exchange"
+                              | "refund",
+                          }))
+                        }
+                        className="mr-2"
+                      />
+                      교환
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="refund"
+                        checked={exchangeForm.requestType === "refund"}
+                        onChange={(e) =>
+                          setExchangeForm((prev) => ({
+                            ...prev,
+                            requestType: e.target.value as
+                              | "exchange"
+                              | "refund",
+                          }))
+                        }
+                        className="mr-2"
+                      />
+                      반품
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    신청 사유 *
+                  </label>
+                  <select
+                    value={exchangeForm.reason}
+                    onChange={(e) =>
+                      setExchangeForm((prev) => ({
+                        ...prev,
+                        reason: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">사유를 선택해주세요</option>
+                    <option value="상품 불량">상품 불량</option>
+                    <option value="배송 중 파손">배송 중 파손</option>
+                    <option value="사이즈 불일치">사이즈 불일치</option>
+                    <option value="색상 불일치">색상 불일치</option>
+                    <option value="단순 변심">단순 변심</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    상세 설명
+                  </label>
+                  <textarea
+                    value={exchangeForm.description}
+                    onChange={(e) =>
+                      setExchangeForm((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    placeholder="구체적인 사유나 요청사항을 자세히 작성해주세요."
+                  />
+                </div>
+              </div>
+
+              {/* 안내사항 */}
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">
+                  교환/반품 안내
+                </h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>
+                    • 배송 완료된 상품에 대해서만 교환/반품 신청이 가능합니다.
+                  </li>
+                  <li>• 교환/반품 신청 기간: 배송 완료 후 30일 이내</li>
+                  <li>• 교환/반품 신청 후 상품 회수가 완료되면 처리됩니다.</li>
+                  <li>• 반품의 경우 영업일 기준 3-5일 내 환불됩니다.</li>
+                  <li>
+                    • 단순 변심에 의한 교환/반품 시 배송비는 고객 부담입니다.
+                  </li>
+                </ul>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowExchangeForm(false)}
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleSubmitExchangeForm}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={isSubmittingExchange}
+                >
+                  {isSubmittingExchange ? "전송 중..." : "신청서 제출"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 환불 신청서 모달 */}
+      <Dialog
+        open={showRefundForm}
+        onOpenChange={(open) => {
+          setShowRefundForm(open);
+          if (!open) {
+            setSelectedPayment(null);
+            // 폼 초기화
+            setRefundForm({
+              name: "",
+              phone: "",
+              email: "",
+              reason: "",
+              description: "",
+            });
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-green-600" />
+              환불 신청서
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedPayment && (
+            <div className="space-y-6">
+              {/* 주문 정보 */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold mb-2">주문 정보</h3>
+                <div className="text-sm space-y-1">
+                  <p>
+                    <span className="text-gray-500">주문번호:</span>{" "}
+                    {selectedPayment.orderId}
+                  </p>
+                  <p>
+                    <span className="text-gray-500">상품명:</span>{" "}
+                    {selectedPayment.product?.title || "상품명 없음"}
+                  </p>
+                  <p>
+                    <span className="text-gray-500">결제금액:</span>{" "}
+                    {selectedPayment.amount.toLocaleString()}원
+                  </p>
+                  <p>
+                    <span className="text-gray-500">주문일:</span>{" "}
+                    {selectedPayment.createdAt.slice(0, 10)}
+                  </p>
+                </div>
+              </div>
+
+              {/* 신청자 정보 */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">신청자 정보</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      이름 *
+                    </label>
+                    <input
+                      type="text"
+                      value={refundForm.name}
+                      onChange={(e) =>
+                        setRefundForm((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="신청자 이름"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      연락처 *
+                    </label>
+                    <input
+                      type="tel"
+                      value={refundForm.phone}
+                      onChange={(e) =>
+                        setRefundForm((prev) => ({
+                          ...prev,
+                          phone: formatPhoneNumber(e.target.value),
+                        }))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="010-0000-0000"
+                      maxLength={13}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    이메일
+                  </label>
+                  <input
+                    type="email"
+                    value={refundForm.email}
+                    onChange={(e) =>
+                      setRefundForm((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="example@email.com"
+                  />
+                </div>
+              </div>
+
+              {/* 신청 내용 */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">신청 내용</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    환불 사유 *
+                  </label>
+                  <select
+                    value={refundForm.reason}
+                    onChange={(e) =>
+                      setRefundForm((prev) => ({
+                        ...prev,
+                        reason: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="">사유를 선택해주세요</option>
+                    <option value="상품 불량">상품 불량</option>
+                    <option value="배송 중 파손">배송 중 파손</option>
+                    <option value="사이즈 불일치">사이즈 불일치</option>
+                    <option value="색상 불일치">색상 불일치</option>
+                    <option value="단순 변심">단순 변심</option>
+                    <option value="기타">기타</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    상세 설명
+                  </label>
+                  <textarea
+                    value={refundForm.description}
+                    onChange={(e) =>
+                      setRefundForm((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    rows={4}
+                    placeholder="구체적인 사유나 요청사항을 자세히 작성해주세요."
+                  />
+                </div>
+              </div>
+
+              {/* 안내사항 */}
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-semibold text-green-800 mb-2">환불 안내</h4>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• 배송 완료된 상품에 대해서만 환불 신청이 가능합니다.</li>
+                  <li>• 환불 신청 기간: 배송 완료 후 7일 이내</li>
+                  <li>• 환불 신청 후 상품 회수가 완료되면 처리됩니다.</li>
+                  <li>• 환불은 영업일 기준 3-5일 내 처리됩니다.</li>
+                  <li>• 단순 변심에 의한 환불 시 배송비는 고객 부담입니다.</li>
+                </ul>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRefundForm(false)}
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleSubmitRefundForm}
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={isSubmittingRefund}
+                >
+                  {isSubmittingRefund ? "전송 중..." : "신청서 제출"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

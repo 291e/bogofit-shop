@@ -27,6 +27,10 @@ import {
   ProfileUpdateVerificationEmail,
   ProfileUpdateVerificationEmailProps,
 } from "@/components/emails/ProfileUpdateVerificationEmail";
+import {
+  ExchangeRefundEmail,
+  ExchangeRefundEmailProps,
+} from "@/components/emails/ExchangeRefundEmail";
 
 // 기존 인터페이스 호환성을 위한 타입 정의
 export interface EmailTemplateData {
@@ -43,6 +47,7 @@ export interface VerificationEmailData extends EmailTemplateData {
 export interface PasswordResetEmailData extends EmailTemplateData {
   temporaryPassword: string;
   userId: string;
+  email: string;
 }
 
 // 새로운 이메일 타입 정의들
@@ -71,6 +76,19 @@ export interface ProfileUpdateVerificationEmailData extends EmailTemplateData {
   updateType: string;
 }
 
+export interface ExchangeRefundEmailData extends EmailTemplateData {
+  orderId: string;
+  productTitle: string;
+  amount: number;
+  orderDate: string;
+  applicantName: string;
+  applicantPhone: string;
+  applicantEmail: string;
+  requestType: "exchange" | "refund";
+  reason: string;
+  description: string;
+}
+
 // React Email 컴포넌트를 HTML 문자열로 렌더링하는 함수들
 
 // 회원가입 인증 이메일 생성
@@ -95,6 +113,7 @@ export const generatePasswordResetEmail = async (
     userName: data.userName,
     temporaryPassword: data.temporaryPassword,
     userId: data.userId,
+    email: data.email,
     appUrl: data.appUrl,
   };
 
@@ -171,4 +190,25 @@ export const generateProfileUpdateVerificationEmail = async (
   };
 
   return await render(ProfileUpdateVerificationEmail(emailProps));
+};
+
+// 교환/반품 신청 이메일 생성
+export const generateExchangeRefundEmail = async (
+  data: ExchangeRefundEmailData
+): Promise<string> => {
+  const emailProps: ExchangeRefundEmailProps = {
+    orderId: data.orderId,
+    productTitle: data.productTitle,
+    amount: data.amount,
+    orderDate: data.orderDate,
+    applicantName: data.applicantName,
+    applicantPhone: data.applicantPhone,
+    applicantEmail: data.applicantEmail,
+    requestType: data.requestType,
+    reason: data.reason,
+    description: data.description,
+    appUrl: data.appUrl,
+  };
+
+  return await render(ExchangeRefundEmail(emailProps));
 };

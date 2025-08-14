@@ -70,6 +70,11 @@ function LoginPage() {
         // redirect 파라미터가 있으면 해당 경로로, 없으면 메인 페이지로
         const redirectPath = searchParams.get("redirect") || "/";
         router.replace(redirectPath);
+
+        // 강력한 새로고침 수행
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       } else {
         setError(data?.login?.message || "로그인에 실패했습니다.");
       }
@@ -122,6 +127,11 @@ function LoginPage() {
         console.log("🔄 /business로 리다이렉트 시도");
         // 사업자는 무조건 비즈니스 대시보드로 리다이렉트
         router.replace("/business");
+
+        // 강력한 새로고침 수행
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       } else {
         console.error("❌ 사업자 로그인 실패:", data);
         setError(data?.login?.message || "사업자 로그인에 실패했습니다.");

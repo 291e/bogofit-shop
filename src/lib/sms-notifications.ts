@@ -127,6 +127,23 @@ export const SMS_TEMPLATES = {
     `신청일시: ${data.refundDate}\n` +
     `${data.reason ? `사유: ${data.reason}\n` : ""}` +
     `검토 후 영업일 기준 3-5일 내 처리됩니다.`,
+
+  // 교환/반품 신청
+  EXCHANGE_REFUND_REQUESTED: (data: {
+    customerName: string;
+    orderId: string;
+    productName: string;
+    amount: number;
+    requestDate: string;
+    requestType: "exchange" | "refund";
+    reason?: string;
+  }) =>
+    `[BogoFit] ${data.customerName}님, ${data.requestType === "exchange" ? "교환" : "반품"} 신청이 접수되었습니다.\n` +
+    `주문번호: ${data.orderId}\n` +
+    `상품명: ${data.productName}\n` +
+    `신청일시: ${data.requestDate}\n` +
+    `${data.reason ? `사유: ${data.reason}\n` : ""}` +
+    `검토 후 영업일 기준 3-5일 내 처리됩니다.`,
 } as const;
 
 // SMS 발송 유틸리티 함수
@@ -395,6 +412,36 @@ export class SmsNotificationService {
     return this.sendSms(data.customerPhone, message, {
       testMode: data.testMode,
       title: "환불 신청",
+    });
+  }
+
+  /**
+   * 교환/반품 신청 SMS 발송
+   */
+  static async sendExchangeRefundRequestedSms(data: {
+    customerPhone: string;
+    customerName: string;
+    orderId: string;
+    productName: string;
+    amount: number;
+    requestDate: string;
+    requestType: "exchange" | "refund";
+    reason?: string;
+    testMode?: boolean;
+  }): Promise<boolean> {
+    const message = SMS_TEMPLATES.EXCHANGE_REFUND_REQUESTED({
+      customerName: data.customerName,
+      orderId: data.orderId,
+      productName: data.productName,
+      amount: data.amount,
+      requestDate: data.requestDate,
+      requestType: data.requestType,
+      reason: data.reason,
+    });
+
+    return this.sendSms(data.customerPhone, message, {
+      testMode: data.testMode,
+      title: `${data.requestType} 신청`,
     });
   }
 }

@@ -44,54 +44,125 @@ import {
   Eye,
   Search,
   Phone,
-  Image,
   FileText,
 } from "lucide-react";
-import {
-  RefundRequest,
-  mockRefundRequests,
-  refundTypeOptions,
-  refundStatusOptions,
-  refundReasonOptions,
-  refundMethodOptions,
-  getRefundStats,
-} from "@/contents/Business/refundData";
+
+// 실제 DB 타입 정의
+interface ExchangeRefundData {
+  id: string;
+  orderId: string;
+  type: "EXCHANGE" | "REFUND";
+  status:
+    | "PENDING"
+    | "REVIEWING"
+    | "APPROVED"
+    | "REJECTED"
+    | "PROCESSING"
+    | "COMPLETED";
+  applicantName: string;
+  applicantPhone: string;
+  applicantEmail: string | null;
+  reason: string;
+  description: string | null;
+  adminNotes: string | null;
+  processedAt: string | null;
+  processedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  order: {
+    id: string;
+    orderNumber: string;
+    totalAmount: number;
+    status: string;
+    createdAt: string;
+    items: Array<{
+      id: number;
+      quantity: number;
+      unitPrice: number;
+      product: {
+        id: number;
+        title: string;
+        images: string[];
+      } | null;
+    }>;
+  };
+}
+
+// 필터 옵션들
+const typeOptions = [
+  { value: "all", label: "전체" },
+  { value: "EXCHANGE", label: "교환" },
+  { value: "REFUND", label: "반품/환불" },
+];
+
+const statusOptions = [
+  { value: "all", label: "전체" },
+  { value: "PENDING", label: "접수대기" },
+  { value: "REVIEWING", label: "검토중" },
+  { value: "APPROVED", label: "승인" },
+  { value: "REJECTED", label: "거부" },
+  { value: "PROCESSING", label: "처리중" },
+  { value: "COMPLETED", label: "완료" },
+];
 
 export default function RefundsPage() {
-  const [refundRequests, setRefundRequests] =
-    useState<RefundRequest[]>(mockRefundRequests);
-  const [filteredData, setFilteredData] =
-    useState<RefundRequest[]>(mockRefundRequests);
+  const [exchangeRefunds, setExchangeRefunds] = useState<ExchangeRefundData[]>(
+    []
+  );
+  const [filteredData, setFilteredData] = useState<ExchangeRefundData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedRequest, setSelectedRequest] = useState<RefundRequest | null>(
-    null
-  );
+  const [selectedRequest, setSelectedRequest] =
+    useState<ExchangeRefundData | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isProcessDialogOpen, setIsProcessDialogOpen] = useState(false);
   const [processData, setProcessData] = useState({
     status: "",
     adminNotes: "",
-    refundMethod: "",
-    bankAccount: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 데이터 로드
+  useEffect(() => {
+    fetchExchangeRefunds();
+  }, []);
+
+  const fetchExchangeRefunds = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/business/exchange-refunds");
+      const result = await response.json();
+
+      if (result.success) {
+        setExchangeRefunds(result.data);
+      } else {
+        console.error("교환/반품 데이터 로드 실패:", result.error);
+      }
+    } catch (error) {
+      console.error("교환/반품 데이터 로드 오류:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 필터링 로직
   useEffect(() => {
-    let filtered = refundRequests;
+    let filtered = exchangeRefunds;
 
     // 검색 필터
     if (searchTerm) {
       filtered = filtered.filter(
         (request) =>
-          request.orderNumber
+          request.order.orderNumber
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          request.customerName
+          request.applicantName
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          request.productName.toLowerCase().includes(searchTerm.toLowerCase())
+          request.order.items.some((item) =>
+            item.product?.title.toLowerCase().includes(searchTerm.toLowerCase())
+          )
       );
     }
 
@@ -106,82 +177,77 @@ export default function RefundsPage() {
     }
 
     setFilteredData(filtered);
-  }, [refundRequests, searchTerm, typeFilter, statusFilter]);
+  }, [exchangeRefunds, searchTerm, typeFilter, statusFilter]);
 
   // 요청 처리 핸들러
-  const handleProcessRequest = () => {
+  const handleProcessRequest = async () => {
     if (!selectedRequest) return;
 
-    const updatedRequests = refundRequests.map((request) => {
-      if (request.id === selectedRequest.id) {
-        const updatedRequest = {
-          ...request,
-          status: processData.status as RefundRequest["status"],
-          adminNotes: processData.adminNotes || undefined,
-          processedDate: new Date().toISOString().split("T")[0],
-        };
+    try {
+      const response = await fetch("/api/business/exchange-refunds", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: selectedRequest.id,
+          status: processData.status,
+          adminNotes: processData.adminNotes || null,
+          processedBy: "admin", // TODO: 실제 로그인된 관리자 ID로 변경
+        }),
+      });
 
-        // 승인된 경우 환불 방법 추가
-        if (
-          processData.status === "approved" ||
-          processData.status === "completed"
-        ) {
-          updatedRequest.refundMethod =
-            processData.refundMethod as RefundRequest["refundMethod"];
-          if (
-            processData.refundMethod === "bank_transfer" &&
-            processData.bankAccount
-          ) {
-            updatedRequest.bankAccount = processData.bankAccount;
-          }
-        }
+      const result = await response.json();
 
-        return updatedRequest;
+      if (result.success) {
+        // 성공 시 데이터 새로고침
+        await fetchExchangeRefunds();
+        setIsProcessDialogOpen(false);
+        setSelectedRequest(null);
+        setProcessData({
+          status: "",
+          adminNotes: "",
+        });
+        alert("처리가 완료되었습니다.");
+      } else {
+        alert(result.error || "처리 중 오류가 발생했습니다.");
       }
-      return request;
-    });
-
-    setRefundRequests(updatedRequests);
-    setIsProcessDialogOpen(false);
-    setSelectedRequest(null);
-    setProcessData({
-      status: "",
-      adminNotes: "",
-      refundMethod: "",
-      bankAccount: "",
-    });
+    } catch (error) {
+      console.error("처리 오류:", error);
+      alert("처리 중 오류가 발생했습니다.");
+    }
   };
 
   // 상태별 배지 색상
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending":
+      case "PENDING":
         return (
           <Badge variant="secondary" className="bg-gray-100 text-gray-800">
             접수대기
           </Badge>
         );
-      case "reviewing":
+      case "REVIEWING":
         return (
           <Badge variant="default" className="bg-blue-100 text-blue-800">
             검토중
           </Badge>
         );
-      case "approved":
+      case "APPROVED":
         return (
           <Badge variant="default" className="bg-green-100 text-green-800">
             승인
           </Badge>
         );
-      case "rejected":
+      case "REJECTED":
         return <Badge variant="destructive">거부</Badge>;
-      case "processing":
+      case "PROCESSING":
         return (
           <Badge variant="default" className="bg-orange-100 text-orange-800">
             처리중
           </Badge>
         );
-      case "completed":
+      case "COMPLETED":
         return (
           <Badge variant="default" className="bg-emerald-100 text-emerald-800">
             완료
@@ -195,13 +261,13 @@ export default function RefundsPage() {
   // 타입별 배지 색상
   const getTypeBadge = (type: string) => {
     switch (type) {
-      case "return":
+      case "REFUND":
         return (
-          <Badge variant="outline" className="text-blue-600 border-blue-200">
-            반품
+          <Badge variant="outline" className="text-green-600 border-green-200">
+            반품/환불
           </Badge>
         );
-      case "exchange":
+      case "EXCHANGE":
         return (
           <Badge
             variant="outline"
@@ -210,53 +276,58 @@ export default function RefundsPage() {
             교환
           </Badge>
         );
-      case "refund":
-        return (
-          <Badge variant="outline" className="text-green-600 border-green-200">
-            환불
-          </Badge>
-        );
       default:
         return <Badge variant="outline">알 수 없음</Badge>;
     }
   };
 
-  // 사유 표시
-  const getReasonLabel = (reason: string) => {
-    const reasonOption = refundReasonOptions.find(
-      (option) => option.value === reason
-    );
-    return reasonOption ? reasonOption.label : reason;
+  // 통계 계산
+  const stats = {
+    total: exchangeRefunds.length,
+    pending: exchangeRefunds.filter((r) => r.status === "PENDING").length,
+    reviewing: exchangeRefunds.filter((r) => r.status === "REVIEWING").length,
+    approved: exchangeRefunds.filter((r) => r.status === "APPROVED").length,
+    completed: exchangeRefunds.filter((r) => r.status === "COMPLETED").length,
+    totalAmount: exchangeRefunds.reduce(
+      (sum, r) => sum + r.order.totalAmount,
+      0
+    ),
   };
 
-  // 통계 계산
-  const stats = getRefundStats(refundRequests);
-
   // 상세보기 다이얼로그 열기
-  const openDetailDialog = (request: RefundRequest) => {
+  const openDetailDialog = (request: ExchangeRefundData) => {
     setSelectedRequest(request);
     setIsDetailDialogOpen(true);
   };
 
   // 처리 다이얼로그 열기
-  const openProcessDialog = (request: RefundRequest) => {
+  const openProcessDialog = (request: ExchangeRefundData) => {
     setSelectedRequest(request);
     setProcessData({
       status: request.status,
       adminNotes: request.adminNotes || "",
-      refundMethod: request.refundMethod || "",
-      bankAccount: request.bankAccount || "",
     });
     setIsProcessDialogOpen(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <RefreshCcw className="h-8 w-8 mx-auto mb-4 animate-spin" />
+          <p>데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* 헤더 */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">반품/환불 관리</h1>
+        <h1 className="text-2xl font-bold text-gray-900">교환/반품 관리</h1>
         <p className="text-gray-600">
-          고객의 반품/환불 요청을 확인하고 처리하세요
+          고객의 교환/반품 요청을 확인하고 처리하세요
         </p>
       </div>
 
@@ -298,7 +369,7 @@ export default function RefundsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">환불 총액</CardTitle>
+            <CardTitle className="text-sm font-medium">총 금액</CardTitle>
             <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -309,12 +380,12 @@ export default function RefundsPage() {
         </Card>
       </div>
 
-      {/* 반품/환불 목록 */}
+      {/* 교환/반품 목록 */}
       <Card>
         <CardHeader>
-          <CardTitle>반품/환불 목록</CardTitle>
+          <CardTitle>교환/반품 목록</CardTitle>
           <CardDescription>
-            고객의 반품/환불 요청을 확인하고 처리하세요
+            고객의 교환/반품 요청을 확인하고 처리하세요
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -336,7 +407,7 @@ export default function RefundsPage() {
                 <SelectValue placeholder="타입 필터" />
               </SelectTrigger>
               <SelectContent>
-                {refundTypeOptions.map((option) => (
+                {typeOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -349,7 +420,7 @@ export default function RefundsPage() {
                 <SelectValue placeholder="상태 필터" />
               </SelectTrigger>
               <SelectContent>
-                {refundStatusOptions.map((option) => (
+                {statusOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -366,7 +437,7 @@ export default function RefundsPage() {
                   <TableHead>고객정보</TableHead>
                   <TableHead>상품정보</TableHead>
                   <TableHead>사유</TableHead>
-                  <TableHead className="text-right">환불금액</TableHead>
+                  <TableHead className="text-right">금액</TableHead>
                   <TableHead>상태</TableHead>
                   <TableHead>관리</TableHead>
                 </TableRow>
@@ -376,13 +447,17 @@ export default function RefundsPage() {
                   <TableRow key={request.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{request.orderNumber}</div>
-                        <div className="text-sm text-gray-500">
-                          요청일: {request.requestDate}
+                        <div className="font-medium">
+                          {request.order.orderNumber}
                         </div>
-                        {request.processedDate && (
+                        <div className="text-sm text-gray-500">
+                          요청일:{" "}
+                          {new Date(request.createdAt).toLocaleDateString()}
+                        </div>
+                        {request.processedAt && (
                           <div className="text-sm text-gray-500">
-                            처리일: {request.processedDate}
+                            처리일:{" "}
+                            {new Date(request.processedAt).toLocaleDateString()}
                           </div>
                         )}
                         <div className="mt-1">{getTypeBadge(request.type)}</div>
@@ -391,46 +466,54 @@ export default function RefundsPage() {
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          {request.customerName}
+                          {request.applicantName}
                         </div>
                         <div className="text-sm text-gray-500 flex items-center">
                           <Phone className="h-3 w-3 mr-1" />
-                          {request.customerPhone}
+                          {request.applicantPhone}
                         </div>
+                        {request.applicantEmail && (
+                          <div className="text-sm text-gray-500">
+                            {request.applicantEmail}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{request.productName}</div>
-                        <div className="text-sm text-gray-500">
-                          수량: {request.quantity}개
+                        <div className="font-medium">
+                          {request.order.items
+                            .map((item) => item.product?.title)
+                            .join(", ")}
                         </div>
                         <div className="text-sm text-gray-500">
-                          원가: ₩{request.originalPrice.toLocaleString()}
+                          총{" "}
+                          {request.order.items.reduce(
+                            (sum, item) => sum + item.quantity,
+                            0
+                          )}
+                          개
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          주문금액: ₩
+                          {request.order.totalAmount.toLocaleString()}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         <div className="text-sm font-medium">
-                          {getReasonLabel(request.reason)}
+                          {request.reason}
                         </div>
-                        {request.reasonDetail && (
+                        {request.description && (
                           <div className="text-sm text-gray-500 max-w-32 truncate">
-                            {request.reasonDetail}
+                            {request.description}
                           </div>
                         )}
-                        {request.attachedImages &&
-                          request.attachedImages.length > 0 && (
-                            <div className="text-sm text-gray-500 flex items-center">
-                              <Image className="h-3 w-3 mr-1" />
-                              {request.attachedImages.length}개 첨부
-                            </div>
-                          )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      ₩{request.refundAmount.toLocaleString()}
+                      ₩{request.order.totalAmount.toLocaleString()}
                     </TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
                     <TableCell>
@@ -443,8 +526,8 @@ export default function RefundsPage() {
                           <Eye className="h-4 w-4 mr-1" />
                           상세
                         </Button>
-                        {(request.status === "pending" ||
-                          request.status === "reviewing") && (
+                        {(request.status === "PENDING" ||
+                          request.status === "REVIEWING") && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -475,7 +558,7 @@ export default function RefundsPage() {
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>반품/환불 요청 상세</DialogTitle>
+            <DialogTitle>교환/반품 요청 상세</DialogTitle>
             <DialogDescription>
               요청 ID: {selectedRequest?.id}
             </DialogDescription>
@@ -486,7 +569,7 @@ export default function RefundsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="font-medium">주문번호</Label>
-                  <p className="text-sm">{selectedRequest.orderNumber}</p>
+                  <p className="text-sm">{selectedRequest.order.orderNumber}</p>
                 </div>
                 <div>
                   <Label className="font-medium">요청타입</Label>
@@ -498,23 +581,35 @@ export default function RefundsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="font-medium">고객명</Label>
-                  <p className="text-sm">{selectedRequest.customerName}</p>
+                  <Label className="font-medium">신청자명</Label>
+                  <p className="text-sm">{selectedRequest.applicantName}</p>
                 </div>
                 <div>
                   <Label className="font-medium">연락처</Label>
-                  <p className="text-sm">{selectedRequest.customerPhone}</p>
+                  <p className="text-sm">{selectedRequest.applicantPhone}</p>
                 </div>
               </div>
+
+              {selectedRequest.applicantEmail && (
+                <div>
+                  <Label className="font-medium">이메일</Label>
+                  <p className="text-sm">{selectedRequest.applicantEmail}</p>
+                </div>
+              )}
 
               <div>
                 <Label className="font-medium">상품정보</Label>
                 <div className="text-sm space-y-1">
-                  <p>상품명: {selectedRequest.productName}</p>
-                  <p>수량: {selectedRequest.quantity}개</p>
-                  <p>원가: ₩{selectedRequest.originalPrice.toLocaleString()}</p>
+                  {selectedRequest.order.items.map((item, index) => (
+                    <div key={index}>
+                      <p>상품명: {item.product?.title || "상품명 없음"}</p>
+                      <p>수량: {item.quantity}개</p>
+                      <p>단가: ₩{item.unitPrice.toLocaleString()}</p>
+                    </div>
+                  ))}
                   <p>
-                    환불금액: ₩{selectedRequest.refundAmount.toLocaleString()}
+                    총 주문금액: ₩
+                    {selectedRequest.order.totalAmount.toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -522,47 +617,12 @@ export default function RefundsPage() {
               <div>
                 <Label className="font-medium">사유</Label>
                 <div className="text-sm space-y-1">
-                  <p>분류: {getReasonLabel(selectedRequest.reason)}</p>
-                  <p>상세사유: {selectedRequest.reasonDetail}</p>
-                </div>
-              </div>
-
-              {selectedRequest.attachedImages &&
-                selectedRequest.attachedImages.length > 0 && (
-                  <div>
-                    <Label className="font-medium">첨부파일</Label>
-                    <div className="text-sm">
-                      {selectedRequest.attachedImages.map((image, index) => (
-                        <p key={index} className="flex items-center">
-                          <Image className="h-4 w-4 mr-2" />
-                          {image}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {selectedRequest.refundMethod && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="font-medium">환불방법</Label>
-                    <p className="text-sm">
-                      {
-                        refundMethodOptions.find(
-                          (option) =>
-                            option.value === selectedRequest.refundMethod
-                        )?.label
-                      }
-                    </p>
-                  </div>
-                  {selectedRequest.bankAccount && (
-                    <div>
-                      <Label className="font-medium">계좌정보</Label>
-                      <p className="text-sm">{selectedRequest.bankAccount}</p>
-                    </div>
+                  <p>분류: {selectedRequest.reason}</p>
+                  {selectedRequest.description && (
+                    <p>상세사유: {selectedRequest.description}</p>
                   )}
                 </div>
-              )}
+              </div>
 
               {selectedRequest.adminNotes && (
                 <div>
@@ -574,12 +634,16 @@ export default function RefundsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="font-medium">요청일</Label>
-                  <p className="text-sm">{selectedRequest.requestDate}</p>
+                  <p className="text-sm">
+                    {new Date(selectedRequest.createdAt).toLocaleString()}
+                  </p>
                 </div>
-                {selectedRequest.processedDate && (
+                {selectedRequest.processedAt && (
                   <div>
                     <Label className="font-medium">처리일</Label>
-                    <p className="text-sm">{selectedRequest.processedDate}</p>
+                    <p className="text-sm">
+                      {new Date(selectedRequest.processedAt).toLocaleString()}
+                    </p>
                   </div>
                 )}
               </div>
@@ -610,7 +674,7 @@ export default function RefundsPage() {
           <DialogHeader>
             <DialogTitle>요청 처리</DialogTitle>
             <DialogDescription>
-              {selectedRequest?.orderNumber} 요청을 처리합니다.
+              {selectedRequest?.order.orderNumber} 요청을 처리합니다.
             </DialogDescription>
           </DialogHeader>
 
@@ -627,10 +691,12 @@ export default function RefundsPage() {
                   <SelectValue placeholder="처리 상태 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {refundStatusOptions
+                  {statusOptions
                     .filter(
                       (option) =>
-                        option.value !== "all" && option.value !== "pending"
+                        option.value !== "all" &&
+                        option.value !== "PENDING" &&
+                        option.value !== selectedRequest?.status
                     )
                     .map((option) => (
                       <SelectItem key={option.value} value={option.value}>
@@ -640,51 +706,6 @@ export default function RefundsPage() {
                 </SelectContent>
               </Select>
             </div>
-
-            {(processData.status === "approved" ||
-              processData.status === "completed") && (
-              <>
-                <div className="space-y-2">
-                  <Label>환불 방법</Label>
-                  <Select
-                    value={processData.refundMethod}
-                    onValueChange={(value) =>
-                      setProcessData((prev) => ({
-                        ...prev,
-                        refundMethod: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="환불 방법 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {refundMethodOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {processData.refundMethod === "bank_transfer" && (
-                  <div className="space-y-2">
-                    <Label>계좌 정보</Label>
-                    <Input
-                      value={processData.bankAccount}
-                      onChange={(e) =>
-                        setProcessData((prev) => ({
-                          ...prev,
-                          bankAccount: e.target.value,
-                        }))
-                      }
-                      placeholder="환불 계좌 정보를 입력하세요"
-                    />
-                  </div>
-                )}
-              </>
-            )}
 
             <div className="space-y-2">
               <Label>관리자 메모</Label>
