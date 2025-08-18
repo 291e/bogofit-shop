@@ -2,14 +2,7 @@
 
 export const productCategories = ["상의", "하의", "원피스", "아우터"];
 
-export const productBadges = [
-  "BEST",
-  "NEW",
-  "SALE",
-  "HOT",
-  "PREMIUM",
-  "LIMITED",
-];
+export const productBadges = ["BEST", "NEW", "SALE", "HOT"];
 
 // 세부 카테고리 데이터
 export const subCategoryMap: Record<

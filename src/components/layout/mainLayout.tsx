@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { usePathname } from "next/navigation"; // ← 추가
-import { useAuthStore } from "@/store/auth.store";
+import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/providers/AuthProvider";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -12,11 +10,6 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  // Zustand 하이드레이션 처리
-  useEffect(() => {
-    useAuthStore.persist.rehydrate();
-  }, []);
-
   const pathname = usePathname();
   // /solution 또는 /business 경로에서는 헤더와 푸터를 숨김
   const isNoLayoutPage =

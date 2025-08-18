@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { usePaymentHistory, Payment } from "@/hooks/usePaymentHistory";
 import { useOrderActions } from "@/hooks/useOrderActions";
-import { useUser } from "@/hooks/useUser";
+import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import {
   Dialog,
@@ -40,7 +40,7 @@ import {
 export default function OrderHistory() {
   const { data: payments, isLoading, error } = usePaymentHistory();
   const { cancelOrderAsync, isCanceling } = useOrderActions();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);

@@ -3,7 +3,7 @@
 import { ShoppingBag, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@/hooks/useUser";
+import { useAuth } from "@/hooks/useAuth";
 import { useCart, useGuestCart } from "@/hooks/useCart";
 
 interface PurchaseButtonProps {
@@ -28,7 +28,7 @@ export function PurchaseButton({
   variantId,
 }: PurchaseButtonProps) {
   const router = useRouter();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   // 로그인된 사용자와 비회원을 위한 각각의 장바구니 훅
   const userCart = useCart();

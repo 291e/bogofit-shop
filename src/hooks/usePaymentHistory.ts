@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useUser } from "./useUser";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface Payment {
   id: string;
@@ -42,7 +42,7 @@ export interface Payment {
 }
 
 export function usePaymentHistory() {
-  const { user } = useUser();
+  const { user } = useAuth();
 
   return useQuery<Payment[]>({
     queryKey: ["paymentHistory", user?.id],

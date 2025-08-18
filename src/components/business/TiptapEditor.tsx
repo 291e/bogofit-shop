@@ -133,28 +133,38 @@ export default function TiptapEditor({
       let firstImageProcessed = !isFirstImage;
 
       try {
-        for (const file of files) {
-          console.log("이미지 업로드 시작:", file.name);
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          console.log(
+            `이미지 업로드 시작 (${i + 1}/${files.length}):`,
+            file.name
+          );
+
           try {
             const imageUrl = await uploadImageToS3(file);
 
-            // 에디터에 이미지 삽입 후 다음 줄로 이동
+            // 현재 커서 위치에 이미지 삽입 (기존 내용을 덮어쓰지 않음)
             editor.chain().focus().setImage({ src: imageUrl }).run();
-            editor.chain().focus().enter().run(); // 새 단락(줄) 추가
+
+            // 이미지 삽입 후 커서를 이미지 다음으로 이동하고 새 줄 추가
+            editor.chain().focus().enter().run();
 
             if (!firstImageProcessed && onDetailImageUpload) {
               onDetailImageUpload(imageUrl);
               firstImageProcessed = true;
               setIsFirstImage(false);
             }
-            console.log("에디터 이미지 추가 완료:", imageUrl);
+            console.log(
+              `에디터 이미지 추가 완료 (${i + 1}/${files.length}):`,
+              imageUrl
+            );
           } catch (error) {
             console.error(`'${file.name}' 업로드 실패:`, error);
             editor
               .chain()
               .focus()
               .insertContent(
-                `<p style="color: red;">⚠️ '${file.name}' 이미지 업로드 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}</p>`
+                `<p style="color: #dc2626; background: #fef2f2; padding: 8px; border-radius: 4px; border-left: 4px solid #dc2626;">⚠️ '${file.name}' 업로드 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}</p>`
               )
               .run();
           }
@@ -164,7 +174,13 @@ export default function TiptapEditor({
         onUploadStateChange?.(false);
       }
     },
-    [editor, isUploading, isFirstImage, onDetailImageUpload, onUploadStateChange]
+    [
+      editor,
+      isUploading,
+      isFirstImage,
+      onDetailImageUpload,
+      onUploadStateChange,
+    ]
   );
 
   const addImage = useCallback(() => {
@@ -240,7 +256,12 @@ export default function TiptapEditor({
       editor?.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
-    editor?.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    editor
+      ?.chain()
+      .focus()
+      .extendMarkRange("link")
+      .setLink({ href: url })
+      .run();
   }, [editor]);
 
   if (!editor) {
@@ -265,44 +286,106 @@ export default function TiptapEditor({
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 p-3 border-b border-gray-200 bg-gray-50">
-        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().chain().focus().undo().run()}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().chain().focus().undo().run()}
+        >
           <Undo className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().chain().focus().redo().run()}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().chain().focus().redo().run()}
+        >
           <Redo className="h-4 w-4" />
         </Button>
         <Separator orientation="vertical" className="h-6 mx-1" />
-        <Button type="button" variant={editor.isActive("bold") ? "default" : "ghost"} size="sm" onClick={() => editor.chain().focus().toggleBold().run()}>
+        <Button
+          type="button"
+          variant={editor.isActive("bold") ? "default" : "ghost"}
+          size="sm"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
           <Bold className="h-4 w-4" />
         </Button>
-        <Button type="button" variant={editor.isActive("italic") ? "default" : "ghost"} size="sm" onClick={() => editor.chain().focus().toggleItalic().run()}>
+        <Button
+          type="button"
+          variant={editor.isActive("italic") ? "default" : "ghost"}
+          size="sm"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
           <Italic className="h-4 w-4" />
         </Button>
-        <Button type="button" variant={editor.isActive("underline") ? "default" : "ghost"} size="sm" onClick={() => editor.chain().focus().toggleUnderline().run()}>
+        <Button
+          type="button"
+          variant={editor.isActive("underline") ? "default" : "ghost"}
+          size="sm"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+        >
           <UnderlineIcon className="h-4 w-4" />
         </Button>
         <Separator orientation="vertical" className="h-6 mx-1" />
-        <Button type="button" variant={editor.isActive("bulletList") ? "default" : "ghost"} size="sm" onClick={() => editor.chain().focus().toggleBulletList().run()}>
+        <Button
+          type="button"
+          variant={editor.isActive("bulletList") ? "default" : "ghost"}
+          size="sm"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
           <List className="h-4 w-4" />
         </Button>
-        <Button type="button" variant={editor.isActive("orderedList") ? "default" : "ghost"} size="sm" onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+        <Button
+          type="button"
+          variant={editor.isActive("orderedList") ? "default" : "ghost"}
+          size="sm"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        >
           <ListOrdered className="h-4 w-4" />
         </Button>
         <Separator orientation="vertical" className="h-6 mx-1" />
-        <Button type="button" variant={editor.isActive({ textAlign: "left" }) ? "default" : "ghost"} size="sm" onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+        <Button
+          type="button"
+          variant={editor.isActive({ textAlign: "left" }) ? "default" : "ghost"}
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        >
           <AlignLeft className="h-4 w-4" />
         </Button>
-        <Button type="button" variant={editor.isActive({ textAlign: "center" }) ? "default" : "ghost"} size="sm" onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+        <Button
+          type="button"
+          variant={
+            editor.isActive({ textAlign: "center" }) ? "default" : "ghost"
+          }
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        >
           <AlignCenter className="h-4 w-4" />
         </Button>
-        <Button type="button" variant={editor.isActive({ textAlign: "right" }) ? "default" : "ghost"} size="sm" onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+        <Button
+          type="button"
+          variant={
+            editor.isActive({ textAlign: "right" }) ? "default" : "ghost"
+          }
+          size="sm"
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        >
           <AlignRight className="h-4 w-4" />
         </Button>
         <Separator orientation="vertical" className="h-6 mx-1" />
         <Button type="button" variant="ghost" size="sm" onClick={setLink}>
           <LinkIcon className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={addImage} disabled={isUploading}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={addImage}
+          disabled={isUploading}
+        >
           {isUploading ? (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
           ) : (
@@ -312,16 +395,19 @@ export default function TiptapEditor({
       </div>
 
       {/* Editor */}
-      <div className="relative min-h-[200px]">
+      <div className="relative min-h-[300px]">
         {isDragging && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-blue-500 bg-opacity-20 pointer-events-none">
-            <p className="text-lg font-bold text-blue-600">여기에 이미지를 드롭하세요</p>
+            <p className="text-lg font-bold text-blue-600">
+              여기에 이미지를 드롭하세요
+            </p>
           </div>
         )}
         <EditorContent
           editor={editor}
           placeholder={
-            placeholder || "📝 상품의 상세 정보를 작성해주세요!\n\n• 🖼️ 이미지 파일을 드래그 앤 드롭하여 여러 장을 한 번에 추가할 수 있습니다.\n• 제품의 특징과 장점을 설명해주세요\n• 사이즈, 소재, 색상 등 구체적인 정보를 포함해주세요\n• 💡 링크, 굵은 글씨, 목록 등 다양한 서식을 활용해보세요"
+            placeholder ||
+            "📝 상품의 상세 정보를 작성해주세요!\n\n• 🖼️ 이미지 파일을 드래그 앤 드롭하여 여러 장을 한 번에 추가할 수 있습니다.\n• 제품의 특징과 장점을 설명해주세요\n• 사이즈, 소재, 색상 등 구체적인 정보를 포함해주세요\n• 💡 링크, 굵은 글씨, 목록 등 다양한 서식을 활용해보세요"
           }
         />
       </div>

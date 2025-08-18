@@ -180,30 +180,60 @@ export default function ProductDetail() {
                   src={currentImage}
                   alt={product.title}
                   fill
-                  className="object-contain"
+                  className="object-cover"
                   priority
                 />
 
                 {/* 상태 배지들 */}
                 <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  {product.badge === "SOLDOUT" && (
-                    <Badge
-                      variant="destructive"
-                      className="bg-red-500 text-white font-bold"
-                    >
-                      품절
-                    </Badge>
-                  )}
-                  {product.badge === "New" && (
-                    <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
-                      NEW
-                    </Badge>
-                  )}
-                  {product.badge === "BEST" && (
-                    <Badge className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">
-                      BEST
-                    </Badge>
-                  )}
+                  {product.badge &&
+                    product.badge
+                      .split(", ")
+                      .slice(0, 3) // 최대 3개만 표시
+                      .map((badge, index) => {
+                        let badgeStyle = "bg-gray-500";
+                        let badgeText = badge;
+
+                        // 뱃지별 스타일 설정
+                        switch (badge.toUpperCase()) {
+                          case "SOLDOUT":
+                            badgeStyle = "bg-red-500";
+                            badgeText = "품절";
+                            break;
+                          case "NEW":
+                            badgeStyle =
+                              "bg-gradient-to-r from-green-500 to-emerald-500";
+                            badgeText = "NEW";
+                            break;
+                          case "BEST":
+                            badgeStyle =
+                              "bg-gradient-to-r from-pink-500 to-purple-500";
+                            badgeText = "BEST";
+                            break;
+                          case "SALE":
+                            badgeStyle =
+                              "bg-gradient-to-r from-red-500 to-orange-500";
+                            badgeText = "SALE";
+                            break;
+                          case "PREMIUM":
+                            badgeStyle =
+                              "bg-gradient-to-r from-yellow-500 to-amber-500";
+                            badgeText = "PREMIUM";
+                            break;
+                          default:
+                            badgeStyle = "bg-gray-500";
+                            badgeText = badge;
+                        }
+
+                        return (
+                          <Badge
+                            key={index}
+                            className={`${badgeStyle} text-white font-bold`}
+                          >
+                            {badgeText}
+                          </Badge>
+                        );
+                      })}
                 </div>
 
                 {/* 위시리스트 버튼 */}
@@ -244,7 +274,7 @@ export default function ProductDetail() {
                               alt={`${product.title} 이미지 ${actualIndex + 1}`}
                               width={100}
                               height={100}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-cover"
                             />
                           </div>
                         );
@@ -379,10 +409,27 @@ export default function ProductDetail() {
               {/* 가격 */}
               <div className="">
                 <div className="space-y-2">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-2xl font-bold">
+                  <div className="flex flex-col items-baseline gap-3 flex-wrap">
+                    {/* 원가 표시 (할인이 있는 경우) */}
+                    {product.originalPrice &&
+                      product.originalPrice > product.price && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg text-gray-500 line-through">
+                            {product.originalPrice.toLocaleString()}원
+                          </span>
+                          {product.discountRate && (
+                            <Badge className="bg-red-500 text-white text-xs">
+                              {product.discountRate}% 할인
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                    {/* 최종 판매가 */}
+                    <span className="text-2xl font-bold text-pink-600">
                       {finalPrice.toLocaleString()}원
                     </span>
+
                     {selectedVariant && selectedVariant.priceDiff !== 0 && (
                       <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded-full">
                         기본가 {product.price.toLocaleString()}원
@@ -391,6 +438,7 @@ export default function ProductDetail() {
                       </span>
                     )}
                   </div>
+
                   {quantity > 1 && (
                     <p className="text-lg font-semibold text-gray-700">
                       총 {totalPrice.toLocaleString()}원 (수량: {quantity}개)

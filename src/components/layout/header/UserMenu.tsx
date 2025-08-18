@@ -12,7 +12,7 @@ import {
 
 interface UserMenuProps {
   user: { userId: string };
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
 }
 
 export function UserMenu({ user, onLogout }: UserMenuProps) {

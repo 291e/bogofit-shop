@@ -1,49 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  Business,
-  BusinessCreateInput,
-  BusinessUpdateInput,
-} from "@/types/business";
-
-// Mock 비즈니스 데이터
-const mockBusiness: Business = {
-  id: "business_1",
-  userId: "user_1",
-  businessName: "스타일링 브랜드",
-  businessNumber: "123-45-67890",
-  businessType: "BRAND",
-  description: "트렌디한 패션 아이템을 제공하는 브랜드입니다.",
-  location: "서울특별시 강남구",
-  website: "https://stylingbrand.com",
-  contactEmail: "contact@stylingbrand.com",
-  contactPhone: "02-1234-5678",
-  isApproved: true,
-  approvedAt: new Date("2024-01-01"),
-  createdAt: new Date("2024-01-01"),
-  updatedAt: new Date("2024-01-15"),
-  user: {
-    id: "user_1",
-    userId: "stylingowner",
-    email: "owner@stylingbrand.com",
-    name: "김스타일",
-    profile: "/images/profile/owner.jpg",
-    phoneNumber: "010-1234-5678",
-    isBusiness: true,
-    isAdmin: false,
-  },
-  stores: [
-    {
-      id: "store_1",
-      businessId: "business_1",
-      storeName: "메인 스토어",
-      storeCode: "MAIN_001",
-      description: "메인 매장",
-      isActive: true,
-      createdAt: new Date("2024-01-01"),
-      updatedAt: new Date("2024-01-01"),
-    },
-  ],
-};
+import { checkBusinessAuth } from "@/lib/businessAuth";
+import { prisma } from "@/lib/prisma";
 
 /**
  * @swagger
@@ -77,16 +34,73 @@ const mockBusiness: Business = {
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
+    // JWT 기반 사업자 인증 체크
+    const [businessUser, errorResponse] = await checkBusinessAuth(request);
+    if (errorResponse) return errorResponse;
+
+    if (!businessUser) {
       return NextResponse.json(
-        { error: "인증 토큰이 필요합니다" },
+        { error: "인증되지 않은 사용자입니다" },
         { status: 401 }
       );
     }
 
-    // Mock 데이터 반환
-    return NextResponse.json({ business: mockBusiness });
+    // 사용자의 브랜드 정보 조회
+    const brand = await prisma.brand.findUnique({
+      where: { id: businessUser.brandId },
+      include: {
+        users: {
+          select: {
+            id: true,
+            userId: true,
+            email: true,
+            name: true,
+            profile: true,
+            phoneNumber: true,
+            isBusiness: true,
+            isAdmin: true,
+          },
+        },
+      },
+    });
+
+    if (!brand) {
+      return NextResponse.json(
+        { error: "브랜드 정보를 찾을 수 없습니다" },
+        { status: 404 }
+      );
+    }
+
+    // Business 형태로 데이터 변환
+    const businessData = {
+      id: brand.id.toString(),
+      userId: businessUser.id,
+      businessName: brand.name,
+      businessNumber: brand.businessNumber || "",
+      businessType: "BRAND" as const,
+      description: brand.description || "",
+      location: "", // Brand 모델에 location 필드가 없음
+      website: "", // Brand 모델에 website 필드가 없음
+      contactEmail: businessUser.email,
+      contactPhone: businessUser.brand.name, // 임시로 브랜드명 사용
+      isApproved: brand.status === "APPROVED",
+      approvedAt: brand.status === "APPROVED" ? brand.createdAt : null,
+      createdAt: brand.createdAt,
+      updatedAt: brand.updatedAt,
+      user: {
+        id: businessUser.id,
+        userId: businessUser.userId,
+        email: businessUser.email,
+        name: businessUser.name,
+        profile: null,
+        phoneNumber: null,
+        isBusiness: businessUser.isBusiness,
+        isAdmin: false,
+      },
+      stores: [], // 현재 Store 모델이 없으므로 빈 배열
+    };
+
+    return NextResponse.json({ business: businessData });
   } catch (error) {
     console.error("비즈니스 정보 조회 실패:", error);
     return NextResponse.json(
@@ -167,38 +181,63 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
+    // JWT 기반 사업자 인증 체크
+    const [businessUser, errorResponse] = await checkBusinessAuth(request);
+    if (errorResponse) return errorResponse;
+
+    if (!businessUser) {
       return NextResponse.json(
-        { error: "인증 토큰이 필요합니다" },
+        { error: "인증되지 않은 사용자입니다" },
         { status: 401 }
       );
     }
 
-    const data: BusinessCreateInput = await request.json();
+    const data = await request.json();
 
-    // 새 비즈니스 생성 (Mock)
-    const newBusiness: Business = {
-      id: `business_${Date.now()}`,
-      userId: "user_1",
-      businessName: data.businessName,
-      businessNumber: data.businessNumber,
-      businessType: data.businessType,
-      description: data.description,
-      location: data.location,
-      website: data.website,
-      contactEmail: data.contactEmail,
-      contactPhone: data.contactPhone,
-      isApproved: false, // 새로 등록된 비즈니스는 승인 대기
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      user: mockBusiness.user,
+    // 브랜드 정보 업데이트 (POST는 브랜드 생성이 아닌 업데이트로 사용)
+    const updatedBrand = await prisma.brand.update({
+      where: { id: businessUser.brandId },
+      data: {
+        name: data.businessName || businessUser.brand.name,
+        description: data.description,
+        businessNumber: data.businessNumber,
+        // 추가 필드들은 필요시 Brand 모델에 추가 후 사용
+      },
+    });
+
+    // Business 형태로 응답 데이터 구성
+    const businessData = {
+      id: updatedBrand.id.toString(),
+      userId: businessUser.id,
+      businessName: updatedBrand.name,
+      businessNumber: updatedBrand.businessNumber || "",
+      businessType: "BRAND" as const,
+      description: updatedBrand.description || "",
+      location: data.location || "",
+      website: data.website || "",
+      contactEmail: data.contactEmail || businessUser.email,
+      contactPhone: data.contactPhone || "",
+      isApproved: updatedBrand.status === "APPROVED",
+      approvedAt:
+        updatedBrand.status === "APPROVED" ? updatedBrand.createdAt : null,
+      createdAt: updatedBrand.createdAt,
+      updatedAt: updatedBrand.updatedAt,
+      user: {
+        id: businessUser.id,
+        userId: businessUser.userId,
+        email: businessUser.email,
+        name: businessUser.name,
+        profile: null,
+        phoneNumber: null,
+        isBusiness: businessUser.isBusiness,
+        isAdmin: false,
+      },
       stores: [],
     };
 
-    return NextResponse.json({ business: newBusiness }, { status: 201 });
+    return NextResponse.json({ business: businessData }, { status: 201 });
   } catch (error) {
-    console.error("비즈니스 등록 실패:", error);
+    console.error("비즈니스 정보 업데이트 실패:", error);
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다" },
       { status: 500 }
@@ -270,35 +309,67 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
+    // JWT 기반 사업자 인증 체크
+    const [businessUser, errorResponse] = await checkBusinessAuth(request);
+    if (errorResponse) return errorResponse;
+
+    if (!businessUser) {
       return NextResponse.json(
-        { error: "인증 토큰이 필요합니다" },
+        { error: "인증되지 않은 사용자입니다" },
         { status: 401 }
       );
     }
 
-    const data: BusinessUpdateInput = await request.json();
+    const data = await request.json();
 
-    // 비즈니스 정보 업데이트 (Mock)
-    const updatedBusiness: Business = {
-      ...mockBusiness,
-      ...(data.businessName && { businessName: data.businessName }),
-      ...(data.businessNumber && { businessNumber: data.businessNumber }),
-      ...(data.businessType && { businessType: data.businessType }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.location !== undefined && { location: data.location }),
-      ...(data.website !== undefined && { website: data.website }),
-      ...(data.contactEmail !== undefined && {
-        contactEmail: data.contactEmail,
-      }),
-      ...(data.contactPhone !== undefined && {
-        contactPhone: data.contactPhone,
-      }),
-      updatedAt: new Date(),
+    // 브랜드 정보 부분 업데이트
+    const updateData: {
+      name?: string;
+      businessNumber?: string;
+      description?: string;
+    } = {};
+    if (data.businessName) updateData.name = data.businessName;
+    if (data.businessNumber !== undefined)
+      updateData.businessNumber = data.businessNumber;
+    if (data.description !== undefined)
+      updateData.description = data.description;
+
+    const updatedBrand = await prisma.brand.update({
+      where: { id: businessUser.brandId },
+      data: updateData,
+    });
+
+    // Business 형태로 응답 데이터 구성
+    const businessData = {
+      id: updatedBrand.id.toString(),
+      userId: businessUser.id,
+      businessName: updatedBrand.name,
+      businessNumber: updatedBrand.businessNumber || "",
+      businessType: "BRAND" as const,
+      description: updatedBrand.description || "",
+      location: data.location || "",
+      website: data.website || "",
+      contactEmail: data.contactEmail || businessUser.email,
+      contactPhone: data.contactPhone || "",
+      isApproved: updatedBrand.status === "APPROVED",
+      approvedAt:
+        updatedBrand.status === "APPROVED" ? updatedBrand.createdAt : null,
+      createdAt: updatedBrand.createdAt,
+      updatedAt: updatedBrand.updatedAt,
+      user: {
+        id: businessUser.id,
+        userId: businessUser.userId,
+        email: businessUser.email,
+        name: businessUser.name,
+        profile: null,
+        phoneNumber: null,
+        isBusiness: businessUser.isBusiness,
+        isAdmin: false,
+      },
+      stores: [],
     };
 
-    return NextResponse.json({ business: updatedBusiness });
+    return NextResponse.json({ business: businessData });
   } catch (error) {
     console.error("비즈니스 정보 수정 실패:", error);
     return NextResponse.json(

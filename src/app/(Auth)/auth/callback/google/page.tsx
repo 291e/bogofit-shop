@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@apollo/client";
 import { LOGIN_WITH_GOOGLE } from "@/graphql/mutations";
 import { User } from "@/graphql/types";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LoginResponse {
   success: boolean;
@@ -19,7 +19,7 @@ function GoogleCallbackContent() {
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { setAuth } = useAuthStore();
+  const { login } = useAuth();
 
   // Google 로그인 뮤테이션
   const [loginWithGoogle] = useMutation(LOGIN_WITH_GOOGLE, {
@@ -34,14 +34,36 @@ function GoogleCallbackContent() {
   });
 
   // 로그인 성공 처리
-  const handleLoginSuccess = (response: LoginResponse) => {
+  const handleLoginSuccess = async (response: LoginResponse) => {
     if (response.success) {
-      // 토큰 저장
-      localStorage.setItem("token", response.token);
-      // 사용자 정보 저장
-      setAuth(response.user, response.token);
-      // 홈페이지로 리다이렉트
-      router.push("/");
+      try {
+        // 2단계: 자체 로그인 API로 JWT 쿠키 설정
+        const loginResponse = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            userId: response.user.userId,
+            password: "oauth", // OAuth 로그인은 비밀번호가 없으므로 특수 플래그
+            isBusiness: false,
+          }),
+        });
+
+        if (loginResponse.ok) {
+          const loginData = await loginResponse.json();
+          // 3단계: AuthProvider에 사용자 정보 설정
+          login(loginData.user);
+          // 홈페이지로 강제 리다이렉트
+          window.location.href = "/";
+        } else {
+          setError("로그인 처리 중 오류가 발생했습니다.");
+        }
+      } catch (error) {
+        console.error("OAuth 로그인 처리 오류:", error);
+        setError("로그인 처리 중 오류가 발생했습니다.");
+      }
     } else {
       setError(response.message || "로그인에 실패했습니다.");
     }

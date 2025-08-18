@@ -221,53 +221,14 @@ export const useBusinessProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 공통 사용자 정보 가져오기 함수
-  const getUserInfo = () => {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (authStorage) {
-      try {
-        const authData = JSON.parse(authStorage);
-        const user = authData.state?.user;
-        return {
-          id: user?.id || "test-user",
-          userData: user
-            ? {
-                userId: user.userId,
-                email: user.email,
-                name: user.userId,
-                isBusiness: user.isBusiness,
-              }
-            : null,
-        };
-      } catch (e) {
-        console.error("auth-storage 파싱 실패:", e);
-      }
-    }
-    return { id: "test-user", userData: null };
-  };
-
-  // 공통 헤더 생성 함수
-  const getAuthHeaders = () => {
-    const { id, userData } = getUserInfo();
-    const headers: Record<string, string> = {
-      "x-user-id": id,
-    };
-
-    if (userData) {
-      headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
-    }
-
-    return headers;
-  };
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/business/products", {
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
         },
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -289,8 +250,8 @@ export const useBusinessProducts = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
         },
+        credentials: "include",
         body: JSON.stringify(input),
       });
 
@@ -313,8 +274,8 @@ export const useBusinessProducts = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
         },
+        credentials: "include",
         body: JSON.stringify(input),
       });
 
@@ -337,7 +298,7 @@ export const useBusinessProducts = () => {
     try {
       const response = await fetch(`/api/business/products/${id}`, {
         method: "DELETE",
-        headers: getAuthHeaders(),
+        credentials: "include",
       });
 
       if (!response.ok) {

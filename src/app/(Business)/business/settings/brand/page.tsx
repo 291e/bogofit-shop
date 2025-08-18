@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -26,45 +26,6 @@ interface BrandInfo {
 }
 
 export default function BrandSettingsPage() {
-  // 공통 사용자 정보 가져오기 함수
-  const getUserInfo = () => {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (authStorage) {
-      try {
-        const authData = JSON.parse(authStorage);
-        const user = authData.state?.user;
-        return {
-          id: user?.id || "test-user",
-          userData: user
-            ? {
-                userId: user.userId,
-                email: user.email,
-                name: user.userId,
-                isBusiness: user.isBusiness,
-              }
-            : null,
-        };
-      } catch (e) {
-        console.error("auth-storage 파싱 실패:", e);
-      }
-    }
-    return { id: "test-user", userData: null };
-  };
-
-  // 공통 헤더 생성 함수
-  const getAuthHeaders = useCallback(() => {
-    const { id, userData } = getUserInfo();
-    const headers: Record<string, string> = {
-      "x-user-id": id,
-    };
-
-    if (userData) {
-      headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
-    }
-
-    return headers;
-  }, []);
-
   const [brandInfo, setBrandInfo] = useState<BrandInfo>({
     name: "",
     description: "",
@@ -80,11 +41,14 @@ export default function BrandSettingsPage() {
         setIsLoadingData(true);
 
         const response = await fetch("/api/business/brand", {
-          headers: getAuthHeaders(),
+          credentials: "include", // JWT 쿠키 포함
         });
 
         if (!response.ok) {
-          throw new Error("브랜드 정보를 불러올 수 없습니다");
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || "브랜드 정보를 불러올 수 없습니다"
+          );
         }
 
         const data = await response.json();
@@ -102,14 +66,18 @@ export default function BrandSettingsPage() {
         }
       } catch (error) {
         console.error("브랜드 정보 불러오기 실패:", error);
-        alert("브랜드 정보를 불러오는 중 오류가 발생했습니다.");
+        alert(
+          error instanceof Error
+            ? error.message
+            : "브랜드 정보를 불러오는 중 오류가 발생했습니다."
+        );
       } finally {
         setIsLoadingData(false);
       }
     };
 
     fetchBrandInfo();
-  }, [getAuthHeaders]);
+  }, []);
 
   // 입력 필드 변경 핸들러
   const handleInputChange = (field: keyof BrandInfo, value: string) => {
@@ -127,8 +95,8 @@ export default function BrandSettingsPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
         },
+        credentials: "include", // JWT 쿠키 포함
         body: JSON.stringify(brandInfo),
       });
 

@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useMutation } from "@apollo/client";
 import { LOGIN } from "@/graphql/mutations";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,7 +22,7 @@ import Link from "next/link";
 import { User, Building2, Store } from "lucide-react";
 
 function LoginPage() {
-  const router = useRouter();
+  // const rout   er = useRouter();
   const searchParams = useSearchParams();
   const { login: authLogin } = useAuth();
 
@@ -33,7 +33,6 @@ function LoginPage() {
   // 사업자 로그인 상태
   const [businessUserId, setBusinessUserId] = useState("");
   const [businessPassword, setBusinessPassword] = useState("");
-  const [deviceId, setDeviceId] = useState("");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,26 +59,51 @@ function LoginPage() {
     }
 
     try {
+      // 1단계: GraphQL LOGIN 뮤테이션으로 사용자 검증 및 DB 저장
       const { data } = await loginMutation({
         variables: { userId, password },
       });
 
-      if (data?.login?.success && data.login.token) {
-        authLogin(data.login.token, data.login.user);
-
-        // redirect 파라미터가 있으면 해당 경로로, 없으면 메인 페이지로
-        const redirectPath = searchParams.get("redirect") || "/";
-        router.replace(redirectPath);
-
-        // 강력한 새로고침 수행
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-      } else {
+      if (!data?.login?.success) {
         setError(data?.login?.message || "로그인에 실패했습니다.");
+        setLoading(false);
+        return;
       }
+
+      // 2단계: 자체 로그인 API로 JWT 쿠키 설정 (GraphQL 토큰 사용)
+      const loginResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          graphqlToken: data.login.token, // GraphQL에서 반환된 토큰 사용
+          password: "graphql", // GraphQL 로그인 성공 플래그
+          isBusiness: false,
+        }),
+      });
+
+      if (!loginResponse.ok) {
+        const errorData = await loginResponse.json();
+        setError(errorData.error || "로그인 처리 중 오류가 발생했습니다.");
+        setLoading(false);
+        return;
+      }
+
+      const loginData = await loginResponse.json();
+
+      // 3단계: AuthProvider에 사용자 정보 설정
+      authLogin(loginData.user);
+
+      // redirect 파라미터가 있으면 해당 경로로, 없으면 메인 페이지로
+      const redirectPath = searchParams.get("redirect") || "/";
+
+      // 강력한 새로고침으로 완전한 상태 초기화
+      window.location.href = redirectPath;
     } catch (err: unknown) {
-      setError((err as Error).message || "로그인 중 오류가 발생했습니다.");
+      console.error("로그인 오류:", err);
+      setError("로그인 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -91,56 +115,58 @@ function LoginPage() {
     setError("");
     setLoading(true);
 
-    if (!businessUserId || !businessPassword || !deviceId) {
-      setError("아이디, 비밀번호, 디바이스 ID를 모두 입력하세요.");
+    if (!businessUserId || !businessPassword) {
+      setError("아이디와 비밀번호를 모두 입력하세요.");
       setLoading(false);
       return;
     }
 
     try {
-      console.log("🏢 사업자 로그인 시도:", { businessUserId, deviceId });
+      console.log("[사업자 로그인] 자체 API 호출 시작");
 
-      const { data } = await loginMutation({
-        variables: {
+      // 자체 로그인 API로 직접 로그인 (isBusiness: true 플래그 포함)
+      const loginResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
           userId: businessUserId,
           password: businessPassword,
-          isBusiness: true,
-          deviceId: deviceId,
-        },
+          isBusiness: true, // 사업자 로그인 플래그
+        }),
       });
 
-      console.log("🏢 사업자 로그인 응답:", data);
-
-      if (data?.login?.success && data.login.token) {
-        console.log("✅ 사업자 로그인 성공");
-
-        // 사업자 로그인 성공 시 사용자 정보에 isBusiness: true 설정
-        const businessUser = {
-          ...data.login.user,
-          isBusiness: true,
-        };
-
-        console.log("👤 사업자 사용자 정보:", businessUser);
-
-        authLogin(data.login.token, businessUser);
-
-        console.log("🔄 /business로 리다이렉트 시도");
-        // 사업자는 무조건 비즈니스 대시보드로 리다이렉트
-        router.replace("/business");
-
-        // 강력한 새로고침 수행
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-      } else {
-        console.error("❌ 사업자 로그인 실패:", data);
-        setError(data?.login?.message || "사업자 로그인에 실패했습니다.");
+      if (!loginResponse.ok) {
+        const errorData = await loginResponse.json();
+        setError(errorData.error || "사업자 로그인에 실패했습니다.");
+        setLoading(false);
+        return;
       }
+
+      const loginData = await loginResponse.json();
+
+      // 사업자 계정인지 확인
+      if (!loginData.user?.isBusiness) {
+        setError("사업자 계정이 아닙니다.");
+        setLoading(false);
+        return;
+      }
+
+      // 인증 상태 업데이트
+      if (loginData.user) {
+        await authLogin(loginData.user);
+      }
+
+      console.log("[사업자 로그인] 성공!");
+
+      // 강력한 새로고침 후 사업자 페이지로 이동
+      window.location.reload();
+      setTimeout(() => {
+        window.location.href = "/business";
+      }, 100);
     } catch (err: unknown) {
-      console.error("❌ 사업자 로그인 에러:", err);
-      setError(
-        (err as Error).message || "사업자 로그인 중 오류가 발생했습니다."
-      );
+      console.error("사업자 로그인 오류:", err);
+      setError("사업자 로그인 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -302,24 +328,6 @@ function LoginPage() {
                       onChange={(e) => setBusinessPassword(e.target.value)}
                       autoComplete="current-password"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="deviceId" className="text-sm font-medium">
-                      디바이스 ID
-                    </label>
-                    <Input
-                      id="deviceId"
-                      name="deviceId"
-                      type="text"
-                      required
-                      placeholder="디바이스 ID를 입력하세요"
-                      value={deviceId}
-                      onChange={(e) => setDeviceId(e.target.value)}
-                      autoComplete="off"
-                    />
-                    <p className="text-xs text-gray-500">
-                      관리자로부터 제공받은 디바이스 ID를 입력하세요
-                    </p>
                   </div>
 
                   {error && activeTab === "business" && (

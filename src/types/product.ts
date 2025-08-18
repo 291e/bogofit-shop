@@ -28,6 +28,7 @@ export interface Brand {
 }
 
 export type ShippingType = "DOMESTIC" | "OVERSEAS";
+export type Gender = "MALE" | "FEMALE" | "UNISEX";
 
 export interface Product {
   id: number;
@@ -37,10 +38,14 @@ export interface Product {
   slug: string;
   description?: string;
   detailDescription?: string;
-  price: number;
+  price: number; // 최종 판매가격
+  originalPrice?: number; // 원가 (할인 전 가격)
+  discountRate?: number; // 할인율 (%)
+  discountAmount?: number; // 할인 금액
   url: string;
   category: string;
   subCategory?: string; // 서브카테고리 필드 추가
+  gender?: Gender; // 성별 (남, 여, 공용)
   imageUrl: string;
   badge?: string;
   storeName?: string; // 호환성을 위해 유지 (brand.name으로 설정됨)

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { loadTossPayments } from "@tosspayments/payment-sdk";
-import { useUser } from "@/hooks/useUser";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,7 +40,7 @@ export function CheckoutButton({
   isOpen,
   setIsOpen,
 }: CheckoutButtonProps) {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<{
     method: PaymentMethodType;
     label: string;

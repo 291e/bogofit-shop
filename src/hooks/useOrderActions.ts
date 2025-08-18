@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUser } from "./useUser";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CancelOrderResponse {
   success: boolean;
@@ -19,7 +19,7 @@ interface RefundRequestData {
 }
 
 export function useOrderActions() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // 주문 취소 뮤테이션

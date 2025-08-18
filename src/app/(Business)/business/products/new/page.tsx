@@ -2,8 +2,9 @@
 
 // S3 기반 이미지 업로드를 사용하는 상품 등록 페이지
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -43,12 +44,13 @@ interface ProductFormData {
   // Product 테이블 매핑 필드
   title: string; // Product.title
   description: string; // Product.description (Tiptap 에디터 - 상세 설명)
-  price: number; // Product.price (원가)
-  discountAmount: number; // 할인 금액
-  discountPercent: number; // 할인 퍼센트
-  finalPrice: number; // 최종 판매가 (price - discountAmount)
+  originalPrice: number; // Product.originalPrice (원가)
+  discountAmount: number; // Product.discountAmount (할인 금액)
+  discountRate: number; // Product.discountRate (할인율)
+  price: number; // Product.price (최종 판매가)
   category: string; // Product.category
   subCategory: string; // Product.subCategory (세부 카테고리)
+  gender: string; // Product.gender (성별)
   badges: string[]; // Product.badge (다중 선택)
   isActive: boolean; // Product.isActive
   shippingType: string; // Product.shippingType
@@ -57,8 +59,7 @@ interface ProductFormData {
   mainImage: File | null; // Product.imageUrl (메인 이미지)
   thumbnailImages: File[]; // Product.thumbnailImages (썸네일들)
 
-  // 옵션 관련 (그룹별 관리)
-  hasOptions: boolean;
+  // 옵션 관련 (그룹별 관리) - 필수
   optionGroups: OptionGroup[];
   variants: ProductVariant[]; // 실제 저장될 때는 여전히 기존 구조 사용
 }
@@ -66,44 +67,27 @@ interface ProductFormData {
 export default function ProductCreatePage() {
   const router = useRouter();
 
-  // 공통 사용자 정보 가져오기 함수
-  const getUserInfo = () => {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (authStorage) {
-      try {
-        const authData = JSON.parse(authStorage);
-        const user = authData.state?.user;
-        return {
-          id: user?.id || "test-user",
-          userData: user
-            ? {
-                userId: user.userId,
-                email: user.email,
-                name: user.userId,
-                isBusiness: user.isBusiness,
-              }
-            : null,
-        };
-      } catch (e) {
-        console.error("auth-storage 파싱 실패:", e);
+  // 인증 상태 체크
+  const checkAuthStatus = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        console.error("인증 실패, 로그인 페이지로 이동");
+        router.push("/login");
+        return false;
       }
+
+      return true;
+    } catch (error) {
+      console.error("인증 상태 확인 실패:", error);
+      router.push("/login");
+      return false;
     }
-    return { id: "test-user", userData: null };
-  };
+  }, [router]);
 
-  // 공통 헤더 생성 함수
-  const getAuthHeaders = () => {
-    const { id, userData } = getUserInfo();
-    const headers: Record<string, string> = {
-      "x-user-id": id,
-    };
-
-    if (userData) {
-      headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
-    }
-
-    return headers;
-  };
   const [loading, setLoading] = useState(false);
   const [detailImageUrl, setDetailImageUrl] = useState<string>(""); // TiptapEditor에서 업로드된 이미지 URL
   const [isEditorUploading, setIsEditorUploading] = useState(false); // TiptapEditor 이미지 업로드 상태
@@ -115,21 +99,26 @@ export default function ProductCreatePage() {
   const [formData, setFormData] = useState<ProductFormData>({
     title: "",
     description: "",
-    price: 0,
+    originalPrice: 0,
     discountAmount: 0,
-    discountPercent: 0,
-    finalPrice: 0,
+    discountRate: 0,
+    price: 0,
     category: "",
     subCategory: "",
+    gender: "UNISEX", // 기본값: 공용
     badges: [],
     isActive: true,
     shippingType: "OVERSEAS", // 기본값
     mainImage: null,
     thumbnailImages: [],
-    hasOptions: false,
     optionGroups: [],
     variants: [],
   });
+
+  // 컴포넌트 마운트 시 인증 상태 확인
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   // productCategories, productBadges를 contents에서 import해서 사용
 
@@ -144,31 +133,35 @@ export default function ProductCreatePage() {
   };
 
   // 할인 계산 로직 - 원가와 최종가를 직접 입력받고 할인금액/할인율 자동 계산
+  const handleOriginalPriceChange = (newOriginalPrice: number) => {
+    const price = formData.price;
+    const discountAmount = Math.max(0, newOriginalPrice - price);
+    const discountRate =
+      newOriginalPrice > 0
+        ? Math.round((discountAmount / newOriginalPrice) * 100)
+        : 0;
+
+    setFormData((prev) => ({
+      ...prev,
+      originalPrice: newOriginalPrice,
+      discountAmount,
+      discountRate,
+    }));
+  };
+
   const handlePriceChange = (newPrice: number) => {
-    const finalPrice = formData.finalPrice;
-    const discountAmount = Math.max(0, newPrice - finalPrice);
-    const discountPercent =
-      newPrice > 0 ? Math.round((discountAmount / newPrice) * 100) : 0;
+    const originalPrice = formData.originalPrice;
+    const discountAmount = Math.max(0, originalPrice - newPrice);
+    const discountRate =
+      originalPrice > 0
+        ? Math.round((discountAmount / originalPrice) * 100)
+        : 0;
 
     setFormData((prev) => ({
       ...prev,
       price: newPrice,
       discountAmount,
-      discountPercent,
-    }));
-  };
-
-  const handleFinalPriceChange = (newFinalPrice: number) => {
-    const price = formData.price;
-    const discountAmount = Math.max(0, price - newFinalPrice);
-    const discountPercent =
-      price > 0 ? Math.round((discountAmount / price) * 100) : 0;
-
-    setFormData((prev) => ({
-      ...prev,
-      finalPrice: newFinalPrice,
-      discountAmount,
-      discountPercent,
+      discountRate,
     }));
   };
 
@@ -226,6 +219,50 @@ export default function ProductCreatePage() {
       ...prev,
       optionGroups: [...prev.optionGroups, newGroup],
     }));
+  };
+
+  // 옵션 저장/불러오기 기능
+  const saveOptionsToLocalStorage = () => {
+    if (formData.optionGroups.length === 0) {
+      alert("저장할 옵션이 없습니다.");
+      return;
+    }
+
+    const optionsData = {
+      optionGroups: formData.optionGroups,
+      savedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem("savedProductOptions", JSON.stringify(optionsData));
+    alert("옵션이 저장되었습니다!");
+  };
+
+  const loadOptionsFromLocalStorage = () => {
+    const savedOptions = localStorage.getItem("savedProductOptions");
+    if (!savedOptions) {
+      alert("저장된 옵션이 없습니다.");
+      return;
+    }
+
+    try {
+      const optionsData = JSON.parse(savedOptions);
+      const confirm = window.confirm(
+        `저장된 옵션을 불러오시겠습니까?\n저장일시: ${new Date(
+          optionsData.savedAt
+        ).toLocaleString()}`
+      );
+
+      if (confirm) {
+        setFormData((prev) => ({
+          ...prev,
+          optionGroups: optionsData.optionGroups,
+        }));
+        alert("옵션이 불러와졌습니다!");
+      }
+    } catch (error) {
+      alert("옵션 불러오기에 실패했습니다.");
+      console.error("옵션 불러오기 오류:", error);
+    }
   };
 
   const removeOptionGroup = (groupId: number) => {
@@ -460,6 +497,12 @@ export default function ProductCreatePage() {
       return;
     }
 
+    // 인증 상태 재확인
+    const isAuthenticated = await checkAuthStatus();
+    if (!isAuthenticated) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -494,14 +537,19 @@ export default function ProductCreatePage() {
       const productData = {
         title: formData.title,
         description: formData.description,
-        price: formData.finalPrice, // 최종 판매가를 price로 저장
+        price: formData.price, // 최종 판매가
+        originalPrice: formData.originalPrice || null, // 원가
+        discountRate: formData.discountRate || null, // 할인율
+        discountAmount: formData.discountAmount || null, // 할인 금액
         category: formData.category,
         subCategory: formData.subCategory || null,
+        gender: formData.gender,
         badge: formData.badges.length > 0 ? formData.badges.join(", ") : null, // 배열을 문자열로 변환
         isActive: formData.isActive,
+        shippingType: formData.shippingType,
         imageUrl: "", // 일단 빈 문자열로 생성
         detailImage: detailImageUrl || null, // TiptapEditor에서 업로드된 이미지 URL
-        variants: formData.hasOptions ? convertGroupsToVariants() : [],
+        variants: convertGroupsToVariants(),
       };
 
       console.log("상품 생성 중...", productData);
@@ -509,8 +557,8 @@ export default function ProductCreatePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
         },
+        credentials: "include",
         body: JSON.stringify(productData),
       });
 
@@ -590,7 +638,7 @@ export default function ProductCreatePage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="description">상세 설명</Label>
-                  <div className="max-h-80 overflow-y-auto border rounded-md p-1">
+                  <div className="max-h-[700px] overflow-y-auto border rounded-md p-1">
                     <TiptapEditor
                       content={formData.description}
                       onChange={(content) =>
@@ -644,28 +692,67 @@ export default function ProductCreatePage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">원가 *</Label>
+                    <Label htmlFor="originalPrice">원가</Label>
                     <Input
-                      id="price"
+                      id="originalPrice"
                       type="number"
-                      value={formData.price}
-                      onChange={(e) =>
-                        handlePriceChange(Number(e.target.value))
-                      }
+                      value={formData.originalPrice || ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // 빈 문자열이거나 유효한 숫자인 경우에만 처리
+                        if (
+                          value === "" ||
+                          (!isNaN(Number(value)) && Number(value) >= 0)
+                        ) {
+                          handleOriginalPriceChange(
+                            value === "" ? 0 : Number(value)
+                          );
+                        }
+                      }}
+                      onFocus={(e) => {
+                        // 포커스 시 값이 0이면 빈 문자열로 변경
+                        if (e.target.value === "0") {
+                          e.target.value = "";
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // 포커스 해제 시 빈 문자열이면 0으로 설정
+                        if (e.target.value === "") {
+                          handleOriginalPriceChange(0);
+                        }
+                      }}
                       placeholder="예: 189000"
-                      required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="finalPrice">최종 판매가 *</Label>
+                    <Label htmlFor="price">최종 판매가 *</Label>
                     <Input
-                      id="finalPrice"
+                      id="price"
                       type="number"
-                      value={formData.finalPrice}
-                      onChange={(e) =>
-                        handleFinalPriceChange(Number(e.target.value))
-                      }
+                      value={formData.price || ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // 빈 문자열이거나 유효한 숫자인 경우에만 처리
+                        if (
+                          value === "" ||
+                          (!isNaN(Number(value)) && Number(value) >= 0)
+                        ) {
+                          handlePriceChange(value === "" ? 0 : Number(value));
+                        }
+                      }}
+                      onFocus={(e) => {
+                        // 포커스 시 값이 0이면 빈 문자열로 변경
+                        if (e.target.value === "0") {
+                          e.target.value = "";
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // 포커스 해제 시 빈 문자열이면 0으로 설정
+                        if (e.target.value === "") {
+                          handlePriceChange(0);
+                        }
+                      }}
                       placeholder="예: 159000"
                       required
                     />
@@ -686,11 +773,11 @@ export default function ProductCreatePage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="discountPercent">할인율 (%)</Label>
+                    <Label htmlFor="discountRate">할인율 (%)</Label>
                     <Input
-                      id="discountPercent"
+                      id="discountRate"
                       type="number"
-                      value={formData.discountPercent}
+                      value={formData.discountRate}
                       readOnly
                       className="bg-gray-50"
                     />
@@ -735,9 +822,11 @@ export default function ProductCreatePage() {
                   </div>
                   {formData.mainImage && (
                     <div className="mt-2">
-                      <img
+                      <Image
                         src={URL.createObjectURL(formData.mainImage)}
                         alt="메인 이미지 미리보기"
+                        width={128}
+                        height={128}
                         className="w-32 h-32 object-cover rounded border"
                       />
                     </div>
@@ -771,9 +860,11 @@ export default function ProductCreatePage() {
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mt-4">
                       {formData.thumbnailImages.map((file, index) => (
                         <div key={index} className="relative group">
-                          <img
+                          <Image
                             src={URL.createObjectURL(file)}
                             alt={`썸네일 ${index + 1}`}
+                            width={96}
+                            height={96}
                             className="w-full h-24 object-cover rounded border"
                           />
                           <Button
@@ -852,6 +943,25 @@ export default function ProductCreatePage() {
                 )}
 
                 <div className="space-y-2">
+                  <Label htmlFor="gender">성별 *</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) =>
+                      handleInputChange("gender", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="성별 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MALE">남성</SelectItem>
+                      <SelectItem value="FEMALE">여성</SelectItem>
+                      <SelectItem value="UNISEX">공용</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label>뱃지 (다중 선택)</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {productBadges.map((badge) => (
@@ -894,168 +1004,222 @@ export default function ProductCreatePage() {
             {/* 상품 옵션 설정 */}
             <Card>
               <CardHeader>
-                <CardTitle>상품 옵션</CardTitle>
-                <CardDescription>상품 옵션을 설정해주세요</CardDescription>
+                <CardTitle>상품 옵션 *</CardTitle>
+                <CardDescription>
+                  상품 옵션을 설정해주세요 (필수)
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* 옵션 사용 여부 */}
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="hasOptions">옵션 사용</Label>
-                  <Switch
-                    id="hasOptions"
-                    checked={formData.hasOptions}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("hasOptions", checked)
-                    }
-                  />
+                {/* 옵션 저장/불러오기 버튼 */}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={saveOptionsToLocalStorage}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    옵션 저장
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={loadOptionsFromLocalStorage}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    옵션 불러오기
+                  </Button>
                 </div>
 
-                {formData.hasOptions && (
-                  <div className="space-y-4">
-                    {/* 옵션 그룹 목록 */}
-                    {formData.optionGroups.map((group) => (
-                      <div
-                        key={group.id}
-                        className="border rounded-lg p-4 space-y-4"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1 mr-4">
-                            <Label className="text-sm font-medium">
-                              옵션명
-                            </Label>
-                            <Input
-                              value={group.name}
-                              onChange={(e) =>
-                                updateOptionGroupName(group.id, e.target.value)
-                              }
-                              placeholder="예: 사이즈, 색상"
-                              className="mt-1"
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removeOptionGroup(group.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                <div className="space-y-4">
+                  {/* 옵션 그룹 목록 */}
+                  {formData.optionGroups.map((group) => (
+                    <div
+                      key={group.id}
+                      className="border rounded-lg p-4 space-y-4"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1 mr-4">
+                          <Label className="text-sm font-medium">옵션명</Label>
+                          <Input
+                            value={group.name}
+                            onChange={(e) =>
+                              updateOptionGroupName(group.id, e.target.value)
+                            }
+                            placeholder="예: 색상-사이즈, 사이즈-색상, 사이즈-사이즈"
+                            className="mt-1"
+                          />
                         </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeOptionGroup(group.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
 
-                        {/* 옵션값 추가 */}
-                        <div>
-                          <Label className="text-sm font-medium">옵션값</Label>
-                          <div className="mt-2 space-y-2">
-                            {group.values.map((value, valueIndex) => (
-                              <div
-                                key={valueIndex}
-                                className="flex items-center gap-2 p-2 bg-gray-50 rounded"
-                              >
-                                <span className="flex-1 font-medium">
-                                  {value}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-gray-500">
-                                      추가금액
-                                    </span>
-                                    <Input
-                                      type="number"
-                                      value={group.priceDiffs[value] || 0}
-                                      onChange={(e) =>
+                      {/* 옵션값 추가 */}
+                      <div>
+                        <Label className="text-sm font-medium">옵션값</Label>
+                        <div className="mt-2 space-y-2">
+                          {group.values.map((value, valueIndex) => (
+                            <div
+                              key={valueIndex}
+                              className="flex items-center gap-2 p-2 bg-gray-50 rounded"
+                            >
+                              <span className="flex-1 font-medium">
+                                {value}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-gray-500">
+                                    추가금액
+                                  </span>
+                                  <Input
+                                    type="number"
+                                    value={group.priceDiffs[value] || ""}
+                                    onChange={(e) => {
+                                      const inputValue = e.target.value;
+                                      if (
+                                        inputValue === "" ||
+                                        (!isNaN(Number(inputValue)) &&
+                                          Number(inputValue) >= 0)
+                                      ) {
                                         updateOptionValuePriceDiff(
                                           group.id,
                                           value,
-                                          Number(e.target.value)
-                                        )
+                                          inputValue === ""
+                                            ? 0
+                                            : Number(inputValue)
+                                        );
                                       }
-                                      className="w-20 h-7 text-xs"
-                                      placeholder="0"
-                                    />
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-gray-500">
-                                      재고
-                                    </span>
-                                    <Input
-                                      type="number"
-                                      value={group.stocks[value] || 0}
-                                      onChange={(e) =>
+                                    }}
+                                    onFocus={(e) => {
+                                      if (e.target.value === "0") {
+                                        e.target.value = "";
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      if (e.target.value === "") {
+                                        updateOptionValuePriceDiff(
+                                          group.id,
+                                          value,
+                                          0
+                                        );
+                                      }
+                                    }}
+                                    className="w-20 h-7 text-xs"
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-gray-500">
+                                    재고
+                                  </span>
+                                  <Input
+                                    type="number"
+                                    value={group.stocks[value] || ""}
+                                    onChange={(e) => {
+                                      const inputValue = e.target.value;
+                                      if (
+                                        inputValue === "" ||
+                                        (!isNaN(Number(inputValue)) &&
+                                          Number(inputValue) >= 0)
+                                      ) {
                                         updateOptionValueStock(
                                           group.id,
                                           value,
-                                          Number(e.target.value)
-                                        )
+                                          inputValue === ""
+                                            ? 0
+                                            : Number(inputValue)
+                                        );
                                       }
-                                      className="w-16 h-7 text-xs"
-                                      placeholder="0"
-                                    />
-                                  </div>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      removeOptionValue(group.id, value)
-                                    }
-                                    className="h-7 w-7 p-0"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
+                                    }}
+                                    onFocus={(e) => {
+                                      if (e.target.value === "0") {
+                                        e.target.value = "";
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      if (e.target.value === "") {
+                                        updateOptionValueStock(
+                                          group.id,
+                                          value,
+                                          0
+                                        );
+                                      }
+                                    }}
+                                    className="w-16 h-7 text-xs"
+                                    placeholder="0"
+                                  />
                                 </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    removeOptionValue(group.id, value)
+                                  }
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
                               </div>
-                            ))}
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="옵션값 입력 (예: S, M, L)"
-                                className="flex-1"
-                                onKeyPress={(e) => {
-                                  if (e.key === "Enter") {
-                                    const input = e.target as HTMLInputElement;
-                                    addOptionValue(group.id, input.value);
-                                    input.value = "";
-                                  }
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={(e) => {
-                                  const input = (
-                                    e.target as HTMLButtonElement
-                                  ).parentElement?.querySelector("input");
-                                  if (input?.value) {
-                                    addOptionValue(group.id, input.value);
-                                    input.value = "";
-                                  }
-                                }}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
                             </div>
+                          ))}
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="옵션값 입력 (예: 화이트-S, 블랙-M, 레드-L)"
+                              className="flex-1"
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  const input = e.target as HTMLInputElement;
+                                  addOptionValue(group.id, input.value);
+                                  input.value = "";
+                                }
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={(e) => {
+                                const input = (
+                                  e.target as HTMLButtonElement
+                                ).parentElement?.querySelector("input");
+                                if (input?.value) {
+                                  addOptionValue(group.id, input.value);
+                                  input.value = "";
+                                }
+                              }}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  ))}
 
-                    {formData.optionGroups.length === 0 && (
-                      <div className="text-center py-6 text-gray-500 text-sm">
-                        옵션 그룹을 추가해주세요
-                      </div>
-                    )}
+                  {formData.optionGroups.length === 0 && (
+                    <div className="text-center py-6 text-gray-500 text-sm">
+                      옵션 그룹을 추가해주세요 (최소 1개 필수)
+                    </div>
+                  )}
 
-                    {/* 옵션 그룹 추가 버튼 - 맨 아래에 위치 */}
-                    <Button
-                      type="button"
-                      onClick={addOptionGroup}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      옵션 그룹 추가
-                    </Button>
-                  </div>
-                )}
+                  {/* 옵션 그룹 추가 버튼 - 맨 아래에 위치 */}
+                  <Button
+                    type="button"
+                    onClick={addOptionGroup}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    옵션 그룹 추가
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -1069,8 +1233,12 @@ export default function ProductCreatePage() {
                   isEditorUploading ||
                   !formData.title ||
                   !formData.category ||
+                  !formData.gender ||
                   formData.price <= 0 ||
-                  formData.finalPrice <= 0
+                  formData.optionGroups.length === 0 ||
+                  formData.optionGroups.some(
+                    (group) => !group.name || group.values.length === 0
+                  )
                 }
               >
                 {loading

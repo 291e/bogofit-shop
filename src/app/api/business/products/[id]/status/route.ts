@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ProductStatus } from "@prisma/client";
-import { checkHeaderBusinessAuth } from "@/lib/businessAuth";
+import { checkBusinessAuth } from "@/lib/businessAuth";
 
 // 상품 상태 변경
 export async function PUT(
@@ -9,7 +9,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const [user, errorResponse] = await checkHeaderBusinessAuth(request);
+    const [businessUser, errorResponse] = await checkBusinessAuth(request);
     if (errorResponse) return errorResponse;
 
     const resolvedParams = await params;
@@ -54,7 +54,7 @@ export async function PUT(
     const existingProduct = await prisma.product.findFirst({
       where: {
         id: productId,
-        brandId: user!.brandId,
+        brandId: businessUser!.brandId,
       },
       select: {
         id: true,
@@ -107,7 +107,7 @@ export async function PUT(
     switch (newStatus) {
       case "APPROVED":
         updateData.approvedAt = new Date();
-        updateData.approvedBy = user!.id; // 승인자 정보
+        updateData.approvedBy = businessUser!.id; // 승인자 정보
         updateData.rejectionReason = null; // 거부 사유 초기화
         break;
       case "REJECTED":

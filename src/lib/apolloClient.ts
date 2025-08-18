@@ -64,21 +64,15 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  // 로컬 스토리지에서 직접 토큰을 가져옵니다
-  let token = null;
-  if (typeof window !== "undefined") {
-    token = localStorage.getItem("token");
-  }
-
-  console.log("🔐 Apollo authLink:", {
-    hasToken: !!token,
-    tokenLength: token?.length || 0,
-  });
+  // 쿠키는 자동으로 전송되므로 별도 헤더 설정 불필요
+  // 하지만 GraphQL API가 특별한 인증 헤더를 요구하는 경우를 위해 유지
+  console.log("🔐 Apollo authLink: 쿠키 기반 인증 사용");
 
   return {
     headers: {
       ...headers,
-      token: token ? `${token}` : "",
+      // 쿠키 기반 인증을 사용하므로 토큰 헤더는 제거
+      // 필요시 서버에서 쿠키를 파싱하여 사용
     },
   };
 });

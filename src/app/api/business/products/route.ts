@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ProductStatus, Prisma } from "@prisma/client";
-import { checkHeaderBusinessAuth } from "@/lib/businessAuth";
+import { checkBusinessAuth } from "@/lib/businessAuth";
 
 /**
  * @swagger
@@ -80,8 +80,8 @@ import { checkHeaderBusinessAuth } from "@/lib/businessAuth";
  */
 export async function GET(request: NextRequest) {
   try {
-    // 공통 인증 체크 (인증 없이 고정 브랜드 사용)
-    const [user, errorResponse] = await checkHeaderBusinessAuth(request);
+    // JWT 쿠키 기반 인증 체크
+    const [businessUser, errorResponse] = await checkBusinessAuth(request);
     if (errorResponse) return errorResponse;
 
     // 쿼리 파라미터 처리
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     // 필터 조건 구성
     const where: Prisma.ProductWhereInput = {
-      brandId: user!.brandId,
+      brandId: businessUser!.brandId,
     };
 
     if (search) {
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
     // 상품 통계 계산
     const stats = await prisma.product.groupBy({
       by: ["status"],
-      where: { brandId: user!.brandId },
+      where: { brandId: businessUser!.brandId },
       _count: { status: true },
     });
 
@@ -180,13 +180,20 @@ export async function GET(request: NextRequest) {
 
       return {
         id: product.id.toString(), // BusinessProduct는 string ID 기대
-        businessId: user!.brandId?.toString() || "", // brandId를 businessId로 사용
+        businessId: businessUser!.brandId?.toString() || "", // brandId를 businessId로 사용
         productId: product.id,
         title: product.title,
         description: product.description || "",
         detailDescription: product.detailDescription,
         price: product.price,
+        originalPrice:
+          (product as { originalPrice?: number }).originalPrice || null,
+        discountRate:
+          (product as { discountRate?: number }).discountRate || null,
+        discountAmount:
+          (product as { discountAmount?: number }).discountAmount || null,
         category: product.category,
+        gender: (product as { gender?: string }).gender || "UNISEX",
         imageUrl: product.imageUrl || "", // 빈 문자열 기본값
         detailImage: product.detailImage || undefined,
         thumbnailImages: product.thumbnailImages || [],
@@ -221,7 +228,7 @@ export async function GET(request: NextRequest) {
         hasPrev: page > 1,
       },
       stats: statusStats,
-      brand: user!.brand,
+      brand: businessUser!.brand,
     });
   } catch (error) {
     console.error("상품 목록 조회 실패:", error);
@@ -234,8 +241,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // 공통 인증 체크 (인증 없이 고정 브랜드 사용)
-    const [user, errorResponse] = await checkHeaderBusinessAuth(request);
+    // JWT 쿠키 기반 인증 체크
+    const [businessUser, errorResponse] = await checkBusinessAuth(request);
     if (errorResponse) return errorResponse;
 
     const productData = await request.json();
@@ -264,21 +271,32 @@ export async function POST(request: NextRequest) {
         // Product 생성 (url은 임시로 빈 문자열)
         const newProduct = await tx.product.create({
           data: {
-            brandId: user!.brandId,
+            brandId: businessUser!.brandId,
             title: productData.title,
             slug: slug,
             description: productData.description || null,
             detailDescription: productData.detailDescription || null,
             price: parseFloat(productData.price),
+            ...(productData.originalPrice && {
+              originalPrice: parseFloat(productData.originalPrice),
+            }),
+            ...(productData.discountRate && {
+              discountRate: parseFloat(productData.discountRate),
+            }),
+            ...(productData.discountAmount && {
+              discountAmount: parseFloat(productData.discountAmount),
+            }),
             url: "", // 임시 빈 값
             category: productData.category,
             subCategory: productData.subCategory || null,
+            gender: productData.gender || "UNISEX",
             imageUrl: productData.imageUrl || "",
             badge: productData.badge || null,
             storeName: productData.storeName || null,
             isActive: productData.isActive !== false,
             detailImage: productData.detailImage || null,
             thumbnailImages: productData.thumbnailImages || [],
+            shippingType: productData.shippingType || "OVERSEAS",
             status: "APPROVED", // 새로 등록된 상품은 승인완료 상태
           },
         });
@@ -329,7 +347,7 @@ export async function POST(request: NextRequest) {
 
         // 브랜드 정보 별도 조회
         const brandInfo = await tx.brand.findUnique({
-          where: { id: user!.brandId! },
+          where: { id: businessUser!.brandId! },
           select: {
             id: true,
             name: true,
@@ -354,15 +372,20 @@ export async function POST(request: NextRequest) {
               description: result.product.description,
               detailDescription: result.product.detailDescription,
               price: result.product.price,
+              originalPrice: result.product.originalPrice || null,
+              discountRate: result.product.discountRate || null,
+              discountAmount: result.product.discountAmount || null,
               url: result.product.url,
               category: result.product.category,
               subCategory: result.product.subCategory,
+              gender: result.product.gender || "UNISEX",
               imageUrl: result.product.imageUrl,
               badge: result.product.badge,
               status: result.product.status,
               isActive: result.product.isActive,
               detailImage: result.product.detailImage,
               thumbnailImages: result.product.thumbnailImages,
+              shippingType: result.product.shippingType,
               createdAt: result.product.createdAt,
               updatedAt: result.product.updatedAt,
               brand: result.brand,

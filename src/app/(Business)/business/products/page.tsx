@@ -61,45 +61,6 @@ export default function BusinessProductsPage() {
     refetch: refreshProducts,
   } = useBusinessProducts();
 
-  // 공통 사용자 정보 가져오기 함수
-  const getUserInfo = () => {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (authStorage) {
-      try {
-        const authData = JSON.parse(authStorage);
-        const user = authData.state?.user;
-        return {
-          id: user?.id || "test-user",
-          userData: user
-            ? {
-                userId: user.userId,
-                email: user.email,
-                name: user.userId,
-                isBusiness: user.isBusiness,
-              }
-            : null,
-        };
-      } catch (e) {
-        console.error("auth-storage 파싱 실패:", e);
-      }
-    }
-    return { id: "test-user", userData: null };
-  };
-
-  // 공통 헤더 생성 함수
-  const getAuthHeaders = () => {
-    const { id, userData } = getUserInfo();
-    const headers: Record<string, string> = {
-      "x-user-id": id,
-    };
-
-    if (userData) {
-      headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
-    }
-
-    return headers;
-  };
-
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProductStatus | "ALL">(
     "ALL"
@@ -147,8 +108,8 @@ export default function BusinessProductsPage() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            ...getAuthHeaders(),
           },
+          credentials: "include",
           body: JSON.stringify({ status: newStatus }),
         }
       );

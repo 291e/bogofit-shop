@@ -191,10 +191,14 @@ model Product  {
   slug          String          @unique
   description   String?
   detailDescription String?
-  price     Float
+  price     Float  // 최종 판매가격
+  originalPrice Float? // 원가 (할인 전 가격)
+  discountRate  Float? // 할인율 (%)
+  discountAmount Float? // 할인 금액
   url       String   @unique
   category  String
   subCategory String? // 세부 카테고리 (후드, 맨투맨, 청바지 등)
+  gender    Gender   @default(UNISEX) // 성별 (남, 여, 공용)
   imageUrl  String
   badge           String?
   storeName       String?       // 임시 유지 - 기존 데이터 보존용
@@ -228,9 +232,15 @@ enum ShippingType {
   OVERSEAS  // 해외 배송
 }
 
+enum Gender {
+  MALE    // 남성
+  FEMALE  // 여성
+  UNISEX  // 공용
+}
+
 model ProductVariant {
   id          Int      @id @default(autoincrement())
-  product     Product  @relation(fields: [productId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId   Int
   optionName  String   // '색상', '사이즈' 등 조합해서 사용해도 OK
   optionValue String   // 'RED', 'XL' ...

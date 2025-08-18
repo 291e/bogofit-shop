@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUser } from "./useUser";
+import { useAuth } from "@/hooks/useAuth";
 import { Cart, AddToCartRequest, GuestCart, GuestCartItem } from "@/types/cart";
 import { useState, useEffect } from "react";
 
 // 기존 로그인 사용자용 장바구니 훅
 export function useCart() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // 장바구니 조회

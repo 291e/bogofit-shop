@@ -1,88 +1,100 @@
-"use client";
-
-import {
+import React, {
   createContext,
   useContext,
-  useEffect,
   useState,
+  useEffect,
   ReactNode,
 } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApolloClient } from "@apollo/client";
-import { GET_MY_INFO } from "@/graphql/queries";
 import { User } from "@/graphql/types";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, userData?: User) => void;
-  logout: () => void;
+  login: (userData: User) => void;
+  logout: () => Promise<void>;
   refetchUser: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
 interface AuthProviderProps {
   children: ReactNode;
+  initialUser?: User | null;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   const client = useApolloClient();
+  const queryClient = useQueryClient();
   const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // React Query로 사용자 정보 가져오기
+  // 쿠키 기반 사용자 정보 가져오기
   const { data, isLoading, refetch } = useQuery<{ user: User }>({
-    queryKey: ["user"],
+    queryKey: ["auth", "user"],
     queryFn: async () => {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token");
-
-      const result = await client.query({
-        query: GET_MY_INFO,
-        fetchPolicy: "network-only",
+      const response = await fetch("/api/auth/me", {
+        credentials: "include", // 쿠키 포함
       });
 
-      return { user: result.data.getMyInfo };
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Unauthorized");
+        }
+        throw new Error("Failed to fetch user");
+      }
+
+      const result = await response.json();
+      return { user: result.user };
     },
-    enabled:
-      mounted &&
-      typeof window !== "undefined" &&
-      !!localStorage.getItem("token"),
+    enabled: mounted,
     staleTime: 1000 * 60 * 5, // 5분
-    retry: false,
+    retry: (failureCount, error) => {
+      // 401 에러는 재시도하지 않음
+      if (error?.message === "Unauthorized") {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    initialData: initialUser ? { user: initialUser } : undefined,
   });
 
-  // 사용자 정보 업데이트
-  useEffect(() => {
-    if (data?.user) {
-      setUser(data.user);
-    } else if (!isLoading && mounted) {
-      setUser(null);
-    }
-  }, [data, isLoading, mounted]);
+  const user = data?.user || null;
 
-  const login = (token: string, userData?: User) => {
-    localStorage.setItem("token", token);
-    if (userData) {
-      setUser(userData);
-    }
-    // 토큰 저장 후 사용자 정보 다시 가져오기
+  const login = (userData: User) => {
+    // 사용자 데이터를 즉시 캐시에 설정
+    queryClient.setQueryData(["auth", "user"], { user: userData });
+
+    // 백그라운드에서 최신 정보 가져오기
     setTimeout(() => {
       refetch();
     }, 100);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    // Apollo 캐시 초기화
-    client.clearStore();
+  const logout = async () => {
+    try {
+      // 서버에 로그아웃 요청
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("로그아웃 요청 실패:", error);
+    } finally {
+      // 클라이언트 상태 완전 초기화
+      queryClient.clear(); // React Query 캐시 완전 삭제
+      client.clearStore(); // Apollo 캐시 완전 삭제
+
+      // 페이지 강제 새로고침으로 모든 상태 초기화
+      window.location.href = "/";
+    }
   };
 
   const refetchUser = () => {
@@ -91,7 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value: AuthContextType = {
     user,
-    isAuthenticated: !!user && !!localStorage.getItem("token"),
+    isAuthenticated: !!user,
     isLoading: isLoading && mounted,
     login,
     logout,

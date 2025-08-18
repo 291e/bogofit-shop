@@ -66,6 +66,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "img.echosting.cafe24.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };

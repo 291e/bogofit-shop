@@ -163,6 +163,7 @@ export const CREATE_ACCOUNT = gql`
     createAccount(userId: $userId, password: $password, email: $email) {
       success
       message
+      id
       user {
         id
         userId

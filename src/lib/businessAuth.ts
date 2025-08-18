@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireBusinessAuth } from "./jwt-server";
 
 // 테스트용 고정 브랜드 ID (개발 편의성을 위해)
 const FIXED_BRAND_ID = 1;
@@ -84,27 +85,107 @@ export async function getFixedBusinessUser(): Promise<
 }
 
 /**
- * Business API에서 사용하는 단순화된 인증 체크 함수
+ * Business API에서 사용하는 JWT 기반 인증 체크 함수
  * @returns [BusinessUser | null, NextResponse | null]
  */
-export async function checkBusinessAuth(): Promise<
-  [BusinessUser | null, NextResponse | null]
-> {
-  const authResult = await getFixedBusinessUser();
+export async function checkBusinessAuth(
+  request: NextRequest
+): Promise<[BusinessUser | null, NextResponse | null]> {
+  const [jwtUser, errorResponse] = await requireBusinessAuth(request);
 
-  // 실패 시 에러 응답 반환
-  if ("error" in authResult) {
+  if (errorResponse) {
+    return [null, errorResponse];
+  }
+
+  if (!jwtUser) {
     return [
       null,
       NextResponse.json(
-        { error: authResult.error },
-        { status: authResult.status }
+        { error: "인증되지 않은 사용자입니다" },
+        { status: 401 }
       ),
     ];
   }
 
-  // 성공 시 사용자 정보 반환
-  return [authResult, null];
+  try {
+    // DB에서 사용자 정보 조회 (브랜드 정보 포함)
+    const user = await prisma.user.findUnique({
+      where: { id: jwtUser.userId },
+      include: {
+        brand: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            status: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return [
+        null,
+        NextResponse.json(
+          { error: "사용자를 찾을 수 없습니다" },
+          { status: 404 }
+        ),
+      ];
+    }
+
+    // 사업자가 아니면 에러
+    if (!user.isBusiness) {
+      return [
+        null,
+        NextResponse.json({ error: "사업자 계정이 아닙니다" }, { status: 403 }),
+      ];
+    }
+
+    // 브랜드가 없으면 자동 생성
+    let brand = user.brand;
+    if (!brand) {
+      console.log(`[BusinessAuth] 사용자 ${user.id}용 브랜드 자동 생성`);
+      brand = await createBrandForUser(user.id, user.name || user.userId);
+
+      // 사용자에게 브랜드 연결
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { brandId: brand.id },
+      });
+
+      console.log(
+        `[BusinessAuth] 브랜드 연결 완료: ${brand.name} (ID: ${brand.id})`
+      );
+    }
+
+    const businessUser: BusinessUser = {
+      id: user.id,
+      userId: user.userId,
+      name: user.name || user.userId,
+      email: user.email,
+      isBusiness: user.isBusiness,
+      brandId: brand.id,
+      brand: {
+        id: brand.id,
+        name: brand.name,
+        slug: brand.slug,
+        status: brand.status,
+        isActive: brand.isActive,
+      },
+    };
+
+    return [businessUser, null];
+  } catch (error) {
+    console.error("[BusinessAuth] 인증 처리 중 오류:", error);
+    return [
+      null,
+      NextResponse.json(
+        { error: "인증 처리 중 오류가 발생했습니다" },
+        { status: 500 }
+      ),
+    ];
+  }
 }
 
 /**
@@ -284,7 +365,39 @@ export async function getUserBusinessInfo(
 }
 
 /**
- * 헤더 기반 비즈니스 인증 체크
+ * JWT 쿠키 기반 비즈니스 인증 체크 (새로운 방식)
+ */
+export async function checkJwtBusinessAuth(
+  request: NextRequest
+): Promise<[BusinessUser | null, NextResponse | null]> {
+  const [jwtUser, errorResponse] = await requireBusinessAuth(request);
+
+  if (errorResponse) {
+    return [null, errorResponse];
+  }
+
+  // JWT 사용자 정보를 BusinessUser 형태로 변환
+  const businessUser: BusinessUser = {
+    id: jwtUser!.userId,
+    userId: jwtUser!.userId,
+    name: jwtUser!.name,
+    email: jwtUser!.email,
+    isBusiness: jwtUser!.isBusiness,
+    brandId: jwtUser!.brandId || 0,
+    brand: {
+      id: jwtUser!.brandId || 0,
+      name: "브랜드", // 실제로는 DB에서 조회해야 함
+      slug: "brand-slug",
+      status: "APPROVED",
+      isActive: true,
+    },
+  };
+
+  return [businessUser, null];
+}
+
+/**
+ * 헤더 기반 비즈니스 인증 체크 (기존 방식 - 호환성 유지)
  */
 export async function checkHeaderBusinessAuth(
   request: NextRequest

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkHeaderBusinessAuth } from "@/lib/businessAuth";
+import { checkBusinessAuth } from "@/lib/businessAuth";
 
 /**
  * @swagger
@@ -45,7 +45,7 @@ import { checkHeaderBusinessAuth } from "@/lib/businessAuth";
  */
 export async function GET(request: NextRequest) {
   try {
-    const [user, errorResponse] = await checkHeaderBusinessAuth(request);
+    const [user, errorResponse] = await checkBusinessAuth(request);
     if (errorResponse) return errorResponse;
 
     const brand = await prisma.brand.findUnique({
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const [user, errorResponse] = await checkHeaderBusinessAuth(request);
+    const [user, errorResponse] = await checkBusinessAuth(request);
     if (errorResponse) return errorResponse;
 
     const body = await request.json();

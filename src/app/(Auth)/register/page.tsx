@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useMutation } from "@apollo/client";
-import { CREATE_ACCOUNT } from "@/graphql/mutations";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 import { useRegisterForm } from "@/hooks/useRegisterForm";
 import { useEmailVerification } from "@/hooks/useEmailVerification";
@@ -24,15 +23,15 @@ type RegisterStep =
 
 type VerificationMethod = "email" | "sms";
 
-interface TermsAgreement {
+type TermsAgreement = {
   terms: boolean;
   privacy: boolean;
   marketing: boolean;
-}
+};
 
 function RegisterPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const { login } = useAuth();
 
   // Custom Hooks
   const { formData, updateField, validateForm } = useRegisterForm();
@@ -45,7 +44,6 @@ function RegisterPageContent() {
     success: emailSuccess,
     setVerificationCode,
     sendVerificationEmail,
-    verifyEmailCode,
   } = useEmailVerification();
 
   // UI 상태
@@ -66,90 +64,91 @@ function RegisterPageContent() {
 
   const hasAgreedToTerms = termsAgreement.terms && termsAgreement.privacy;
 
-  // GraphQL Mutation
-  const [createAccount] = useMutation(CREATE_ACCOUNT, {
-    onCompleted: async (data) => {
-      if (data?.createAccount?.success) {
-        await saveAdditionalUserInfo(data.createAccount.user?.id);
-        setStep("success");
-        setSuccess("🎉 회원가입이 완료되었습니다! 환영합니다!");
-        setError("");
-        // 3초 후 로그인 페이지로 이동
-        setTimeout(() => {
-          router.replace("/login");
-        }, 3000);
-      } else {
-        setError(data?.createAccount?.message || "회원가입에 실패했습니다.");
-        setSuccess("");
-      }
-      setLoading(false);
-    },
-    onError: (err) => {
-      setError(err.message || "회원가입 중 오류가 발생했습니다.");
-      setSuccess("");
-      setLoading(false);
-    },
-  });
-
-  // 추가 사용자 정보 저장 (뮤테이션 외 정보들)
-  const saveAdditionalUserInfo = async (userId: string) => {
+  // 회원가입 처리 함수
+  const handleCreateAccount = useCallback(async () => {
     try {
-      // TODO: 추가 정보를 저장하는 API 또는 GraphQL 뮤테이션 호출
-      console.log("추가 사용자 정보:", {
-        userId,
-        name: formData.name,
-        phoneNumber: formData.phoneNumber,
-        gender: formData.gender,
-        birthDate: formData.birthDate,
-        profile: formData.profile,
-        zipCode: formData.zipCode,
-        address: formData.address,
-        addressDetail: formData.addressDetail,
-        termsAgreement,
-        verificationMethod: selectedVerificationMethod,
+      setLoading(true);
+      setError("");
+
+      console.log("[회원가입] 자체 API 호출 시작");
+
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          userId: formData.userId,
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          phoneNumber: formData.phoneNumber,
+          gender: formData.gender,
+          birthDate: formData.birthDate,
+          profile: formData.profile,
+          zipCode: formData.zipCode,
+          address: formData.address,
+          addressDetail: formData.addressDetail,
+          termsAgreement,
+          verificationMethod: selectedVerificationMethod,
+        }),
       });
-    } catch (error) {
-      console.error("추가 정보 저장 실패:", error);
-    }
-  };
 
-  // 회원가입 실행
-  const handleCreateAccount = useCallback(() => {
-    setLoading(true);
-    createAccount({
-      variables: {
-        userId: formData.userId,
-        email: formData.email,
-        password: formData.password,
-      },
-    });
-  }, [createAccount, formData.userId, formData.email, formData.password]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "회원가입에 실패했습니다");
+      }
 
-  // 이메일 링크를 통한 인증 완료 처리
-  useEffect(() => {
-    const verified = searchParams.get("verified");
-    if (verified === "true" && step === "form") {
-      console.log("📧 이메일 링크를 통한 인증 완료 감지");
-      setSelectedVerificationMethod("email");
-      setStep("email-verification");
-      setSuccess("✅ 이메일 인증이 완료되었습니다! 회원가입을 진행합니다.");
+      const result = await response.json();
+      console.log("[회원가입] 성공:", result.message);
 
-      // 1초 후 자동으로 회원가입 진행
+      // 자동 로그인 처리 (API에서 쿠키가 설정됨)
+      if (result.user) {
+        await login(result.user);
+      }
+
+      setStep("success");
+      setSuccess("🎉 회원가입이 완료되었습니다! 환영합니다!");
+
+      // 3초 후 홈페이지로 이동
       setTimeout(() => {
-        handleCreateAccount();
-      }, 1000);
+        window.location.href = "/";
+      }, 3000);
+    } catch (error) {
+      console.error("[회원가입] 실패:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "회원가입 중 오류가 발생했습니다"
+      );
+    } finally {
+      setLoading(false);
     }
-  }, [searchParams, step, handleCreateAccount]);
+  }, [formData, termsAgreement, selectedVerificationMethod, login]);
 
-  // 폼 제출 핸들러
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
+  // URL 파라미터에서 초기 단계 설정
+  useEffect(() => {
+    const stepParam = searchParams.get("step");
+    if (
+      stepParam &&
+      [
+        "form",
+        "verification-choice",
+        "email-verification",
+        "sms-verification",
+        "success",
+      ].includes(stepParam)
+    ) {
+      setStep(stepParam as RegisterStep);
+    }
+  }, [searchParams]);
 
+  // 단계별 핸들러
+  const handleFormSubmit = useCallback(() => {
     const validation = validateForm();
     if (!validation.isValid) {
-      setError(validation.errors[0]);
+      setError("입력 정보를 확인해주세요.");
       return;
     }
 
@@ -158,263 +157,196 @@ function RegisterPageContent() {
       return;
     }
 
-    // 기본 정보 입력 완료 → 인증 방식 선택 단계로 이동
+    setError("");
     setStep("verification-choice");
-    setSuccess("기본 정보 입력이 완료되었습니다. 인증 방식을 선택해주세요.");
-  };
+  }, [validateForm, hasAgreedToTerms]);
 
-  // 인증 방식 선택 핸들러
-  const handleVerificationMethodSelect = (method: VerificationMethod) => {
+  const handleVerificationChoice = useCallback((method: VerificationMethod) => {
     setSelectedVerificationMethod(method);
     if (method === "email") {
       setStep("email-verification");
     } else {
       setStep("sms-verification");
     }
-  };
+  }, []);
 
-  // 이메일 인증 코드 전송
-  const handleSendVerification = async () => {
-    await sendVerificationEmail(formData.email, formData.name, formData.userId);
-  };
+  const handleEmailVerified = useCallback(() => {
+    console.log("이메일 인증 완료, 회원가입 진행");
+    handleCreateAccount();
+  }, [handleCreateAccount]);
 
-  // 이메일 인증 코드 확인
-  const handleVerifyCode = async () => {
-    const success = await verifyEmailCode(formData.email, verificationCode);
-    if (success) {
-      // 인증 완료 후 회원가입 진행
-      setTimeout(() => {
-        handleCreateAccount();
-      }, 1000);
-    }
-  };
-
-  // SMS 인증 완료 핸들러
-  const handleSmsVerified = (phoneNumber: string) => {
-    console.log("📱 SMS 인증 완료:", phoneNumber);
-    // 전화번호 정보 업데이트
-    updateField("phoneNumber", phoneNumber);
-
-    // 인증 완료 후 회원가입 진행
+  const handleSmsVerified = useCallback(() => {
+    console.log("SMS 인증 완료, 회원가입 진행");
     setTimeout(() => {
       handleCreateAccount();
-    }, 1000);
-  };
+    }, 500);
+  }, [handleCreateAccount]);
 
-  // 약관 동의 핸들러
-  const handleTermsAgree = (agreements: TermsAgreement) => {
-    setTermsAgreement(agreements);
-  };
+  const handleGoBack = useCallback(() => {
+    switch (step) {
+      case "verification-choice":
+        setStep("form");
+        break;
+      case "email-verification":
+      case "sms-verification":
+        setStep("verification-choice");
+        break;
+      default:
+        setStep("form");
+    }
+  }, [step]);
 
-  // 단계별 제목과 설명
-  const getStepInfo = () => {
+  // 렌더링
+  const renderStep = () => {
     switch (step) {
       case "form":
-        return {
-          title: "회원가입",
-          description: "BOGOFIT에 오신 것을 환영합니다",
-        };
-      case "verification-choice":
-        return {
-          title: "인증 방식 선택",
-          description: "본인 확인을 위한 인증 방식을 선택해주세요",
-        };
-      case "email-verification":
-        return {
-          title: "이메일 인증",
-          description: "회원가입을 완료하려면 이메일 인증이 필요합니다",
-        };
-      case "sms-verification":
-        return {
-          title: "휴대폰 인증",
-          description: "회원가입을 완료하려면 휴대폰 인증이 필요합니다",
-        };
-      case "success":
-        return {
-          title: "회원가입 완료",
-          description: "환영합니다! 곧 로그인 페이지로 이동합니다",
-        };
-    }
-  };
-
-  const stepInfo = getStepInfo();
-  const currentLoading = loading || emailLoading;
-  const currentError = error || emailError;
-  const currentSuccess = success || emailSuccess;
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* 헤더 */}
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {stepInfo.title}
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            {stepInfo.description}
-          </p>
-
-          {/* 진행 단계 표시 */}
-          <div className="mt-4 flex justify-center">
-            <div className="flex space-x-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  step === "form" ? "bg-indigo-600" : "bg-gray-300"
-                }`}
-              />
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  step === "verification-choice" ||
-                  step === "email-verification" ||
-                  step === "sms-verification"
-                    ? "bg-indigo-600"
-                    : "bg-gray-300"
-                }`}
-              />
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  step === "success" ? "bg-indigo-600" : "bg-gray-300"
-                }`}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 단계별 컴포넌트 렌더링 */}
-        {step === "form" && (
+        return (
           <RegisterFormStep
             formData={formData}
             updateField={updateField}
             onSubmit={handleFormSubmit}
-            loading={currentLoading}
-            error={currentError}
-            success={currentSuccess}
             onTermsClick={() => setTermsModalOpen(true)}
             hasAgreedToTerms={hasAgreedToTerms}
+            loading={loading}
+            error={error}
+            success={success}
           />
-        )}
+        );
 
-        {step === "verification-choice" && (
+      case "verification-choice":
+        return (
           <div className="space-y-6">
-            {/* 에러 메시지 */}
-            {currentError && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <p className="text-sm text-red-600">{currentError}</p>
-              </div>
-            )}
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                본인 인증 방법 선택
+              </h2>
+              <p className="text-gray-600 mb-8">
+                회원가입을 완료하기 위해 본인 인증을 진행해주세요.
+              </p>
+            </div>
 
-            {/* 성공 메시지 */}
-            {currentSuccess && (
-              <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                <p className="text-sm text-green-600">{currentSuccess}</p>
-              </div>
-            )}
-
-            {/* 인증 방식 선택 */}
             <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                {/* 이메일 인증 버튼 */}
-                <button
-                  onClick={() => handleVerificationMethodSelect("email")}
-                  className="flex items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
-                >
-                  <div className="text-center">
-                    <div className="text-2xl mb-2">📧</div>
-                    <div className="font-medium text-gray-900">이메일 인증</div>
-                    <div className="text-sm text-gray-600">
-                      {formData.email}로 인증 코드 발송
-                    </div>
-                  </div>
-                </button>
-
-                {/* 휴대폰 인증 버튼 */}
-                <button
-                  onClick={() => handleVerificationMethodSelect("sms")}
-                  className="flex items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
-                >
-                  <div className="text-center">
-                    <div className="text-2xl mb-2">📱</div>
-                    <div className="font-medium text-gray-900">휴대폰 인증</div>
-                    <div className="text-sm text-gray-600">
-                      SMS로 인증 코드 발송
-                    </div>
-                  </div>
-                </button>
-              </div>
-
-              {/* 뒤로가기 버튼 */}
               <button
-                onClick={() => setStep("form")}
-                className="w-full text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2 justify-center"
+                onClick={() => handleVerificationChoice("email")}
+                className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
               >
-                <ArrowLeft className="w-4 h-4" />
-                기본 정보 입력으로 돌아가기
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">이메일 인증</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {formData.email}로 인증 코드를 발송합니다.
+                    </p>
+                  </div>
+                  <div className="text-blue-500">📧</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleVerificationChoice("sms")}
+                className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">SMS 인증</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      휴대폰 번호로 인증 코드를 발송합니다.
+                    </p>
+                  </div>
+                  <div className="text-green-500">📱</div>
+                </div>
               </button>
             </div>
-          </div>
-        )}
 
-        {step === "email-verification" && (
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+                {error}
+              </div>
+            )}
+          </div>
+        );
+
+      case "email-verification":
+        return (
           <EmailVerificationStep
             email={formData.email}
-            verificationCode={verificationCode}
-            setVerificationCode={setVerificationCode}
             isEmailSent={isEmailSent}
             isEmailVerified={isEmailVerified}
-            loading={currentLoading}
-            error={currentError}
-            success={currentSuccess}
-            onSendVerification={handleSendVerification}
-            onVerifyCode={handleVerifyCode}
-            onGoBack={() => setStep("verification-choice")}
+            verificationCode={verificationCode}
+            setVerificationCode={setVerificationCode}
+            onSendVerification={() =>
+              sendVerificationEmail(
+                formData.email,
+                formData.name,
+                formData.userId
+              )
+            }
+            onVerifyCode={handleEmailVerified}
+            onGoBack={handleGoBack}
+            loading={emailLoading}
+            error={emailError}
+            success={emailSuccess}
           />
-        )}
+        );
 
-        {step === "sms-verification" && (
-          <div className="space-y-4">
-            {/* 에러 메시지 */}
-            {currentError && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <p className="text-sm text-red-600">{currentError}</p>
-              </div>
-            )}
+      case "sms-verification":
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                휴대폰 인증
+              </h2>
+              <p className="text-gray-600 mb-8">
+                휴대폰 번호로 인증 코드를 발송하여 본인 확인을 진행합니다.
+              </p>
+            </div>
 
-            {/* 성공 메시지 */}
-            {currentSuccess && (
-              <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                <p className="text-sm text-green-600">{currentSuccess}</p>
-              </div>
-            )}
-
-            {/* SMS 인증 컴포넌트 */}
             <SmsVerification
-              purpose="signup"
+              phoneNumber={formData.phoneNumber}
               onVerified={handleSmsVerified}
               onError={(error) => setError(error)}
-              showPhoneInput={true}
-              autoFocus={true}
             />
 
-            {/* 뒤로가기 버튼 */}
-            <button
-              onClick={() => setStep("verification-choice")}
-              className="w-full text-sm text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2 justify-center"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              인증 방식 선택으로 돌아가기
-            </button>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+                {error}
+              </div>
+            )}
           </div>
-        )}
+        );
 
-        {step === "success" && <RegisterSuccessStep success={currentSuccess} />}
+      case "success":
+        return <RegisterSuccessStep success={success} />;
 
-        {/* 약관 동의 모달 */}
-        <TermsAgreementModal
-          open={termsModalOpen}
-          onOpenChange={setTermsModalOpen}
-          onAgree={handleTermsAgree}
-          initialAgreements={termsAgreement}
-        />
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {/* 뒤로가기 버튼 */}
+          {step !== "form" && step !== "success" && (
+            <button
+              onClick={handleGoBack}
+              className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              뒤로가기
+            </button>
+          )}
+
+          {renderStep()}
+
+          {/* 약관 동의 모달 */}
+          <TermsAgreementModal
+            open={termsModalOpen}
+            onOpenChange={setTermsModalOpen}
+            onAgree={setTermsAgreement}
+            initialAgreements={termsAgreement}
+          />
+        </div>
       </div>
     </div>
   );
@@ -424,11 +356,8 @@ export default function RegisterPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">페이지를 불러오는 중...</p>
-          </div>
+        <div className="min-h-screen flex items-center justify-center">
+          로딩 중...
         </div>
       }
     >

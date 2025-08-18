@@ -46,9 +46,8 @@ export default function Header() {
     };
   }, [open]);
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = "/";
+  const handleLogout = async () => {
+    await logout(); // logout 함수에서 이미 window.location.href = "/" 처리됨
   };
 
   // 디버깅 로그 (필요시에만 사용)
@@ -306,8 +305,8 @@ export default function Header() {
                       마이페이지
                     </Link>
                     <button
-                      onClick={() => {
-                        handleLogout();
+                      onClick={async () => {
+                        await handleLogout();
                         setOpen(false);
                       }}
                       className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors w-full text-left"

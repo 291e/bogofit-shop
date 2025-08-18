@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useUser } from "@/hooks/useUser";
+import { useAuth } from "@/hooks/useAuth";
 import { useAddress } from "@/hooks/useAddress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ interface DaumPostcodeData {
 export default function OrderPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user } = useUser();
+  const { user } = useAuth();
   const {
     addresses,
     loading: addressLoading,
