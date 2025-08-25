@@ -14,26 +14,27 @@ interface Cafe24BestSellersProps {
 export function Cafe24BestSellers({ products }: Cafe24BestSellersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // 반응형 첫 줄 개수 계산
-  const getFirstRowCount = () => {
-    if (typeof window === "undefined") return 6; // SSR 기본값
+  // Hydration 안전한 반응형 계산
+  const [firstRowCount, setFirstRowCount] = useState(6); // 서버와 클라이언트 동일한 초기값
 
-    const width = window.innerWidth;
-    if (width < 640) return 2; // 모바일: 2열
-    if (width < 1024) return 3; // 태블릿: 3열
-    return 6; // 데스크톱: 6열
-  };
-
-  const [firstRowCount, setFirstRowCount] = useState(getFirstRowCount);
-
-  // 윈도우 리사이즈 이벤트 처리
   React.useEffect(() => {
-    const handleResize = () => {
+    const getFirstRowCount = () => {
+      const width = window.innerWidth;
+      if (width < 640) return 2; // 모바일: 2열
+      if (width < 1024) return 3; // 태블릿: 3열
+      return 6; // 데스크톱: 6열
+    };
+
+    const updateFirstRowCount = () => {
       setFirstRowCount(getFirstRowCount());
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    // 초기 설정
+    updateFirstRowCount();
+
+    // 리사이즈 이벤트 처리
+    window.addEventListener("resize", updateFirstRowCount);
+    return () => window.removeEventListener("resize", updateFirstRowCount);
   }, []);
 
   // 표시할 상품 계산
@@ -95,8 +96,8 @@ export function Cafe24BestSellers({ products }: Cafe24BestSellersProps) {
                       index === 0
                         ? "bg-yellow-500"
                         : index === 1
-                        ? "bg-gray-400"
-                        : "bg-amber-600"
+                          ? "bg-gray-400"
+                          : "bg-amber-600"
                     }
                   `}
                   >

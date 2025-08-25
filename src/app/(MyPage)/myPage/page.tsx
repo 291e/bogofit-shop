@@ -4,7 +4,23 @@ import { useSearchParams } from "next/navigation";
 import OrderHistory from "@/components/myPage/OrderHistory";
 import CouponList from "@/components/myPage/CouponList";
 import AddressBook from "@/components/myPage/AddressBook";
-import RecentProducts from "@/components/myPage/RecentProducts";
+import dynamic from "next/dynamic";
+
+// 클라이언트에서만 렌더링되는 컴포넌트들
+const RecentProducts = dynamic(
+  () => import("@/components/myPage/RecentProducts"),
+  {
+    ssr: false,
+    loading: () => (
+      <div>
+        <h2 className="text-xl font-bold mb-6">최근 본 상품</h2>
+        <div className="text-center text-gray-500 py-8">
+          최근 본 상품을 불러오는 중...
+        </div>
+      </div>
+    ),
+  }
+);
 import Cart from "@/components/myPage/Cart";
 import ProfileEditLink from "@/components/myPage/ProfileEditLink";
 import LogoutButton from "@/components/myPage/LogoutButton";

@@ -8,8 +8,12 @@ import Image from "next/image";
 
 export default function RecentProducts() {
   const [products, setProducts] = useState<RecentProduct[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // 클라이언트 마운트 확인
+    setIsClient(true);
+
     // 로컬스토리지에서 productId 배열 읽기
     const ids = JSON.parse(
       localStorage.getItem("recentProductIds") || "[]"
@@ -20,6 +24,18 @@ export default function RecentProducts() {
       .filter(Boolean) as RecentProduct[];
     setProducts(list);
   }, []);
+
+  // 클라이언트 마운트 전에는 로딩 상태 표시
+  if (!isClient) {
+    return (
+      <div>
+        <h2 className="text-xl font-bold mb-6">최근 본 상품</h2>
+        <div className="text-center text-gray-500 py-8">
+          최근 본 상품을 불러오는 중...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

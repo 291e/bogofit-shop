@@ -7,25 +7,18 @@ import bcrypt from "bcryptjs";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      userId,
-      password,
-      isBusiness = false,
-      userInfo,
-      graphqlToken,
-    } = body;
+    const { userId, password, isBusiness = false, graphqlToken } = body;
 
     console.log("[Auth Login] 요청 데이터:", {
       userId,
       passwordLength: password?.length,
       isBusiness,
-      hasUserInfo: !!userInfo,
       hasGraphqlToken: !!graphqlToken,
     });
 
-    if (!userId && !graphqlToken) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "아이디 또는 토큰이 필요합니다" },
+        { error: "아이디가 필요합니다" },
         { status: 400 }
       );
     }
@@ -37,29 +30,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // GraphQL 로그인 성공 시 토큰을 검증하고 사용자 정보 추출
+    // GraphQL 토큰을 통한 로그인 처리
     if (password === "graphql" && graphqlToken) {
-      console.log("[Auth Login] GraphQL 토큰 검증 시작");
+      console.log("[Auth Login] GraphQL 토큰 처리 시작");
 
-      // GraphQL 토큰 디코딩 (검증 없이 구조 확인)
       const decodedPayload = decodeGraphQLToken(graphqlToken);
       console.log("[Auth Login] 디코딩된 토큰 페이로드:", decodedPayload);
 
       if (!decodedPayload || !decodedPayload.id) {
-        console.log("[Auth Login] 토큰 디코딩 실패 또는 사용자 ID 없음");
+        console.log("[Auth Login] 토큰 디코딩 실패");
         return NextResponse.json(
           { error: "유효하지 않은 토큰입니다" },
           { status: 401 }
         );
       }
 
-      const userId = decodedPayload.id;
-
-      console.log("[Auth Login] 토큰에서 추출한 사용자 ID:", userId);
-
       // 토큰의 사용자 ID로 DB에서 사용자 정보 조회
       const user = await prisma.user.findUnique({
-        where: { id: userId },
+        where: { id: decodedPayload.id },
         include: {
           brand: {
             select: {
@@ -73,24 +61,15 @@ export async function POST(request: NextRequest) {
       });
 
       if (!user) {
-        console.log("[Auth Login] 사용자를 찾을 수 없음:", userId);
-        console.log(
-          "[Auth Login] 회원가입이 완료되지 않았거나 DB 동기화 문제일 수 있습니다."
-        );
+        console.log("[Auth Login] GraphQL 토큰의 사용자를 찾을 수 없음");
         return NextResponse.json(
-          { error: "사용자를 찾을 수 없습니다. 회원가입을 먼저 완료해주세요." },
+          { error: "사용자를 찾을 수 없습니다" },
           { status: 401 }
         );
       }
 
-      console.log("[Auth Login] 사용자 조회 성공:", {
-        userId: user.userId,
-        email: user.email,
-        isBusiness: user.isBusiness,
-      });
-
-      // 새로운 JWT 토큰 생성 (현재 프로젝트 형식에 맞게)
-      const newToken = await createJWT({
+      // JWT 토큰 생성 및 응답
+      const token = await createJWT({
         userId: user.id,
         email: user.email,
         name: user.name || user.userId,
@@ -98,7 +77,6 @@ export async function POST(request: NextRequest) {
         brandId: user.brand?.id,
       });
 
-      // 응답 생성 및 쿠키 설정
       const response = NextResponse.json({
         success: true,
         message: "로그인 성공",
@@ -112,11 +90,11 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      setAuthCookie(response, newToken);
+      setAuthCookie(response, token);
       return response;
     }
 
-    // 일반적인 로그인 처리 (DB 조회 필요)
+    // Prisma 직접 로그인 처리
     console.log("[Auth Login] 사용자 조회 시작:", userId);
     const user = await prisma.user.findFirst({
       where: {
@@ -151,11 +129,57 @@ export async function POST(request: NextRequest) {
 
     // 비밀번호 검증 (OAuth 로그인은 특수 플래그로 스킵)
     if (password !== "oauth") {
-      const isValidPassword = await bcrypt.compare(
-        password,
-        user.password || ""
-      );
+      console.log("[Auth Login] 비밀번호 검증 시작:", {
+        inputPassword: password,
+        hasStoredPassword: !!user.password,
+        storedPasswordLength: user.password?.length,
+        isPasswordHashed:
+          user.password?.startsWith("$2b$") ||
+          user.password?.startsWith("$2a$"),
+      });
+
+      if (!user.password) {
+        console.log(
+          "[Auth Login] 저장된 비밀번호가 없음 - GraphQL 로그인 필요"
+        );
+        return NextResponse.json(
+          {
+            error: "GraphQL_LOGIN_REQUIRED",
+            message: "GraphQL 로그인이 필요한 계정입니다",
+          },
+          { status: 422 } // Unprocessable Entity - GraphQL로 재시도 필요
+        );
+      }
+
+      let isValidPassword = false;
+
+      // bcrypt 해시인지 확인
+      if (
+        user.password.startsWith("$2b$") ||
+        user.password.startsWith("$2a$")
+      ) {
+        // bcrypt 해시와 비교
+        isValidPassword = await bcrypt.compare(password, user.password);
+        console.log("[Auth Login] bcrypt 검증 결과:", isValidPassword);
+      } else {
+        // 평문 비밀번호와 직접 비교 (레거시 지원)
+        isValidPassword = password === user.password;
+        console.log("[Auth Login] 평문 검증 결과:", isValidPassword);
+
+        // 로그인 성공 시 비밀번호를 bcrypt로 업그레이드
+        if (isValidPassword) {
+          console.log("[Auth Login] 평문 비밀번호를 bcrypt로 업그레이드 중...");
+          const hashedPassword = await bcrypt.hash(password, 12);
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
+          });
+          console.log("[Auth Login] 비밀번호 업그레이드 완료");
+        }
+      }
+
       if (!isValidPassword) {
+        console.log("[Auth Login] 비밀번호 불일치 - 로그인 실패");
         return NextResponse.json(
           { error: "비밀번호가 일치하지 않습니다" },
           { status: 401 }

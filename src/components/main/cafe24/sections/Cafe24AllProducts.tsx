@@ -17,26 +17,27 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
   const [page, setPage] = useState(2); // 페이지 3부터 무한 스크롤 시작
   const observerRef = useRef<HTMLDivElement>(null);
 
-  // 반응형 열 개수 계산
-  const getColumnsCount = () => {
-    if (typeof window === "undefined") return 6; // SSR 기본값
+  // Hydration 안전한 반응형 계산
+  const [columnsCount, setColumnsCount] = useState(6); // 서버와 클라이언트 동일한 초기값
 
-    const width = window.innerWidth;
-    if (width < 640) return 2; // 모바일: 2열
-    if (width < 1024) return 3; // 태블릿: 3열
-    return 6; // 데스크톱: 6열
-  };
-
-  const [columnsCount, setColumnsCount] = useState(getColumnsCount);
-
-  // 윈도우 리사이즈 이벤트 처리
   useEffect(() => {
-    const handleResize = () => {
+    const getColumnsCount = () => {
+      const width = window.innerWidth;
+      if (width < 640) return 2; // 모바일: 2열
+      if (width < 1024) return 3; // 태블릿: 3열
+      return 6; // 데스크톱: 6열
+    };
+
+    const updateColumnsCount = () => {
       setColumnsCount(getColumnsCount());
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    // 초기 설정
+    updateColumnsCount();
+
+    // 리사이즈 이벤트 처리
+    window.addEventListener("resize", updateColumnsCount);
+    return () => window.removeEventListener("resize", updateColumnsCount);
   }, []);
 
   // 다음 페이지 데이터 로드 함수

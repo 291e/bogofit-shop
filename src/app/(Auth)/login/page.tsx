@@ -45,8 +45,7 @@ function LoginPage() {
   const [brandInquiryOpen, setBrandInquiryOpen] = useState(false);
 
   const [loginMutation] = useMutation(LOGIN);
-
-  // 일반 사용자 로그인
+  // 일반 사용자 로그인 (Prisma 우선 + GraphQL 보조)
   const handleUserLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -59,18 +58,9 @@ function LoginPage() {
     }
 
     try {
-      // 1단계: GraphQL LOGIN 뮤테이션으로 사용자 검증 및 DB 저장
-      const { data } = await loginMutation({
-        variables: { userId, password },
-      });
+      console.log("[Login] 1단계: Prisma 직접 로그인 시도");
 
-      if (!data?.login?.success) {
-        setError(data?.login?.message || "로그인에 실패했습니다.");
-        setLoading(false);
-        return;
-      }
-
-      // 2단계: 자체 로그인 API로 JWT 쿠키 설정 (GraphQL 토큰 사용)
+      // 1단계: Prisma 직접 로그인 시도
       const loginResponse = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -78,29 +68,84 @@ function LoginPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          graphqlToken: data.login.token, // GraphQL에서 반환된 토큰 사용
-          password: "graphql", // GraphQL 로그인 성공 플래그
+          userId,
+          password,
           isBusiness: false,
         }),
       });
 
-      if (!loginResponse.ok) {
-        const errorData = await loginResponse.json();
-        setError(errorData.error || "로그인 처리 중 오류가 발생했습니다.");
-        setLoading(false);
+      if (loginResponse.ok) {
+        console.log("[Login] Prisma 로그인 성공");
+        const loginData = await loginResponse.json();
+        authLogin(loginData.user);
+
+        const redirectPath = searchParams.get("redirect") || "/";
+        window.location.href = redirectPath;
         return;
       }
 
-      const loginData = await loginResponse.json();
+      // 422 상태 코드 (GraphQL 로그인 필요) 또는 다른 실패 시 GraphQL 보조 로그인 시도
+      const errorData = await loginResponse.json();
+      const shouldTryGraphQL =
+        loginResponse.status === 422 ||
+        errorData.error === "GraphQL_LOGIN_REQUIRED";
 
-      // 3단계: AuthProvider에 사용자 정보 설정
-      authLogin(loginData.user);
+      console.log("[Login] 2단계: GraphQL 보조 로그인 시도", {
+        status: loginResponse.status,
+        shouldTryGraphQL,
+        error: errorData.error,
+      });
 
-      // redirect 파라미터가 있으면 해당 경로로, 없으면 메인 페이지로
-      const redirectPath = searchParams.get("redirect") || "/";
+      try {
+        const { data } = await loginMutation({
+          variables: { userId, password },
+        });
 
-      // 강력한 새로고침으로 완전한 상태 초기화
-      window.location.href = redirectPath;
+        if (data?.login?.success && data.login.token) {
+          console.log("[Login] GraphQL 로그인 성공, JWT 쿠키 설정 중");
+
+          // GraphQL 성공 시 자체 API로 JWT 쿠키 설정
+          const jwtResponse = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              graphqlToken: data.login.token,
+              password: "graphql", // GraphQL 성공 플래그
+              isBusiness: false,
+            }),
+          });
+
+          if (jwtResponse.ok) {
+            const jwtData = await jwtResponse.json();
+            authLogin(jwtData.user);
+
+            const redirectPath = searchParams.get("redirect") || "/";
+            window.location.href = redirectPath;
+            return;
+          }
+        }
+
+        // GraphQL도 실패한 경우
+        if (shouldTryGraphQL) {
+          setError("GraphQL 로그인에 실패했습니다. 계정 정보를 확인해주세요.");
+        } else {
+          setError(
+            errorData.message || errorData.error || "로그인에 실패했습니다."
+          );
+        }
+      } catch (graphqlError) {
+        console.error("[Login] GraphQL 로그인 실패:", graphqlError);
+        if (shouldTryGraphQL) {
+          setError("GraphQL 로그인 중 오류가 발생했습니다.");
+        } else {
+          setError(
+            errorData.message || errorData.error || "로그인에 실패했습니다."
+          );
+        }
+      }
     } catch (err: unknown) {
       console.error("로그인 오류:", err);
       setError("로그인 중 오류가 발생했습니다.");
@@ -138,7 +183,63 @@ function LoginPage() {
 
       if (!loginResponse.ok) {
         const errorData = await loginResponse.json();
-        setError(errorData.error || "사업자 로그인에 실패했습니다.");
+        const shouldTryGraphQL =
+          loginResponse.status === 422 ||
+          errorData.error === "GraphQL_LOGIN_REQUIRED";
+
+        if (shouldTryGraphQL) {
+          console.log("[사업자 로그인] GraphQL 보조 로그인 시도");
+
+          try {
+            const { data } = await loginMutation({
+              variables: { userId: businessUserId, password: businessPassword },
+            });
+
+            if (data?.login?.success && data.login.token) {
+              console.log("[사업자 로그인] GraphQL 성공, JWT 쿠키 설정 중");
+
+              const jwtResponse = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  graphqlToken: data.login.token,
+                  password: "graphql",
+                  isBusiness: true,
+                }),
+              });
+
+              if (jwtResponse.ok) {
+                const jwtData = await jwtResponse.json();
+
+                if (!jwtData.user?.isBusiness) {
+                  setError("사업자 계정이 아닙니다.");
+                  setLoading(false);
+                  return;
+                }
+
+                await authLogin(jwtData.user);
+                console.log("[사업자 로그인] 성공!");
+
+                // 강제 페이지 이동 (실제 환경에서 안전한 방식)
+                window.location.href = "/business";
+                return;
+              }
+            }
+
+            setError("GraphQL 사업자 로그인에 실패했습니다.");
+          } catch (graphqlError) {
+            console.error("[사업자 로그인] GraphQL 실패:", graphqlError);
+            setError("GraphQL 사업자 로그인 중 오류가 발생했습니다.");
+          }
+        } else {
+          setError(
+            errorData.message ||
+              errorData.error ||
+              "사업자 로그인에 실패했습니다."
+          );
+        }
+
         setLoading(false);
         return;
       }
@@ -159,11 +260,8 @@ function LoginPage() {
 
       console.log("[사업자 로그인] 성공!");
 
-      // 강력한 새로고침 후 사업자 페이지로 이동
-      window.location.reload();
-      setTimeout(() => {
-        window.location.href = "/business";
-      }, 100);
+      // 강제 페이지 이동 (실제 환경에서 안전한 방식)
+      window.location.href = "/business";
     } catch (err: unknown) {
       console.error("사업자 로그인 오류:", err);
       setError("사업자 로그인 중 오류가 발생했습니다.");

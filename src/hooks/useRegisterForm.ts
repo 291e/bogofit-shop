@@ -85,8 +85,8 @@ export const useRegisterForm = () => {
 
     if (!formData.password.trim()) {
       errors.push("비밀번호를 입력해주세요.");
-    } else if (formData.password.length < 6) {
-      errors.push("비밀번호는 6자 이상이어야 합니다.");
+    } else if (formData.password.length < 4) {
+      errors.push("비밀번호는 4자 이상이어야 합니다.");
     }
 
     if (!formData.confirmPassword.trim()) {
