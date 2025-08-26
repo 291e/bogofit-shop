@@ -8,12 +8,18 @@ import React, {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApolloClient } from "@apollo/client";
 import { User } from "@/graphql/types";
+import { LOGIN } from "@/graphql/mutations";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (userData: User) => void;
+  loginWithCredentials: (
+    userId: string,
+    password: string,
+    isBusiness?: boolean
+  ) => Promise<{ success: boolean; user?: User; error?: string }>;
   logout: () => Promise<void>;
   refetchUser: () => void;
 }
@@ -78,6 +84,126 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     }, 100);
   };
 
+  const loginWithCredentials = async (
+    userId: string,
+    password: string,
+    isBusiness: boolean = false
+  ): Promise<{ success: boolean; user?: User; error?: string }> => {
+    try {
+      console.log("[AuthProvider] 로그인 시도:", { userId, isBusiness });
+
+      // 1단계: 자체 로그인 시도
+      const directLoginResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          userId,
+          password,
+          isBusiness,
+        }),
+      });
+
+      const directLoginResult = await directLoginResponse.json();
+
+      // 자체 로그인 성공
+      if (directLoginResponse.ok) {
+        console.log("[AuthProvider] 자체 로그인 성공");
+        const userData = directLoginResult.user;
+        login(userData);
+        return { success: true, user: userData };
+      }
+
+      // GraphQL 로그인이 필요한 경우
+      if (directLoginResult.error === "GRAPHQL_LOGIN_REQUIRED") {
+        console.log("[AuthProvider] GraphQL 로그인 시도");
+
+        try {
+          // 2단계: GraphQL 로그인 시도
+          const graphqlResult = await client.mutate({
+            mutation: LOGIN,
+            variables: {
+              userId,
+              password,
+              deviceId: null, // 사업자 로그인은 deviceId 불필요
+            },
+          });
+
+          console.log(
+            "[AuthProvider] GraphQL 로그인 응답:",
+            graphqlResult.data?.login
+          );
+
+          if (
+            graphqlResult.data?.login?.success &&
+            graphqlResult.data?.login?.token
+          ) {
+            // 3단계: GraphQL 토큰으로 자체 JWT 생성
+            const jwtResponse = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify({
+                userId: userId, // 원본 userId 전달
+                password: "graphql",
+                graphqlToken: graphqlResult.data.login.token,
+                isBusiness,
+              }),
+            });
+
+            const jwtResult = await jwtResponse.json();
+
+            if (jwtResponse.ok) {
+              console.log("[AuthProvider] GraphQL 토큰 로그인 성공");
+              const userData = jwtResult.user;
+              login(userData);
+              return { success: true, user: userData };
+            } else {
+              console.error(
+                "[AuthProvider] GraphQL 토큰 로그인 실패:",
+                jwtResult
+              );
+              return {
+                success: false,
+                error: jwtResult.error || "GraphQL 토큰 로그인 실패",
+              };
+            }
+          } else {
+            console.error(
+              "[AuthProvider] GraphQL 로그인 실패:",
+              graphqlResult.data?.login
+            );
+            return {
+              success: false,
+              error:
+                graphqlResult.data?.login?.message || "GraphQL 로그인 실패",
+            };
+          }
+        } catch (graphqlError) {
+          console.error("[AuthProvider] GraphQL 로그인 오류:", graphqlError);
+          return {
+            success: false,
+            error: "GraphQL 로그인 중 오류가 발생했습니다",
+          };
+        }
+      }
+
+      // 기타 오류
+      console.error("[AuthProvider] 로그인 실패:", directLoginResult);
+      return {
+        success: false,
+        error: directLoginResult.error || "로그인 실패",
+      };
+    } catch (error) {
+      console.error("[AuthProvider] 로그인 처리 중 오류:", error);
+      return { success: false, error: "로그인 처리 중 오류가 발생했습니다" };
+    }
+  };
+
   const logout = async () => {
     try {
       // 서버에 로그아웃 요청
@@ -106,6 +232,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
     isAuthenticated: !!user,
     isLoading: isLoading && mounted,
     login,
+    loginWithCredentials,
     logout,
     refetchUser,
   };

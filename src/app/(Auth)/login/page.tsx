@@ -130,7 +130,13 @@ function LoginPage() {
 
         // GraphQL도 실패한 경우
         if (shouldTryGraphQL) {
-          setError("GraphQL 로그인에 실패했습니다. 계정 정보를 확인해주세요.");
+          // GraphQL 응답에서 메시지 확인
+          const graphqlMessage = data?.login?.message;
+          if (graphqlMessage) {
+            setError(graphqlMessage);
+          } else {
+            setError(`login error: ${errorData.error}`);
+          }
         } else {
           setError(
             errorData.message || errorData.error || "로그인에 실패했습니다."
@@ -227,7 +233,13 @@ function LoginPage() {
               }
             }
 
-            setError("GraphQL 사업자 로그인에 실패했습니다.");
+            // GraphQL 응답에서 메시지 확인
+            const graphqlMessage = data?.login?.message;
+            if (graphqlMessage) {
+              setError(graphqlMessage);
+            } else {
+              setError("GraphQL 사업자 로그인에 실패했습니다.");
+            }
           } catch (graphqlError) {
             console.error("[사업자 로그인] GraphQL 실패:", graphqlError);
             setError("GraphQL 사업자 로그인 중 오류가 발생했습니다.");

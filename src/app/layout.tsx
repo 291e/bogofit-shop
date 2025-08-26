@@ -31,8 +31,7 @@ const lineSeedKR = localFont({
 });
 
 export const metadata: Metadata = {
-  title:
-    "보고핏 샵(BOGOFIT SHOP) - AI 가상피팅 쇼핑몰, 내 몸에 딱 맞는 패션 추천",
+  title: "보고핏 - AI 가상피팅 쇼핑몰, 내 몸에 딱 맞는 패션 추천",
   description: "다양한 브랜드와 상품을 한 곳에서!",
   keywords: [
     "쇼핑몰",

@@ -9,3 +9,13 @@ export function useAuth() {
   return context;
 }
 
+// 편의를 위한 별칭 함수들
+export const useLogin = () => {
+  const { loginWithCredentials } = useAuth();
+  return loginWithCredentials;
+};
+
+export const useLogout = () => {
+  const { logout } = useAuth();
+  return logout;
+};

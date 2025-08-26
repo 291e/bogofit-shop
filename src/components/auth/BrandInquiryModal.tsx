@@ -13,8 +13,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Building2, User, Mail, Store, MapPin, Upload, X } from "lucide-react";
+import {
+  Building2,
+  User,
+  Mail,
+  Store,
+  MapPin,
+  Upload,
+  X,
+  FileText,
+  Landmark,
+} from "lucide-react";
 import { useAddressSearch } from "@/hooks/useAddressSearch";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface BrandInquiryModalProps {
   open: boolean;
@@ -47,6 +58,9 @@ interface FormData {
   productCount: string;
   averagePrice: string;
   monthlyRevenue: string;
+  // --- 아이디, 비밀번호 필드 추가 ---
+  userId: string;
+  password: string;
 
   // 추가 정보
   hasOnlineStore: boolean;
@@ -73,6 +87,9 @@ const initialFormData: FormData = {
   productCount: "",
   averagePrice: "",
   monthlyRevenue: "",
+  // --- 아이디, 비밀번호 초기값 추가 ---
+  userId: "",
+  password: "",
   hasOnlineStore: false,
   marketingBudget: "",
   inquiryDetails: "",
@@ -86,7 +103,13 @@ export default function BrandInquiryModal({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [attachments, setAttachments] = useState<File[]>([]);
+
+  const [businessRegistrationFiles, setBusinessRegistrationFiles] = useState<
+    File[]
+  >([]);
+  const [telecomLicenseFiles, setTelecomLicenseFiles] = useState<File[]>([]);
+  const [bankbookFiles, setBankbookFiles] = useState<File[]>([]);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const { openAddressSearch } = useAddressSearch();
 
@@ -94,28 +117,34 @@ export default function BrandInquiryModal({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // 사업자번호 포맷팅 (000-00-00000)
   const formatBusinessNumber = (value: string) => {
     const numbers = value.replace(/[^\d]/g, "");
     if (numbers.length <= 3) return numbers;
     if (numbers.length <= 5)
       return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
-    return `${numbers.slice(0, 3)}-${numbers.slice(3, 5)}-${numbers.slice(5, 10)}`;
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 5)}-${numbers.slice(
+      5,
+      10
+    )}`;
   };
 
-  // 전화번호 포맷팅 (000-0000-0000 또는 00-0000-0000)
   const formatPhoneNumber = (value: string) => {
     const numbers = value.replace(/[^\d]/g, "");
     if (numbers.length <= 3) return numbers;
     if (numbers.length <= 7)
       return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
     if (numbers.startsWith("02")) {
-      return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6, 10)}`;
+      return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(
+        6,
+        10
+      )}`;
     }
-    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(
+      7,
+      11
+    )}`;
   };
 
-  // 주소 검색
   const handleAddressSearch = () => {
     openAddressSearch((result) => {
       setFormData((prev) => ({
@@ -126,8 +155,10 @@ export default function BrandInquiryModal({
     });
   };
 
-  // 파일 업로드 처리
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFiles: React.Dispatch<React.SetStateAction<File[]>>
+  ) => {
     const files = Array.from(e.target.files || []);
     const validFiles = files.filter((file) => {
       const isValidType =
@@ -140,17 +171,20 @@ export default function BrandInquiryModal({
       setError(
         "이미지 파일(.jpg, .png, .gif) 또는 PDF 파일만 업로드 가능하며, 파일 크기는 10MB 이하여야 합니다."
       );
-      return;
     }
 
-    setAttachments((prev) => [...prev, ...validFiles]);
+    setFiles((prev) => [...prev, ...validFiles]);
+    e.target.value = "";
   };
 
-  // 파일 삭제
-  const removeFile = (index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  const removeFile = (
+    index: number,
+    setFiles: React.Dispatch<React.SetStateAction<File[]>>
+  ) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // --- 유효성 검사 로직 수정 ---
   const validateForm = () => {
     const required = [
       "companyName",
@@ -160,6 +194,8 @@ export default function BrandInquiryModal({
       "contactName",
       "brandName",
       "brandCategory",
+      "userId", // 아이디 필수
+      "password", // 비밀번호 필수
       "inquiryDetails",
     ];
 
@@ -169,21 +205,38 @@ export default function BrandInquiryModal({
       }
     }
 
-    // 이메일 형식 확인
+    // 아이디, 비밀번호 형식 검사 (필요 시 정규식 추가)
+    // 예: if (formData.userId.length < 6) return "아이디는 6자 이상이어야 합니다.";
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.companyEmail)) {
       return "올바른 회사 이메일 형식을 입력해주세요.";
     }
 
-    // 사업자번호 형식 확인 (10자리 숫자)
     const businessNumberOnly = formData.businessNumber.replace(/[^\d]/g, "");
     if (businessNumberOnly.length !== 10) {
       return "사업자등록번호는 10자리 숫자여야 합니다.";
     }
 
+    // --- 첨부 파일 필수 검사 ---
+    if (businessRegistrationFiles.length === 0) {
+      return "사업자등록증을 첨부해주세요.";
+    }
+    if (telecomLicenseFiles.length === 0) {
+      return "통신판매업 신고증을 첨부해주세요.";
+    }
+    if (bankbookFiles.length === 0) {
+      return "통장 사본을 첨부해주세요.";
+    }
+
+    if (!agreedToTerms) {
+      return "개인정보 수집 및 이용 약관에 동의해주세요.";
+    }
+
     return null;
   };
 
+  // --- 필드 라벨 추가 ---
   const getFieldLabel = (field: string) => {
     const labels: Record<string, string> = {
       companyName: "회사명",
@@ -193,6 +246,8 @@ export default function BrandInquiryModal({
       contactName: "담당자명",
       brandName: "브랜드명",
       brandCategory: "브랜드 카테고리",
+      userId: "사용할 아이디",
+      password: "사용할 비밀번호",
       inquiryDetails: "입점 문의 내용",
     };
     return labels[field] || field;
@@ -211,22 +266,26 @@ export default function BrandInquiryModal({
     setLoading(true);
 
     try {
-      // FormData 생성 (파일 업로드를 위해)
       const submitData = new FormData();
 
-      // 폼 데이터 추가
       Object.entries(formData).forEach(([key, value]) => {
         submitData.append(key, value.toString());
       });
 
-      // 첨부파일 추가
-      attachments.forEach((file, index) => {
-        submitData.append(`attachment_${index}`, file);
+      businessRegistrationFiles.forEach((file, index) => {
+        submitData.append(`businessRegistration_${index}`, file);
       });
+      telecomLicenseFiles.forEach((file, index) => {
+        submitData.append(`telecomLicense_${index}`, file);
+      });
+      bankbookFiles.forEach((file, index) => {
+        submitData.append(`bankbook_${index}`, file);
+      });
+      submitData.append("agreedToTerms", String(agreedToTerms));
 
       const response = await fetch("/api/brand/inquiry", {
         method: "POST",
-        body: submitData, // FormData 사용
+        body: submitData,
       });
 
       const data = await response.json();
@@ -249,7 +308,10 @@ export default function BrandInquiryModal({
     setSuccess(false);
     setError("");
     setFormData(initialFormData);
-    setAttachments([]);
+    setBusinessRegistrationFiles([]);
+    setTelecomLicenseFiles([]);
+    setBankbookFiles([]);
+    setAgreedToTerms(false);
     onOpenChange(false);
   };
 
@@ -275,6 +337,41 @@ export default function BrandInquiryModal({
     );
   }
 
+  const FileList = ({
+    files,
+    onRemove,
+  }: {
+    files: File[];
+    onRemove: (index: number) => void;
+  }) => (
+    <div className="space-y-2">
+      {files.map((file, index) => (
+        <div
+          key={index}
+          className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+        >
+          <div className="flex items-center gap-2 overflow-hidden">
+            <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
+            <span className="text-sm truncate" title={file.name}>
+              {file.name}
+            </span>
+            <span className="text-xs text-gray-500 flex-shrink-0">
+              ({(file.size / 1024 / 1024).toFixed(2)}MB)
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemove(index)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -299,7 +396,7 @@ export default function BrandInquiryModal({
                 필수
               </Badge>
             </div>
-
+            {/* ... (회사 정보 입력 필드는 변경 없음) ... */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="companyName">회사명 *</Label>
@@ -321,7 +418,7 @@ export default function BrandInquiryModal({
                     updateField("businessNumber", formatted);
                   }}
                   placeholder="000-00-00000"
-                  maxLength={12} // 000-00-00000 형식
+                  maxLength={12}
                 />
               </div>
 
@@ -400,6 +497,7 @@ export default function BrandInquiryModal({
 
           {/* 담당자 정보 */}
           <div className="space-y-4">
+            {/* ... (담당자 정보 입력 필드는 변경 없음) ... */}
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <h3 className="font-semibold">담당자 정보</h3>
@@ -407,7 +505,6 @@ export default function BrandInquiryModal({
                 필수
               </Badge>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contactName">담당자명 *</Label>
@@ -418,7 +515,6 @@ export default function BrandInquiryModal({
                   placeholder="홍길동"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="position">직책</Label>
                 <Input
@@ -433,6 +529,7 @@ export default function BrandInquiryModal({
 
           {/* 브랜드 정보 */}
           <div className="space-y-4">
+            {/* ... (브랜드 정보 입력 필드는 변경 없음) ... */}
             <div className="flex items-center gap-2">
               <Store className="h-4 w-4" />
               <h3 className="font-semibold">브랜드 정보</h3>
@@ -440,7 +537,6 @@ export default function BrandInquiryModal({
                 필수
               </Badge>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="brandName">브랜드명 *</Label>
@@ -451,7 +547,6 @@ export default function BrandInquiryModal({
                   placeholder="브랜드명"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="brandCategory">브랜드 카테고리 *</Label>
                 <Input
@@ -461,7 +556,6 @@ export default function BrandInquiryModal({
                   placeholder="스포츠웨어, 캐주얼 등"
                 />
               </div>
-
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="brandWebsite">브랜드 웹사이트</Label>
                 <Input
@@ -472,7 +566,6 @@ export default function BrandInquiryModal({
                   placeholder="https://www.brand.com"
                 />
               </div>
-
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="brandDescription">브랜드 소개</Label>
                 <Textarea
@@ -488,7 +581,7 @@ export default function BrandInquiryModal({
             </div>
           </div>
 
-          {/* 입점 문의 내용 */}
+          {/* --- 입점 문의 내용 (아이디/비밀번호 추가) --- */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
@@ -497,7 +590,27 @@ export default function BrandInquiryModal({
                 필수
               </Badge>
             </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="userId">사용할 아이디 *</Label>
+                <Input
+                  id="userId"
+                  value={formData.userId}
+                  onChange={(e) => updateField("userId", e.target.value)}
+                  placeholder="영문, 숫자 포함 6~12자"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">사용할 비밀번호 *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => updateField("password", e.target.value)}
+                  placeholder="영문, 숫자, 특수문자 포함 8~16자"
+                />
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="inquiryDetails">상세 문의 내용 *</Label>
               <Textarea
@@ -510,68 +623,141 @@ export default function BrandInquiryModal({
             </div>
           </div>
 
-          {/* 첨부파일 */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              <h3 className="font-semibold">사업자등록증</h3>
-              <Badge variant="secondary" className="text-xs">
-                선택
-              </Badge>
-            </div>
-
+          {/* --- 첨부파일 섹션 (필수로 변경) --- */}
+          <div className="space-y-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <input
+                <Upload className="h-4 w-4" />
+                <h3 className="font-semibold">사업자등록증</h3>
+                <Badge variant="destructive" className="text-xs">
+                  필수
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
                   type="file"
-                  id="fileUpload"
+                  id="businessRegistrationUpload"
                   multiple
                   accept="image/*,.pdf"
-                  onChange={handleFileUpload}
+                  onChange={(e) =>
+                    handleFileUpload(e, setBusinessRegistrationFiles)
+                  }
                   className="hidden"
                 />
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => document.getElementById("fileUpload")?.click()}
-                  className="flex items-center gap-2"
+                  onClick={() =>
+                    document
+                      .getElementById("businessRegistrationUpload")
+                      ?.click()
+                  }
                 >
-                  <Upload className="h-4 w-4" />
-                  사업자등록증 업로드
+                  파일 선택
                 </Button>
                 <span className="text-xs text-gray-500">
-                  사업자등록증 이미지 또는 PDF (최대 10MB)
+                  이미지 또는 PDF (최대 10MB)
                 </span>
               </div>
+              <FileList
+                files={businessRegistrationFiles}
+                onRemove={(index) =>
+                  removeFile(index, setBusinessRegistrationFiles)
+                }
+              />
+            </div>
 
-              {/* 업로드된 파일 목록 */}
-              {attachments.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">업로드된 파일:</p>
-                  {attachments.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Upload className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm truncate">{file.name}</span>
-                        <span className="text-xs text-gray-500">
-                          ({(file.size / 1024 / 1024).toFixed(2)}MB)
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                <h3 className="font-semibold">통신판매업 신고증</h3>
+                <Badge variant="destructive" className="text-xs">
+                  필수
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  id="telecomLicenseUpload"
+                  multiple
+                  accept="image/*,.pdf"
+                  onChange={(e) => handleFileUpload(e, setTelecomLicenseFiles)}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    document.getElementById("telecomLicenseUpload")?.click()
+                  }
+                >
+                  파일 선택
+                </Button>
+                <span className="text-xs text-gray-500">
+                  이미지 또는 PDF (최대 10MB)
+                </span>
+              </div>
+              <FileList
+                files={telecomLicenseFiles}
+                onRemove={(index) => removeFile(index, setTelecomLicenseFiles)}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Landmark className="h-4 w-4" />
+                <h3 className="font-semibold">통장 사본</h3>
+                <Badge variant="destructive" className="text-xs">
+                  필수
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  id="bankbookUpload"
+                  multiple
+                  accept="image/*,.pdf"
+                  onChange={(e) => handleFileUpload(e, setBankbookFiles)}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    document.getElementById("bankbookUpload")?.click()
+                  }
+                >
+                  파일 선택
+                </Button>
+                <span className="text-xs text-gray-500">
+                  이미지 또는 PDF (최대 10MB)
+                </span>
+              </div>
+              <FileList
+                files={bankbookFiles}
+                onRemove={(index) => removeFile(index, setBankbookFiles)}
+              />
+            </div>
+          </div>
+
+          {/* 약관 동의 */}
+          <div className="items-top flex space-x-2 pt-2">
+            <Checkbox
+              id="terms"
+              checked={agreedToTerms}
+              onCheckedChange={(checked) => setAgreedToTerms(Boolean(checked))}
+            />
+            <div className="grid gap-1.5 leading-none">
+              <label
+                htmlFor="terms"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                개인정보 수집 및 이용에 동의합니다. (필수)
+              </label>
+              <p className="text-sm text-muted-foreground">
+                입점 문의를 위해 수집된 개인정보는 담당자 확인 및 회신
+                목적으로만 사용됩니다.
+              </p>
             </div>
           </div>
 
