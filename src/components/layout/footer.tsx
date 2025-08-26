@@ -91,14 +91,13 @@ export default function Footer() {
       {/* 하단: 소셜/저작권 */}
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:justify-between items-center gap-2 md:gap-0">
         <div className="flex gap-3 mb-2 md:mb-0">
-          <Link href="https://www.youtube.com/@bogofit">
+          <Link href="https://www.youtube.com/@metabank_official658">
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 group-hover:bg-black transition-colors shadow hover:scale-110">
               <Youtube className="w-4 h-4 text-red-500 group-hover:text-white transition-colors" />
             </span>
           </Link>
           <Link
-            href="https://instagram.com"
-            target="_blank"
+            href="#"
             rel="noopener noreferrer"
             aria-label="인스타그램"
             className="group"
@@ -108,8 +107,7 @@ export default function Footer() {
             </span>
           </Link>
           <Link
-            href="https://facebook.com"
-            target="_blank"
+            href="#"
             rel="noopener noreferrer"
             aria-label="페이스북"
             className="group"

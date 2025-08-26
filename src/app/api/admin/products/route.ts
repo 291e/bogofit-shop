@@ -3,6 +3,45 @@ import { requireAdminAuth } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { ProductStatus } from "@prisma/client";
 
+/**
+ * @swagger
+ * /api/admin/products:
+ *   get:
+ *     tags: [Products]
+ *     summary: 관리자 - 상품 목록 조회 (페이지네이션)
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [ALL, PENDING, APPROVED, REJECTED, DRAFT] }
+ *       - in: query
+ *         name: brandId
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: 상품 목록과 페이지네이션 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 products:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ */
 // 관리자용 상품 목록 조회
 export async function GET(request: NextRequest) {
   try {

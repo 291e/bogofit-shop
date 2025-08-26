@@ -65,8 +65,11 @@ export async function GET() {
                     if (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') {
                         request.headers['Content-Type'] = 'application/json';
                     }
+                    // 쿠키 기반 인증 사용 (JWT httpOnly 쿠키 포함)
+                    request.credentials = 'include';
                     return request;
                 },
+                persistAuthorization: true,
                 onComplete: function(system) {
                     console.log('Swagger UI 로딩 완료');
                 },

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Share2,
   Star,
   Heart,
   Truck,
@@ -11,7 +10,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useProduct } from "@/hooks/useProduct";
 import { useState } from "react";
@@ -39,6 +37,9 @@ export default function ProductDetail() {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
     null
   );
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, string>
+  >({});
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -49,7 +50,7 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-12">
               {/* 이미지 Skeleton */}
               <div className="space-y-4">
                 <Skeleton className="aspect-square w-full rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200" />
@@ -112,18 +113,6 @@ export default function ProductDetail() {
     );
   }
 
-  // 최종 가격 계산 (기본 가격 + 선택된 옵션의 가격 차이)
-  const finalPrice = selectedVariant
-    ? product.price + selectedVariant.priceDiff
-    : product.price;
-
-  // 품절 확인 (옵션값에 "품절" 단어 포함 여부)
-  const isOutOfStock = selectedVariant
-    ? selectedVariant.optionValue.includes("품절")
-    : product.variants && product.variants.length > 0
-      ? product.variants.every((v) => v.optionValue.includes("품절"))
-      : false;
-
   // 옵션별로 그룹화
   const groupedVariants =
     product.variants?.reduce(
@@ -137,24 +126,121 @@ export default function ProductDetail() {
       {} as Record<string, ProductVariant[]>
     ) || {};
 
+  // 선택된 옵션들로부터 최종 variant 찾기 (다중 옵션 조합)
+  const findMatchingVariant = () => {
+    if (!product.variants || Object.keys(selectedOptions).length === 0) {
+      return null;
+    }
+
+    const optionNames = Object.keys(groupedVariants);
+    const selectedOptionNames = Object.keys(selectedOptions);
+
+    // 옵션이 하나인 경우 - 기존 방식대로 처리
+    if (optionNames.length === 1) {
+      return (
+        product.variants.find(
+          (variant) =>
+            variant.optionName === optionNames[0] &&
+            variant.optionValue === selectedOptions[optionNames[0]]
+        ) || null
+      );
+    }
+
+    // 다중 옵션인 경우 - 모든 옵션이 선택되어야 함
+    if (optionNames.length !== selectedOptionNames.length) {
+      return null;
+    }
+
+    // 선택된 옵션 조합을 문자열로 만들어서 비교
+    // 예: "사이즈: M, 색상: 블랙" 형태로 조합
+    const selectedCombination = optionNames
+      .sort()
+      .map((name) => `${name}: ${selectedOptions[name]}`)
+      .join(", ");
+
+    // variant의 optionValue가 조합된 형태인지 확인
+    return (
+      product.variants.find((variant) => {
+        // variant.optionValue가 "M, 블랙" 같은 형태일 수 있음
+        const variantOptions = variant.optionValue.split(", ");
+        const variantCombination = optionNames
+          .sort()
+          .map((name) => {
+            const matchingOption = variantOptions.find(
+              (opt) =>
+                opt === selectedOptions[name] ||
+                opt.includes(selectedOptions[name])
+            );
+            return `${name}: ${matchingOption || selectedOptions[name]}`;
+          })
+          .join(", ");
+
+        return selectedCombination === variantCombination;
+      }) || null
+    );
+  };
+
+  const matchingVariant = findMatchingVariant();
+
+  // 선택된 옵션들의 총 가격 차이 계산
+  const calculateTotalPriceDiff = () => {
+    if (matchingVariant) {
+      return matchingVariant.priceDiff;
+    }
+
+    if (Object.keys(selectedOptions).length === 0) {
+      return 0;
+    }
+
+    // 각 선택된 옵션의 가격 차이를 합산
+    let totalDiff = 0;
+    Object.entries(selectedOptions).forEach(([optionName, optionValue]) => {
+      const variant = product.variants?.find(
+        (v) => v.optionName === optionName && v.optionValue === optionValue
+      );
+      if (variant) {
+        totalDiff += variant.priceDiff;
+      }
+    });
+
+    return totalDiff;
+  };
+
+  const totalPriceDiff = calculateTotalPriceDiff();
+
+  // 최종 가격 계산 (기본 가격 + 선택된 옵션의 가격 차이)
+  const finalPrice = product.price + totalPriceDiff;
+
+  // 품절 확인 (옵션값에 "품절" 단어 포함 여부)
+  const isOutOfStock = matchingVariant
+    ? matchingVariant.optionValue.includes("품절")
+    : selectedVariant
+      ? selectedVariant.optionValue.includes("품절")
+      : product.variants && product.variants.length > 0
+        ? product.variants.every((v) => v.optionValue.includes("품절"))
+        : false;
+
   // 옵션이 없는 상품의 경우 기본 variant ID 설정 (첫 번째 variant 또는 product.id 사용)
   const effectiveVariantId =
     Object.keys(groupedVariants).length === 0
       ? product.variants && product.variants.length > 0
         ? product.variants[0].id
         : product.id // 옵션이 없으면 product.id를 variantId로 사용
-      : selectedVariant?.id;
+      : matchingVariant?.id || selectedVariant?.id;
 
-  console.log("effectiveVariantId 계산:", {
+  console.log("상품 옵션 선택 상태:", {
     hasOptions: Object.keys(groupedVariants).length > 0,
+    selectedOptions,
+    matchingVariant: matchingVariant?.id,
     selectedVariant: selectedVariant?.id,
-    firstVariant: product.variants?.[0]?.id,
-    productId: product.id,
+    totalPriceDiff,
+    finalPrice,
     effectiveVariantId,
     allVariants: product.variants?.map((v) => ({
       id: v.id,
       optionName: v.optionName,
       optionValue: v.optionValue,
+      priceDiff: v.priceDiff,
     })),
   });
 
@@ -172,7 +258,7 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-12">
             {/* 상품 이미지 섹션 */}
             <div className="space-y-6">
               <div className="relative aspect-square">
@@ -326,22 +412,6 @@ export default function ProductDetail() {
 
             {/* 상품 정보 섹션 */}
             <div id="product-info" className="space-y-8">
-              {/* 브랜드 및 공유 */}
-              <div className="flex justify-between items-center">
-                <Link href="/" className="flex items-center space-x-2 group">
-                  <span
-                    className="rounded-full border-2 border-pink-200 
-                    group-hover:border-pink-400 transition-colors px-2 font-bold text-pink-500"
-                  >
-                    BOGOFIT
-                  </span>
-                </Link>
-                <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-gray-600 hover:text-pink-600">
-                  <Share2 className="w-4 h-4" />
-                  <span className="text-sm font-medium">공유</span>
-                </button>
-              </div>
-
               {/* 상품명 및 기본 정보 */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -430,11 +500,16 @@ export default function ProductDetail() {
                       {finalPrice.toLocaleString()}원
                     </span>
 
-                    {selectedVariant && selectedVariant.priceDiff !== 0 && (
+                    {totalPriceDiff !== 0 && (
                       <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded-full">
                         기본가 {product.price.toLocaleString()}원
-                        {selectedVariant.priceDiff > 0 ? " +" : " "}
-                        {selectedVariant.priceDiff.toLocaleString()}원
+                        {totalPriceDiff > 0 ? " +" : " "}
+                        {totalPriceDiff.toLocaleString()}원
+                        {Object.keys(selectedOptions).length > 1 && (
+                          <span className="text-xs text-gray-400 ml-1">
+                            (옵션 합계)
+                          </span>
+                        )}
                       </span>
                     )}
                   </div>
@@ -453,13 +528,21 @@ export default function ProductDetail() {
                   {Object.entries(groupedVariants).map(
                     ([optionName, variants]) => (
                       <div key={optionName} className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700">
+                          {optionName}
+                        </label>
                         <Select
-                          value={selectedVariant?.id.toString() || ""}
+                          value={selectedOptions[optionName] || ""}
                           onValueChange={(value) => {
-                            const variant = variants.find(
-                              (v) => v.id.toString() === value
-                            );
+                            setSelectedOptions((prev) => ({
+                              ...prev,
+                              [optionName]: value,
+                            }));
 
+                            // 기존 selectedVariant 로직도 유지 (호환성을 위해)
+                            const variant = variants.find(
+                              (v) => v.optionValue === value
+                            );
                             setSelectedVariant(variant || null);
                           }}
                         >
@@ -472,7 +555,7 @@ export default function ProductDetail() {
                             {variants.map((variant) => (
                               <SelectItem
                                 key={variant.id}
-                                value={variant.id.toString()}
+                                value={variant.optionValue}
                                 disabled={variant.optionValue.includes("품절")}
                                 className="rounded-lg"
                               >
@@ -504,6 +587,53 @@ export default function ProductDetail() {
                       </div>
                     )
                   )}
+                </div>
+              )}
+
+              {/* 선택된 옵션 요약 */}
+              {Object.keys(selectedOptions).length > 0 && (
+                <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-4 border border-pink-100">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                    선택된 옵션
+                  </h4>
+                  <div className="space-y-1">
+                    {Object.entries(selectedOptions).map(([name, value]) => {
+                      const variant = product.variants?.find(
+                        (v) => v.optionName === name && v.optionValue === value
+                      );
+                      return (
+                        <div
+                          key={name}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="text-sm text-gray-600">
+                            {name}:{" "}
+                            <span className="font-medium text-gray-800">
+                              {value}
+                            </span>
+                          </span>
+                          {variant && variant.priceDiff !== 0 && (
+                            <span className="text-sm font-semibold text-pink-600">
+                              {variant.priceDiff > 0 ? "+" : ""}
+                              {variant.priceDiff.toLocaleString()}원
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {Object.keys(selectedOptions).length > 1 &&
+                      totalPriceDiff !== 0 && (
+                        <div className="pt-2 mt-2 border-t border-pink-200 flex justify-between items-center">
+                          <span className="text-sm font-semibold text-gray-700">
+                            옵션 합계
+                          </span>
+                          <span className="text-sm font-bold text-pink-600">
+                            {totalPriceDiff > 0 ? "+" : ""}
+                            {totalPriceDiff.toLocaleString()}원
+                          </span>
+                        </div>
+                      )}
+                  </div>
                 </div>
               )}
 
@@ -540,9 +670,13 @@ export default function ProductDetail() {
                   productPrice={finalPrice}
                   quantity={quantity}
                   selectedOption={
-                    selectedVariant
-                      ? `${selectedVariant.optionName}: ${selectedVariant.optionValue}`
-                      : ""
+                    Object.keys(selectedOptions).length > 0
+                      ? Object.entries(selectedOptions)
+                          .map(([name, value]) => `${name}: ${value}`)
+                          .join(", ")
+                      : selectedVariant
+                        ? `${selectedVariant.optionName}: ${selectedVariant.optionValue}`
+                        : ""
                   }
                   hasOptions={Object.keys(groupedVariants).length > 0}
                   isOutOfStock={isOutOfStock}
@@ -551,7 +685,7 @@ export default function ProductDetail() {
               </div>
 
               {/* 배송 및 서비스 정보 */}
-              <div className="bg-white space-y-4">
+              <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">

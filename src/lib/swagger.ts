@@ -38,6 +38,26 @@ const swaggerDefinition = {
       },
     },
     schemas: {
+      Pagination: {
+        type: "object",
+        properties: {
+          page: { type: "integer", description: "현재 페이지" },
+          limit: { type: "integer", description: "페이지당 개수" },
+          total: { type: "integer", description: "총 개수" },
+          totalPages: { type: "integer", description: "총 페이지 수" },
+          hasNext: { type: "boolean", description: "다음 페이지 여부" },
+          hasPrev: { type: "boolean", description: "이전 페이지 여부" },
+        },
+      },
+      LoginResult: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          token: { type: "string", nullable: true },
+          user: { $ref: "#/components/schemas/User" },
+        },
+      },
       Product: {
         type: "object",
         properties: {
@@ -885,6 +905,7 @@ const swaggerDefinition = {
 
 const options = {
   definition: swaggerDefinition,
+  // Next.js route handlers with JSDoc swagger annotations
   apis: ["./src/app/api/**/*.ts", "./src/app/api/**/*.js"],
 };
 

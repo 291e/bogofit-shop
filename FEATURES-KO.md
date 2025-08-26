@@ -1,4 +1,3 @@
-
 # BogoFit Shop 기능 요약
 
 ## 1. 핵심 기능
@@ -8,8 +7,8 @@
 - **기능**: 사용자가 자신의 사진을 업로드하면, 선택한 상품을 가상으로 입어본 이미지를 생성합니다.
 - **기술**: AI 이미지 생성 모델을 사용하여 실제와 유사한 착용 모습을 제공합니다.
 - **경로**:
-    - 가상 피팅 생성 API: `/api/virtual-fitting/generate` (외부 AI 서버로 프록시)
-    - 관련 UI: 상품 상세 페이지 내 가상 피팅 섹션
+  - 가상 피팅 생성 API: `/api/virtual-fitting/generate` (외부 AI 서버로 프록시)
+  - 관련 UI: 상품 상세 페이지 내 가상 피팅 섹션
 
 ### 1.2. 동영상 패션 룩 (Video Lookbook)
 
@@ -30,11 +29,18 @@
 
 ### 2.1. 인증 (Authentication)
 
-- **기능**: Google, Kakao 소셜 로그인을 지원합니다.
-- **기술**: NextAuth.js를 사용하여 간편하고 안전한 인증을 구현합니다.
-- **경로**:
-    - 로그인 페이지: `src/app/(Auth)/login/page.tsx`
-    - 관련 API: `src/lib/auth.ts`
+- **기능**: Google, Kakao 소셜 로그인 및 로컬 계정 로그인을 지원합니다.
+- **기술 변경**: JWT httpOnly 쿠키 기반 인증으로 통합. 로컬 DB 우선 로그인, GraphQL/OAuth 토큰 폴백.
+- **플로우**:
+  1. 로컬 DB에 사용자/비밀번호가 있으면 직접 로그인
+  2. 없거나 비밀번호가 null이면 GraphQL/OAuth 토큰으로 로그인 시도 후 로컬 DB에 사용자 저장(비번 null)
+  3. 이후 동일 사용자 로그인 시 비번 null이면 GraphQL/OAuth 플로우로 유도
+- **주요 경로**:
+  - 로그인 페이지: `src/app/(Auth)/login/page.tsx`
+  - Google 콜백: `src/app/(Auth)/auth/callback/google/page.tsx`
+  - Kakao 콜백: `src/app/(Auth)/auth/callback/kakao/page.tsx`
+  - 로그인 API: `src/app/api/auth/login/route.ts`
+  - 현재 사용자: `src/app/api/auth/me/route.ts`
 
 ### 2.2. 마이페이지 (MyPage)
 
@@ -46,8 +52,8 @@
 - **기능**: 회원가입, 주문 완료, 배송 시작 등 주요 이벤트 발생 시 사용자에게 SMS 알림을 발송합니다.
 - **기술**: Aligo SMS API를 연동하여 구현합니다.
 - **경로**:
-    - SMS 발송 로직: `src/lib/aligo.ts`
-    - 테스트 페이지: `src/app/test-sms/page.tsx`
+  - SMS 발송 로직: `src/lib/aligo.ts`
+  - 테스트 페이지: `src/app/test-sms/page.tsx`
 
 ## 3. 쇼핑 기능
 
@@ -56,6 +62,7 @@
 - **기능**: 카테고리별 상품 목록, 상품 상세 정보, 검색 및 필터링 기능을 제공합니다.
 - **데이터베이스**: `Product`, `ProductVariant` 모델을 통해 상품 정보와 옵션(색상, 사이즈)을 관리합니다.
 - **경로**: `src/app/(Product)` 디렉토리 하위에 관련 페이지들이 위치합니다.
+- **UI 개선**: 상품 상세 페이지 다중 옵션 선택, 옵션별 가격 합산 및 요약 표시.
 
 ### 3.2. 장바구니 (Cart)
 
@@ -83,8 +90,8 @@
 - **기능**: Cafe24 쇼핑몰의 상품 데이터를 OAuth 인증을 통해 BogoFit Shop으로 가져올 수 있습니다.
 - **기술**: Cafe24 API를 사용하여 상품 정보를 동기화합니다.
 - **경로**:
-    - 연동 관련 로직: `src/lib/cafe24.ts`
-    - 연동 페이지: `src/app/cafe24/page.tsx`
+  - 연동 관련 로직: `src/lib/cafe24.ts`
+  - 연동 페이지: `src/app/cafe24/page.tsx`
 
 ## 5. 기술 스택 및 아키텍처
 
@@ -94,7 +101,7 @@
 - **상태 관리**: Zustand
 - **데이터베이스**: PostgreSQL
 - **ORM**: Prisma
-- **인증**: NextAuth.js
+- **인증**: JWT httpOnly 쿠키 (로컬 + GraphQL/OAuth 폴백)
 - **결제**: Toss Payments
 - **SMS**: Aligo API
 - **이미지 저장소**: AWS S3

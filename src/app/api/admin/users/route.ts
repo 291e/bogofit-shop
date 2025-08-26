@@ -3,6 +3,88 @@ import { requireAdminAuth } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     tags: [User]
+ *     summary: 관리자 - 사용자 목록 조회 (페이지네이션)
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 페이지 번호
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: 페이지당 개수
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: userId/email/name 검색어
+ *       - in: query
+ *         name: filter
+ *         schema:
+ *           type: string
+ *           enum: [all, admin, business, regular]
+ *         description: 필터 타입
+ *     responses:
+ *       200:
+ *         description: 사용자 목록과 페이지네이션 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         description: 인증 실패
+ *   post:
+ *     tags: [User]
+ *     summary: 관리자 - 사용자 생성
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               phoneNumber:
+ *                 type: string
+ *               isAdmin:
+ *                 type: boolean
+ *               isBusiness:
+ *                 type: boolean
+ *             required: [userId, email, password, name]
+ *     responses:
+ *       200:
+ *         description: 생성된 사용자 반환
+ *       409:
+ *         description: 중복 사용자
+ */
+
 // 사용자 목록 조회
 export async function GET(request: NextRequest) {
   try {

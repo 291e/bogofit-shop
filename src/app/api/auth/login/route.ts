@@ -4,6 +4,50 @@ import { decodeGraphQLToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: 로그인 (로컬 DB 우선, GraphQL/OAuth 토큰 폴백)
+ *     description: |
+ *       1) 로컬 DB 사용자 비밀번호 검증 후 JWT 쿠키 발급
+ *       2) 로컬에 사용자 없거나 비밀번호 null인 경우 GraphQL/OAuth 토큰으로 로그인 처리 후 로컬 사용자 생성/갱신
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: 사용자 ID 또는 이메일
+ *               password:
+ *                 type: string
+ *                 description: 일반 로그인 비밀번호 또는 'graphql'/'oauth' 토큰 로그인 플래그
+ *               isBusiness:
+ *                 type: boolean
+ *                 description: 사업자 로그인 여부
+ *               graphqlToken:
+ *                 type: string
+ *                 description: GraphQL/OAuth 로그인 성공 시 받은 액세스 토큰
+ *     responses:
+ *       200:
+ *         description: 로그인 성공 (JWT 쿠키 설정)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 message: { type: string }
+ *                 user: { $ref: '#/components/schemas/User' }
+ *       400:
+ *         description: 잘못된 요청
+ *       401:
+ *         description: 인증 실패
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
