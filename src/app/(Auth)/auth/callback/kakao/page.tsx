@@ -37,7 +37,7 @@ function KakaoCallbackContent() {
   const handleLoginSuccess = async (response: LoginResponse) => {
     if (response.success) {
       try {
-        // 2단계: 자체 로그인 API로 JWT 쿠키 설정
+        // 2단계: 자체 로그인 API로 JWT 쿠키 설정 (GraphQL 토큰 포함)
         const loginResponse = await fetch("/api/auth/login", {
           method: "POST",
           headers: {
@@ -48,6 +48,7 @@ function KakaoCallbackContent() {
             userId: response.user.userId,
             password: "oauth", // OAuth 로그인은 비밀번호가 없으므로 특수 플래그
             isBusiness: false,
+            graphqlToken: response.token, // GraphQL 토큰 전달
           }),
         });
 
@@ -58,7 +59,9 @@ function KakaoCallbackContent() {
           // 홈페이지로 강제 리다이렉트
           window.location.href = "/";
         } else {
-          setError("로그인 처리 중 오류가 발생했습니다.");
+          const errorData = await loginResponse.json();
+          console.error("로그인 API 오류:", errorData);
+          setError(errorData.message || "로그인 처리 중 오류가 발생했습니다.");
         }
       } catch (error) {
         console.error("OAuth 로그인 처리 오류:", error);

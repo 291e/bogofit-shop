@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       email: newUser.email,
       name: newUser.name || newUser.userId,
       isBusiness: newUser.isBusiness || false,
+      isAdmin: newUser.isAdmin || false,
       brandId: newUser.brand?.id,
     });
 

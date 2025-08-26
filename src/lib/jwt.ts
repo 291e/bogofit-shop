@@ -14,6 +14,7 @@ export interface CustomJWTPayload {
   email: string;
   name: string;
   isBusiness: boolean;
+  isAdmin: boolean;
   brandId?: number;
   iat?: number;
   exp?: number;

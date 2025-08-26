@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Menu, User } from "lucide-react";
+import { Menu, User, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCart } from "@/hooks/useCart";
@@ -50,14 +50,18 @@ export default function Header() {
     await logout(); // logout 함수에서 이미 window.location.href = "/" 처리됨
   };
 
-  // 디버깅 로그 (필요시에만 사용)
-  // console.log({
-  //   mounted,
-  //   loading,
-  //   isAuthenticated,
-  //   user: user?.userId || "없음",
-  //   userFromQuery: userFromQuery?.userId || "없음",
-  // });
+  // 디버깅 로그 (관리자 권한 확인용)
+  useEffect(() => {
+    if (mounted && user) {
+      console.log("[Header Debug] 사용자 정보:", {
+        userId: user.userId,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isBusiness: user.isBusiness,
+        isAuthenticated,
+      });
+    }
+  }, [mounted, user, isAuthenticated]);
 
   return (
     <>
@@ -142,7 +146,26 @@ export default function Header() {
                 {mounted && (
                   <>
                     {isAuthenticated && user ? (
-                      <UserMenu user={user} onLogout={handleLogout} />
+                      <>
+                        {/* 관리자 메뉴 */}
+                        {user.isAdmin && (
+                          <Link href="/admin">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`gap-2 ${
+                                pathname.startsWith("/admin")
+                                  ? "text-[#FF84CD] bg-pink-50"
+                                  : "hover:text-[#FF84CD] hover:bg-pink-50"
+                              }`}
+                            >
+                              <Settings className="w-4 h-4" />
+                              <span className="hidden xl:inline">관리자</span>
+                            </Button>
+                          </Link>
+                        )}
+                        <UserMenu user={user} onLogout={handleLogout} />
+                      </>
                     ) : (
                       <Link href="/login">
                         <Button variant="ghost" size="sm" className="gap-2">
@@ -282,6 +305,20 @@ export default function Header() {
 
                   {/* 메뉴 링크들 */}
                   <div className="space-y-1">
+                    {user.isAdmin && (
+                      <Link
+                        href="/admin"
+                        className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                          pathname.startsWith("/admin")
+                            ? "text-[#FF84CD] bg-pink-50"
+                            : "text-gray-600 hover:text-[#FF84CD] hover:bg-pink-50"
+                        }`}
+                        onClick={() => setOpen(false)}
+                      >
+                        <Settings className="w-4 h-4" />
+                        관리자 대시보드
+                      </Link>
+                    )}
                     <Link
                       href="/profile"
                       className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${

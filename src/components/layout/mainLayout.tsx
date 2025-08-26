@@ -13,7 +13,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname();
   // /solution 또는 /business 경로에서는 헤더와 푸터를 숨김
   const isNoLayoutPage =
-    pathname.startsWith("/solution") || pathname.startsWith("/business");
+    pathname.startsWith("/solution") ||
+    pathname.startsWith("/business") ||
+    pathname.startsWith("/admin");
 
   return (
     <AuthProvider>

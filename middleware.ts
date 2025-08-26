@@ -14,6 +14,9 @@ const protectedPaths = [
 // 사업자 전용 경로들
 const businessPaths = ["/business"];
 
+// 관리자 전용 경로들
+const adminPaths = ["/admin"];
+
 // 인증된 사용자가 접근하면 안 되는 경로들 (로그인, 회원가입 등)
 const publicOnlyPaths = ["/login", "/register", "/reset-password"];
 
@@ -43,7 +46,13 @@ export async function middleware(request: NextRequest) {
     console.log("[Middleware]", {
       pathname,
       isAuthenticated,
-      user: user ? { userId: user.userId, isBusiness: user.isBusiness } : null,
+      user: user
+        ? {
+            userId: user.userId,
+            isBusiness: user.isBusiness,
+            isAdmin: user.isAdmin,
+          }
+        : null,
     });
 
     // 인증된 사용자가 public-only 경로에 접근하는 경우
@@ -53,6 +62,20 @@ export async function middleware(request: NextRequest) {
     ) {
       const redirectUrl = new URL("/", request.url);
       return NextResponse.redirect(redirectUrl);
+    }
+
+    // 관리자 전용 경로 체크
+    if (adminPaths.some((path) => pathname.startsWith(path))) {
+      if (!isAuthenticated) {
+        const redirectUrl = new URL("/login", request.url);
+        redirectUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(redirectUrl);
+      }
+
+      if (!user.isAdmin) {
+        const redirectUrl = new URL("/", request.url);
+        return NextResponse.redirect(redirectUrl);
+      }
     }
 
     // 사업자 전용 경로 체크
@@ -99,7 +122,8 @@ export async function middleware(request: NextRequest) {
     // 인증 오류 시 보호된 경로는 로그인 페이지로 리다이렉트
     if (
       protectedPaths.some((path) => pathname.startsWith(path)) ||
-      businessPaths.some((path) => pathname.startsWith(path))
+      businessPaths.some((path) => pathname.startsWith(path)) ||
+      adminPaths.some((path) => pathname.startsWith(path))
     ) {
       const redirectUrl = new URL("/login", request.url);
       redirectUrl.searchParams.set("redirect", pathname);

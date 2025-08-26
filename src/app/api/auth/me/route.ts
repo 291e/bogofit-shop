@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
         name: user.name || user.userId,
         isBusiness: user.isBusiness,
+        isAdmin: user.isAdmin,
         brand: user.brand,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,

@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
     }
 
     // GraphQL 토큰 로그인 처리 (클라이언트에서 GraphQL 로그인 성공 후 호출)
-    if (password === "graphql" && graphqlToken) {
-      console.log("[Auth Login] GraphQL 토큰 로그인 처리");
+    if ((password === "graphql" || password === "oauth") && graphqlToken) {
+      console.log("[Auth Login] GraphQL/OAuth 토큰 로그인 처리");
       return await handleGraphQLTokenLogin(graphqlToken, isBusiness);
     }
 
@@ -165,6 +165,7 @@ async function handleGraphQLTokenLogin(
     email: user.email,
     name: user.name || user.userId,
     isBusiness: user.isBusiness || false,
+    isAdmin: user.isAdmin || false,
     brandId: user.brand?.id,
   });
 
@@ -177,6 +178,7 @@ async function handleGraphQLTokenLogin(
       email: user.email,
       name: user.name || user.userId,
       isBusiness: user.isBusiness || false,
+      isAdmin: user.isAdmin || false,
       brand: user.brand,
     },
   });
@@ -194,6 +196,7 @@ async function handleDirectLogin(
     name: string | null;
     password: string | null;
     isBusiness: boolean;
+    isAdmin: boolean;
     brand?: {
       id: number;
       name: string;
@@ -255,6 +258,7 @@ async function handleDirectLogin(
     email: user.email,
     name: user.name || user.userId,
     isBusiness: user.isBusiness,
+    isAdmin: user.isAdmin,
     brandId: user.brand?.id,
   });
 
@@ -268,6 +272,7 @@ async function handleDirectLogin(
       email: user.email,
       name: user.name || user.userId,
       isBusiness: user.isBusiness,
+      isAdmin: user.isAdmin,
       brand: user.brand,
     },
   });
