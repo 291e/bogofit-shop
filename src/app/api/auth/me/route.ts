@@ -2,6 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/jwt-server";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     tags: [Auth]
+ *     summary: 현재 로그인 사용자 조회
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: 사용자 정보
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 user: { $ref: '#/components/schemas/User' }
+ *       401:
+ *         description: 인증 필요
+ */
+
 export async function GET(request: NextRequest) {
   try {
     // JWT 토큰에서 사용자 정보 추출

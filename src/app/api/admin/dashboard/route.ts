@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * @swagger
+ * /api/admin/dashboard:
+ *   get:
+ *     tags: [Admin]
+ *     summary: 관리자 대시보드 통계 조회
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: 통계 데이터 반환
+ *       401:
+ *         description: 인증 실패
+ */
 // 관리자 대시보드 통계 조회
 export async function GET(request: NextRequest) {
   try {
