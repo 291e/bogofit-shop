@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,6 +8,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCart } from "@/hooks/useCart";
 import Image from "next/image";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+import { useI18n } from "@/providers/I18nProvider";
 
 // 분리된 컴포넌트들 import
 import { UserMenu } from "./header/UserMenu";
@@ -27,6 +29,7 @@ export default function Header() {
 
   // 장바구니 훅 사용
   const { cart } = useCart();
+  const { t } = useI18n();
 
   useEffect(() => {
     setMounted(true);
@@ -84,53 +87,38 @@ export default function Header() {
               <div className="flex flex-col justify-center">
                 <div className="flex-col md:flex-row flex items-start md:items-center gap-0 md:gap-3 text-base line-seed-kr select-none">
                   <span className="font-bold text-gray-900">BOGOFIT</span>
-                  <Badge
-                    variant="outline"
-                    className="pt-1 bg-[#ff84cd] text-white"
-                  >
-                    입어보고 쇼핑하는 AI 전문쇼핑몰
+                  <Badge variant="outline" className="pt-1 bg-[#ff84cd] text-white">
+                    {t("brand.tagline")}
                   </Badge>
                 </div>
                 <div className="hidden md:flex items-center gap-6 mt-1 text-sm line-seed-kr">
-                  <Link
-                    href="/recommend"
-                    className={
+                  <Link href="/recommend" className={
                       pathname === "/recommend"
                         ? "text-[#FF84CD] font-medium"
                         : "text-gray-600 hover:text-[#FF84CD] transition-colors"
-                    }
-                  >
-                    추천
+                    }>
+                    {t("header.recommend")}
                   </Link>
-                  <Link
-                    href="/ranking"
-                    className={
+                  <Link href="/ranking" className={
                       pathname === "/ranking"
                         ? "text-[#FF84CD] font-medium"
                         : "text-gray-600 hover:text-[#FF84CD] transition-colors"
-                    }
-                  >
-                    랭킹
+                    }>
+                    {t("header.ranking")}
                   </Link>
-                  <Link
-                    href="/sale"
-                    className={
+                  <Link href="/sale" className={
                       pathname === "/sale"
                         ? "text-[#FF84CD] font-medium"
                         : "text-gray-600 hover:text-[#FF84CD] transition-colors"
-                    }
-                  >
-                    세일
+                    }>
+                    {t("header.sale")}
                   </Link>
-                  <Link
-                    href="/brands"
-                    className={
+                  <Link href="/brands" className={
                       pathname === "/brands"
                         ? "text-[#FF84CD] font-medium"
                         : "text-gray-600 hover:text-[#FF84CD] transition-colors"
-                    }
-                  >
-                    브랜드
+                    }>
+                    {t("header.brands")}
                   </Link>
                 </div>
               </div>
@@ -140,6 +128,9 @@ export default function Header() {
             <div className="hidden md:flex items-center gap-4">
               {/* 검색바 */}
               <SearchBar className="w-64 xl:w-72" />
+
+              {/* 언어 스위처 */}
+              <LanguageSwitcher />
 
               {/* 사용자 메뉴 & 장바구니 */}
               <div className="flex items-center gap-2">
@@ -160,7 +151,7 @@ export default function Header() {
                               }`}
                             >
                               <Settings className="w-4 h-4" />
-                              <span className="hidden xl:inline">관리자</span>
+                              <span className="hidden xl:inline">{t("header.admin")}</span>
                             </Button>
                           </Link>
                         )}
@@ -170,7 +161,7 @@ export default function Header() {
                       <Link href="/login">
                         <Button variant="ghost" size="sm" className="gap-2">
                           <User className="w-4 h-4" />
-                          <span className="hidden xl:inline">로그인</span>
+                          <span className="hidden xl:inline">{t("header.login")}</span>
                         </Button>
                       </Link>
                     )}
@@ -188,7 +179,7 @@ export default function Header() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setOpen(true)}
-                aria-label="메뉴 열기"
+                aria-label={t("header.menuOpen")}
                 className="text-[#D74FDF] hover:bg-pink-50"
               >
                 <Menu className="w-6 h-6" />
@@ -316,7 +307,7 @@ export default function Header() {
                         onClick={() => setOpen(false)}
                       >
                         <Settings className="w-4 h-4" />
-                        관리자 대시보드
+                        {t("header.adminDashboard")}
                       </Link>
                     )}
                     <Link
@@ -328,7 +319,7 @@ export default function Header() {
                       }`}
                       onClick={() => setOpen(false)}
                     >
-                      <User className="w-4 h-4" />내 정보 수정
+                      <User className="w-4 h-4" />{t("header.profile")}
                     </Link>
                     <Link
                       href="/myPage"
@@ -339,7 +330,7 @@ export default function Header() {
                       }`}
                       onClick={() => setOpen(false)}
                     >
-                      마이페이지
+                      {t("header.myPage")}
                     </Link>
                     <button
                       onClick={async () => {
@@ -348,7 +339,7 @@ export default function Header() {
                       }}
                       className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors w-full text-left"
                     >
-                      로그아웃
+                      {t("header.logout")}
                     </button>
                   </div>
                 </div>
@@ -359,7 +350,7 @@ export default function Header() {
                   onClick={() => setOpen(false)}
                 >
                   <User className="w-4 h-4" />
-                  로그인
+                  {t("header.login")}
                 </Link>
               )}
             </div>

@@ -14,18 +14,20 @@ import {
   DollarSign,
 } from "lucide-react";
 import { subCategoryMap, categoryMap } from "@/contents/Category/subCategories";
+import { useI18n } from "@/providers/I18nProvider";
 
 const LIMIT = 30;
 
 // 메인 카테고리 4가지
 const mainCategories = [
-  { key: "top", label: "상의", koLabel: "상의" },
-  { key: "bottom", label: "하의", koLabel: "하의" },
-  { key: "outer", label: "아우터", koLabel: "아우터" },
-  { key: "onepiece", label: "원피스", koLabel: "원피스" },
+  { key: "top", label: "category.top", koLabel: "상의" },
+  { key: "bottom", label: "category.bottom", koLabel: "하의" },
+  { key: "outer", label: "category.outer", koLabel: "아우터" },
+  { key: "onepiece", label: "category.onepiece", koLabel: "원피스" },
 ];
 
 export default function SalePage() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<"hot" | "today" | "weekend">(
     "hot"
   );
@@ -84,7 +86,7 @@ export default function SalePage() {
         }
 
         const res = await fetch(`/api/products?${params.toString()}`);
-        if (!res.ok) throw new Error("핫딜 상품을 불러오지 못했습니다.");
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
         const data = await res.json();
         return data.products || [];
       },
@@ -122,7 +124,7 @@ export default function SalePage() {
         params.append("maxPrice", filters.maxPrice.toString());
 
       const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("오늘의 딜 상품을 불러오지 못했습니다.");
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -158,7 +160,7 @@ export default function SalePage() {
         params.append("maxPrice", filters.maxPrice.toString());
 
       const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("주말 특가 상품을 불러오지 못했습니다.");
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -271,15 +273,13 @@ export default function SalePage() {
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
             <ShoppingBag className="w-8 h-8 text-red-500" />
-            특가 세일
+            {t("nav.specialOffers")}
           </h1>
           <div className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
             HOT
           </div>
         </div>
-        <p className="text-gray-600 text-sm md:text-base">
-          최대 50% 할인! 놓치면 후회하는 특가 상품들
-        </p>
+  <p className="text-gray-600 text-sm md:text-base">{t("sale.subheading")}</p>
       </div>
 
       {/* 타이머 (오늘의 딜일 때만 표시) */}
@@ -289,7 +289,7 @@ export default function SalePage() {
             <div>
               <h3 className="font-bold text-lg flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                타임 세일 진행 중!
+                {t("sale.timer.title")}
               </h3>
               <p className="text-sm opacity-90">
                 오늘 자정까지 특가로 만나보세요
@@ -299,7 +299,7 @@ export default function SalePage() {
               <div className="text-2xl font-mono font-bold">
                 {getTimeLeft()}
               </div>
-              <div className="text-xs opacity-90">남은 시간</div>
+              <div className="text-xs opacity-90">{t("sale.timer.left")}</div>
             </div>
           </div>
         </div>
@@ -317,7 +317,7 @@ export default function SalePage() {
             }`}
           >
             <Flame className="w-4 h-4 inline mr-2" />
-            핫딜 특가
+            {t("sale.tabs.hot")}
           </button>
           <button
             onClick={() => setActiveTab("today")}
@@ -328,7 +328,7 @@ export default function SalePage() {
             }`}
           >
             <Clock className="w-4 h-4 inline mr-2" />
-            오늘의 딜
+            {t("sale.tabs.today")}
           </button>
           <button
             onClick={() => setActiveTab("weekend")}
@@ -339,16 +339,14 @@ export default function SalePage() {
             }`}
           >
             <PartyPopper className="w-4 h-4 inline mr-2" />
-            주말 특가
+            {t("sale.tabs.weekend")}
           </button>
         </div>
       </div>
 
       {/* 메인 카테고리 선택 */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          카테고리 선택
-        </h3>
+  <h3 className="text-lg font-semibold text-gray-900 mb-3">{t("filters.category")}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {mainCategories.map((category) => (
             <button
@@ -360,7 +358,7 @@ export default function SalePage() {
                   : "border-gray-200 bg-white text-gray-700 hover:border-red-500 hover:bg-red-50"
               }`}
             >
-              {category.label}
+              {t(category.label)}
             </button>
           ))}
         </div>
@@ -369,9 +367,7 @@ export default function SalePage() {
       {/* 세부 카테고리 선택 */}
       {subCategories.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">
-            세부 카테고리
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t("filters.subCategory")}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
             {subCategories.map((subCategory) => (
               <button
@@ -429,12 +425,8 @@ export default function SalePage() {
           <div className="text-6xl mb-4">
             <ShoppingBag className="w-16 h-16 mx-auto text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            세일 상품이 없습니다
-          </h3>
-          <p className="text-gray-500">
-            곧 새로운 특가 상품이 업데이트될 예정입니다.
-          </p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t("sale.empty.title")}</h3>
+          <p className="text-gray-500">{t("sale.empty.desc")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
@@ -455,13 +447,9 @@ export default function SalePage() {
         <div className="mt-12 text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
           <div className="flex items-center justify-center gap-2 mb-2">
             <DollarSign className="w-6 h-6 text-yellow-500" />
-            <p className="text-gray-800 font-medium">
-              더 많은 할인 혜택을 받으세요
-            </p>
+            <p className="text-gray-800 font-medium">{t("sale.more.title")}</p>
           </div>
-          <p className="text-sm text-gray-600">
-            회원가입 시 추가 10% 할인 쿠폰을 드립니다!
-          </p>
+          <p className="text-sm text-gray-600">{t("sale.more.desc")}</p>
         </div>
       )}
     </div>

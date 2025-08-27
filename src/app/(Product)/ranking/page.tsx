@@ -5,6 +5,7 @@ import MusinsaProductCard from "@/components/product/MusinsaProductCard";
 import ProductFilters from "@/components/product/ProductFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product, ProductFilters as ProductFiltersType } from "@/types/product";
+import { useI18n } from "@/providers/I18nProvider";
 import { useState } from "react";
 import { BarChart3, Trophy, Flame, Star } from "lucide-react";
 import { subCategoryMap, categoryMap } from "@/contents/Category/subCategories";
@@ -20,6 +21,7 @@ const mainCategories = [
 ];
 
 export default function RankingPage() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<"best" | "popular" | "review">(
     "best"
   );
@@ -69,7 +71,7 @@ export default function RankingPage() {
         params.append("maxPrice", filters.maxPrice.toString());
 
       const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("베스트 상품을 불러오지 못했습니다.");
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -105,7 +107,7 @@ export default function RankingPage() {
         params.append("maxPrice", filters.maxPrice.toString());
 
       const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("인기 상품을 불러오지 못했습니다.");
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -141,7 +143,7 @@ export default function RankingPage() {
         params.append("maxPrice", filters.maxPrice.toString());
 
       const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("리뷰 상품을 불러오지 못했습니다.");
+      if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -191,20 +193,20 @@ export default function RankingPage() {
       case "best":
         return {
           icon: <Trophy className="w-5 h-5" />,
-          title: "베스트 상품",
-          description: "가장 많이 판매된 인기 상품들을 확인해보세요.",
+          title: t("nav.bestSellers"),
+          description: t("ranking.best.desc"),
         };
       case "popular":
         return {
           icon: <Flame className="w-5 h-5" />,
-          title: "프리미엄 상품",
-          description: "높은 가격대의 프리미엄 상품들을 만나보세요.",
+          title: t("ranking.popular.title"),
+          description: t("ranking.popular.desc"),
         };
       case "review":
         return {
           icon: <Star className="w-5 h-5" />,
-          title: "최신 상품",
-          description: "따끈따끈한 신상품들을 가장 먼저 만나보세요.",
+          title: t("ranking.review.title"),
+          description: t("ranking.review.desc"),
         };
       default:
         return { icon: null, title: "", description: "" };
@@ -219,10 +221,10 @@ export default function RankingPage() {
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <BarChart3 className="w-8 h-8 text-[#FF84CD]" />
-          상품 랭킹
+          {t("header.ranking")}
         </h1>
         <p className="text-gray-600 text-sm md:text-base">
-          실시간 인기 상품과 베스트셀러를 한눈에 확인하세요
+          {t("ranking.subheading")}
         </p>
       </div>
 
@@ -238,7 +240,7 @@ export default function RankingPage() {
             }`}
           >
             <Trophy className="w-4 h-4 inline mr-2" />
-            베스트 상품
+            {t("nav.bestSellers")}
           </button>
           <button
             onClick={() => setActiveTab("popular")}
@@ -249,7 +251,7 @@ export default function RankingPage() {
             }`}
           >
             <Flame className="w-4 h-4 inline mr-2" />
-            프리미엄 상품
+            {t("ranking.popular.title")}
           </button>
           <button
             onClick={() => setActiveTab("review")}
@@ -260,7 +262,7 @@ export default function RankingPage() {
             }`}
           >
             <Star className="w-4 h-4 inline mr-2" />
-            최신 상품
+            {t("ranking.review.title")}
           </button>
         </div>
       </div>
@@ -268,7 +270,7 @@ export default function RankingPage() {
       {/* 메인 카테고리 선택 */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          카테고리 선택
+          {t("filters.category")}
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {mainCategories.map((category) => (
@@ -281,7 +283,7 @@ export default function RankingPage() {
                   : "border-gray-200 bg-white text-gray-700 hover:border-[#FF84CD] hover:bg-pink-50"
               }`}
             >
-              {category.label}
+              {t(category.label)}
             </button>
           ))}
         </div>
@@ -291,7 +293,7 @@ export default function RankingPage() {
       {subCategories.length > 0 && (
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">
-            세부 카테고리
+            {t("filters.subCategory")}
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
             {subCategories.map((subCategory) => (
@@ -347,7 +349,7 @@ export default function RankingPage() {
         <div className="text-center py-20">
           <div className="text-6xl mb-4">📊</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            랭킹 데이터가 없습니다
+            {t("ranking.empty.title")}
           </h3>
           <p className="text-gray-500">잠시 후 다시 시도해주세요.</p>
         </div>
@@ -377,7 +379,7 @@ export default function RankingPage() {
         <div className="mt-12 text-center p-6 bg-gray-50 rounded-lg">
           <p className="text-gray-600 mb-2">📈 실시간 랭킹이 업데이트됩니다</p>
           <p className="text-sm text-gray-500">
-            매일 새로운 랭킹 데이터로 업데이트되니 자주 확인해보세요!
+            {t("ranking.updateNote")}
           </p>
         </div>
       )}

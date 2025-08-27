@@ -8,18 +8,20 @@ import { Product, ProductFilters as ProductFiltersType } from "@/types/product";
 import { useState } from "react";
 import { Target, Bot, Sparkles } from "lucide-react";
 import { subCategoryMap, categoryMap } from "@/contents/Category/subCategories";
+import { useI18n } from "@/providers/I18nProvider";
 
 const LIMIT = 30;
 
 // 메인 카테고리 4가지
 const mainCategories = [
-  { key: "top", label: "상의", koLabel: "상의" },
-  { key: "bottom", label: "하의", koLabel: "하의" },
-  { key: "outer", label: "아우터", koLabel: "아우터" },
-  { key: "onepiece", label: "원피스", koLabel: "원피스" },
+  { key: "top", label: "category.top", koLabel: "상의" },
+  { key: "bottom", label: "category.bottom", koLabel: "하의" },
+  { key: "outer", label: "category.outer", koLabel: "아우터" },
+  { key: "onepiece", label: "category.onepiece", koLabel: "원피스" },
 ];
 
 export default function RecommendPage() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<"ai" | "editor">("ai");
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
@@ -74,8 +76,8 @@ export default function RecommendPage() {
         params.append("random", LIMIT.toString());
       }
 
-      const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("AI 추천 상품을 불러오지 못했습니다.");
+  const res = await fetch(`/api/products?${params.toString()}`);
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -111,8 +113,8 @@ export default function RecommendPage() {
       if (filters.maxPrice)
         params.append("maxPrice", filters.maxPrice.toString());
 
-      const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("에디터 추천 상품을 불러오지 못했습니다.");
+  const res = await fetch(`/api/products?${params.toString()}`);
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -151,11 +153,9 @@ export default function RecommendPage() {
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <Target className="w-8 h-8 text-[#FF84CD]" />
-          추천 상품
+          {t("header.recommend")}
         </h1>
-        <p className="text-gray-600 text-sm md:text-base">
-          당신만을 위한 특별한 상품을 추천해드립니다
-        </p>
+  <p className="text-gray-600 text-sm md:text-base">{t("recommend.subheading")}</p>
       </div>
 
       {/* 탭 메뉴 */}
@@ -170,7 +170,7 @@ export default function RecommendPage() {
             }`}
           >
             <Bot className="w-4 h-4 inline mr-2" />
-            AI 추천
+            {t("recommend.tabs.ai")}
           </button>
           <button
             onClick={() => setActiveTab("editor")}
@@ -181,16 +181,14 @@ export default function RecommendPage() {
             }`}
           >
             <Sparkles className="w-4 h-4 inline mr-2" />
-            에디터 추천
+            {t("recommend.tabs.editor")}
           </button>
         </div>
       </div>
 
       {/* 메인 카테고리 선택 */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          카테고리 선택
-        </h3>
+  <h3 className="text-lg font-semibold text-gray-900 mb-3">{t("filters.category")}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {mainCategories.map((category) => (
             <button
@@ -202,7 +200,7 @@ export default function RecommendPage() {
                   : "border-gray-200 bg-white text-gray-700 hover:border-[#FF84CD] hover:bg-pink-50"
               }`}
             >
-              {category.label}
+              {t(category.label)}
             </button>
           ))}
         </div>
@@ -211,9 +209,7 @@ export default function RecommendPage() {
       {/* 세부 카테고리 선택 */}
       {subCategories.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">
-            세부 카테고리
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t("filters.subCategory")}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
             {subCategories.map((subCategory) => (
               <button
@@ -246,8 +242,7 @@ export default function RecommendPage() {
         {activeTab === "ai" ? (
           <div>
             <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
-              <Bot className="w-5 h-5" />
-              AI가 선별한 맞춤 상품
+              <Bot className="w-5 h-5" /> {t("recommend.ai.title")}
             </h3>
             <p className="text-sm text-gray-600">
               머신러닝 알고리즘이 분석한 인기 트렌드와 베스트셀러 상품들을
@@ -258,7 +253,7 @@ export default function RecommendPage() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
               <Sparkles className="w-5 h-5" />
-              패션 에디터가 엄선한 신상품
+              {t("recommend.editor.title")}
             </h3>
             <p className="text-sm text-gray-600">
               패션 전문가들이 직접 선별한 최신 트렌드 아이템들을 만나보세요.
@@ -282,10 +277,8 @@ export default function RecommendPage() {
       ) : currentProducts.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">😔</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            추천 상품이 없습니다
-          </h3>
-          <p className="text-gray-500">잠시 후 다시 시도해주세요.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t("recommend.empty.title")}</h3>
+          <p className="text-gray-500">{t("recommend.empty.desc")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
@@ -298,10 +291,8 @@ export default function RecommendPage() {
       {/* 더보기 안내 */}
       {!isLoading && currentProducts.length > 0 && (
         <div className="mt-12 text-center p-6 bg-gray-50 rounded-lg">
-          <p className="text-gray-600 mb-2">더 많은 상품을 원하시나요?</p>
-          <p className="text-sm text-gray-500">
-            카테고리별 상품을 둘러보시거나 검색을 이용해보세요.
-          </p>
+          <p className="text-gray-600 mb-2">{t("recommend.more.title")}</p>
+          <p className="text-sm text-gray-500">{t("recommend.more.desc")}</p>
         </div>
       )}
     </div>

@@ -3,8 +3,10 @@
 import { useSearchParams } from "next/navigation";
 import MusinsaProductList from "@/components/product/MusinsaProductList";
 import { ProductFilters } from "@/types/product";
+import { useI18n } from "@/providers/I18nProvider";
 
 export default function ProductsPageClient() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
 
   // URL에서 검색 파라미터 추출
@@ -29,11 +31,11 @@ export default function ProductsPageClient() {
         {search && (
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              &lsquo;<span className="text-pink-600">{search}</span>&rsquo; 검색
-              결과
+              {t("product.search.resultsPrefix")} ‘
+              <span className="text-pink-600">{search}</span>’ {t("product.search.resultsSuffix")}
             </h1>
             <p className="text-gray-600">
-              찾으시는 상품이 없다면 다른 검색어로 시도해보세요.
+              {t("product.search.tryAnother")}
             </p>
           </div>
         )}
@@ -42,7 +44,7 @@ export default function ProductsPageClient() {
         {category && !search && (
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
-              {getCategoryName(category)}
+              {getCategoryName(category, t)}
             </h1>
           </div>
         )}
@@ -54,12 +56,12 @@ export default function ProductsPageClient() {
 }
 
 // 카테고리 한글명 변환 함수
-function getCategoryName(category: string): string {
+function getCategoryName(category: string, t: (k: string) => string): string {
   const categoryMap: Record<string, string> = {
-    top: "상의",
-    bottom: "하의",
-    outer: "아우터",
-    onepiece: "원피스",
+    top: t("category.top"),
+    bottom: t("category.bottom"),
+    outer: t("category.outer"),
+    onepiece: t("category.onepiece"),
   };
 
   return categoryMap[category] || category;

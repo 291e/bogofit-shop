@@ -1,8 +1,10 @@
 import { Instagram, Facebook, Youtube } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useI18n } from "@/providers/I18nProvider";
 
 export default function Footer() {
+  const { t } = useI18n();
   return (
     <footer className="w-full bg-white border-t text-gray-700 text-sm mt-16 pt-10 pb-6 px-4 md:px-0">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8 md:gap-0 px-4 ">
@@ -17,37 +19,35 @@ export default function Footer() {
             />
             <span className="text-lg font-bold tracking-wide">BOGOFIT</span>
           </div>
-          <span className="text-gray-500">
-            반품없이 쉽고 빠르게 입어보는 BOGOFIT!
-          </span>
-          <span className="text-gray-500">전 세계 인기 상품을 한 곳에서</span>
-          <span className="text-gray-500">믿을 수 있는 해외배송 서비스</span>
+          <span className="text-gray-500">{t("footer.tagline1")}</span>
+          <span className="text-gray-500">{t("footer.tagline2")}</span>
+          <span className="text-gray-500">{t("footer.tagline3")}</span>
         </div>
 
         {/* 주요 메뉴 */}
         <div className="flex-1 flex flex-col gap-1">
-          <span className="font-semibold mb-1">메뉴</span>
+          <span className="font-semibold mb-1">{t("footer.menu")}</span>
           <Link
             href="https://www.metabank3d.com/"
             className="hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >
-            회사소개
+            {t("footer.companyIntro")}
           </Link>
           <Link href="/agreement" className="hover:underline">
-            이용약관
+            {t("footer.terms")}
           </Link>
           <Link href="/privacy" className="hover:underline">
-            개인정보처리방침
+            {t("footer.privacy")}
           </Link>
         </div>
 
         {/* 고객센터 */}
         <div className="flex-1 flex flex-col gap-1">
-          <span className="font-semibold mb-1">고객센터</span>
+          <span className="font-semibold mb-1">{t("footer.customerCenter")}</span>
           <span>
-            상품 문의{" "}
+            {t("footer.productInquiry")} {" "}
             <Link
               href="mailto:bogofit@naver.com"
               className="text-blue-600 hover:underline ml-1"
@@ -56,7 +56,7 @@ export default function Footer() {
             </Link>
           </span>
           <span>
-            입점 문의{" "}
+            {t("footer.partnerInquiry")} {" "}
             <Link
               href="mailto:bogofit@naver.com"
               className="text-blue-600 hover:underline ml-1"
@@ -66,22 +66,17 @@ export default function Footer() {
           </span>
           <span>
             042-385-1008{" "}
-            <span className="text-xs text-gray-400 ml-1">
-              (평일 10:00~18:00)
-            </span>
+            <span className="text-xs text-gray-400 ml-1">{t("footer.hours")}</span>
           </span>
         </div>
 
         {/* 회사정보 */}
         <div className="flex-1  flex flex-col gap-1 text-xs text-gray-500 mt-4 md:mt-0">
-          <span className="font-semibold text-sm text-gray-700 mb-1">
-            회사정보
-          </span>
+          <span className="font-semibold text-sm text-gray-700 mb-1">{t("footer.companyInfo")}</span>
+          {/* Company legal info kept in Korean as requested */}
           <span>상호: (주)메타뱅크 | 대표: 소요환</span>
           <span>사업자등록번호: 755-86-02418</span>
-          <span>
-            주소: 대전광역시 대덕구 한남로 70 한남대캠퍼스혁신파크 B동 205호
-          </span>
+          <span>주소: 대전광역시 대덕구 한남로 70 한남대캠퍼스혁신파크 B동 205호</span>
         </div>
       </div>
 

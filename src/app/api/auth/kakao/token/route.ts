@@ -127,9 +127,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("✅ Kakao token request successful");
-    // 액세스 토큰 반환
-    return NextResponse.json({ accessToken: tokenData.access_token });
+  console.log("✅ Kakao token request successful");
+  // 액세스 토큰 반환
+  return NextResponse.json({ accessToken: tokenData.access_token });
   } catch (error) {
     console.error("❌ Kakao 토큰 요청 오류:", error);
     return NextResponse.json(

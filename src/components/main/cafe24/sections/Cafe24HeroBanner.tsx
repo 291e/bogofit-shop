@@ -4,8 +4,10 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 import { heroBannerSlides, heroImageUrls } from "@/contents/Hero/slideImages";
+import { useI18n } from "@/providers/I18nProvider";
 
 export function Cafe24HeroBanner() {
+  const { t } = useI18n();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -110,7 +112,7 @@ export function Cafe24HeroBanner() {
       <div
         className="relative h-[400px] md:h-[700px] container mx-auto overflow-hidden "
         role="region"
-        aria-label="메인 배너 슬라이드"
+        aria-label={t("hero.mainBanner")}
         tabIndex={0}
       >
         {/* 슬라이드 이미지들 */}
@@ -135,7 +137,7 @@ export function Cafe24HeroBanner() {
                       {/* 이미지 */}
                       <Image
                         src={slide.image}
-                        alt={slide.alt}
+                        alt={slide.altKey ? t(slide.altKey) : slide.alt}
                         fill
                         className="object-cover"
                         priority={slide.priority || slideIndex === 0}
@@ -151,17 +153,17 @@ export function Cafe24HeroBanner() {
                         <div className="text-center text-white">
                           {/* 제목 */}
                           <h3 className="text-lg md:text-2xl lg:text-3xl font-bold mb-2 leading-tight drop-shadow-lg">
-                            {slide.title}
+                            {slide.titleKey ? t(slide.titleKey) : slide.title}
                           </h3>
 
                           {/* 부제목 */}
                           <h4 className="text-sm md:text-lg lg:text-xl font-medium  leading-snug drop-shadow-md">
-                            {slide.subtitle}
+                            {slide.subtitleKey ? t(slide.subtitleKey) : slide.subtitle}
                           </h4>
 
                           {/* 설명 */}
                           <p className="text-xs md:text-sm lg:text-base mb-4 opacity-90 leading-relaxed drop-shadow-sm line-clamp-2 hidden sm:block">
-                            {slide.description}
+                            {slide.descriptionKey ? t(slide.descriptionKey) : slide.description}
                           </p>
                         </div>
                       </div>
@@ -191,7 +193,7 @@ export function Cafe24HeroBanner() {
         <button
           onClick={prevSlide}
           className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-300 backdrop-blur-sm z-20 focus:outline-none focus:ring-2 focus:ring-white/50"
-          aria-label="이전 슬라이드"
+          aria-label={t("hero.prev")}
           disabled={isTransitioning}
         >
           <ChevronLeft size={24} />
@@ -200,7 +202,7 @@ export function Cafe24HeroBanner() {
         <button
           onClick={nextSlide}
           className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-all duration-300 backdrop-blur-sm z-20 focus:outline-none focus:ring-2 focus:ring-white/50"
-          aria-label="다음 슬라이드"
+          aria-label={t("hero.next")}
           disabled={isTransitioning}
         >
           <ChevronRight size={24} />
@@ -210,7 +212,7 @@ export function Cafe24HeroBanner() {
         <button
           onClick={toggleAutoPlay}
           className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all duration-300 backdrop-blur-sm z-20 focus:outline-none focus:ring-2 focus:ring-white/50"
-          aria-label={isAutoPlaying ? "자동재생 정지" : "자동재생 시작"}
+          aria-label={isAutoPlaying ? t("hero.autoplayPause") : t("hero.autoplayPlay")}
         >
           {isAutoPlaying ? <Pause size={20} /> : <Play size={20} />}
         </button>
@@ -226,7 +228,7 @@ export function Cafe24HeroBanner() {
                   ? "bg-white scale-110"
                   : "bg-white/50 hover:bg-white/70"
               }`}
-              aria-label={`슬라이드 ${index + 1}로 이동`}
+              aria-label={`${t("hero.slideWord")} ${index + 1} ${t("hero.goToSlide")}`}
               disabled={isTransitioning}
             />
           ))}
@@ -244,7 +246,7 @@ export function Cafe24HeroBanner() {
 
         {/* 슬라이드 정보 (스크린 리더용) */}
         <div className="sr-only" aria-live="polite">
-          슬라이드 {currentSlide + 1} / {slideCount}: {currentSlideData.title}
+          {t("hero.slideWord")} {currentSlide + 1} / {slideCount}: {currentSlideData.title}
         </div>
       </div>
     </div>

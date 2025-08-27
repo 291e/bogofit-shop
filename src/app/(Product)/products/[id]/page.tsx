@@ -26,8 +26,10 @@ import { ProductVariant } from "@/types/product";
 import { PurchaseButton } from "@/components/product/PurchaseButton";
 import VirtualFitting from "@/components/product/VirtualFitting";
 import ProductReview from "@/components/product/ProductReview";
+import { useI18n } from "@/providers/I18nProvider";
 
 export default function ProductDetail() {
+  const { t } = useI18n();
   const params = useParams();
   const {
     data: product,
@@ -90,10 +92,8 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😞</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            상품을 불러올 수 없습니다
-          </h2>
-          <p className="text-gray-600">잠시 후 다시 시도해주세요.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("product.detail.errorTitle")}</h2>
+          <p className="text-gray-600">{t("product.detail.errorDesc")}</p>
         </div>
       </div>
     );
@@ -104,10 +104,8 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🔍</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            상품을 찾을 수 없습니다
-          </h2>
-          <p className="text-gray-600">요청하신 상품이 존재하지 않습니다.</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("product.detail.notFoundTitle")}</h2>
+          <p className="text-gray-600">{t("product.detail.notFoundDesc")}</p>
         </div>
       </div>
     );
@@ -281,10 +279,10 @@ export default function ProductDetail() {
                         let badgeText = badge;
 
                         // 뱃지별 스타일 설정
-                        switch (badge.toUpperCase()) {
+            switch (badge.toUpperCase()) {
                           case "SOLDOUT":
                             badgeStyle = "bg-red-500";
-                            badgeText = "품절";
+              badgeText = t("product.badge.soldout");
                             break;
                           case "NEW":
                             badgeStyle =
@@ -357,7 +355,7 @@ export default function ProductDetail() {
                           >
                             <Image
                               src={image}
-                              alt={`${product.title} 이미지 ${actualIndex + 1}`}
+                              alt={`${product.title} ${t("product.detail.imageAltSuffix")} ${actualIndex + 1}`}
                               width={100}
                               height={100}
                               className="w-full h-full object-cover"
@@ -469,9 +467,7 @@ export default function ProductDetail() {
                     <span className="font-semibold text-gray-900">
                       {product.avgRating}
                     </span>
-                    <span className="text-gray-500">
-                      ({product.reviewCount}개 리뷰)
-                    </span>
+                    <span className="text-gray-500">({product.reviewCount}{t("product.detail.reviewSuffix")})</span>
                   </div>
                 )}
               </div>
@@ -485,11 +481,11 @@ export default function ProductDetail() {
                       product.originalPrice > product.price && (
                         <div className="flex items-center gap-2">
                           <span className="text-lg text-gray-500 line-through">
-                            {product.originalPrice.toLocaleString()}원
+                            {product.originalPrice.toLocaleString()}{t("currency.won")}
                           </span>
                           {product.discountRate && (
                             <Badge className="bg-red-500 text-white text-xs">
-                              {product.discountRate}% 할인
+                              {product.discountRate}% {t("product.detail.discount")}
                             </Badge>
                           )}
                         </div>
@@ -497,17 +493,17 @@ export default function ProductDetail() {
 
                     {/* 최종 판매가 */}
                     <span className="text-2xl font-bold text-pink-600">
-                      {finalPrice.toLocaleString()}원
+                      {finalPrice.toLocaleString()}{t("currency.won")}
                     </span>
 
                     {totalPriceDiff !== 0 && (
                       <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded-full">
-                        기본가 {product.price.toLocaleString()}원
+                        {t("product.detail.basePrice")} {product.price.toLocaleString()}{t("currency.won")}
                         {totalPriceDiff > 0 ? " +" : " "}
-                        {totalPriceDiff.toLocaleString()}원
+                        {totalPriceDiff.toLocaleString()}{t("currency.won")}
                         {Object.keys(selectedOptions).length > 1 && (
                           <span className="text-xs text-gray-400 ml-1">
-                            (옵션 합계)
+                            ({t("product.detail.optionsTotal")})
                           </span>
                         )}
                       </span>
@@ -516,7 +512,7 @@ export default function ProductDetail() {
 
                   {quantity > 1 && (
                     <p className="text-lg font-semibold text-gray-700">
-                      총 {totalPrice.toLocaleString()}원 (수량: {quantity}개)
+                      {t("product.detail.total")} {totalPrice.toLocaleString()}{t("currency.won")} ({t("product.detail.quantity")}: {quantity})
                     </p>
                   )}
                 </div>
@@ -547,9 +543,7 @@ export default function ProductDetail() {
                           }}
                         >
                           <SelectTrigger className="w-full bg-white border-2 border-gray-200 hover:border-pink-300 transition-colors rounded-xl h-12">
-                            <SelectValue
-                              placeholder={`${optionName}을 선택하세요`}
-                            />
+                            <SelectValue placeholder={`${optionName} ${t("product.detail.selectPlaceholder")}`} />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
                             {variants.map((variant) => (
@@ -570,12 +564,12 @@ export default function ProductDetail() {
                                         {variant.priceDiff.toLocaleString()}원
                                       </span>
                                     )}
-                                    {variant.optionValue.includes("품절") && (
+                  {variant.optionValue.includes("품절") && (
                                       <Badge
                                         variant="destructive"
                                         className="text-xs"
                                       >
-                                        품절
+                    {t("product.badge.soldout")}
                                       </Badge>
                                     )}
                                   </div>
@@ -593,9 +587,7 @@ export default function ProductDetail() {
               {/* 선택된 옵션 요약 */}
               {Object.keys(selectedOptions).length > 0 && (
                 <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-4 border border-pink-100">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    선택된 옵션
-                  </h4>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">{t("product.detail.selectedOptions")}</h4>
                   <div className="space-y-1">
                     {Object.entries(selectedOptions).map(([name, value]) => {
                       const variant = product.variants?.find(
@@ -624,9 +616,7 @@ export default function ProductDetail() {
                     {Object.keys(selectedOptions).length > 1 &&
                       totalPriceDiff !== 0 && (
                         <div className="pt-2 mt-2 border-t border-pink-200 flex justify-between items-center">
-                          <span className="text-sm font-semibold text-gray-700">
-                            옵션 합계
-                          </span>
+                          <span className="text-sm font-semibold text-gray-700">{t("product.detail.optionsTotal")}</span>
                           <span className="text-sm font-bold text-pink-600">
                             {totalPriceDiff > 0 ? "+" : ""}
                             {totalPriceDiff.toLocaleString()}원
@@ -639,9 +629,7 @@ export default function ProductDetail() {
 
               {/* 수량 선택 */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700">
-                  수량
-                </label>
+                <label className="text-sm font-semibold text-gray-700">{t("product.detail.quantity")}</label>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -692,8 +680,8 @@ export default function ProductDetail() {
                       <Truck className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">무료배송</p>
-                      <p className="text-xs text-gray-500">모든 주문</p>
+                      <p className="font-semibold text-sm">{t("product.detail.freeShipping")}</p>
+                      <p className="text-xs text-gray-500">{t("product.detail.allOrders")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -701,8 +689,8 @@ export default function ProductDetail() {
                       <Shield className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">품질보장</p>
-                      <p className="text-xs text-gray-500">100% 정품</p>
+                      <p className="font-semibold text-sm">{t("product.detail.qualityAssured")}</p>
+                      <p className="text-xs text-gray-500">{t("product.detail.genuine")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -710,8 +698,8 @@ export default function ProductDetail() {
                       <RefreshCw className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">교환/반품</p>
-                      <p className="text-xs text-gray-500">7일 이내</p>
+                      <p className="font-semibold text-sm">{t("product.detail.exchangeReturn")}</p>
+                      <p className="text-xs text-gray-500">{t("product.detail.within7days")}</p>
                     </div>
                   </div>
                 </div>
@@ -739,13 +727,13 @@ export default function ProductDetail() {
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                   className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
-                  title="상품정보"
+                  title={t("product.detail.nav.info")}
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center">
                     <div className="w-3 h-3 border-2 border-white rounded-sm"></div>
                   </div>
                   <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    상품정보
+                    {t("product.detail.nav.info")}
                   </div>
                 </button>
 
@@ -756,13 +744,13 @@ export default function ProductDetail() {
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                   className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
-                  title="상품상세"
+                  title={t("product.detail.nav.detail")}
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-pink-400 to-purple-400 rounded-lg flex items-center justify-center">
                     <div className="w-3 h-3 bg-white rounded-sm"></div>
                   </div>
                   <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    상품상세
+                    {t("product.detail.nav.detail")}
                   </div>
                 </button>
 
@@ -773,13 +761,13 @@ export default function ProductDetail() {
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                   className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
-                  title="리뷰"
+                  title={t("product.detail.nav.reviews")}
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-lg flex items-center justify-center">
                     <div className="w-3 h-3 border border-white rounded-full"></div>
                   </div>
                   <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    리뷰
+                    {t("product.detail.nav.reviews")}
                   </div>
                 </button>
                 <button
@@ -805,13 +793,13 @@ export default function ProductDetail() {
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                   className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
-                  title="배송/교환/반품"
+                  title={t("product.detail.nav.shipping")}
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-lg flex items-center justify-center">
                     <div className="w-3 h-2 bg-white rounded-sm"></div>
                   </div>
                   <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    배송/교환/반품
+                    {t("product.detail.nav.shipping")}
                   </div>
                 </button>
               </nav>
@@ -822,9 +810,7 @@ export default function ProductDetail() {
           {(product.description || detailImage) && (
             <div id="product-detail" className="max-w-3xl mx-auto mt-16">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 text-center">
-                  상품 상세
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-900 text-center">{t("product.detail.details")}</h2>
                 <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
               </div>
 
@@ -842,7 +828,7 @@ export default function ProductDetail() {
               {!product.description && detailImage && (
                 <Image
                   src={detailImage}
-                  alt="상세 이미지"
+                  alt={t("product.detail.detailImageAlt")}
                   width={1200}
                   height={1600}
                   className="w-full h-auto"
@@ -865,23 +851,15 @@ export default function ProductDetail() {
           {/* Q&A 섹션 */}
           <div id="qna" className="max-w-6xl mx-auto mt-16">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 text-center">
-                Q&A
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">Q&A</h2>
               <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
             </div>
             <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">💬</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  아직 등록된 문의가 없습니다
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  상품에 대해 궁금한 점이 있으시면 언제든 문의해주세요.
-                </p>
-                <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200">
-                  문의하기
-                </button>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{t("product.detail.qna.emptyTitle")}</h3>
+                <p className="text-gray-600 mb-6">{t("product.detail.qna.emptyDesc")}</p>
+                <button className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200">{t("product.detail.qna.ask")}</button>
               </div>
             </div>
           </div>
@@ -889,9 +867,7 @@ export default function ProductDetail() {
           {/* 배송/교환/반품 정보 */}
           <div id="shipping-info" className="max-w-6xl mx-auto mt-16 mb-16">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 text-center">
-                배송/교환/반품
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">{t("product.detail.shipping.title")}</h2>
               <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
             </div>
             <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
@@ -899,37 +875,37 @@ export default function ProductDetail() {
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Truck className="w-5 h-5 text-pink-500" />
-                    배송 정보
+                    {t("product.detail.shipping.info")}
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>• 배송비: 무료배송</p>
-                    <p>• 배송기간: 주문 후 7-10일 (영업일 기준)</p>
-                    <p>• 배송지역: 전국</p>
-                    <p>• 택배사: CJ대한통운</p>
+                    <p>• {t("product.detail.shipping.free")}</p>
+                    <p>• {t("product.detail.shipping.duration")}</p>
+                    <p>• {t("product.detail.shipping.region")}</p>
+                    <p>• {t("product.detail.shipping.carrier")}</p>
                   </div>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <RefreshCw className="w-5 h-5 text-blue-500" />
-                    교환/반품
+                    {t("product.detail.shipping.exchangeReturn")}
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>• 교환/반품 기간: 상품 수령 후 7일 이내</p>
-                    <p>• 교환/반품 비용: 고객 부담</p>
-                    <p>• 단순변심 시 왕복배송비 부담</p>
-                    <p>• 불량품/오배송 시 무료 교환</p>
+                    <p>• {t("product.detail.shipping.exchangeReturnPeriod")}</p>
+                    <p>• {t("product.detail.shipping.exchangeReturnCost")}</p>
+                    <p>• {t("product.detail.shipping.changeOfMind")}</p>
+                    <p>• {t("product.detail.shipping.defectOrWrong")}</p>
                   </div>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Shield className="w-5 h-5 text-green-500" />
-                    주의사항
+                    {t("product.detail.shipping.notes")}
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>• 착용 후 교환/반품 불가</p>
-                    <p>• 세탁 후 교환/반품 불가</p>
-                    <p>• 상품 택 제거 시 교환/반품 불가</p>
-                    <p>• 고객 과실로 인한 손상 시 불가</p>
+                    <p>• {t("product.detail.shipping.noReturnAfterWear")}</p>
+                    <p>• {t("product.detail.shipping.noReturnAfterWash")}</p>
+                    <p>• {t("product.detail.shipping.noReturnWithoutTag")}</p>
+                    <p>• {t("product.detail.shipping.noReturnCustomerFault")}</p>
                   </div>
                 </div>
               </div>

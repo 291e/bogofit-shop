@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 // import Image from "next/image";
 import Link from "next/link";
 import { categories } from "@/contents/Category/categories";
+import { useI18n } from "@/providers/I18nProvider";
 
 const categoryUrlMap: Record<string, string> = {
   상의: "top",
@@ -34,6 +35,7 @@ const itemVariants = {
 };
 
 export default function CategoryListPage() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-16">
@@ -44,10 +46,10 @@ export default function CategoryListPage() {
           className="text-center mb-16"
         >
           <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            카테고리별 쇼핑
+            {t("product.categoryList.title")}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            원하는 스타일을 빠르게 찾아보세요
+            {t("product.categoryList.subtitle")}
           </p>
         </motion.div>
 

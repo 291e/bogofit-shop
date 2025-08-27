@@ -5,6 +5,7 @@ import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import MainLayout from "@/components/layout/mainLayout";
 import { Providers } from "@/providers/ApolloProvider";
+import { I18nProvider } from "@/providers/I18nProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -138,7 +139,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </noscript>
         <Providers>
           <QueryProvider>
-            <MainLayout>{children}</MainLayout>
+            <I18nProvider>
+              <MainLayout>{children}</MainLayout>
+            </I18nProvider>
           </QueryProvider>
         </Providers>
       </body>

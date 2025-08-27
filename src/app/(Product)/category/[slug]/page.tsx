@@ -21,10 +21,12 @@ import {
 } from "@/types/product";
 import { subCategoryMap, categoryMap } from "@/contents/Category/subCategories";
 import { useState } from "react";
+import { useI18n } from "@/providers/I18nProvider";
 
 const LIMIT = 30;
 
 export default function CategoryProductsPage() {
+  const { t } = useI18n();
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -54,8 +56,8 @@ export default function CategoryProductsPage() {
       if (filters.sortBy) params.append("sortBy", filters.sortBy);
       if (filters.showSoldOut !== undefined)
         params.append("showSoldOut", filters.showSoldOut.toString());
-      const res = await fetch(`/api/products?${params.toString()}`);
-      if (!res.ok) throw new Error("상품을 불러오지 못했습니다.");
+  const res = await fetch(`/api/products?${params.toString()}`);
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       return res.json() as Promise<ProductsResponse>;
     },
   });
@@ -86,12 +88,12 @@ export default function CategoryProductsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center text-red-500 py-20">
-          상품을 불러오지 못했습니다.
+          {t("product.errors.fetchProducts")}
           <button
             onClick={() => refetch()}
             className="block mx-auto mt-4 text-blue-500 underline"
           >
-            다시 시도
+            {t("common.retry")}
           </button>
         </div>
       </div>
@@ -109,13 +111,17 @@ export default function CategoryProductsPage() {
             </h1>
             <div className="hidden sm:block h-4 md:h-6 w-px bg-gray-200" />
             <p className="hidden sm:block text-gray-600 text-xs md:text-sm">
-              총 {totalCount.toLocaleString()}개의 상품
+              {t("product.category.totalPrefix")}
+              {totalCount.toLocaleString()}
+              {t("product.category.totalSuffix")}
             </p>
           </div>
         </div>
         <div className="block sm:hidden">
           <p className="text-gray-600 text-xs">
-            총 {totalCount.toLocaleString()}개의 상품
+            {t("product.category.totalPrefix")}
+            {totalCount.toLocaleString()}
+            {t("product.category.totalSuffix")}
           </p>
         </div>
       </div>
@@ -144,7 +150,7 @@ export default function CategoryProductsPage() {
             <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 sm:hidden">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">
-                  선택된 카테고리:{" "}
+                  {t("product.category.selected")}:{" "}
                   <span className="font-medium text-[#000c22]">
                     {selectedSubCategory}
                   </span>
@@ -156,7 +162,7 @@ export default function CategoryProductsPage() {
                   }}
                   className="text-xs text-gray-500 hover:text-red-600 underline"
                 >
-                  초기화
+                  {t("common.reset")}
                 </button>
               </div>
             </div>
@@ -193,10 +199,10 @@ export default function CategoryProductsPage() {
             </div>
             <div className="text-center">
               <p className="text-gray-900 font-medium text-base md:text-lg mb-1 md:mb-2">
-                검색 결과가 없습니다
+                {t("product.empty.noResults")}
               </p>
               <p className="text-gray-500 text-sm mb-3 md:mb-4 leading-relaxed">
-                다른 검색어나 필터를 시도해보세요
+                {t("product.empty.tryAnother")}
               </p>
             </div>
             <button
@@ -206,7 +212,7 @@ export default function CategoryProductsPage() {
               }}
               className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors text-sm font-medium touch-manipulation"
             >
-              필터 초기화
+              {t("common.resetFilters")}
             </button>
           </div>
         </div>
