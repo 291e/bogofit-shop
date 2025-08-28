@@ -221,7 +221,7 @@ export default function RecommendPage() {
                     : "bg-white"
                 }`}
               >
-        {"nameKey" in subCategory ? t((subCategory as any).nameKey) : (subCategory as any).name}
+  {t(subCategory.nameKey)}
               </button>
             ))}
           </div>

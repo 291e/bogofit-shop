@@ -57,7 +57,7 @@ export default function AddressPage() {
     } else if (user) {
       fetchAddresses();
     }
-  }, [user, isAuthenticated, router]);
+  }, [user, isAuthenticated, router, fetchAddresses]);
 
   // 주소 저장
   const handleSaveAddress = async (e: React.FormEvent) => {

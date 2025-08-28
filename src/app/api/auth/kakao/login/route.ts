@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       kakaoUser.kakao_account?.profile?.nickname || `kakao_${socialId}`;
 
     // Find existing provider link
-    let provider = await prisma.provider.findUnique({
+  const provider = await prisma.provider.findUnique({
       where: {
         provider_socialId: {
           provider: "kakao",
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
               include: { brand: true },
             });
             break;
-          } catch (e: any) {
-            if (e?.code === "P2002") {
+          } catch (e) {
+            if (typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002") {
               suffix += 1;
               userId = `${userIdBase}_${suffix}`;
               continue;

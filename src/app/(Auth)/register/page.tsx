@@ -148,18 +148,18 @@ function RegisterPageContent() {
   const handleFormSubmit = useCallback(() => {
     const validation = validateForm();
     if (!validation.isValid) {
-  setError(t("auth.register.errors.invalidForm"));
+      setError(t("auth.register.errors.invalidForm"));
       return;
     }
 
     if (!hasAgreedToTerms) {
-  setError(t("auth.register.errors.agreeRequired"));
+      setError(t("auth.register.errors.agreeRequired"));
       return;
     }
 
     setError("");
     setStep("verification-choice");
-  }, [validateForm, hasAgreedToTerms]);
+  }, [validateForm, hasAgreedToTerms, t]);
 
   const handleVerificationChoice = useCallback((method: VerificationMethod) => {
     setSelectedVerificationMethod(method);
@@ -168,7 +168,7 @@ function RegisterPageContent() {
     } else {
       setStep("sms-verification");
     }
-  }, []);
+  }, [t]);
 
   const handleEmailVerified = useCallback(() => {
   console.log("Email verified, continue registration");

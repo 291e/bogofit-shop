@@ -102,7 +102,7 @@ export const useAddressSearch = () => {
         closeBtn.onclick = () => {
           try {
             document.body.removeChild(overlay);
-          } catch (_) {
+          } catch {
             // ignore
           }
         };
@@ -117,7 +117,7 @@ export const useAddressSearch = () => {
             onComplete({ zipCode: data.zonecode, address: addr });
             try {
               document.body.removeChild(overlay);
-            } catch (_) {
+            } catch {
               // ignore
             }
           },
