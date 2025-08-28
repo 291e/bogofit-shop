@@ -1,0 +1,528 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @unique @default(uuid())
+  userId      String       @unique
+  password    String?
+  isAdmin     Boolean      @default(false)
+  isBusiness  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  email       String       @unique
+  profile     String?
+  phoneNumber String?      @unique
+  name        String
+  gender            String?
+  birthDate         DateTime?
+
+  brandId     Int?
+  brand       Brand?        @relation(fields: [brandId], references: [id])
+
+  gradeId     Int?
+  grade       UserGrade?    @relation(fields: [gradeId], references: [id])
+
+
+  addresses   Address[]
+  carts       Cart[]
+  orders      Order[]
+  reviews     Review[]
+  coupons     CouponUser[]
+  providers   Provider[]
+  termsAgreements TermsAgreement[]
+  userLogs UserLog[]
+}
+
+model UserGrade {
+  id Int @id @default(autoincrement())
+  name String @unique
+  slug String @unique
+  description String?
+  discountRate Float @default(0)
+  pointRate Float @default(1.0)
+  freeShipping Boolean @default(false)
+  minOrderAmount Float @default(0)
+  minOrderCount Int @default(0)
+  isActive Boolean @default(true)
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+}
+model Address {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  label     String   // '집', '회사' 등
+  recipient String
+  zipCode   String
+  address1  String
+  address2  String?
+  phone     String
+  isDefault Boolean  @default(false)
+}
+
+model Provider {
+  id        String   @id @default(uuid())
+  provider  String
+  socialId  String
+  email     String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, socialId])
+}
+
+model Brand {
+  id Int @id @default(autoincrement())
+  name String @unique
+  slug String @unique
+  logo String?
+  description String?
+  businessNumber String?
+  status BrandStatus @default(PENDING)
+  isActive Boolean @default(true)
+  commissionRate Float @default(0)
+  bankAccount String?
+  bankCode String?
+  accountHolder String?
+  settings Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+  products Product[]
+  orders Order[]
+  settlements Settlement[]
+  analytics BrandAnalytics[]
+}
+
+
+enum BrandStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+model TermsAgreement {
+  id Int @id @default(autoincrement())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  termsType TermsType
+  termsVersion String
+  content String?
+  isAgreed Boolean @default(false)
+  ipAddress String?
+  userAgent String?
+  isWithdraw Boolean @default(false)
+  withdrawReason String?
+  withdrawAt DateTime?
+  agreedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, termsType, termsVersion])
+}
+
+enum TermsType {
+  SERVICE
+  PRIVACY
+  MARKETING
+  LOCATION
+  THIRDPARTY
+}
+
+model UserLog {
+  id Int @id @default(autoincrement())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  action LogAction
+  category String?
+  description String?
+  targetType String?
+  targetId String?
+  sessionId String?
+  ipAddress String?
+  userAgent String?
+  metadata Json?
+  isSuccess Boolean @default(true)
+  errorMessage String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+enum LogAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  PASSWORD_RESET
+  VIEW_PRODUCT
+  ADD_TO_CART
+  REMOVE_FROM_CART
+  CREATE_ORDER
+  CANCEL_ORDER
+  PAYMENT_SUCCESS
+  PAYMENT_FAIL
+  WRITE_REVIEW
+  UPDATE_PROFILE
+  BUSINESS_LOGIN
+  BUSINESS_ACTION
+}
+
+/// PRODUCT ------------------------------------------------------------------
+model Product  {
+  id        Int      @id @default(autoincrement())
+  brandId   Int?
+  brand     Brand?   @relation(fields: [brandId], references: [id])
+  title     String
+  slug          String          @unique
+  description   String?
+  detailDescription String?
+  price     Float  // 최종 판매가격
+  originalPrice Float? // 원가 (할인 전 가격)
+  discountRate  Float? // 할인율 (%)
+  discountAmount Float? // 할인 금액
+  url       String   @unique
+  category  String
+  subCategory String? // 세부 카테고리 (후드, 맨투맨, 청바지 등)
+  gender    Gender   @default(UNISEX) // 성별 (남, 여, 공용)
+  imageUrl  String
+  badge           String?
+  storeName       String?       // 임시 유지 - 기존 데이터 보존용
+  isActive  Boolean   @default(true)
+  detailImage     String?      // 상세 영역 첫 이미지 (단일)
+  thumbnailImages String[]     // 썸네일 배열(Postgres text[])
+  status ProductStatus @default(PENDING)
+  shippingType ShippingType @default(OVERSEAS) // 배송 지역 (기존 상품은 모두 해외)
+  totalSales Int @default(0)
+  totalSold Int @default(0)
+  approvedAt DateTime?
+  approvedBy String?
+  rejectionReason String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants      ProductVariant[]
+  reviews       Review[]
+  orderItems    OrderItem[]
+}
+
+enum ProductStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DRAFT
+}
+
+enum ShippingType {
+  DOMESTIC  // 국내 배송
+  OVERSEAS  // 해외 배송
+}
+
+enum Gender {
+  MALE    // 남성
+  FEMALE  // 여성
+  UNISEX  // 공용
+}
+
+model ProductVariant {
+  id          Int      @id @default(autoincrement())
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   Int
+  optionName  String   // '색상', '사이즈' 등 조합해서 사용해도 OK
+  optionValue String   // 'RED', 'XL' ...
+  priceDiff   Int  @default(0) // 옵션가
+  stock       Int
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  @@unique([productId, optionName, optionValue])
+}
+
+/// CART ---------------------------------------------------------------------
+model Cart {
+  id        Int        @id @default(autoincrement())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  items     CartItem[]
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id          Int             @id @default(autoincrement())
+  cart        Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId      Int
+  variant     ProductVariant  @relation(fields: [variantId], references: [id])
+  variantId   Int
+  quantity    Int
+  @@unique([cartId, variantId])
+}
+
+/// ORDER & PAYMENT ----------------------------------------------------------
+model Order {
+  id            String        @id @default(cuid())
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId        String?       // 비회원 주문을 위해 nullable로 변경
+  orderNumber   String        @unique           // 예: YYMMDD-XXXX
+  status        OrderStatus   @default(PENDING) // 결제 전, 후, 배송 등
+  totalAmount   Int
+  items         OrderItem[]
+  payment       Payment?
+  couponUsedId  Int?          // CouponUser.id (nullable)
+  couponUsed    CouponUser?   @relation(fields: [couponUsedId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // 주문자 정보 (비회원용 필수)
+  ordererName    String
+  ordererEmail   String?
+  ordererPhone   String
+  ordererTel     String?
+
+  // 배송지 정보 (비회원용 필수)
+  recipientName  String
+  recipientPhone String
+  recipientTel   String?
+  zipCode        String
+  address1       String
+  address2       String?
+
+  // 통관 정보 (비회원용 필수)
+  customsId      String
+
+  // 개인정보 동의 (비회원용 필수)
+  agreePrivacy   Boolean   @default(true)
+  
+  
+  // 비회원 구매 플래그
+  isGuestOrder   Boolean   @default(false)
+
+  // 교환/반품 관련
+  exchangeRefunds ExchangeRefund[]
+
+  // 브랜드, 정산
+  brandId Int?
+  brand Brand? @relation(fields: [brandId], references: [id])
+  totalCommission Float @default(0)
+  settlementStatus SettlementStatus @default(PENDING)
+  settlementId String?
+  settlement Settlement? @relation(fields: [settlementId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPING
+  COMPLETED
+  CANCELED
+  FAILED
+}
+
+enum ExchangeRefundType {
+  EXCHANGE   // 교환
+  REFUND     // 반품/환불
+}
+
+enum ExchangeRefundStatus {
+  PENDING    // 접수 대기
+  REVIEWING  // 검토 중
+  APPROVED   // 승인
+  REJECTED   // 거부
+  PROCESSING // 처리 중
+  COMPLETED  // 완료
+}
+
+model ExchangeRefund {
+  id          String              @id @default(cuid())
+  order       Order               @relation(fields: [orderId], references: [id])
+  orderId     String
+  type        ExchangeRefundType
+  status      ExchangeRefundStatus @default(PENDING)
+  
+  // 신청자 정보
+  applicantName  String
+  applicantPhone String
+  applicantEmail String?
+  
+  // 신청 내용
+  reason         String
+  description    String?
+  
+  // 처리 정보
+  adminNotes     String?
+  processedAt    DateTime?
+  processedBy    String?  // 처리한 관리자 ID
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model OrderItem {
+  id          Int             @id @default(autoincrement())
+  order       Order           @relation(fields: [orderId], references: [id])
+  orderId     String
+  variant     ProductVariant?  @relation(fields: [variantId], references: [id])
+  variantId   Int?
+  product     Product?  @relation(fields: [productId], references: [id])
+  productId   Int?
+  quantity    Int
+  unitPrice   Int // 주문 시점 가격
+}
+
+/// 결제 정보: PG 응답 전용 (토스 등) --------------------
+model Payment {
+  id          String   @id @default(cuid())
+  order       Order        @relation(fields: [orderId], references: [id])
+  userId      String?      // 비회원 주문을 위해 nullable로 변경
+  orderId     String   @unique
+  amount      Int
+  status      String   // "PENDING", "SUCCESS", "FAILED"
+  method      String?  // 카드, 계좌이체 등
+  paymentKey  String?  // Toss 결제키
+  failReason  String?  // 실패 사유
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// COUPON -------------------------------------------------------------------
+model Coupon {
+  id            Int       @id @default(autoincrement())
+  code          String    @unique
+  type          CouponType
+  value         Int
+  minOrderAmount Int  @default(0)
+  validFrom     DateTime
+  validTo       DateTime
+  isActive      Boolean   @default(true)
+  users         CouponUser[]
+}
+
+enum CouponType {
+  PERCENT      // value = 10  → 10%
+  FIXED        // value = 5000 → ₩5,000
+}
+
+model CouponUser {
+  id         Int       @id @default(autoincrement())
+  coupon     Coupon    @relation(fields: [couponId], references: [id])
+  couponId   Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  issuedAt   DateTime  @default(now())
+  usedAt     DateTime?
+  isUsed     Boolean   @default(false)
+  orders     Order[]
+}
+
+/// REVIEW -------------------------------------------------------------------
+model Review {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  product     Product   @relation(fields: [productId], references: [id])
+  productId   Int
+  rating      Int       // 1~5
+  content     String
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+/// ETC (Event, FAQ, Notice) --------------------------------------------------
+model Event {
+  id        Int       @id @default(autoincrement())
+  title     String
+  description String?
+  imageUrl  String?
+  startAt   DateTime
+  endAt     DateTime
+  isActive  Boolean   @default(true)
+}
+
+model Faq {
+  id        Int      @id @default(autoincrement())
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notice {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Settlement {
+  id              String        @id @default(cuid())
+  brand           Brand         @relation(fields: [brandId], references: [id])
+  brandId         Int
+  periodStart     DateTime
+  periodEnd       DateTime
+  settlementDate  DateTime?
+  totalSales      Float
+  totalOrders     Int
+  commission      Float
+  commissionRate  Float
+  adjustments     Float         @default(0)
+  finalAmount     Float
+  status          SettlementStatus @default(PENDING)
+  bankAccount     String?
+  bankCode        String?
+  accountHolder   String?
+  notes           String?
+  attachments     String[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  orders          Order[]
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model BrandAnalytics {
+  id                   Int        @id @default(autoincrement())
+  brand                Brand      @relation(fields: [brandId], references: [id])
+  brandId              Int
+  period               String
+  periodType           PeriodType
+  totalRevenue         Float      @default(0)
+  totalOrders          Int        @default(0)
+  totalProducts        Int        @default(0)
+  averageOrderValue    Float      @default(0)
+  bestSellingProduct   String?
+  totalProductViews    Int        @default(0)
+  conversionRate       Float      @default(0)
+  returnsCount         Int        @default(0)
+  refundsAmount        Float      @default(0)
+  reviewsCount         Int        @default(0)
+  averageRating        Float      @default(0)
+  calculatedAt         DateTime   @default(now())
+  @@unique([brandId, period, periodType])
+}
+
+enum PeriodType {
+  DAILY
+  MONTHLY
+  YEARLY
+}
