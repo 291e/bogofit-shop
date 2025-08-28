@@ -3,41 +3,6 @@ import { requireAdminAuth } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { BrandStatus } from "@prisma/client";
 
-/**
- * @swagger
- * /api/admin/brands:
- *   get:
- *     tags: [Brand]
- *     summary: 관리자 - 브랜드 목록 조회 (페이지네이션)
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema: { type: integer, default: 1 }
- *       - in: query
- *         name: limit
- *         schema: { type: integer, default: 20 }
- *       - in: query
- *         name: search
- *         schema: { type: string }
- *       - in: query
- *         name: status
- *         schema: { type: string, enum: [ALL, PENDING, APPROVED, REJECTED, SUSPENDED] }
- *     responses:
- *       200:
- *         description: 브랜드 목록과 페이지네이션/통계 정보
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 brands:
- *                   type: array
- *                   items: { $ref: '#/components/schemas/Brand' }
- *                 pagination: { $ref: '#/components/schemas/Pagination' }
- */
-
 // 관리자용 브랜드 목록 조회
 export async function GET(request: NextRequest) {
   try {

@@ -3,55 +3,6 @@ import { requireAdminAuth } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 
-/**
- * @swagger
- * /api/admin/orders:
- *   get:
- *     tags: [Orders]
- *     summary: 관리자 - 주문 목록 조회 (페이지네이션)
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema: { type: integer, default: 1 }
- *       - in: query
- *         name: limit
- *         schema: { type: integer, default: 20 }
- *       - in: query
- *         name: search
- *         schema: { type: string }
- *         description: 주문번호/이름/이메일 검색
- *       - in: query
- *         name: status
- *         schema: { type: string, enum: [ALL, PENDING, PAID, SHIPPING, COMPLETED, CANCELED, FAILED] }
- *       - in: query
- *         name: startDate
- *         schema: { type: string, format: date }
- *       - in: query
- *         name: endDate
- *         schema: { type: string, format: date }
- *     responses:
- *       200:
- *         description: 주문 목록과 페이지네이션/통계 정보
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 orders:
- *                   type: array
- *                   items: { $ref: '#/components/schemas/Order' }
- *                 pagination: { $ref: '#/components/schemas/Pagination' }
- *                 stats:
- *                   type: object
- *                   properties:
- *                     total: { type: integer }
- *                     totalRevenue: { type: number }
- *       401:
- *         description: 인증 실패
- */
-
 // 관리자용 주문 목록 조회
 export async function GET(request: NextRequest) {
   try {

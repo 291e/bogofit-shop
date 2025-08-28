@@ -20,7 +20,7 @@ const swaggerDefinition = {
       description: "Development server",
     },
     {
-      url: "https://bogofit.kr",
+      url: "https://bogofit-shop.vercel.app",
       description: "Production server",
     },
   ],
