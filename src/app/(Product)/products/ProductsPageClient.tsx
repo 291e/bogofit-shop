@@ -34,9 +34,7 @@ export default function ProductsPageClient() {
               {t("product.search.resultsPrefix")} ‘
               <span className="text-pink-600">{search}</span>’ {t("product.search.resultsSuffix")}
             </h1>
-            <p className="text-gray-600">
-              {t("product.search.tryAnother")}
-            </p>
+            <p className="text-gray-600">{t("product.empty.tryAnother")}</p>
           </div>
         )}
 

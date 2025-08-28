@@ -13,6 +13,7 @@ import { RegisterSuccessStep } from "@/components/auth/RegisterSuccessStep";
 import { TermsAgreementModal } from "@/components/auth/TermsAgreementModal";
 import SmsVerification from "@/components/auth/SmsVerification";
 import { ArrowLeft } from "lucide-react";
+import { useI18n } from "@/providers/I18nProvider";
 
 type RegisterStep =
   | "form"
@@ -32,6 +33,7 @@ type TermsAgreement = {
 function RegisterPageContent() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
+  const { t } = useI18n();
 
   // Custom Hooks
   const { formData, updateField, validateForm } = useRegisterForm();
@@ -70,7 +72,7 @@ function RegisterPageContent() {
       setLoading(true);
       setError("");
 
-      console.log("[회원가입] 자체 API 호출 시작");
+  console.log("[Register] calling API");
 
       const response = await fetch("/api/auth/signup", {
         method: "POST",
@@ -96,31 +98,29 @@ function RegisterPageContent() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "회원가입에 실패했습니다");
+  const errorData = await response.json();
+  throw new Error(errorData.error || t("auth.register.errors.signupFailed"));
       }
 
       const result = await response.json();
-      console.log("[회원가입] 성공:", result.message);
+  console.log("[Register] success:", result.message);
 
       // 자동 로그인 처리 (API에서 쿠키가 설정됨)
       if (result.user) {
         await login(result.user);
       }
 
-      setStep("success");
-      setSuccess("🎉 회원가입이 완료되었습니다! 환영합니다!");
+  setStep("success");
+  setSuccess(t("auth.register.success.message"));
 
       // 3초 후 홈페이지로 이동
       setTimeout(() => {
         window.location.href = "/";
       }, 3000);
     } catch (error) {
-      console.error("[회원가입] 실패:", error);
+      console.error("[Register] failed:", error);
       setError(
-        error instanceof Error
-          ? error.message
-          : "회원가입 중 오류가 발생했습니다"
+        error instanceof Error ? error.message : t("auth.register.errors.unknown")
       );
     } finally {
       setLoading(false);
@@ -148,12 +148,12 @@ function RegisterPageContent() {
   const handleFormSubmit = useCallback(() => {
     const validation = validateForm();
     if (!validation.isValid) {
-      setError("입력 정보를 확인해주세요.");
+  setError(t("auth.register.errors.invalidForm"));
       return;
     }
 
     if (!hasAgreedToTerms) {
-      setError("필수 약관에 동의해주세요.");
+  setError(t("auth.register.errors.agreeRequired"));
       return;
     }
 
@@ -171,12 +171,12 @@ function RegisterPageContent() {
   }, []);
 
   const handleEmailVerified = useCallback(() => {
-    console.log("이메일 인증 완료, 회원가입 진행");
+  console.log("Email verified, continue registration");
     handleCreateAccount();
   }, [handleCreateAccount]);
 
   const handleSmsVerified = useCallback(() => {
-    console.log("SMS 인증 완료, 회원가입 진행");
+  console.log("SMS verified, continue registration");
     setTimeout(() => {
       handleCreateAccount();
     }, 500);
@@ -218,10 +218,10 @@ function RegisterPageContent() {
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                본인 인증 방법 선택
+                {t("auth.register.verifyChoice.title")}
               </h2>
               <p className="text-gray-600 mb-8">
-                회원가입을 완료하기 위해 본인 인증을 진행해주세요.
+                {t("auth.register.verifyChoice.desc")}
               </p>
             </div>
 
@@ -232,9 +232,9 @@ function RegisterPageContent() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">이메일 인증</h3>
+                    <h3 className="font-semibold text-gray-900">{t("auth.register.verifyChoice.email.title")}</h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      {formData.email}로 인증 코드를 발송합니다.
+                      {t("auth.register.verifyChoice.email.desc")} {formData.email}
                     </p>
                   </div>
                   <div className="text-blue-500">📧</div>
@@ -247,9 +247,9 @@ function RegisterPageContent() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">SMS 인증</h3>
+                    <h3 className="font-semibold text-gray-900">{t("auth.register.verifyChoice.sms.title")}</h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      휴대폰 번호로 인증 코드를 발송합니다.
+                      {t("auth.register.verifyChoice.sms.desc")}
                     </p>
                   </div>
                   <div className="text-green-500">📱</div>
@@ -293,10 +293,10 @@ function RegisterPageContent() {
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                휴대폰 인증
+                {t("auth.register.sms.title")}
               </h2>
               <p className="text-gray-600 mb-8">
-                휴대폰 번호로 인증 코드를 발송하여 본인 확인을 진행합니다.
+                {t("auth.register.sms.desc")}
               </p>
             </div>
 
@@ -333,7 +333,7 @@ function RegisterPageContent() {
               className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              뒤로가기
+              {t("auth.register.back")}
             </button>
           )}
 
@@ -357,7 +357,7 @@ export default function RegisterPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center">
-          로딩 중...
+          Loading...
         </div>
       }
     >

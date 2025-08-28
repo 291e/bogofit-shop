@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/providers/I18nProvider";
 
 interface EmailVerificationStepProps {
   email: string;
@@ -30,11 +31,12 @@ export function EmailVerificationStep({
   onVerifyCode,
   onGoBack,
 }: EmailVerificationStepProps) {
+  const { t } = useI18n();
   return (
     <div className="mt-8 space-y-6">
       <div className="text-center">
         <div className="text-sm text-gray-600 mb-4">
-          <strong>{email}</strong>로 인증번호를 전송합니다.
+          {t("auth.register.email.descPrefix")} <strong>{email}</strong>{t("auth.register.email.descSuffix")}
         </div>
 
         {!isEmailSent && (
@@ -43,24 +45,20 @@ export function EmailVerificationStep({
             disabled={loading}
             className="w-full"
           >
-            {loading ? "전송 중..." : "인증번호 전송"}
+            {loading ? t("auth.register.email.sending") : t("auth.register.email.send")}
           </Button>
         )}
 
         {isEmailSent && !isEmailVerified && (
           <div className="space-y-4">
             <div className="text-sm text-gray-600 mb-4">
-              <p>📧 이메일을 확인해주세요!</p>
-              <p className="mt-2">
-                • <strong>이메일 링크</strong>를 클릭하거나
-              </p>
-              <p>
-                • <strong>인증번호</strong>를 직접 입력해주세요
-              </p>
+              <p>📧 {t("auth.register.email.checkInbox")}</p>
+              <p className="mt-2">• {t("auth.register.email.tipLink")}</p>
+              <p>• {t("auth.register.email.tipCode")}</p>
             </div>
 
             <Input
-              placeholder="인증번호 입력 (6자리)"
+              placeholder={t("auth.register.email.codePlaceholder")}
               value={verificationCode}
               onChange={(e) =>
                 setVerificationCode(e.target.value.toUpperCase())
@@ -78,7 +76,7 @@ export function EmailVerificationStep({
                 }
                 className="flex-1"
               >
-                {loading ? "확인 중..." : "인증번호 확인"}
+                {loading ? t("auth.register.email.verifying") : t("auth.register.email.verify")}
               </Button>
 
               <Button
@@ -86,19 +84,16 @@ export function EmailVerificationStep({
                 onClick={onSendVerification}
                 disabled={loading}
               >
-                재전송
+                {t("auth.register.email.resend")}
               </Button>
             </div>
 
             <div className="text-xs text-gray-500 mt-4 space-y-1">
-              <p>• 인증번호는 30분간 유효합니다</p>
-              <p>• 이메일이 오지 않으면 스팸함을 확인해주세요</p>
-              <p>• 🧪 개발 테스트: metabank3d@gmail.com만 사용 가능</p>
-              <p>• ⚠️ 개발환경: 코드 저장/재시작 시 인증번호가 초기화됩니다</p>
-              <p>
-                • 🔄 &quot;인증번호를 찾을 수 없다&quot;면 재전송 버튼을
-                눌러주세요
-              </p>
+              <p>• {t("auth.register.email.note.valid30min")}</p>
+              <p>• {t("auth.register.email.note.checkSpam")}</p>
+              <p>• {t("auth.register.email.note.devOnly")}</p>
+              <p>• {t("auth.register.email.note.devReset")}</p>
+              <p>• {t("auth.register.email.note.resendIfNotFound")}</p>
             </div>
           </div>
         )}
@@ -123,7 +118,7 @@ export function EmailVerificationStep({
           disabled={loading}
           className="text-gray-600 hover:text-gray-800"
         >
-          ← 이전 단계로
+          ← {t("auth.register.backToPrev")}
         </Button>
       </div>
     </div>

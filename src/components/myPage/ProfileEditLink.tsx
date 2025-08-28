@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/providers/AuthProvider";
 import DeleteAccountModal from "@/components/auth/DeleteAccountModal";
+import { useI18n } from "@/providers/I18nProvider";
 
 export default function ProfileEditLink() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [profile, setProfile] = useState("");
   const [password, setPassword] = useState("");
@@ -32,16 +34,14 @@ export default function ProfileEditLink() {
     {
       onCompleted: (data) => {
         if (data?.editProfile?.success) {
-          setSuccess("프로필이 성공적으로 업데이트되었습니다.");
+          setSuccess(t("myPage.profile.success"));
           setPassword("");
         } else {
-          setError(
-            data?.editProfile?.message || "프로필 업데이트에 실패했습니다."
-          );
+          setError(data?.editProfile?.message || t("myPage.profile.errors.updateFailed"));
         }
       },
       onError: (err) => {
-        setError(err.message || "프로필 업데이트 중 오류가 발생했습니다.");
+        setError(err.message || t("myPage.profile.errors.updateError"));
       },
     }
   );
@@ -52,7 +52,7 @@ export default function ProfileEditLink() {
     setSuccess("");
 
     if (!password) {
-      setError("변경을 위해 비밀번호를 입력해주세요.");
+      setError(t("myPage.profile.errors.missingPassword"));
       return;
     }
 
@@ -77,7 +77,7 @@ export default function ProfileEditLink() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="text-center">로딩 중...</div>
+  <div className="text-center">{t("myPage.profile.loading")}</div>
       </div>
     );
   }
@@ -85,10 +85,10 @@ export default function ProfileEditLink() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] py-10 px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">내 프로필</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">{t("myPage.profile.title")}</h1>
 
         <div className="mb-6">
-          <div className="text-gray-600 mb-1">아이디</div>
+          <div className="text-gray-600 mb-1">{t("myPage.profile.userId")}</div>
           <div className="font-medium">{user?.userId}</div>
         </div>
 
@@ -98,14 +98,14 @@ export default function ProfileEditLink() {
               htmlFor="email"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              이메일
+              {t("myPage.profile.email")}
             </label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일"
+              placeholder={t("myPage.profile.emailPlaceholder")}
             />
           </div>
 
@@ -114,14 +114,14 @@ export default function ProfileEditLink() {
               htmlFor="profile"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              프로필 이미지 URL
+              {t("myPage.profile.profileUrl")}
             </label>
             <Input
               id="profile"
               type="text"
               value={profile}
               onChange={(e) => setProfile(e.target.value)}
-              placeholder="프로필 이미지 URL"
+              placeholder={t("myPage.profile.profileUrlPlaceholder")}
             />
           </div>
 
@@ -130,14 +130,14 @@ export default function ProfileEditLink() {
               htmlFor="password"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              비밀번호 확인
+              {t("myPage.profile.password")}
             </label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="변경을 위한 비밀번호 입력"
+              placeholder={t("myPage.profile.passwordPlaceholder")}
             />
           </div>
 
@@ -150,24 +150,21 @@ export default function ProfileEditLink() {
           )}
 
           <Button type="submit" className="w-full" disabled={mutationLoading}>
-            {mutationLoading ? "업데이트 중..." : "프로필 업데이트"}
+            {mutationLoading ? t("myPage.profile.submitting") : t("myPage.profile.submit")}
           </Button>
         </form>
 
         {/* 계정 탈퇴 섹션 */}
         <div className="mt-8 pt-6 border-t border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">위험 구역</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            계정을 탈퇴하면 모든 데이터가 영구적으로 삭제되며 복구할 수
-            없습니다.
-          </p>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">{t("myPage.profile.dangerZone.title")}</h3>
+          <p className="text-sm text-gray-600 mb-4">{t("myPage.profile.dangerZone.desc")}</p>
           <Button
             type="button"
             variant="destructive"
             onClick={() => setShowDeleteModal(true)}
             className="w-full"
           >
-            계정 탈퇴
+            {t("myPage.profile.dangerZone.deleteAccount")}
           </Button>
         </div>
       </div>

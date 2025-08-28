@@ -234,7 +234,7 @@ export default function Header() {
                 }`}
                 onClick={() => setOpen(false)}
               >
-                추천
+                {t("header.recommend")}
               </Link>
               <Link
                 href="/ranking"
@@ -245,7 +245,7 @@ export default function Header() {
                 }`}
                 onClick={() => setOpen(false)}
               >
-                랭킹
+                {t("header.ranking")}
               </Link>
               <Link
                 href="/sale"
@@ -256,7 +256,7 @@ export default function Header() {
                 }`}
                 onClick={() => setOpen(false)}
               >
-                세일
+                {t("header.sale")}
               </Link>
               <Link
                 href="/brands"
@@ -267,7 +267,7 @@ export default function Header() {
                 }`}
                 onClick={() => setOpen(false)}
               >
-                브랜드
+                {t("header.brands")}
               </Link>
             </div>
 

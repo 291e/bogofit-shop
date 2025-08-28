@@ -211,7 +211,7 @@ export default function RecommendPage() {
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">{t("filters.subCategory")}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
-            {subCategories.map((subCategory) => (
+      {subCategories.map((subCategory) => (
               <button
                 key={subCategory.keyword}
                 onClick={() => handleSubCategoryClick(subCategory.keyword)}
@@ -221,7 +221,7 @@ export default function RecommendPage() {
                     : "bg-white"
                 }`}
               >
-                {subCategory.name}
+        {"nameKey" in subCategory ? t((subCategory as any).nameKey) : (subCategory as any).name}
               </button>
             ))}
           </div>
@@ -244,10 +244,7 @@ export default function RecommendPage() {
             <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
               <Bot className="w-5 h-5" /> {t("recommend.ai.title")}
             </h3>
-            <p className="text-sm text-gray-600">
-              머신러닝 알고리즘이 분석한 인기 트렌드와 베스트셀러 상품들을
-              추천해드립니다.
-            </p>
+            <p className="text-sm text-gray-600">{t("recommend.ai.desc")}</p>
           </div>
         ) : (
           <div>
@@ -255,9 +252,7 @@ export default function RecommendPage() {
               <Sparkles className="w-5 h-5" />
               {t("recommend.editor.title")}
             </h3>
-            <p className="text-sm text-gray-600">
-              패션 전문가들이 직접 선별한 최신 트렌드 아이템들을 만나보세요.
-            </p>
+            <p className="text-sm text-gray-600">{t("recommend.editor.desc")}</p>
           </div>
         )}
       </div>

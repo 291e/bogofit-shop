@@ -1,4 +1,5 @@
 "use client";
+import { useI18n } from "@/providers/I18nProvider";
 import { useState } from "react";
 import { usePaymentHistory, Payment } from "@/hooks/usePaymentHistory";
 import { useOrderActions } from "@/hooks/useOrderActions";
@@ -38,6 +39,7 @@ import {
 } from "lucide-react";
 
 export default function OrderHistory() {
+  const { t } = useI18n();
   const { data: payments, isLoading, error } = usePaymentHistory();
   const { cancelOrderAsync, isCanceling } = useOrderActions();
   const { user } = useAuth();
@@ -307,24 +309,20 @@ export default function OrderHistory() {
   if (error) {
     return (
       <div className="text-center text-red-500 py-8">
-        {error instanceof Error
-          ? error.message
-          : "결제 내역을 불러오는데 실패했습니다."}
+        {error instanceof Error ? error.message : t("myPage.orderHistory.errors.fetch")}
       </div>
     );
   }
 
   if (!payments?.length) {
     return (
-      <div className="text-center text-gray-500 py-8">
-        주문 내역이 없습니다.
-      </div>
+      <div className="text-center text-gray-500 py-8">{t("myPage.orderHistory.empty")}</div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-6">주문 내역 조회</h2>
+      <h2 className="text-xl font-bold mb-6">{t("myPage.orderHistory.title")}</h2>
       <div className="space-y-4">
         {payments.map((payment) => (
           <div

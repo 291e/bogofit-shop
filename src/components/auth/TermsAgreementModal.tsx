@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { useI18n } from "@/providers/I18nProvider";
 
 interface TermsAgreement {
   terms: boolean;
@@ -34,6 +35,7 @@ export function TermsAgreementModal({
 }: TermsAgreementModalProps) {
   const [agreements, setAgreements] =
     useState<TermsAgreement>(initialAgreements);
+  const { t } = useI18n();
 
   const handleAgreementChange = (
     key: keyof TermsAgreement,
@@ -52,7 +54,7 @@ export function TermsAgreementModal({
 
   const handleConfirm = () => {
     if (!agreements.terms || !agreements.privacy) {
-      alert("필수 약관에 동의해주세요.");
+  alert(t("auth.register.errors.agreeRequired"));
       return;
     }
     onAgree(agreements);
@@ -67,9 +69,9 @@ export function TermsAgreementModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>약관 동의</DialogTitle>
+          <DialogTitle>{t("auth.register.terms.title")}</DialogTitle>
           <DialogDescription>
-            BogoFit Shop 회원가입을 위해 아래 약관에 동의해주세요.
+            {t("auth.register.terms.desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -85,7 +87,7 @@ export function TermsAgreementModal({
               htmlFor="all"
               className="text-base font-semibold cursor-pointer"
             >
-              전체 동의하기
+              {t("auth.register.terms.selectAll")}
             </label>
           </div>
 
@@ -105,7 +107,8 @@ export function TermsAgreementModal({
                     }
                   />
                   <label htmlFor="terms" className="font-medium cursor-pointer">
-                    이용약관 동의 <span className="text-red-500">(필수)</span>
+                    {t("auth.register.terms.tos")}{" "}
+                    <span className="text-red-500">({t("auth.register.terms.required")})</span>
                   </label>
                 </div>
               </div>
@@ -155,8 +158,8 @@ export function TermsAgreementModal({
                     htmlFor="privacy"
                     className="font-medium cursor-pointer"
                   >
-                    개인정보처리방침 동의{" "}
-                    <span className="text-red-500">(필수)</span>
+                    {t("auth.register.terms.privacy")} {" "}
+                    <span className="text-red-500">({t("auth.register.terms.required")})</span>
                   </label>
                 </div>
               </div>
@@ -202,19 +205,16 @@ export function TermsAgreementModal({
                     htmlFor="marketing"
                     className="font-medium cursor-pointer"
                   >
-                    마케팅 정보 수신 동의{" "}
-                    <span className="text-gray-500">(선택)</span>
+                    {t("auth.register.terms.marketing")} {" "}
+                    <span className="text-gray-500">({t("auth.register.terms.optional")})</span>
                   </label>
                 </div>
               </div>
               <ScrollArea className="h-24 w-full border rounded p-3 text-sm text-gray-600">
                 <div className="space-y-2">
-                  <h4 className="font-semibold">마케팅 정보 수신 동의</h4>
+                  <h4 className="font-semibold">{t("auth.register.terms.marketing")}</h4>
                   <p>
-                    BogoFit Shop의 신상품 소식, 이벤트 정보, 할인 혜택 등의
-                    마케팅 정보를 이메일 및 SMS로 받아보실 수 있습니다. 동의하지
-                    않으셔도 서비스 이용에는 제한이 없으며, 언제든지 수신을
-                    거부하실 수 있습니다.
+                    {t("auth.register.terms.marketingDesc")}
                   </p>
                 </div>
               </ScrollArea>
@@ -228,7 +228,7 @@ export function TermsAgreementModal({
               onClick={() => onOpenChange(false)}
               className="flex-1"
             >
-              취소
+              {t("auth.register.cta.cancel")}
             </Button>
             <Button
               onClick={handleConfirm}
@@ -239,7 +239,7 @@ export function TermsAgreementModal({
                   : "bg-gray-300 cursor-not-allowed"
               }`}
             >
-              동의하고 계속하기
+              {t("auth.register.cta.agreeAndContinue")}
             </Button>
           </div>
         </div>

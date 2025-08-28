@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ProductFilters as IProductFilters, Product } from "@/types/product";
+import { useI18n } from "@/providers/I18nProvider";
 
 interface ProductFiltersProps {
   filters: IProductFilters;
@@ -23,6 +24,7 @@ export default function ProductFilters({
   filters,
   onFiltersChange,
 }: ProductFiltersProps) {
+  const { t } = useI18n();
   const [localFilters, setLocalFilters] = useState<IProductFilters>(filters);
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export default function ProductFilters({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <Input
-          placeholder="상품명, 브랜드명으로 검색..."
+          placeholder={t("product.filters.searchPlaceholder")}
           value={localFilters.search || ""}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="pl-10"
@@ -86,14 +88,14 @@ export default function ProductFilters({
           onValueChange={(value) => handleFilterChange("sortBy", value)}
         >
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="정렬" />
+            <SelectValue placeholder={t("product.filters.sort.label")}/>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="newest">최신순</SelectItem>
-            <SelectItem value="price_low">가격 낮은순</SelectItem>
-            <SelectItem value="price_high">가격 높은순</SelectItem>
-            <SelectItem value="name">이름순</SelectItem>
-            <SelectItem value="rating">평점순</SelectItem>
+            <SelectItem value="newest">{t("product.filters.sort.newest")}</SelectItem>
+            <SelectItem value="price_low">{t("product.filters.sort.priceLow")}</SelectItem>
+            <SelectItem value="price_high">{t("product.filters.sort.priceHigh")}</SelectItem>
+            <SelectItem value="name">{t("product.filters.sort.name")}</SelectItem>
+            <SelectItem value="rating">{t("product.filters.sort.rating")}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -105,7 +107,7 @@ export default function ProductFilters({
         <div className="flex flex-wrap gap-2">
           {filters.showSoldOut && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              품절 상품 표시
+              {t("product.filters.showSoldOut")}
               <X
                 className="w-3 h-3 cursor-pointer"
                 onClick={() => handleFilterChange("showSoldOut", false)}
@@ -114,16 +116,16 @@ export default function ProductFilters({
           )}
           {filters.sortBy && filters.sortBy !== "newest" && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              정렬:{" "}
+              {t("product.filters.sort.activePrefix")} {" "}
               {filters.sortBy === "price_low"
-                ? "가격 낮은순"
+                ? t("product.filters.sort.priceLow")
                 : filters.sortBy === "price_high"
-                ? "가격 높은순"
+                ? t("product.filters.sort.priceHigh")
                 : filters.sortBy === "name"
-                ? "이름순"
+                ? t("product.filters.sort.name")
                 : filters.sortBy === "rating"
-                ? "평점순"
-                : "최신순"}
+                ? t("product.filters.sort.rating")
+                : t("product.filters.sort.newest")}
               <X
                 className="w-3 h-3 cursor-pointer"
                 onClick={() => handleFilterChange("sortBy", "newest")}

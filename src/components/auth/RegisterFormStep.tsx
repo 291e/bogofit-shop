@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { RegisterFormData } from "@/hooks/useRegisterForm";
 import { useAddressSearch } from "@/hooks/useAddressSearch";
+import { useI18n } from "@/providers/I18nProvider";
 
 interface RegisterFormStepProps {
   formData: RegisterFormData;
@@ -19,7 +20,7 @@ interface RegisterFormStepProps {
     field: keyof RegisterFormData,
     value: string | Date | undefined
   ) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: () => void;
   loading: boolean;
   error: string;
   success: string;
@@ -38,6 +39,7 @@ export function RegisterFormStep({
   hasAgreedToTerms,
 }: RegisterFormStepProps) {
   const { openAddressSearch } = useAddressSearch();
+  const { t } = useI18n();
 
   const handleAddressSearch = () => {
     openAddressSearch((result) => {
@@ -47,14 +49,20 @@ export function RegisterFormStep({
   };
 
   return (
-    <form className="mt-8 space-y-6" onSubmit={onSubmit}>
+    <form
+      className="mt-8 space-y-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+    >
       <div className="space-y-4">
         {/* 필수 정보 */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">필수 정보</h3>
+          <h3 className="text-lg font-medium text-gray-900">{t("auth.register.form.requiredInfo")}</h3>
 
           <Input
-            placeholder="아이디 (4자 이상) *"
+            placeholder={t("auth.register.placeholders.userId")}
             value={formData.userId}
             onChange={(e) => updateField("userId", e.target.value)}
             disabled={loading}
@@ -62,7 +70,7 @@ export function RegisterFormStep({
           />
 
           <Input
-            placeholder="이름 *"
+            placeholder={t("auth.register.placeholders.name")}
             value={formData.name}
             onChange={(e) => updateField("name", e.target.value)}
             disabled={loading}
@@ -71,7 +79,7 @@ export function RegisterFormStep({
 
           <Input
             type="email"
-            placeholder="이메일 *"
+            placeholder={t("auth.register.placeholders.email")}
             value={formData.email}
             onChange={(e) => updateField("email", e.target.value)}
             disabled={loading}
@@ -80,7 +88,7 @@ export function RegisterFormStep({
 
           <Input
             type="password"
-            placeholder="비밀번호 (6자 이상) *"
+            placeholder={t("auth.register.placeholders.password")}
             value={formData.password}
             onChange={(e) => updateField("password", e.target.value)}
             disabled={loading}
@@ -89,7 +97,7 @@ export function RegisterFormStep({
 
           <Input
             type="password"
-            placeholder="비밀번호 확인 *"
+            placeholder={t("auth.register.placeholders.confirmPassword")}
             value={formData.confirmPassword}
             onChange={(e) => updateField("confirmPassword", e.target.value)}
             disabled={loading}
@@ -99,10 +107,10 @@ export function RegisterFormStep({
 
         {/* 선택 정보 */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">선택 정보</h3>
+          <h3 className="text-lg font-medium text-gray-900">{t("auth.register.form.optionalInfo")}</h3>
 
           <Input
-            placeholder="휴대폰 번호 (예: 010-1234-5678)"
+            placeholder={t("auth.register.placeholders.phone")}
             value={formData.phoneNumber}
             onChange={(e) => updateField("phoneNumber", e.target.value)}
             disabled={loading}
@@ -115,18 +123,18 @@ export function RegisterFormStep({
             disabled={loading}
           >
             <SelectTrigger>
-              <SelectValue placeholder="성별 선택" />
+              <SelectValue placeholder={t("auth.register.placeholders.gender") as string} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="male">남성</SelectItem>
-              <SelectItem value="female">여성</SelectItem>
-              <SelectItem value="other">기타</SelectItem>
+              <SelectItem value="male">{t("auth.register.gender.male")}</SelectItem>
+              <SelectItem value="female">{t("auth.register.gender.female")}</SelectItem>
+              <SelectItem value="other">{t("auth.register.gender.other")}</SelectItem>
             </SelectContent>
           </Select>
 
           <Input
             type="date"
-            placeholder="생년월일"
+            placeholder={t("auth.register.placeholders.birthDate")}
             value={
               formData.birthDate
                 ? formData.birthDate.toISOString().split("T")[0]
@@ -142,7 +150,7 @@ export function RegisterFormStep({
           />
 
           <Input
-            placeholder="자기소개 (선택사항)"
+            placeholder={t("auth.register.placeholders.profile")}
             value={formData.profile}
             onChange={(e) => updateField("profile", e.target.value)}
             disabled={loading}
@@ -151,14 +159,12 @@ export function RegisterFormStep({
 
         {/* 주소 정보 */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">
-            주소 정보 (선택)
-          </h3>
+          <h3 className="text-lg font-medium text-gray-900">{t("auth.register.form.addressInfo")}</h3>
 
           <div className="flex gap-2">
             <div className="flex-1">
               <Input
-                placeholder="우편번호"
+                placeholder={t("auth.register.placeholders.zipCode")}
                 value={formData.zipCode}
                 onChange={(e) => updateField("zipCode", e.target.value)}
                 disabled={loading}
@@ -172,12 +178,12 @@ export function RegisterFormStep({
               disabled={loading}
               className="whitespace-nowrap"
             >
-              주소 검색
+              {t("auth.register.cta.searchAddress")}
             </Button>
           </div>
 
           <Input
-            placeholder="기본 주소"
+            placeholder={t("auth.register.placeholders.address")}
             value={formData.address}
             onChange={(e) => updateField("address", e.target.value)}
             disabled={loading}
@@ -185,7 +191,7 @@ export function RegisterFormStep({
           />
 
           <Input
-            placeholder="상세 주소 (선택사항)"
+            placeholder={t("auth.register.placeholders.addressDetail")}
             value={formData.addressDetail}
             onChange={(e) => updateField("addressDetail", e.target.value)}
             disabled={loading}
@@ -194,7 +200,7 @@ export function RegisterFormStep({
 
         {/* 약관 동의 */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">약관 동의</h3>
+          <h3 className="text-lg font-medium text-gray-900">{t("auth.register.form.terms")}</h3>
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div className="flex items-center gap-2">
               {hasAgreedToTerms ? (
@@ -202,14 +208,14 @@ export function RegisterFormStep({
                   <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
                     ✓
                   </div>
-                  <span className="text-sm font-medium">약관 동의 완료</span>
+                  <span className="text-sm font-medium">{t("auth.register.terms.status.complete")}</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-gray-600">
                   <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center">
                     !
                   </div>
-                  <span className="text-sm font-medium">약관 동의 필요 *</span>
+                  <span className="text-sm font-medium">{t("auth.register.terms.status.requiredStar")}</span>
                 </div>
               )}
             </div>
@@ -220,13 +226,13 @@ export function RegisterFormStep({
               disabled={loading}
               size="sm"
             >
-              {hasAgreedToTerms ? "다시 보기" : "약관 보기"}
+              {hasAgreedToTerms ? t("auth.register.cta.viewAgain") : t("auth.register.cta.viewTerms")}
             </Button>
           </div>
         </div>
       </div>
 
-      {error && (
+  {error && (
         <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-md">
           {error}
         </div>
@@ -244,16 +250,16 @@ export function RegisterFormStep({
           className="w-full"
           disabled={loading || !hasAgreedToTerms}
         >
-          {loading ? "처리 중..." : "다음 단계"}
+          {loading ? t("auth.register.cta.processing") : t("auth.register.cta.next")}
         </Button>
 
         <div className="text-center text-sm">
-          <span className="text-gray-500">이미 계정이 있으신가요?</span>{" "}
+          <span className="text-gray-500">{t("auth.register.haveAccount")}</span>{" "}
           <Link
             href="/login"
             className="text-indigo-600 hover:text-indigo-500 font-medium"
           >
-            로그인
+            {t("auth.cta.login")}
           </Link>
         </div>
       </div>

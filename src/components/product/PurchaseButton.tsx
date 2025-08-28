@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart, useGuestCart } from "@/hooks/useCart";
+import { useI18n } from "@/providers/I18nProvider";
 
 interface PurchaseButtonProps {
   productId: number;
@@ -29,6 +30,7 @@ export function PurchaseButton({
 }: PurchaseButtonProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   // 로그인된 사용자와 비회원을 위한 각각의 장바구니 훅
   const userCart = useCart();
@@ -41,20 +43,20 @@ export function PurchaseButton({
     // 옵션이 있는 상품인 경우에만 옵션 체크
     if (hasOptions) {
       if (typeof selectedOption === "string" && selectedOption.trim() === "") {
-        alert("옵션을 선택하세요.");
+        alert(t("product.cta.selectOption"));
         return;
       }
       if (
         typeof selectedOption === "string" &&
         selectedOption.includes("품절")
       ) {
-        alert("선택하신 상품은 품절입니다.");
+        alert(t("product.cta.selectedOptionSoldout"));
         return;
       }
     }
 
     if (isOutOfStock) {
-      alert("품절된 상품입니다.");
+      alert(t("product.cta.soldout"));
       return;
     }
 
@@ -74,16 +76,16 @@ export function PurchaseButton({
   const handleAddToCart = async () => {
     // 옵션이 있는 상품인 경우 variantId 체크
     if (hasOptions && !variantId) {
-      alert("옵션을 선택해주세요.");
+  alert(t("product.cta.selectOption"));
       return;
     }
 
     // variantId가 없는 경우 처리
     if (!variantId) {
       if (hasOptions) {
-        alert("옵션을 선택해주세요.");
+  alert(t("product.cta.selectOption"));
       } else {
-        alert("상품 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.");
+  alert(t("product.cta.productInfoUnavailable"));
       }
       return;
     }
@@ -91,32 +93,32 @@ export function PurchaseButton({
     // 옵션이 있는 상품인 경우 추가 검증
     if (hasOptions) {
       if (typeof selectedOption === "string" && selectedOption.trim() === "") {
-        alert("옵션을 선택하세요.");
+        alert(t("product.cta.selectOption"));
         return;
       }
       if (
         typeof selectedOption === "string" &&
         selectedOption.includes("품절")
       ) {
-        alert("선택하신 상품은 품절입니다.");
+        alert(t("product.cta.selectedOptionSoldout"));
         return;
       }
     }
 
     if (isOutOfStock) {
-      alert("품절된 상품입니다.");
+      alert(t("product.cta.soldout"));
       return;
     }
 
     try {
       await currentCart.addToCart({ variantId: variantId!, quantity });
-      alert("장바구니에 추가되었습니다!");
+    alert(t("product.cta.addedToCart"));
     } catch (error) {
-      console.error("장바구니 추가 실패:", error);
+    console.error(t("product.cta.addToCartFailedPrefix"), error);
       alert(
         error instanceof Error
           ? error.message
-          : "장바구니에 추가하는데 실패했습니다."
+      : t("product.cta.addToCartFailed")
       );
     }
   };
@@ -128,10 +130,8 @@ export function PurchaseButton({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3">
           <p className="text-xs sm:text-sm text-blue-700 text-center">
             💡{" "}
-            <span className="hidden sm:inline">
-              로그인하지 않아도 주문할 수 있습니다!
-            </span>
-            <span className="sm:hidden">비회원 주문 가능!</span>
+            <span className="hidden sm:inline">{t("product.cta.guestTip.desktop")}</span>
+            <span className="sm:hidden">{t("product.cta.guestTip.mobile")}</span>
           </p>
         </div>
       )}
@@ -147,10 +147,10 @@ export function PurchaseButton({
         >
           <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
           <span className="hidden sm:inline">
-            {currentCart.isAddingToCart ? "추가 중..." : "장바구니"}
+            {currentCart.isAddingToCart ? t("product.cta.adding") : t("product.cta.addToCart")}
           </span>
           <span className="sm:hidden">
-            {currentCart.isAddingToCart ? "추가 중..." : "장바구니"}
+            {currentCart.isAddingToCart ? t("product.cta.adding") : t("product.cta.addToCart")}
           </span>
         </Button>
 
@@ -162,10 +162,10 @@ export function PurchaseButton({
         >
           <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
           <span className="hidden sm:inline">
-            {isOutOfStock ? "품절" : user?.id ? "바로 구매" : "비회원 주문"}
+            {isOutOfStock ? t("product.badge.soldout") : user?.id ? t("product.cta.buyNow") : t("product.cta.guestOrder")}
           </span>
           <span className="sm:hidden">
-            {isOutOfStock ? "품절" : user?.id ? "구매" : "주문"}
+            {isOutOfStock ? t("product.badge.soldout") : user?.id ? t("product.cta.buy") : t("product.cta.order")}
           </span>
         </Button>
       </div>
@@ -173,12 +173,15 @@ export function PurchaseButton({
       {/* 부가 정보 */}
       <div className="text-center text-xs text-gray-500 space-y-1">
         <div className="hidden sm:block space-y-1">
-          <p>• 안전한 결제 시스템으로 보호됩니다</p>
-          <p>• 주문 후 1-2일 내 배송 시작</p>
-          {!user?.id && <p>• 비회원 주문 시 주문번호로 배송 조회 가능</p>}
+          <p>• {t("product.cta.securePayment")}</p>
+          <p>• {t("product.cta.shippingStart")}</p>
+          {!user?.id && <p>• {t("product.cta.guestTracking")}</p>}
         </div>
         <div className="sm:hidden">
-          <p>안전결제 • 1-2일 배송{!user?.id && " • 주문번호 조회 가능"}</p>
+          <p>
+            {t("product.cta.securePaymentShort")} • {t("product.cta.shippingStartShort")} 
+            {!user?.id && ` • ${t("product.cta.guestTrackingShort")}`}
+          </p>
         </div>
       </div>
     </div>

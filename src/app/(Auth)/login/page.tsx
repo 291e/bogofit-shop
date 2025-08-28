@@ -16,15 +16,16 @@ import {
 } from "@/components/ui/card";
 import SocialLogin from "@/components/auth/SocialLogin";
 import ResetPasswordModal from "@/components/auth/ResetPasswordModal";
-import BrandInquiryModal from "@/components/auth/BrandInquiryModal";
 import { useAuth } from "@/providers/AuthProvider";
 import Link from "next/link";
 import { User, Building2, Store } from "lucide-react";
+import { useI18n } from "@/providers/I18nProvider";
 
 function LoginPage() {
   // const rout   er = useRouter();
   const searchParams = useSearchParams();
   const { login: authLogin } = useAuth();
+  const { t } = useI18n();
 
   // 일반 로그인 상태
   const [userId, setUserId] = useState("");
@@ -41,8 +42,7 @@ function LoginPage() {
   // 비밀번호 초기화 모달 상태
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
-  // 브랜드 입점 문의 모달 상태
-  const [brandInquiryOpen, setBrandInquiryOpen] = useState(false);
+  // 브랜드 입점 문의는 /brand 페이지에서 진행
 
   const [loginMutation] = useMutation(LOGIN);
   // 일반 사용자 로그인 (Prisma 우선 + GraphQL 보조)
@@ -52,7 +52,7 @@ function LoginPage() {
     setLoading(true);
 
     if (!userId || !password) {
-      setError("아이디와 비밀번호를 모두 입력하세요.");
+      setError(t("auth.errors.requireIdPassword"));
       setLoading(false);
       return;
     }
@@ -138,23 +138,19 @@ function LoginPage() {
             setError(`login error: ${errorData.error}`);
           }
         } else {
-          setError(
-            errorData.message || errorData.error || "로그인에 실패했습니다."
-          );
+          setError(errorData.message || errorData.error || t("auth.errors.loginFailed"));
         }
       } catch (graphqlError) {
         console.error("[Login] GraphQL 로그인 실패:", graphqlError);
         if (shouldTryGraphQL) {
-          setError("GraphQL 로그인 중 오류가 발생했습니다.");
+          setError(t("auth.errors.graphqlLoginError"));
         } else {
-          setError(
-            errorData.message || errorData.error || "로그인에 실패했습니다."
-          );
+          setError(errorData.message || errorData.error || t("auth.errors.loginFailed"));
         }
       }
     } catch (err: unknown) {
       console.error("로그인 오류:", err);
-      setError("로그인 중 오류가 발생했습니다.");
+      setError(t("auth.errors.loginProcessing"));
     } finally {
       setLoading(false);
     }
@@ -167,7 +163,7 @@ function LoginPage() {
     setLoading(true);
 
     if (!businessUserId || !businessPassword) {
-      setError("아이디와 비밀번호를 모두 입력하세요.");
+      setError(t("auth.errors.requireIdPassword"));
       setLoading(false);
       return;
     }
@@ -219,7 +215,7 @@ function LoginPage() {
                 const jwtData = await jwtResponse.json();
 
                 if (!jwtData.user?.isBusiness) {
-                  setError("사업자 계정이 아닙니다.");
+                  setError(t("auth.errors.notBusinessAccount"));
                   setLoading(false);
                   return;
                 }
@@ -238,18 +234,14 @@ function LoginPage() {
             if (graphqlMessage) {
               setError(graphqlMessage);
             } else {
-              setError("GraphQL 사업자 로그인에 실패했습니다.");
+              setError(t("auth.errors.graphqlBusinessLoginFailed"));
             }
           } catch (graphqlError) {
             console.error("[사업자 로그인] GraphQL 실패:", graphqlError);
-            setError("GraphQL 사업자 로그인 중 오류가 발생했습니다.");
+            setError(t("auth.errors.graphqlBusinessLoginError"));
           }
         } else {
-          setError(
-            errorData.message ||
-              errorData.error ||
-              "사업자 로그인에 실패했습니다."
-          );
+          setError(errorData.message || errorData.error || t("auth.errors.businessLoginFailed"));
         }
 
         setLoading(false);
@@ -260,7 +252,7 @@ function LoginPage() {
 
       // 사업자 계정인지 확인
       if (!loginData.user?.isBusiness) {
-        setError("사업자 계정이 아닙니다.");
+        setError(t("auth.errors.notBusinessAccount"));
         setLoading(false);
         return;
       }
@@ -276,7 +268,7 @@ function LoginPage() {
       window.location.href = "/business";
     } catch (err: unknown) {
       console.error("사업자 로그인 오류:", err);
-      setError("사업자 로그인 중 오류가 발생했습니다.");
+  setError(t("auth.errors.businessLoginProcessing"));
     } finally {
       setLoading(false);
     }
@@ -287,10 +279,10 @@ function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            로그인
+            {t("header.login")}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            계정 유형을 선택하여 로그인하세요
+            {t("auth.login.subtitle")}
           </p>
         </div>
 
@@ -298,11 +290,11 @@ function LoginPage() {
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="user" className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              일반 사용자
+              {t("auth.tabs.user")}
             </TabsTrigger>
             <TabsTrigger value="business" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              사업자
+              {t("auth.tabs.business")}
             </TabsTrigger>
           </TabsList>
 
@@ -310,40 +302,32 @@ function LoginPage() {
           <TabsContent value="user">
             <Card>
               <CardHeader className="space-y-1">
-                <CardTitle className="text-center">
-                  일반 사용자 로그인
-                </CardTitle>
-                <CardDescription className="text-center">
-                  일반 고객용 계정으로 로그인합니다
-                </CardDescription>
+                <CardTitle className="text-center">{t("auth.user.title")}</CardTitle>
+                <CardDescription className="text-center">{t("auth.user.desc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleUserLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="userId" className="text-sm font-medium">
-                      아이디
-                    </label>
+                    <label htmlFor="userId" className="text-sm font-medium">{t("auth.labels.userId")}</label>
                     <Input
                       id="userId"
                       name="userId"
                       type="text"
                       required
-                      placeholder="아이디를 입력하세요"
+                      placeholder={t("auth.placeholders.userId")}
                       value={userId}
                       onChange={(e) => setUserId(e.target.value)}
                       autoComplete="username"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-medium">
-                      비밀번호
-                    </label>
+                    <label htmlFor="password" className="text-sm font-medium">{t("auth.labels.password")}</label>
                     <Input
                       id="password"
                       name="password"
                       type="password"
                       required
-                      placeholder="비밀번호를 입력하세요"
+                      placeholder={t("auth.placeholders.password")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="current-password"
@@ -358,7 +342,7 @@ function LoginPage() {
 
                   <div className="space-y-3">
                     <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "로그인 중..." : "로그인"}
+                      {loading ? t("auth.cta.loggingIn") : t("auth.cta.login")}
                     </Button>
 
                     <div className="flex items-center justify-start">
@@ -368,7 +352,7 @@ function LoginPage() {
                         className="p-0 h-auto text-sm text-blue-600 hover:text-blue-500"
                         onClick={() => setResetPasswordOpen(true)}
                       >
-                        비밀번호를 잊으셨나요?
+                        {t("auth.cta.forgotPassword")}
                       </Button>
                     </div>
 
@@ -378,7 +362,7 @@ function LoginPage() {
                         variant="outline"
                         className="w-full"
                       >
-                        회원가입
+                        {t("auth.cta.signup")}
                       </Button>
                     </Link>
                   </div>
@@ -396,44 +380,32 @@ function LoginPage() {
           <TabsContent value="business">
             <Card>
               <CardHeader className="space-y-1">
-                <CardTitle className="text-center">사업자 로그인</CardTitle>
-                <CardDescription className="text-center">
-                  입점 브랜드/매장 관리자 계정으로 로그인합니다
-                </CardDescription>
+                <CardTitle className="text-center">{t("auth.business.title")}</CardTitle>
+                <CardDescription className="text-center">{t("auth.business.desc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleBusinessLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <label
-                      htmlFor="businessUserId"
-                      className="text-sm font-medium"
-                    >
-                      사업자 아이디
-                    </label>
+                    <label htmlFor="businessUserId" className="text-sm font-medium">{t("auth.labels.businessUserId")}</label>
                     <Input
                       id="businessUserId"
                       name="businessUserId"
                       type="text"
                       required
-                      placeholder="사업자 아이디를 입력하세요"
+                      placeholder={t("auth.placeholders.businessUserId")}
                       value={businessUserId}
                       onChange={(e) => setBusinessUserId(e.target.value)}
                       autoComplete="username"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label
-                      htmlFor="businessPassword"
-                      className="text-sm font-medium"
-                    >
-                      비밀번호
-                    </label>
+                    <label htmlFor="businessPassword" className="text-sm font-medium">{t("auth.labels.password")}</label>
                     <Input
                       id="businessPassword"
                       name="businessPassword"
                       type="password"
                       required
-                      placeholder="비밀번호를 입력하세요"
+                      placeholder={t("auth.placeholders.password")}
                       value={businessPassword}
                       onChange={(e) => setBusinessPassword(e.target.value)}
                       autoComplete="current-password"
@@ -447,7 +419,7 @@ function LoginPage() {
                   )}
 
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "로그인 중..." : "사업자 로그인"}
+                    {loading ? t("auth.cta.businessLoggingIn") : t("auth.cta.businessLogin")}
                   </Button>
                 </form>
 
@@ -455,30 +427,29 @@ function LoginPage() {
                   <div className="flex items-start gap-2">
                     <Building2 className="h-4 w-4 text-blue-600 mt-0.5" />
                     <div className="text-xs text-blue-700">
-                      <p className="font-medium">사업자 계정 안내</p>
+                      <p className="font-medium">{t("auth.business.info.title")}</p>
                       <ul className="mt-1 space-y-1">
-                        <li>• 입점 브랜드/매장 관리자만 사용 가능</li>
-                        <li>• 디바이스 ID는 보안을 위해 필수입니다</li>
-                        <li>• 계정 문의: bogofit@naver.com</li>
+                        <li>• {t("auth.business.info.bullets.1")}</li>
+                        <li>• {t("auth.business.info.bullets.2")}</li>
+                        <li>• {t("auth.business.info.bullets.3")}</li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
-                {/* 브랜드 입점 문의 버튼 */}
+                {/* 브랜드 입점 문의 링크 */}
                 <div className="mt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full bg-red-500 border-red-500 text-white hover:bg-red-50 hover:border-red-700"
-                    onClick={() => setBrandInquiryOpen(true)}
-                  >
-                    <Store className="h-4 w-4 mr-2" />
-                    브랜드 입점 신청하기
-                  </Button>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    새로운 브랜드의 BogoFit 입점을 원하시나요?
-                  </p>
+                  <Link href="/brand" className="w-full block">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full bg-red-500 border-red-500 text-white hover:bg-red-50 hover:border-red-700"
+                    >
+                      <Store className="h-4 w-4 mr-2" />
+                      {t("brands.partner.cta")}
+                    </Button>
+                  </Link>
+                  <p className="text-xs text-gray-500 mt-2 text-center">{t("brands.partner.noteShort")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -491,11 +462,7 @@ function LoginPage() {
           onOpenChange={setResetPasswordOpen}
         />
 
-        {/* 브랜드 입점 문의 모달 */}
-        <BrandInquiryModal
-          open={brandInquiryOpen}
-          onOpenChange={setBrandInquiryOpen}
-        />
+  {/* 브랜드 입점 문의는 /brand 페이지에서 진행합니다. */}
       </div>
     </div>
   );

@@ -6,7 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Product } from "@/types/product";
 import { useState } from "react";
 import { Store, Crown, Sparkles, Gem, Star, Handshake } from "lucide-react";
-import BrandInquiryModal from "@/components/auth/BrandInquiryModal";
+import Link from "next/link";
+import { useI18n } from "@/providers/I18nProvider";
 
 const LIMIT = 30;
 
@@ -24,18 +25,19 @@ interface Brand {
 }
 
 export default function BrandsPage() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<"popular" | "new" | "premium">(
     "popular"
   );
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  const [isBrandInquiryModalOpen, setIsBrandInquiryModalOpen] = useState(false);
+  // Standalone brand inquiry page is at /brand; no modal state needed
 
   // 브랜드 목록 조회
   const { data: brands = [], isLoading: brandsLoading } = useQuery<Brand[]>({
     queryKey: ["brands"],
     queryFn: async () => {
       const res = await fetch(`/api/brands`);
-      if (!res.ok) throw new Error("브랜드 목록을 불러오지 못했습니다.");
+  if (!res.ok) throw new Error(t("brands.errors.fetchBrands"));
       const data = await res.json();
       return data.data.brands || [];
     },
@@ -60,7 +62,7 @@ export default function BrandsPage() {
         )}&badge=BEST&limit=${LIMIT}`;
       }
       const res = await fetch(url);
-      if (!res.ok) throw new Error("인기 브랜드 상품을 불러오지 못했습니다.");
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -80,7 +82,7 @@ export default function BrandsPage() {
           )}&badge=NEW&limit=${LIMIT}`;
         }
         const res = await fetch(url);
-        if (!res.ok) throw new Error("신생 브랜드 상품을 불러오지 못했습니다.");
+  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
         const data = await res.json();
         return data.products || [];
       },
@@ -103,7 +105,7 @@ export default function BrandsPage() {
       }
       const res = await fetch(url);
       if (!res.ok)
-        throw new Error("프리미엄 브랜드 상품을 불러오지 못했습니다.");
+        throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -130,21 +132,20 @@ export default function BrandsPage() {
       case "popular":
         return {
           icon: <Crown className="w-5 h-5" />,
-          title: "인기 브랜드",
-          description: "고객들이 가장 많이 찾는 인기 브랜드의 상품들입니다.",
+          title: t("brands.tabs.popular"),
+          description: t("brands.tabInfo.popular.desc"),
         };
       case "new":
         return {
           icon: <Sparkles className="w-5 h-5" />,
-          title: "신생 브랜드",
-          description:
-            "새롭게 입점한 주목할 만한 브랜드들의 상품을 만나보세요.",
+          title: t("brands.tabs.new"),
+          description: t("brands.tabInfo.new.desc"),
         };
       case "premium":
         return {
           icon: <Gem className="w-5 h-5" />,
-          title: "프리미엄 브랜드",
-          description: "고급스러운 프리미엄 브랜드의 특별한 상품들입니다.",
+          title: t("brands.tabs.premium"),
+          description: t("brands.tabInfo.premium.desc"),
         };
       default:
         return { icon: null, title: "", description: "" };
@@ -159,18 +160,14 @@ export default function BrandsPage() {
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <Store className="w-8 h-8 text-[#FF84CD]" />
-          입점 브랜드
+          {t("header.brands")}
         </h1>
-        <p className="text-gray-600 text-sm md:text-base">
-          엄선된 브랜드들의 다양한 상품을 만나보세요
-        </p>
+        <p className="text-gray-600 text-sm md:text-base">{t("brands.subheading")}</p>
       </div>
 
       {/* 브랜드 필터 */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          브랜드 선택
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">{t("brands.filter.title")}</h3>
         {brandsLoading ? (
           <div className="flex flex-wrap gap-2 mb-4">
             <Skeleton className="h-8 w-16 rounded-full" />
@@ -181,10 +178,8 @@ export default function BrandsPage() {
         ) : brands.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg mb-4">
             <Store className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500 mb-2">등록된 브랜드가 없습니다</p>
-            <p className="text-sm text-gray-400">
-              첫 번째 브랜드가 되어보세요!
-            </p>
+            <p className="text-gray-500 mb-2">{t("brands.listEmpty.title")}</p>
+            <p className="text-sm text-gray-400">{t("brands.listEmpty.desc")}</p>
           </div>
         ) : (
           <div className="flex flex-wrap gap-2 mb-4">
@@ -196,7 +191,7 @@ export default function BrandsPage() {
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              전체
+              {t("brands.filter.all")}
             </button>
             {brands.map((brand) => (
               <button
@@ -220,7 +215,7 @@ export default function BrandsPage() {
         <div className="mb-8 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Star className="w-5 h-5 text-yellow-500" />
-            추천 브랜드
+            {t("brands.recommend")}
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
             {brands.slice(0, 6).map((brand) => (
@@ -246,7 +241,8 @@ export default function BrandsPage() {
                   {brand.name}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {brand.productCount}개 상품
+                  {brand.productCount}
+                  {t("brands.productCountSuffix")}
                 </div>
               </button>
             ))}
@@ -280,20 +276,15 @@ export default function BrandsPage() {
       {!selectedBrand && !brandsLoading && brands.length === 0 && (
         <div className="mb-8 text-center py-20 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
           <Store className="w-20 h-20 mx-auto text-gray-300 mb-6" />
-          <h3 className="text-xl font-semibold text-gray-800 mb-3">
-            아직 입점한 브랜드가 없습니다
-          </h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            보고핏과 함께 성장할 첫 번째 브랜드가 되어보세요! 우리는 새로운
-            브랜드를 환영합니다.
-          </p>
-          <button
-            onClick={() => setIsBrandInquiryModalOpen(true)}
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">{t("brands.none.title")}</h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">{t("brands.none.desc")}</p>
+          <Link
+            href="/brand"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF84CD] text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
           >
             <Handshake className="w-5 h-5" />
-            브랜드 입점 신청하기
-          </button>
+            {t("brands.partner.cta")}
+          </Link>
         </div>
       )}
 
@@ -311,16 +302,14 @@ export default function BrandsPage() {
                 <h3 className="text-lg font-bold text-gray-900">
                   {selectedBrand}
                 </h3>
-                <p className="text-sm text-gray-600">
-                  브랜드 상품을 확인해보세요
-                </p>
+                <p className="text-sm text-gray-600">{t("brands.selected.desc")}</p>
               </div>
             </div>
             <button
               onClick={() => setSelectedBrand(null)}
               className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
             >
-              전체 보기
+              {t("brands.selected.clear")}
             </button>
           </div>
         </div>
@@ -338,7 +327,7 @@ export default function BrandsPage() {
             }`}
           >
             <Crown className="w-4 h-4 inline mr-2" />
-            인기 브랜드
+            {t("brands.tabs.popular")}
           </button>
           <button
             onClick={() => setActiveTab("new")}
@@ -349,7 +338,7 @@ export default function BrandsPage() {
             }`}
           >
             <Sparkles className="w-4 h-4 inline mr-2" />
-            신생 브랜드
+            {t("brands.tabs.new")}
           </button>
           <button
             onClick={() => setActiveTab("premium")}
@@ -360,7 +349,7 @@ export default function BrandsPage() {
             }`}
           >
             <Gem className="w-4 h-4 inline mr-2" />
-            프리미엄 브랜드
+            {t("brands.tabs.premium")}
           </button>
         </div>
       </div>
@@ -394,13 +383,16 @@ export default function BrandsPage() {
             <Store className="w-16 h-16 mx-auto text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {selectedBrand
-              ? `${selectedBrand} 브랜드의 상품이 없습니다`
-              : "브랜드 상품이 없습니다"}
+            {selectedBrand ? (
+              <>
+                {selectedBrand}
+                {t("brands.emptyForBrand.suffix")}
+              </>
+            ) : (
+              t("brands.empty.title")
+            )}
           </h3>
-          <p className="text-gray-500">
-            다른 브랜드를 선택하거나 잠시 후 다시 시도해주세요.
-          </p>
+          <p className="text-gray-500">{t("brands.empty.desc")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
@@ -415,25 +407,19 @@ export default function BrandsPage() {
         <div className="mt-12 text-center p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Handshake className="w-6 h-6 text-green-500" />
-            <p className="text-gray-800 font-medium">브랜드 입점 문의</p>
+            <p className="text-gray-800 font-medium">{t("brands.partner.title")}</p>
           </div>
-          <p className="text-sm text-gray-600 mb-3">
-            새로운 브랜드의 입점을 환영합니다. 함께 성장해요!
-          </p>
-          <button
-            onClick={() => setIsBrandInquiryModalOpen(true)}
+          <p className="text-sm text-gray-600 mb-3">{t("brands.partner.desc")}</p>
+          <Link
+            href="/brand"
             className="inline-block px-6 py-2 bg-[#FF84CD] text-white rounded-lg hover:bg-pink-600 transition-colors text-sm font-medium"
           >
-            브랜드 입점 신청
-          </button>
+            {t("brands.partner.cta")}
+          </Link>
         </div>
       )}
 
-      {/* 브랜드 입점 문의 모달 */}
-      <BrandInquiryModal
-        open={isBrandInquiryModalOpen}
-        onOpenChange={setIsBrandInquiryModalOpen}
-      />
+  {/* 브랜드 입점 문의는 /brand 페이지에서 진행합니다. */}
     </div>
   );
 }

@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useI18n } from "@/providers/I18nProvider";
 
 interface SocialLoginProps {
   className?: string;
 }
 
 export default function SocialLogin({ className }: SocialLoginProps) {
+  const { t } = useI18n();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -54,7 +56,7 @@ export default function SocialLogin({ className }: SocialLoginProps) {
 
       if (provider === "google") {
         if (!config.googleClientId) {
-          throw new Error("Google Client ID가 설정되지 않았습니다.");
+          throw new Error(t("auth.social.google.missingClientId"));
         }
 
         // Google OAuth 인증 URL 생성
@@ -69,7 +71,7 @@ export default function SocialLogin({ className }: SocialLoginProps) {
         console.log("Google OAuth URL:", authUrl);
       } else if (provider === "kakao") {
         if (!config.kakaoClientId) {
-          throw new Error("Kakao Client ID가 설정되지 않았습니다.");
+          throw new Error(t("auth.social.kakao.missingClientId"));
         }
 
         // Kakao OAuth 인증 URL 생성
@@ -87,11 +89,11 @@ export default function SocialLogin({ className }: SocialLoginProps) {
       window.location.href = authUrl;
     } catch (error) {
       console.error(`${provider} 인증 오류:`, error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : `${provider} 인증 중 오류가 발생했습니다.`
-      );
+      const fallbackKey =
+        provider === "google"
+          ? "auth.social.google.authError"
+          : "auth.social.kakao.authError";
+      setError(error instanceof Error ? error.message : t(fallbackKey));
       setLoading(false);
     }
   };
@@ -114,7 +116,7 @@ export default function SocialLogin({ className }: SocialLoginProps) {
         </div>
         <div className="relative flex justify-center text-sm">
           <span className="px-2 bg-gray-50 text-gray-500">
-            또는 다음으로 로그인
+            {t("auth.social.orLoginWith")}
           </span>
         </div>
       </div>
@@ -126,13 +128,13 @@ export default function SocialLogin({ className }: SocialLoginProps) {
           className="w-full flex justify-center items-center hover:opacity-80 disabled:opacity-50 transition-opacity cursor-pointer"
           title={
             !config.googleClientId
-              ? "Google Client ID가 설정되지 않았습니다"
+              ? t("auth.social.google.missingClientId")
               : ""
           }
         >
           <Image
             src="/auth/google.svg"
-            alt="Google로 로그인"
+            alt={t("auth.social.googleAlt")}
             width={179}
             height={40}
             className="h-10 w-auto"
@@ -143,12 +145,12 @@ export default function SocialLogin({ className }: SocialLoginProps) {
           disabled={loading || !config.kakaoClientId}
           className="w-full flex justify-center items-center hover:opacity-80 disabled:opacity-50 transition-opacity cursor-pointer"
           title={
-            !config.kakaoClientId ? "Kakao Client ID가 설정되지 않았습니다" : ""
+            !config.kakaoClientId ? t("auth.social.kakao.missingClientId") : ""
           }
         >
           <Image
             src="/auth/kakao.svg"
-            alt="Kakao로 로그인"
+            alt={t("auth.social.kakaoAlt")}
             width={512}
             height={125}
             className="h-10 w-auto"
@@ -163,8 +165,8 @@ export default function SocialLogin({ className }: SocialLoginProps) {
       {/* 개발 모드에서만 설정 상태 표시 */}
       {process.env.NODE_ENV === "development" && (
         <div className="mt-3 text-xs text-gray-400 text-center">
-          <div>Google: {config.googleClientId ? "✓" : "❌"}</div>
-          <div>Kakao: {config.kakaoClientId ? "✓" : "❌"}</div>
+          <div>{t("auth.social.googleLabel")}: {config.googleClientId ? "✓" : "❌"}</div>
+          <div>{t("auth.social.kakaoLabel")}: {config.kakaoClientId ? "✓" : "❌"}</div>
         </div>
       )}
     </div>

@@ -13,10 +13,8 @@ const RecentProducts = dynamic(
     ssr: false,
     loading: () => (
       <div>
-        <h2 className="text-xl font-bold mb-6">최근 본 상품</h2>
-        <div className="text-center text-gray-500 py-8">
-          최근 본 상품을 불러오는 중...
-        </div>
+        <h2 className="text-xl font-bold mb-6">&nbsp;</h2>
+        <div className="text-center text-gray-500 py-8">...</div>
       </div>
     ),
   }
@@ -25,58 +23,70 @@ import Cart from "@/components/myPage/Cart";
 import ProfileEditLink from "@/components/myPage/ProfileEditLink";
 import LogoutButton from "@/components/myPage/LogoutButton";
 import { Ticket, MapPin, Clock, User, LogOut } from "lucide-react";
+import { useI18n } from "@/providers/I18nProvider";
 
-const menuSections = [
-  {
-    title: "나의 쇼핑 정보",
-    items: [
-      {
-        key: "order",
-        label: "주문 내역 조회",
-        icon: <Clock className="w-4 h-4" />,
-      },
-      {
-        key: "coupon",
-        label: "쿠폰 내역",
-        icon: <Ticket className="w-4 h-4" />,
-      },
-      {
-        key: "address",
-        label: "배송 주소록 관리",
-        icon: <MapPin className="w-4 h-4" />,
-      },
-    ],
-  },
-  {
-    title: "활동 정보",
-    items: [
-      {
-        key: "recent",
-        label: "최근 본 상품",
-        icon: <Clock className="w-4 h-4" />,
-      },
-    ],
-  },
-  {
-    title: "나의 정보",
-    items: [
-      {
-        key: "profile",
-        label: "회원 정보 수정",
-        icon: <User className="w-4 h-4" />,
-      },
-      {
-        key: "logout",
-        label: "로그아웃",
-        icon: <LogOut className="w-4 h-4" />,
-      },
-    ],
-  },
-];
+function MyPageSuspenseFallback() {
+  const { t } = useI18n();
+  return (
+    <div className="max-w-5xl mx-auto py-12 px-4 flex justify-center items-center">
+      <div className="text-gray-500">{t("common.loading")}</div>
+    </div>
+  );
+}
 
 function MyPageContent() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const [selected, setSelected] = useState("order");
+
+  // Build localized menu
+  const menuSections = [
+    {
+      title: t("myPage.menu.sections.shoppingInfo"),
+      items: [
+        {
+          key: "order",
+          label: t("myPage.menu.items.orderHistory"),
+          icon: <Clock className="w-4 h-4" />,
+        },
+        {
+          key: "coupon",
+          label: t("myPage.menu.items.coupons"),
+          icon: <Ticket className="w-4 h-4" />,
+        },
+        {
+          key: "address",
+          label: t("myPage.menu.items.addressBook"),
+          icon: <MapPin className="w-4 h-4" />,
+        },
+      ],
+    },
+    {
+      title: t("myPage.menu.sections.activities"),
+      items: [
+        {
+          key: "recent",
+          label: t("myPage.menu.items.recentViewed"),
+          icon: <Clock className="w-4 h-4" />,
+        },
+      ],
+    },
+    {
+      title: t("myPage.menu.sections.account"),
+      items: [
+        {
+          key: "profile",
+          label: t("myPage.menu.items.profileEdit"),
+          icon: <User className="w-4 h-4" />,
+        },
+        {
+          key: "logout",
+          label: t("myPage.menu.items.logout"),
+          icon: <LogOut className="w-4 h-4" />,
+        },
+      ],
+    },
+  ];
 
   // URL 쿼리 파라미터에서 section을 읽어서 초기 selected 설정
   useEffect(() => {
@@ -139,11 +149,7 @@ function MyPageContent() {
 export default function MyPage() {
   return (
     <Suspense
-      fallback={
-        <div className="max-w-5xl mx-auto py-12 px-4 flex justify-center items-center">
-          <div className="text-gray-500">로딩 중...</div>
-        </div>
-      }
+  fallback={<MyPageSuspenseFallback />}
     >
       <MyPageContent />
     </Suspense>

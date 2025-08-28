@@ -5,10 +5,12 @@ import {
   RecentProduct,
 } from "@/contents/myPage/recentProducts";
 import Image from "next/image";
+import { useI18n } from "@/providers/I18nProvider";
 
 export default function RecentProducts() {
   const [products, setProducts] = useState<RecentProduct[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     // 클라이언트 마운트 확인
@@ -29,21 +31,17 @@ export default function RecentProducts() {
   if (!isClient) {
     return (
       <div>
-        <h2 className="text-xl font-bold mb-6">최근 본 상품</h2>
-        <div className="text-center text-gray-500 py-8">
-          최근 본 상품을 불러오는 중...
-        </div>
+  <h2 className="text-xl font-bold mb-6">{t("myPage.recentProducts.title")}</h2>
+  <div className="text-center text-gray-500 py-8">{t("myPage.recentProducts.loading")}</div>
       </div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-6">최근 본 상품</h2>
+      <h2 className="text-xl font-bold mb-6">{t("myPage.recentProducts.title")}</h2>
       {products.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">
-          최근 본 상품이 없습니다.
-        </div>
+        <div className="text-center text-gray-500 py-8">{t("myPage.recentProducts.empty")}</div>
       ) : (
         <div className="flex flex-wrap gap-6">
           {products.map((product) => (
@@ -62,14 +60,14 @@ export default function RecentProducts() {
                 {product.title}
               </div>
               <div className="text-lg font-bold text-[#d74fdf] mb-2">
-                {product.price.toLocaleString()}원
+                {product.price.toLocaleString()}{t("currency.won")}
               </div>
               <div className="flex gap-2 w-full">
                 <button className="flex-1 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm">
-                  장바구니
+                  {t("myPage.recentProducts.cart")}
                 </button>
                 <button className="flex-1 py-1 rounded bg-[#d74fdf] hover:bg-[#b93fc0] text-white text-sm">
-                  구매
+                  {t("myPage.recentProducts.buy")}
                 </button>
               </div>
             </div>

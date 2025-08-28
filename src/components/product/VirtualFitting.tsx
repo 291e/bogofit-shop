@@ -19,6 +19,7 @@ import {
   garmentSamples,
   lowerSamples,
 } from "@/contents/VirtualFitting/sampleImages";
+import { useI18n } from "@/providers/I18nProvider";
 
 interface VirtualFittingProps {
   productTitle?: string;
@@ -31,6 +32,7 @@ export default function VirtualFitting({
   productCategory,
   currentImage,
 }: VirtualFittingProps) {
+  const { t } = useI18n();
   const [files, setFiles] = useState<{
     human_file: File | null;
     garment_file: File | null;
@@ -125,7 +127,7 @@ export default function VirtualFitting({
     // 파일 형식 검사
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      return "지원하지 않는 파일 형식입니다. JPG, PNG, WEBP 파일만 업로드 가능합니다.";
+      return t("virtualFitting.errors.unsupportedFormat");
     }
 
     return "";
@@ -141,7 +143,7 @@ export default function VirtualFitting({
       if (url.startsWith("/")) {
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(`이미지 로드 실패: ${response.status}`);
+          throw new Error(`${t("virtualFitting.errors.imageLoadFailed")}: ${response.status}`);
         }
 
         const blob = await response.blob();
@@ -153,13 +155,13 @@ export default function VirtualFitting({
       const response = await fetch(proxyUrl);
 
       if (!response.ok) {
-        throw new Error(`프록시 요청 실패: ${response.status}`);
+        throw new Error(`${t("virtualFitting.errors.proxyRequestFailed")}: ${response.status}`);
       }
 
       const blob = await response.blob();
       return new File([blob], filename, { type: blob.type || "image/jpeg" });
     } catch (error) {
-      console.error("이미지 다운로드 실패:", error);
+      console.error(t("virtualFitting.errors.imageDownloadFailed"), error);
       return null;
     }
   };
@@ -188,7 +190,7 @@ export default function VirtualFitting({
             }
           }
         } catch (error) {
-          console.error("자동 업로드 실패:", error);
+          console.error(t("virtualFitting.errors.autoUploadFailed"), error);
         }
       }
     };
@@ -228,8 +230,7 @@ export default function VirtualFitting({
       reader.onerror = () => {
         setFileErrors((prev) => ({
           ...prev,
-          [fieldName]:
-            "파일을 읽는 중 오류가 발생했습니다. 다른 이미지를 시도해주세요.",
+          [fieldName]: t("virtualFitting.errors.fileReadError"),
         }));
       };
 
@@ -249,8 +250,7 @@ export default function VirtualFitting({
         URL.revokeObjectURL(tempUrl);
         setFileErrors((prev) => ({
           ...prev,
-          [fieldName]:
-            "손상되었거나 유효하지 않은 이미지 파일입니다. 다른 이미지를 선택해주세요.",
+          [fieldName]: t("virtualFitting.errors.invalidImageFile"),
         }));
       };
     } else {
@@ -274,14 +274,14 @@ export default function VirtualFitting({
   const runWorkflowDirect = async (formData: FormData) => {
     try {
       setProgress(5);
-      setStatus("이미지 생성 중...");
+      setStatus(t("virtualFitting.status.generatingImage"));
 
       // 배경 이미지가 포함된 경우 더 긴 타임아웃 설정
       const hasBackground = formData.has("background_file");
       const timeoutDuration = hasBackground ? 120000 : 60000; // 배경 포함시 2분, 아니면 1분
 
       // FormData 내용 로깅 (디버깅용)
-      console.log("전송할 파일 정보:");
+      console.log(t("virtualFitting.logs.sendingFiles"));
       for (const [key, value] of formData.entries()) {
         if (value instanceof File) {
           console.log(
@@ -297,7 +297,7 @@ export default function VirtualFitting({
 
       // 이미지 생성 진행률을 19초 동안 5%에서 100%까지 점진적으로 증가
       startProgressTimer(5, 100, 19000);
-      setStatus("AI 서버와 통신 중...");
+      setStatus(t("virtualFitting.status.communicatingAI"));
 
       const workflowResponse = await fetch(
         "/api/virtual-fitting/run_workflow",
@@ -315,13 +315,13 @@ export default function VirtualFitting({
       const responseText = await workflowResponse.text();
 
       // 응답 로깅 (디버깅용)
-      console.log("서버 응답 상태:", workflowResponse.status);
+      console.log(t("virtualFitting.logs.serverResponse"), workflowResponse.status);
       console.log(
-        "서버 응답 헤더:",
+        t("virtualFitting.logs.serverHeaders"),
         Object.fromEntries(workflowResponse.headers.entries())
       );
       console.log(
-        "서버 응답 텍스트 (처음 500자):",
+        t("virtualFitting.logs.serverText"),
         responseText.substring(0, 500)
       );
 
@@ -333,13 +333,9 @@ export default function VirtualFitting({
         clearProgressTimer();
         const hasBackground = formData.has("background_file");
         if (hasBackground) {
-          setStatus(
-            "배경 이미지 처리 중 서버 오류가 발생했습니다. 배경 이미지 없이 다시 시도해보세요."
-          );
+          setStatus(t("virtualFitting.errors.backgroundProcessingError"));
         } else {
-          setStatus(
-            "서버 내부 오류가 발생했습니다. 이미지 품질을 확인하고 다시 시도해주세요."
-          );
+          setStatus(t("virtualFitting.errors.serverInternalError"));
         }
         return;
       }
@@ -348,8 +344,8 @@ export default function VirtualFitting({
         workflowResult = JSON.parse(responseText);
       } catch (parseError) {
         // JSON 파싱 실패시 더 자세한 분석
-        console.error("JSON 파싱 실패:", parseError);
-        console.error("응답 전체 텍스트:", responseText);
+        console.error(t("virtualFitting.errors.jsonParsingFailed"), parseError);
+        console.error(t("virtualFitting.logs.responseFullText"), responseText);
 
         // HTML 응답인지 확인
         if (
@@ -357,9 +353,7 @@ export default function VirtualFitting({
           responseText.includes("<html")
         ) {
           clearProgressTimer();
-          setStatus(
-            "서버에서 HTML 응답을 반환했습니다. 관리자에게 문의하세요."
-          );
+          setStatus(t("virtualFitting.errors.htmlResponse"));
           return;
         }
 
@@ -369,14 +363,14 @@ export default function VirtualFitting({
         );
         if (imageUrlMatch) {
           // 이미지 URL을 찾았다면 성공으로 처리
-          console.log("응답에서 이미지 URL 추출:", imageUrlMatch[0]);
+          console.log(t("virtualFitting.logs.imageUrlExtracted"), imageUrlMatch[0]);
           clearProgressTimer();
           setProgress(90);
-          setStatus("이미지 생성 완료!");
+          setStatus(t("virtualFitting.status.imageGenerationComplete"));
           setGeneratedImage(imageUrlMatch[0]);
 
           if (isProEnabled) {
-            setStatus("비디오 생성 중...");
+            setStatus(t("virtualFitting.status.generatingVideo"));
             startProgressTimer(90, 100, 10000);
 
             const proFormData = new FormData();
@@ -396,7 +390,7 @@ export default function VirtualFitting({
             } catch {
               clearProgressTimer();
               setStatus(
-                `비디오 생성 서버 오류: ${proResponseText.substring(0, 100)}...`
+                `${t("virtualFitting.errors.videoGenerationServerError")}: ${proResponseText.substring(0, 100)}...`
               );
               return;
             }
@@ -404,12 +398,12 @@ export default function VirtualFitting({
             if (proResponse.ok && proResult.video_url) {
               clearProgressTimer();
               setProgress(100);
-              setStatus("비디오 생성 완료!");
+              setStatus(t("virtualFitting.status.videoGenerationComplete"));
               setGeneratedVideo(proResult.video_url);
             } else {
               clearProgressTimer();
               setStatus(
-                "비디오 생성 실패: " + (proResult.error || "알 수 없는 오류")
+                t("virtualFitting.errors.videoGenerationFailed") + ": " + (proResult.error || t("virtualFitting.errors.unknownError"))
               );
             }
           } else {
@@ -422,18 +416,16 @@ export default function VirtualFitting({
         clearProgressTimer();
         const hasBackground = formData.has("background_file");
         if (hasBackground) {
-          setStatus(
-            "배경 이미지 처리 중 오류가 발생했습니다. 배경 이미지 없이 시도해보세요."
-          );
+          setStatus(t("virtualFitting.errors.backgroundProcessingErrorGeneric"));
         } else if (
           workflowResponse.status === 500 &&
           (responseText.includes("Internal Server Error") ||
             responseText.includes("Internal S"))
         ) {
-          setStatus("사람 이미지는 최소한 상반신을 포함하여 올려주세요!");
+          setStatus(t("virtualFitting.errors.minimumUpperBody"));
         } else {
           setStatus(
-            `서버 응답 파싱 실패 (${
+            `${t("virtualFitting.errors.serverResponseParsingFailed")} (${
               workflowResponse.status
             }): ${responseText.substring(0, 100)}...`
           );
@@ -443,11 +435,11 @@ export default function VirtualFitting({
 
       if (workflowResponse.ok && workflowResult.image_url) {
         setProgress(90);
-        setStatus("이미지 생성 완료!");
+        setStatus(t("virtualFitting.status.imageGenerationComplete"));
         setGeneratedImage(workflowResult.image_url);
 
         if (isProEnabled) {
-          setStatus("비디오 생성 중...");
+          setStatus(t("virtualFitting.status.generatingVideo"));
           // 비디오 생성 진행률을 10초 동안 90%에서 100%까지 증가
           startProgressTimer(90, 100, 10000);
 
@@ -468,7 +460,7 @@ export default function VirtualFitting({
           } catch {
             clearProgressTimer();
             setStatus(
-              `비디오 생성 서버 오류: ${proResponseText.substring(0, 100)}...`
+              `${t("virtualFitting.errors.videoGenerationServerError")}: ${proResponseText.substring(0, 100)}...`
             );
             return;
           }
@@ -476,12 +468,12 @@ export default function VirtualFitting({
           if (proResponse.ok && proResult.video_url) {
             clearProgressTimer();
             setProgress(100);
-            setStatus("비디오 생성 완료!");
+            setStatus(t("virtualFitting.status.videoGenerationComplete"));
             setGeneratedVideo(proResult.video_url);
           } else {
             clearProgressTimer();
             setStatus(
-              "비디오 생성 실패: " + (proResult.error || "알 수 없는 오류")
+              t("virtualFitting.errors.videoGenerationFailed") + ": " + (proResult.error || t("virtualFitting.errors.unknownError"))
             );
           }
         } else {
@@ -490,18 +482,17 @@ export default function VirtualFitting({
       } else {
         // 에러 메시지 개선
         clearProgressTimer();
-        let errorMessage = "이미지 생성 실패: ";
+        let errorMessage = t("virtualFitting.errors.imageGenerationFailed") + ": ";
         const hasBackground = formData.has("background_file");
 
         if (hasBackground) {
-          errorMessage =
-            "배경 이미지 처리 중 오류가 발생했습니다. 배경 이미지를 제거하고 다시 시도해보세요.";
+          errorMessage = t("virtualFitting.errors.backgroundProcessingErrorRetry");
         } else if (
           workflowResponse.status === 500 &&
           (responseText.includes("Internal Server Error") ||
             responseText.includes("Internal S"))
         ) {
-          errorMessage = "사람 이미지는 최소한 상반신을 포함하여 올려주세요!";
+          errorMessage = t("virtualFitting.errors.minimumUpperBody");
         } else if (workflowResult.error) {
           errorMessage += workflowResult.error;
         } else {
@@ -514,12 +505,12 @@ export default function VirtualFitting({
       clearProgressTimer(); // 에러 발생 시 타이머 정리
       if (error instanceof Error) {
         if (error.name === "AbortError") {
-          setStatus("요청 시간이 초과되었습니다. 다시 시도해주세요.");
+          setStatus(t("virtualFitting.errors.requestTimeout"));
         } else {
-          setStatus("네트워크 오류: " + error.message);
+          setStatus(t("virtualFitting.errors.networkError") + ": " + error.message);
         }
       } else {
-        setStatus("알 수 없는 오류가 발생했습니다.");
+        setStatus(t("virtualFitting.errors.unknownError"));
       }
     } finally {
       clearProgressTimer(); // 최종적으로 타이머 정리
@@ -530,7 +521,7 @@ export default function VirtualFitting({
   // 워크플로우 실행
   const runWorkflow = async () => {
     if (!files.human_file || !files.garment_file) {
-      alert("필수 파일을 모두 업로드해주세요.");
+      alert(t("virtualFitting.alerts.uploadRequiredFiles"));
       return;
     }
 
@@ -542,9 +533,9 @@ export default function VirtualFitting({
     // 배경 이미지가 포함된 경우 사용자에게 알림
     const hasBackground = !!files.background_file;
     if (hasBackground) {
-      setStatus("배경 이미지 포함으로 처리 시간이 더 오래 걸릴 수 있습니다...");
+      setStatus(t("virtualFitting.status.backgroundWarning"));
     } else {
-      setStatus("연결 중...");
+      setStatus(t("virtualFitting.status.connecting"));
     }
 
     const formData = new FormData();
@@ -563,13 +554,13 @@ export default function VirtualFitting({
 
       setStatus(
         hasBackground
-          ? "배경 합성을 포함한 워크플로우 시작 중..."
-          : "워크플로우 시작 중..."
+          ? t("virtualFitting.status.startingWorkflowWithBackground")
+          : t("virtualFitting.status.startingWorkflow")
       );
       await runWorkflowDirect(formData);
     } catch (error) {
       clearProgressTimer();
-      setStatus("연결 오류: " + (error as Error).message);
+      setStatus(t("virtualFitting.errors.connectionError") + ": " + (error as Error).message);
       setIsProcessing(false);
     }
   };
@@ -617,7 +608,7 @@ export default function VirtualFitting({
               <div className="w-8 h-8 bg-gradient-to-r from-[#FF84CD] to-[#F9CFB7] rounded-full flex items-center justify-center">
                 <Play className="w-4 h-4 text-white" />
               </div>
-              가상 피팅
+              {t("virtualFitting.title")}
               <Badge variant="secondary" className="ml-2">
                 AI
               </Badge>
@@ -653,7 +644,7 @@ export default function VirtualFitting({
             } order-1`}
           >
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">이미지 업로드</CardTitle>
+              <CardTitle className="text-lg">{t("virtualFitting.uploadTitle")}</CardTitle>
               {showResults && (
                 <Button
                   variant="ghost"
@@ -674,9 +665,9 @@ export default function VirtualFitting({
                     <FileDropzone
                       onDrop={(file) => handleFileChange("human_file", file)}
                       preview={previews.human_file}
-                      label="모델 이미지"
+                      label={t("virtualFitting.labels.modelImage")}
                       required
-                      description="최소한 상반신이 포함된 사진을 업로드해주세요"
+                      description={t("virtualFitting.descriptions.modelImage")}
                       sampleImages={humanSamples}
                       onSampleSelect={(imageSrc) =>
                         handleSampleSelect("human_file", imageSrc)
@@ -692,7 +683,7 @@ export default function VirtualFitting({
                       <div className="flex items-start space-x-2">
                         <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-red-800">
-                          <p className="font-medium">업로드 오류</p>
+                          <p className="font-medium">{t("virtualFitting.errors.uploadError")}</p>
                           <p className="mt-1">{fileErrors.human_file}</p>
                         </div>
                       </div>
@@ -715,7 +706,7 @@ export default function VirtualFitting({
                           ? currentImage
                           : "")
                       }
-                      label="상의 이미지"
+                      label={t("virtualFitting.labels.topImage")}
                       required
                       description="&nbsp;"
                       sampleImages={garmentSamples}
@@ -733,7 +724,7 @@ export default function VirtualFitting({
                       <div className="flex items-start space-x-2">
                         <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-red-800">
-                          <p className="font-medium">업로드 오류</p>
+                          <p className="font-medium">{t("virtualFitting.errors.uploadError")}</p>
                           <p className="mt-1">{fileErrors.garment_file}</p>
                         </div>
                       </div>
@@ -754,7 +745,7 @@ export default function VirtualFitting({
                           ? currentImage
                           : "")
                       }
-                      label="하의 이미지 (선택)"
+                      label={t("virtualFitting.labels.bottomImage")}
                       description="&nbsp;"
                       sampleImages={lowerSamples}
                       onSampleSelect={(imageSrc) =>
@@ -771,7 +762,7 @@ export default function VirtualFitting({
                       <div className="flex items-start space-x-2">
                         <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-red-800">
-                          <p className="font-medium">업로드 오류</p>
+                          <p className="font-medium">{t("virtualFitting.errors.uploadError")}</p>
                           <p className="mt-1">{fileErrors.lower_file}</p>
                         </div>
                       </div>
@@ -785,13 +776,11 @@ export default function VirtualFitting({
                 {/* 파일 업로드 가이드 */}
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="text-sm text-blue-800">
-                    <p className="font-medium mb-2">📝 파일 업로드 가이드</p>
+                    <p className="font-medium mb-2">{t("virtualFitting.guide.title")}</p>
                     <ul className="space-y-1 text-xs">
-                      <li>• 지원 형식: JPG, PNG, WEBP</li>
-                      <li>• 사람 이미지: 최소한 상반신이 포함된 선명한 사진</li>
-                      <li>
-                        • 의류 이미지: 배경이 깔끔하고 의류가 잘 보이는 사진
-                      </li>
+                      <li>• {t("virtualFitting.guide.supportedFormats")}</li>
+                      <li>• {t("virtualFitting.guide.humanImage")}</li>
+                      <li>• {t("virtualFitting.guide.clothingImage")}</li>
                     </ul>
                   </div>
                 </div>
@@ -801,12 +790,9 @@ export default function VirtualFitting({
                   <div className="flex items-start space-x-2">
                     <AlertTriangle className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-gray-700">
-                      <p className="font-medium">배경 이미지 기능 일시 중단</p>
+                      <p className="font-medium">{t("virtualFitting.backgroundDisabled.title")}</p>
                       <p className="mt-1 text-xs">
-                        서버 안정성을 위해 배경 이미지 업로드 기능을 일시적으로
-                        비활성화했습니다.
-                        <br />
-                        기본 가상 피팅 기능은 정상적으로 사용 가능합니다.
+                        {t("virtualFitting.backgroundDisabled.description")}
                       </p>
                     </div>
                   </div>
@@ -824,7 +810,7 @@ export default function VirtualFitting({
                     className="rounded"
                   />
                   <label htmlFor="is_pro" className="text-sm font-medium">
-                    AI 비디오 생성 활성화
+                    {t("virtualFitting.options.aiVideoGeneration")}
                     <Badge variant="outline" className="ml-2 text-xs">
                       PRO
                     </Badge>
@@ -849,14 +835,14 @@ export default function VirtualFitting({
                     <div className="flex flex-col items-center w-full">
                       <div className="flex items-center mb-2">
                         <Play className="w-4 h-4 mr-2" />
-                        처리 중... {progress}%
+                        {t("virtualFitting.processing")} {progress}%
                       </div>
                       <Progress value={progress} className="w-full h-2" />
                     </div>
                   ) : (
                     <>
                       <Play className="w-4 h-4 mr-2" />
-                      가상 피팅 시작
+                      {t("virtualFitting.startButton")}
                     </>
                   )}
                 </Button>
@@ -909,9 +895,9 @@ export default function VirtualFitting({
                     <Progress value={progress} className="w-full h-3" />
                   </div>
                   <p className="text-sm text-gray-600 text-center">
-                    AI가 가상 피팅 이미지를 생성하고 있습니다.
+                    {t("virtualFitting.aiGeneratingImage")}
                     <br />
-                    잠시만 기다려주세요... {progress}%
+                    {t("virtualFitting.pleaseWait")} {progress}%
                   </p>
                 </div>
               )}
@@ -921,7 +907,7 @@ export default function VirtualFitting({
                 <div className="relative">
                   <img
                     src={generatedImage}
-                    alt="생성된 이미지"
+                    alt={t("virtualFitting.generatedImageAlt")}
                     className="w-full h-auto rounded-lg shadow-lg"
                   />
                   <Button
@@ -945,7 +931,7 @@ export default function VirtualFitting({
                       <Progress value={progress} className="w-full h-3" />
                     </div>
                     <p className="text-sm text-gray-600 text-center">
-                      AI가 비디오를 생성하고 있습니다... {progress}%
+                      {t("virtualFitting.aiGeneratingVideo")} {progress}%
                     </p>
                   </div>
                 )}

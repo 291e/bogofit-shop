@@ -1,178 +1,883 @@
 {
-  "nav.allProducts": "全部商品",
-  "nav.bestSellers": "畅销商品",
-  "nav.specialOffers": "特价商品",
-  "nav.newArrivals": "新品",
-  "nav.featured": "推荐",
-  "cta.viewAll": "查看全部",
-  "cta.loadMore": "查看更多",
-  "cta.collapse": "收起",
-  "hint.bestNow": "现在最受欢迎的商品",
-  "hint.dontMissDeal": "不容错过的特价",
-  "hint.justIn": "刚刚上架",
-  "status.loadingProducts": "正在加载商品...",
-  "status.noProducts": "暂无商品",
-  "status.allLoaded": "已查看全部商品",
-  "badge.best": "BEST",
-  "badge.hot": "HOT",
-  "badge.new": "NEW",
-  "header.recommend": "推荐",
-  "header.ranking": "排行",
-  "header.sale": "特价",
-  "header.brands": "品牌",
-  "header.admin": "管理员",
-  "header.login": "登录",
-  "header.logout": "退出登录",
-  "header.myPage": "我的页面",
-  "header.profile": "编辑资料",
-  "header.adminDashboard": "管理后台",
-  "header.menuOpen": "打开菜单",
-  "brand.tagline": "AI 试穿购物，先试后买",
-  "footer.menu": "菜单",
-  "footer.companyIntro": "公司介绍",
-  "footer.terms": "使用条款",
-  "footer.privacy": "隐私政策",
-  "footer.customerCenter": "客服中心",
-  "footer.productInquiry": "商品咨询",
-  "footer.partnerInquiry": "入驻咨询",
-  "footer.hours": "（工作日 10:00~18:00）",
-  "footer.companyInfo": "公司信息",
-  "footer.tagline1": "无需退货，轻松快速试穿！",
-  "footer.tagline2": "全球人气商品一站购齐",
-  "footer.tagline3": "值得信赖的海外配送服务",
-  "hero.mainBanner": "主横幅轮播",
-  "hero.prev": "上一张",
-  "hero.next": "下一张",
-  "hero.autoplayPause": "暂停自动播放",
-  "hero.autoplayPlay": "开始自动播放",
-  "hero.slideWord": "幻灯片",
-  "hero.goToSlide": "跳转到幻灯片",
-  "hero.slides.1.title": "新品上市纪念",
-  "hero.slides.1.subtitle": "BOGOFIT 夏季系列",
-  "hero.slides.1.description": "用清爽舒适的运动装迎接完美夏天",
-  "hero.slides.1.buttonText": "立即购买",
-  "hero.slides.1.alt": "BOGOFIT 夏季系列新品",
-  "hero.slides.1.discount": "最高 50%",
-  "hero.slides.2.title": "限时特卖进行中",
-  "hero.slides.2.subtitle": "畅销款特价",
-  "hero.slides.2.description": "热门商品特惠入手",
-  "hero.slides.2.buttonText": "查看特价商品",
-  "hero.slides.2.alt": "畅销款特价商品",
-  "hero.slides.2.discount": "50% OFF",
-  "hero.slides.3.title": "会员福利",
-  "hero.slides.3.subtitle": "免运费 + 积分",
-  "hero.slides.3.description": "注册会员享多重优惠",
-  "hero.slides.3.buttonText": "立即注册",
-  "hero.slides.3.alt": "会员福利介绍",
-  "hero.slides.4.title": "潮流 Lookbook",
-  "hero.slides.4.subtitle": "穿搭指南",
-  "hero.slides.4.description": "本季流行单品打造完美造型",
-  "hero.slides.4.buttonText": "查看 Lookbook",
-  "hero.slides.4.alt": "潮流 Lookbook 穿搭",
-  "hero.slides.5.title": "品牌故事",
-  "hero.slides.5.subtitle": "BOGOFIT 的理念",
-  "hero.slides.5.description": "为健康生活方式打造的高端运动服",
-  "hero.slides.5.buttonText": "了解品牌",
-  "hero.slides.5.alt": "BOGOFIT 品牌故事",
-  "hero.slides.6.title": "AI 试穿服务",
-  "hero.slides.6.subtitle": "虚拟穿着体验",
-  "hero.slides.6.description": "用 AI 提前试穿，找到完美尺码",
-  "hero.slides.6.buttonText": "开始虚拟试穿",
-  "hero.slides.6.alt": "AI 虚拟试穿服务"
-  ,
-  "common.loading": "加载中...",
-  "common.retry": "重试",
-  "common.reset": "重置",
-  "common.resetFilters": "重置筛选",
-  "category.top": "上衣",
-  "category.bottom": "下装",
-  "category.outer": "外套",
-  "category.onepiece": "连衣裙",
-  "product.categoryList.title": "按分类购物",
-  "product.categoryList.subtitle": "快速找到你想要的风格",
-  "product.errors.fetchProducts": "获取商品失败。",
-  "product.category.totalPrefix": "共 ",
-  "product.category.totalSuffix": " 件商品",
-  "product.category.selected": "已选分类",
-  "product.empty.noResults": "没有搜索结果",
-  "product.empty.tryAnother": "请尝试其他关键词或调整筛选条件",
-  "product.search.resultsPrefix": "搜索结果",
-  "product.search.resultsSuffix": ""
-  ,
-  "ranking.subheading": "快速查看热门与畅销商品",
-  "ranking.best.desc": "发现最畅销的单品。",
-  "ranking.popular.title": "人气",
-  "ranking.popular.desc": "按浏览量查看人气商品。",
-  "ranking.review.title": "评价多",
-  "ranking.review.desc": "按评价数量排序。",
-  "ranking.empty.title": "暂无排行数据",
-  "ranking.empty.desc": "请稍后再试。",
-  "ranking.updateNote": "每日更新，欢迎常来！",
-  "filters.category": "分类",
-  "filters.subCategory": "子分类",
-  "recommend.subheading": "为你推荐最合适的商品",
-  "recommend.tabs.ai": "AI 推荐",
-  "recommend.tabs.editor": "编辑精选",
-  "recommend.ai.title": "AI 选择合适单品",
-  "recommend.editor.title": "编辑推荐",
-  "recommend.empty.title": "暂无推荐",
-  "recommend.empty.desc": "请稍后再试。",
-  "recommend.more.title": "想看更多商品？",
-  "recommend.more.desc": "可按分类浏览或使用搜索。",
-  "sale.subheading": "低至 50% 折扣！手慢无",
-  "sale.tabs.hot": "火热特惠",
-  "sale.tabs.today": "今日特惠",
-  "sale.tabs.weekend": "周末特惠",
-  "sale.timer.title": "限时抢购进行中！",
-  "sale.timer.left": "剩余时间",
-  "sale.empty.title": "暂无促销商品",
-  "sale.empty.desc": "稍后将更新新的优惠。",
-  "sale.more.title": "获取更多优惠",
-  "sale.more.desc": "订阅可获得额外 10% 优惠码",
-  "currency.won": "₩",
-  "product.badge.soldout": "售罄",
-  "product.detail.imageAltSuffix": "图片",
-  "product.detail.reviewSuffix": "条评价",
-  "product.detail.discount": "折",
-  "product.detail.basePrice": "基础价",
-  "product.detail.optionsTotal": "选项小计",
-  "product.detail.total": "合计",
-  "product.detail.quantity": "数量",
-  "product.detail.selectPlaceholder": "选择",
-  "product.detail.freeShipping": "免运费",
-  "product.detail.allOrders": "全单适用",
-  "product.detail.qualityAssured": "品质保证",
-  "product.detail.genuine": "100% 正品",
-  "product.detail.exchangeReturn": "退换",
-  "product.detail.within7days": "7 日内",
-  "product.detail.details": "商品详情",
-  "product.detail.detailImageAlt": "详情图片",
-  "product.detail.errorTitle": "无法加载商品",
-  "product.detail.errorDesc": "请稍后再试。",
-  "product.detail.notFoundTitle": "未找到商品",
-  "product.detail.notFoundDesc": "请求的商品不存在。",
-  "product.detail.nav.info": "信息",
-  "product.detail.nav.detail": "详情",
-  "product.detail.nav.reviews": "评价",
-  "product.detail.nav.shipping": "配送/退换",
-  "product.detail.qna.emptyTitle": "暂无提问",
-  "product.detail.qna.emptyDesc": "如有疑问，欢迎联系我们。",
-  "product.detail.qna.ask": "我要提问",
-  "product.detail.shipping.title": "配送/退换",
-  "product.detail.shipping.info": "配送信息",
-  "product.detail.shipping.free": "运费：免运费",
-  "product.detail.shipping.duration": "时效：7-10 天（工作日）",
-  "product.detail.shipping.region": "范围：全国",
-  "product.detail.shipping.carrier": "承运：CJ Logistics",
-  "product.detail.shipping.exchangeReturn": "退换",
-  "product.detail.shipping.exchangeReturnPeriod": "签收 7 日内",
-  "product.detail.shipping.exchangeReturnCost": "费用：由顾客承担",
-  "product.detail.shipping.changeOfMind": "个人原因退换：双程运费自理",
-  "product.detail.shipping.defectOrWrong": "瑕疵/发错：免费换货",
-  "product.detail.shipping.notes": "注意事项",
-  "product.detail.shipping.noReturnAfterWear": "穿着后不支持退换",
-  "product.detail.shipping.noReturnAfterWash": "清洗后不支持退换",
-  "product.detail.shipping.noReturnWithoutTag": "无吊牌不支持退换",
-  "product.detail.shipping.noReturnCustomerFault": "因顾客原因造成的损坏不支持退换",
-  "product.detail.selectedOptions": "已选项汇总"
+  "nav": {
+    "allProducts": "全部商品",
+    "bestSellers": "畅销商品",
+    "specialOffers": "特价商品",
+    "newArrivals": "新品",
+    "featured": "推荐"
+  },
+  "cta": {
+    "viewAll": "查看全部",
+    "loadMore": "查看更多",
+    "collapse": "收起"
+  },
+  "hint": {
+    "bestNow": "现在最受欢迎的商品",
+    "dontMissDeal": "不容错过的特价",
+    "justIn": "刚刚上架"
+  },
+  "status": {
+    "loadingProducts": "正在加载商品...",
+    "noProducts": "暂无商品",
+    "allLoaded": "已查看全部商品"
+  },
+  "badge": {
+    "best": "BEST",
+    "hot": "HOT",
+    "new": "NEW"
+  },
+  "header": {
+    "recommend": "推荐",
+    "ranking": "排行",
+    "sale": "特价",
+    "brands": "品牌",
+    "admin": "管理员",
+    "login": "登录",
+    "logout": "退出登录",
+    "myPage": "我的页面",
+    "profile": "编辑资料",
+    "adminDashboard": "管理后台",
+    "menuOpen": "打开菜单"
+  },
+  "auth": {
+    "login": { "subtitle": "请选择账户类型登录" },
+    "tabs": { "user": "个人用户", "business": "企业/商家" },
+    "user": { "title": "个人用户登录", "desc": "使用顾客账户登录" },
+    "business": {
+      "title": "企业/商家登录",
+      "desc": "入驻品牌/店铺管理员登录",
+      "info": {
+        "title": "企业账户说明",
+        "bullets": {
+          "1": "仅限入驻品牌/店铺管理员使用",
+          "2": "为安全起见，需提供设备ID",
+          "3": "账户咨询：bogofit@naver.com"
+        }
+      }
+    },
+    "labels": {
+      "userId": "账号",
+      "businessUserId": "企业账号",
+      "password": "密码"
+    },
+    "placeholders": {
+      "userId": "请输入账号",
+      "businessUserId": "请输入企业账号",
+      "password": "请输入密码"
+    },
+    "cta": {
+      "login": "登录",
+      "loggingIn": "正在登录...",
+      "businessLogin": "企业/商家登录",
+      "businessLoggingIn": "正在登录...",
+      "forgotPassword": "忘记密码？",
+      "signup": "注册"
+    },
+    "errors": {
+      "requireIdPassword": "请填写账号和密码。",
+      "loginFailed": "登录失败。",
+      "loginProcessing": "登录过程中发生错误。",
+      "graphqlLoginError": "GraphQL 登录时发生错误。",
+      "businessLoginFailed": "企业登录失败。",
+      "businessLoginProcessing": "企业登录过程中发生错误。",
+      "graphqlBusinessLoginFailed": "GraphQL 企业登录失败。",
+      "graphqlBusinessLoginError": "GraphQL 企业登录时发生错误。",
+      "notBusinessAccount": "这不是企业账户。"
+    },
+  "social": {
+      "orLoginWith": "或使用以下方式登录",
+      "googleAlt": "使用 Google 登录",
+      "kakaoAlt": "使用 Kakao 登录",
+      "googleLabel": "Google",
+      "kakaoLabel": "Kakao",
+      "googleAuthPrefix": "Google 认证错误：",
+      "kakaoAuthPrefix": "Kakao 认证错误：",
+      "googleAuthError": "Google 认证过程中发生错误。",
+      "kakaoAuthError": "Kakao 认证过程中发生错误。",
+      "google": { "authError": "Google 认证过程中发生错误。", "missingClientId": "未配置 Google Client ID" },
+      "kakao": { "authError": "Kakao 认证过程中发生错误。", "missingClientId": "未配置 Kakao Client ID" }
+    },
+    "register": {
+      "back": "返回",
+      "backToPrev": "返回上一步",
+      "haveAccount": "已经有账号了吗？",
+      "form": {
+        "requiredInfo": "必填信息",
+        "optionalInfo": "可选信息",
+        "addressInfo": "地址信息（可选）",
+        "terms": "同意条款"
+      },
+      "gender": { "male": "男", "female": "女", "other": "其他" },
+      "placeholders": {
+        "userId": "账号（至少 4 位）*",
+        "name": "姓名 *",
+        "email": "邮箱 *",
+        "password": "密码（至少 6 位）*",
+        "confirmPassword": "确认密码 *",
+        "phone": "手机号（如：010-1234-5678）",
+        "birthDate": "生日",
+        "profile": "个人简介（可选）",
+        "zipCode": "邮编",
+        "address": "详细地址",
+        "addressDetail": "补充地址（可选）",
+        "gender": "选择性别"
+      },
+      "cta": {
+        "processing": "处理中...",
+        "next": "下一步",
+        "searchAddress": "搜索地址",
+        "cancel": "取消",
+        "agreeAndContinue": "同意并继续",
+        "viewAgain": "再次查看",
+        "viewTerms": "查看条款"
+      },
+      "verifyChoice": {
+        "title": "选择验证方式",
+        "desc": "为完成注册，请先进行身份验证。",
+        "email": {
+          "title": "邮箱验证",
+          "desc": "将发送验证码至："
+        },
+        "sms": {
+          "title": "短信验证",
+          "desc": "将发送验证码至你的手机号。"
+        }
+      },
+      "email": {
+        "descPrefix": "将向 ",
+        "descSuffix": " 发送验证码。",
+        "send": "发送验证码",
+        "sending": "发送中...",
+        "checkInbox": "请查收邮箱！",
+        "tipLink": "点击邮件中的链接，或",
+        "tipCode": "手动输入验证码",
+        "codePlaceholder": "输入 6 位验证码",
+        "verifying": "验证中...",
+        "verify": "确认验证码",
+        "resend": "重新发送",
+        "note": {
+          "valid30min": "验证码有效期为 30 分钟",
+          "checkSpam": "未收到请检查垃圾邮件夹",
+          "devOnly": "🧪 开发环境：仅支持 metabank3d@gmail.com",
+          "devReset": "⚠️ 开发环境：保存/重启会重置验证码",
+          "resendIfNotFound": "找不到验证码？请点击重新发送"
+        }
+      },
+      "sms": {
+        "title": "手机验证",
+        "desc": "我们将向你的手机号发送验证码以验证身份。",
+        "titleShort": "手机号验证",
+        "descShort": "输入手机号即可接收验证码。",
+        "codeTitle": "输入验证码",
+        "codeDesc": "请输入收到的 6 位验证码。",
+        "verified": "验证成功！",
+        "verifiedDesc": "手机号验证已完成。",
+        "country": "国家/地区",
+        "countryPlaceholder": "请选择国家/地区",
+        "phone": "手机号",
+        "sending": "发送中...",
+        "sendCode": "发送验证码",
+        "sentTo": "验证码已发送至：",
+        "codeLabel": "验证码（6 位）",
+        "remainingAttemptsPrefix": "剩余尝试次数：",
+        "remainingAttemptsSuffix": "次",
+        "verifying": "验证中...",
+        "verify": "验证",
+        "notReceived": "没有收到验证码？",
+        "secondsResend": "秒后可重发",
+        "resend": "重新发送",
+        "verifyAgain": "重新验证"
+      },
+      "terms": {
+        "title": "同意条款",
+        "desc": "注册 BogoFit Shop 需要同意以下条款。",
+        "selectAll": "全部同意",
+        "tos": "同意使用条款",
+        "privacy": "同意隐私政策",
+        "marketing": "接收营销信息",
+        "marketingDesc": "你可通过邮箱或短信接收 BogoFit Shop 的新品、活动和优惠信息。非必选，可随时取消订阅。",
+        "required": "必填",
+        "optional": "可选",
+        "status": {
+          "complete": "已同意条款",
+          "requiredStar": "需同意条款 *"
+        }
+      },
+      "success": {
+        "message": "🎉 注册成功！欢迎加入！",
+        "autoRedirect": "稍后将自动跳转到登录页面。",
+        "subDesc": "现在你可以使用 BogoFit Shop 的全部服务了！",
+        "goLogin": "前往登录",
+        "goHome": "返回首页",
+        "footer": "注册完成，欢迎加入！🚀"
+      },
+      "errors": {
+        "invalidForm": "请检查输入信息。",
+        "agreeRequired": "请同意必选条款。",
+        "signupFailed": "注册失败",
+        "unknown": "注册过程中发生错误"
+      }
+    }
+  },
+  "brand": {
+    "tagline": "AI 试穿购物，先试后买"
+  },
+  "brands": {
+    "subheading": "发现精选品牌的优质商品",
+    "errors": {
+      "fetchBrands": "无法获取品牌列表。"
+    },
+    "filter": {
+      "title": "选择品牌",
+      "all": "全部"
+    },
+    "listEmpty": {
+      "title": "暂无品牌",
+      "desc": "成为第一个入驻的品牌！"
+    },
+    "recommend": "推荐品牌",
+    "productCountSuffix": " 件商品",
+    "none": {
+      "title": "暂时还没有入驻品牌",
+      "desc": "成为与 BOGOFIT 一起成长的第一家品牌！我们欢迎新品牌。"
+    },
+    "partner": {
+      "title": "品牌入驻咨询",
+      "desc": "欢迎新品牌入驻，让我们一起成长！",
+  "cta": "申请入驻",
+  "noteShort": "想与 BogoFit 合作入驻吗？"
+    },
+    "selected": {
+      "desc": "查看该品牌的商品",
+      "clear": "查看全部"
+    },
+    "tabs": {
+      "popular": "人气品牌",
+      "new": "新晋品牌",
+      "premium": "高端品牌"
+    },
+    "tabInfo": {
+      "popular": { "desc": "顾客最常搜索的人气品牌商品。" },
+      "new": { "desc": "新入驻、值得关注的品牌商品。" },
+      "premium": { "desc": "高端品牌的特别之选。" }
+    },
+    "empty": {
+      "title": "暂无该品牌商品",
+      "desc": "请选择其他品牌或稍后再试。"
+    },
+    "emptyForBrand": {
+      "suffix": " 品牌暂无商品"
+    },
+    "inquiry": {
+          "title": "品牌入驻申请",
+          "desc": "请填写入驻 BogoFit 的品牌信息，工作人员审核后将与您联系。",
+          "sections": {
+            "company": "公司信息",
+            "contact": "联系人信息",
+            "brand": "品牌信息",
+            "inquiry": "入驻申请内容",
+            "uploads": {
+              "businessReg": "营业执照",
+              "telecomLicense": "电商经营许可证",
+              "bankbook": "银行存折复印件"
+            }
+          },
+          "badge": { "required": "必填" },
+          "labels": {
+            "companyName": "公司名称",
+            "companyNameReq": "公司名称 *",
+            "businessNumber": "统一社会信用代码",
+            "businessNumberReq": "统一社会信用代码 *",
+            "companyEmail": "公司邮箱",
+            "companyEmailReq": "公司邮箱 *",
+            "companyPhone": "公司电话",
+            "companyPhoneReq": "公司电话 *",
+            "addressGroup": "公司地址",
+            "searchAddress": "搜索地址",
+            "establishedYear": "成立年份",
+            "contactName": "联系人姓名",
+            "contactNameReq": "联系人姓名 *",
+            "position": "职位",
+            "brandName": "品牌名称",
+            "brandNameReq": "品牌名称 *",
+            "brandCategory": "品牌类别",
+            "brandCategoryReq": "品牌类别 *",
+            "brandWebsite": "品牌官网",
+            "brandDescription": "品牌介绍",
+            "userId": "登录账号",
+            "userIdReq": "登录账号 *",
+            "password": "登录密码",
+            "passwordReq": "登录密码 *",
+            "inquiryDetails": "详细申请内容",
+            "inquiryDetailsReq": "详细申请内容 *"
+          },
+          "placeholders": {
+            "companyName": "某某有限公司",
+            "businessNumber": "000-00-00000",
+            "companyEmail": "info@company.com",
+            "companyPhone": "02-0000-0000",
+            "zipCode": "邮编",
+            "address": "请搜索地址",
+            "addressDetail": "补充地址（可选）",
+            "establishedYear": "2020",
+            "contactName": "张三",
+            "position": "市场部经理",
+            "brandName": "品牌名称",
+            "brandCategory": "运动装、休闲装等",
+            "brandWebsite": "https://www.brand.com",
+            "brandDescription": "请简单介绍品牌特点、理念及主要产品",
+            "userId": "6~12 位字母和数字",
+            "password": "8~16 位字母、数字、特殊字符",
+            "inquiryDetails": "申请入驻原因、预期效果及问题等"
+          },
+          "uploads": {
+            "chooseFile": "选择文件",
+            "hint": "图片或 PDF（最大 10MB）"
+          },
+          "terms": {
+            "checkbox": "同意收集和使用个人信息。（必填）",
+            "note": "出于入驻咨询之目的，所收集的个人信息仅用于审核与回复。"
+          },
+          "cta": {
+            "cancel": "取消",
+            "sending": "发送中...",
+            "submit": "提交入驻申请"
+          },
+          "success": {
+            "title": "申请已提交！",
+            "desc1": "品牌入驻申请已成功提交。",
+            "desc2": "我们将在 3-5 天内回复。",
+            "ok": "确认"
+          },
+          "errors": {
+            "required": "为必填项。",
+            "invalidEmail": "请输入有效的公司邮箱。",
+            "businessNumber10": "统一社会信用代码应为 10 位数字。",
+            "needBusinessReg": "请上传营业执照。",
+            "needTelecomLicense": "请上传电商经营许可证。",
+            "needBankbook": "请上传银行存折复印件。",
+            "needTermsAgree": "请同意个人信息收集与使用条款。",
+            "uploadInvalid": "仅支持图片（.jpg, .png, .gif）或 PDF，且不超过 10MB。",
+            "submitFailed": "提交失败。",
+            "submitError": "提交过程中发生错误。"
+      }
+    }
+  },
+  "footer": {
+    "menu": "菜单",
+    "companyIntro": "公司介绍",
+    "terms": "使用条款",
+    "privacy": "隐私政策",
+    "customerCenter": "客服中心",
+    "productInquiry": "商品咨询",
+    "partnerInquiry": "入驻咨询",
+    "hours": "（工作日 10:00~18:00）",
+    "companyInfo": "公司信息",
+    "tagline1": "无需退货，轻松快速试穿！",
+    "tagline2": "全球人气商品一站购齐",
+    "tagline3": "值得信赖的海外配送服务"
+  },
+  "hero": {
+    "mainBanner": "主横幅轮播",
+    "prev": "上一张",
+    "next": "下一张",
+    "autoplayPause": "暂停自动播放",
+    "autoplayPlay": "开始自动播放",
+    "slideWord": "幻灯片",
+    "goToSlide": "跳转到幻灯片",
+    "slides": {
+      "1": {
+        "title": "新品上市纪念",
+        "subtitle": "BOGOFIT 夏季系列",
+        "description": "用清爽舒适的运动装迎接完美夏天",
+        "buttonText": "立即购买",
+        "alt": "BOGOFIT 夏季系列新品",
+        "discount": "最高 50%"
+      },
+      "2": {
+        "title": "限时特卖进行中",
+        "subtitle": "畅销款特价",
+        "description": "热门商品特惠入手",
+        "buttonText": "查看特价商品",
+        "alt": "畅销款特价商品",
+        "discount": "50% OFF"
+      },
+      "3": {
+        "title": "会员福利",
+        "subtitle": "免运费 + 积分",
+        "description": "注册会员享多重优惠",
+        "buttonText": "立即注册",
+        "alt": "会员福利介绍"
+      },
+      "4": {
+        "title": "潮流 Lookbook",
+        "subtitle": "穿搭指南",
+        "description": "本季流行单品打造完美造型",
+        "buttonText": "查看 Lookbook",
+        "alt": "潮流 Lookbook 穿搭"
+      },
+      "5": {
+        "title": "品牌故事",
+        "subtitle": "BOGOFIT 的理念",
+        "description": "为健康生活方式打造的高端运动服",
+        "buttonText": "了解品牌",
+        "alt": "BOGOFIT 品牌故事"
+      },
+      "6": {
+        "title": "AI 试穿服务",
+        "subtitle": "虚拟穿着体验",
+        "description": "用 AI 提前试穿，找到完美尺码",
+        "buttonText": "开始虚拟试穿",
+        "alt": "AI 虚拟试穿服务"
+      }
+    }
+  },
+  "common": {
+    "loading": "加载中...",
+    "retry": "重试",
+  "reset": "重置",
+  "resetFilters": "重置筛选",
+  "close": "关闭",
+  "cancel": "取消",
+  "edit": "编辑",
+  "save": "保存",
+  "delete": "删除",
+  "noImage": "无图片",
+  "like": "喜欢"
+  },
+  "category": {
+    "top": "上衣",
+    "bottom": "下装",
+    "outer": "外套",
+    "onepiece": "连衣裙"
+  },
+  "product": {
+    "categoryList": {
+      "title": "按分类购物",
+      "subtitle": "快速找到你想要的风格"
+    },
+    "errors": {
+      "fetchProducts": "获取商品失败。"
+    },
+    "category": {
+      "totalPrefix": "共 ",
+      "totalSuffix": " 件商品",
+      "selected": "已选分类"
+    },
+    "empty": {
+      "noResults": "没有搜索结果",
+      "tryAnother": "请尝试其他关键词或调整筛选条件"
+    },
+    "search": {
+      "resultsPrefix": "搜索结果",
+      "resultsSuffix": ""
+    },
+    "badge": {
+      "soldout": "售罄"
+    },
+    "shipping": {
+      "domestic": "国内",
+      "overseas": "海外"
+    },
+    "filters": {
+      "searchPlaceholder": "按商品名、品牌名搜索...",
+      "showSoldOut": "显示售罄商品",
+      "sort": {
+        "label": "排序",
+        "activePrefix": "排序:",
+        "newest": "最新",
+        "priceLow": "价格从低到高",
+        "priceHigh": "价格从高到低",
+        "name": "名称",
+        "rating": "评分"
+      }
+    },
+    "cta": {
+      "viewProduct": "查看商品",
+      "selectOption": "请选择选项。",
+      "selectedOptionSoldout": "所选选项已售罄。",
+      "soldout": "该商品已售罄。",
+      "addToCart": "加入购物车",
+      "adding": "添加中...",
+      "addedToCart": "已加入购物车！",
+      "addToCartFailed": "加入购物车失败。",
+      "addToCartFailedPrefix": "加入购物车失败:",
+      "productInfoUnavailable": "无法确认商品信息，请稍后再试。",
+      "buyNow": "立即购买",
+      "guestOrder": "游客下单",
+      "buy": "购买",
+      "order": "下单",
+      "guestTip": {
+        "desktop": "无需登录也可下单！",
+        "mobile": "支持游客下单！"
+      },
+      "securePayment": "受安全支付系统保护",
+      "shippingStart": "下单后 1-2 天内开始发货",
+      "guestTracking": "游客下单可用订单号查询物流",
+      "securePaymentShort": "安全支付",
+      "shippingStartShort": "1-2 日发货",
+      "guestTrackingShort": "可查物流"
+    },
+    "subcategory": {
+      "all": "全部",
+      "hoodie": "连帽卫衣",
+      "sweatshirt": "卫衣",
+      "knit": "针织衫",
+      "shirt": "衬衫",
+      "longSleeveT": "长袖T恤",
+      "blouse": "女式衬衫",
+      "vest": "马甲",
+      "shortSleeveT": "短袖T恤",
+      "sleeveless": "无袖",
+      "tshirt": "T恤",
+      "jeans": "牛仔裤",
+      "chinos": "休闲裤",
+      "slacks": "西装裤",
+      "joggers": "束脚裤",
+      "shorts": "短裤",
+      "leggings": "打底裤",
+      "skirt": "裙子",
+      "trainingPants": "运动裤",
+      "coat": "大衣",
+      "jacket": "夹克",
+      "puffer": "羽绒服",
+      "jumper": "短外套",
+      "cardigan": "开衫",
+      "zipup": "拉链外套",
+      "blazer": "西装外套",
+      "trenchCoat": "风衣",
+      "miniDress": "迷你连衣裙",
+      "midiDress": "中长连衣裙",
+      "maxiDress": "长款连衣裙",
+      "shirtDress": "衬衫裙",
+      "knitDress": "针织连衣裙",
+      "tunic": "束腰上衣"
+    },
+    "detail": {
+      "imageAltSuffix": "图片",
+      "reviewSuffix": "条评价",
+      "discount": "折",
+      "basePrice": "基础价",
+      "optionsTotal": "选项小计",
+      "total": "合计",
+      "quantity": "数量",
+      "selectPlaceholder": "选择",
+      "freeShipping": "免运费",
+      "allOrders": "全单适用",
+      "qualityAssured": "品质保证",
+      "genuine": "100% 正品",
+      "exchangeReturn": "退换",
+      "within7days": "7 日内",
+      "details": "商品详情",
+      "detailImageAlt": "详情图片",
+      "errorTitle": "无法加载商品",
+      "errorDesc": "请稍后再试。",
+      "notFoundTitle": "未找到商品",
+      "notFoundDesc": "请求的商品不存在。",
+      "nav": {
+        "info": "信息",
+        "detail": "详情",
+        "reviews": "评价",
+        "qna": "问答",
+        "shipping": "配送/退换"
+      },
+      "qna": {
+        "emptyTitle": "暂无提问",
+        "emptyDesc": "如有疑问，欢迎联系我们。",
+        "ask": "我要提问"
+      },
+      "shipping": {
+        "title": "配送/退换",
+        "info": "配送信息",
+        "free": "运费：免运费",
+        "duration": "时效：7-10 天（工作日）",
+        "region": "范围：全国",
+        "carrier": "承运：CJ Logistics",
+        "exchangeReturn": "退换",
+        "exchangeReturnPeriod": "签收 7 日内",
+        "exchangeReturnCost": "费用：由顾客承担",
+        "changeOfMind": "个人原因退换：双程运费自理",
+        "defectOrWrong": "瑕疵/发错：免费换货",
+        "notes": "注意事项",
+        "noReturnAfterWear": "穿着后不支持退换",
+        "noReturnAfterWash": "清洗后不支持退换",
+        "noReturnWithoutTag": "无吊牌不支持退换",
+        "noReturnCustomerFault": "因顾客原因造成的损坏不支持退换"
+      },
+      "selectedOptions": "已选项汇总"
+    }
+  },
+  "ranking": {
+    "subheading": "快速查看热门与畅销商品",
+  "realtimeUpdate": "排行榜实时更新",
+    "best": {
+      "desc": "发现最畅销的单品。"
+    },
+    "popular": {
+      "title": "人气",
+      "desc": "按浏览量查看人气商品。"
+    },
+    "review": {
+      "title": "评价多",
+      "desc": "按评价数量排序。"
+    },
+    "empty": {
+      "title": "暂无排行数据",
+      "desc": "请稍后再试。"
+    },
+    "updateNote": "每日更新，欢迎常来！"
+  },
+  "filters": {
+    "category": "分类",
+    "subCategory": "子分类"
+  },
+  "recommend": {
+    "subheading": "为你推荐最合适的商品",
+    "tabs": {
+      "ai": "AI 推荐",
+      "editor": "编辑精选"
+    },
+    "ai": {
+  "title": "AI 选择合适单品",
+  "desc": "基于机器学习的趋势与畅销分析，为你智能推荐商品。"
+    },
+    "editor": {
+  "title": "编辑推荐",
+  "desc": "时尚编辑亲选，带你发现本季潮流单品。"
+    },
+    "empty": {
+      "title": "暂无推荐",
+      "desc": "请稍后再试。"
+    },
+    "more": {
+      "title": "想看更多商品？",
+      "desc": "可按分类浏览或使用搜索。"
+    }
+  },
+  "sale": {
+    "subheading": "低至 50% 折扣！手慢无",
+    "tabs": {
+      "hot": "火热特惠",
+      "today": "今日特惠",
+      "weekend": "周末特惠"
+    },
+    "timer": {
+      "title": "限时抢购进行中！",
+      "left": "剩余时间",
+      "desc": "今日 24:00 前特价有效"
+    },
+    "tabInfo": {
+      "hot": { "desc": "别错过当前最火热的优惠单品！" },
+      "today": { "desc": "仅限今日，超值特价不容错过。" },
+      "weekend": { "desc": "周末更特别！更多优惠等你来。" }
+    },
+    "empty": {
+      "title": "暂无促销商品",
+      "desc": "稍后将更新新的优惠。"
+    },
+    "more": {
+      "title": "获取更多优惠",
+      "desc": "订阅可获得额外 10% 优惠码"
+    }
+  },
+  "myPage": {
+    "menu": {
+      "sections": {
+        "shoppingInfo": "我的购物信息",
+        "activities": "活动信息",
+        "account": "我的账户"
+      },
+      "items": {
+        "orderHistory": "订单查询",
+        "coupons": "优惠券",
+        "addressBook": "收货地址管理",
+        "recentViewed": "最近浏览",
+        "profileEdit": "编辑个人信息",
+        "logout": "退出登录"
+      }
+    },
+    "addressBook": {
+      "title": "收货地址管理",
+      "maxCount": "最多可添加 10 个地址",
+      "add": "+ 添加地址",
+      "form": {
+        "editTitle": "编辑地址",
+        "newTitle": "新增收货地址",
+        "label": "地址名称",
+        "recipient": "收件人",
+        "zipCode": "邮编",
+        "searchAddress": "搜索地址",
+        "address1": "详细地址",
+        "address2": "补充地址（可选）",
+        "tel": "座机",
+        "phone": "手机号",
+        "saveAsDefault": "设为默认收货地址"
+      },
+      "errors": {
+        "requiredFields": "请填写所有必填项。",
+        "invalidLogin": "登录信息无效，请重新登录。"
+      },
+      "confirm": {
+        "delete": "确定要删除该地址吗？"
+      },
+      "empty": {
+        "title": "暂无收货地址",
+        "desc": "添加地址，享受更快捷的购物体验。",
+        "add": "+ 添加地址"
+      },
+      "list": {
+        "default": "默认",
+        "recipient": "收件人",
+        "address": "地址",
+        "phone": "联系方式",
+        "setDefault": "设为默认收货地址"
+      }
+    },
+    "cart": {
+      "title": "购物车",
+      "desc": "加入购物车的商品将显示在此处。"
+    },
+    "coupons": {
+      "title": "优惠券",
+      "desc": "你持有的优惠券会显示在此处。"
+    },
+    "logout": {
+      "title": "退出登录"
+    },
+    "recentProducts": {
+      "title": "最近浏览",
+      "loading": "正在加载最近浏览的商品...",
+      "empty": "暂无最近浏览的商品。",
+      "cart": "加入购物车",
+      "buy": "购买"
+    },
+    "profile": {
+      "title": "我的资料",
+      "userId": "账号",
+      "email": "邮箱",
+      "emailPlaceholder": "邮箱",
+      "profileUrl": "头像图片 URL",
+      "profileUrlPlaceholder": "头像图片 URL",
+      "password": "确认密码",
+      "passwordPlaceholder": "输入密码以确认更改",
+      "submit": "更新资料",
+      "submitting": "正在更新...",
+      "success": "资料已成功更新。",
+      "errors": {
+        "missingPassword": "请先输入密码以更改。",
+        "updateFailed": "资料更新失败。",
+        "updateError": "更新资料时发生错误。"
+      },
+      "dangerZone": {
+        "title": "危险区域",
+        "desc": "删除账户后，所有数据将被永久删除且无法恢复。",
+        "deleteAccount": "删除账户"
+      },
+      "loading": "加载中..."
+    },
+    "orderHistory": {
+      "title": "订单查询",
+      "empty": "暂无订单。",
+      "errors": {
+        "fetch": "获取支付记录失败。"
+      }
+    }
+  },
+  "virtualFitting": {
+    "title": "虚拟试穿",
+    "uploadTitle": "上传图片",
+    "labels": {
+      "modelImage": "模特图片",
+      "topImage": "上衣图片",
+      "bottomImage": "下装图片（可选）"
+    },
+    "descriptions": {
+      "modelImage": "请上传至少包含上半身的照片"
+    },
+    "guide": {
+      "title": "📝 文件上传指南",
+      "supportedFormats": "支持格式：JPG、PNG、WEBP",
+      "humanImage": "人物图片：至少包含上半身的清晰照片",
+      "clothingImage": "服装图片：背景干净、服装清晰可见的照片"
+    },
+    "backgroundDisabled": {
+      "title": "背景图片功能暂停",
+      "description": "为确保服务器稳定性，背景图片上传功能已暂时停用。\n基本虚拟试穿功能仍可正常使用。"
+    },
+    "options": {
+      "aiVideoGeneration": "启用AI视频生成"
+    },
+    "startButton": "开始虚拟试穿",
+    "processing": "处理中...",
+    "aiGeneratingImage": "AI正在生成虚拟试穿图片。",
+    "pleaseWait": "请稍候...",
+    "aiGeneratingVideo": "AI正在生成视频...",
+    "generatedImageAlt": "生成的图片",
+    "status": {
+      "generatingImage": "正在生成图片...",
+      "communicatingAI": "正在与AI服务器通信...",
+      "imageGenerationComplete": "图片生成完成！",
+      "generatingVideo": "正在生成视频...",
+      "videoGenerationComplete": "视频生成完成！",
+      "backgroundWarning": "包含背景图片可能需要更长的处理时间...",
+      "connecting": "连接中...",
+      "startingWorkflow": "正在启动工作流...",
+      "startingWorkflowWithBackground": "正在启动包含背景合成的工作流..."
+    },
+    "errors": {
+      "unsupportedFormat": "不支持的文件格式。仅可上传JPG、PNG、WEBP文件。",
+      "imageLoadFailed": "图片加载失败",
+      "proxyRequestFailed": "代理请求失败",
+      "imageDownloadFailed": "图片下载失败：",
+      "autoUploadFailed": "自动上传失败：",
+      "fileReadError": "读取文件时发生错误。请尝试其他图片。",
+      "invalidImageFile": "损坏或无效的图片文件。请选择其他图片。",
+      "uploadError": "上传错误",
+      "backgroundProcessingError": "处理背景图片时发生服务器错误。请不使用背景图片重试。",
+      "serverInternalError": "服务器内部错误。请检查图片质量后重试。",
+      "jsonParsingFailed": "JSON解析失败：",
+      "htmlResponse": "服务器返回了HTML响应。请联系管理员。",
+      "backgroundProcessingErrorGeneric": "处理背景图片时发生错误。请不使用背景图片尝试。",
+      "minimumUpperBody": "人物图片必须至少包含上半身！",
+      "serverResponseParsingFailed": "服务器响应解析失败",
+      "videoGenerationServerError": "视频生成服务器错误",
+      "videoGenerationFailed": "视频生成失败",
+      "unknownError": "未知错误",
+      "imageGenerationFailed": "图片生成失败",
+      "backgroundProcessingErrorRetry": "处理背景图片时发生错误。请移除背景图片后重试。",
+      "requestTimeout": "请求超时。请重试。",
+      "networkError": "网络错误",
+      "connectionError": "连接错误"
+    },
+    "alerts": {
+      "uploadRequiredFiles": "请上传所有必需文件。"
+    },
+    "logs": {
+      "sendingFiles": "发送文件信息：",
+      "serverResponse": "服务器响应状态：",
+      "serverHeaders": "服务器响应头：",
+      "serverText": "服务器响应文本（前500字符）：",
+      "responseFullText": "完整响应文本：",
+      "imageUrlExtracted": "从响应中提取图片URL："
+    }
+  },
+  "ui": {
+    "fileDropzone": {
+      "removeImage": "删除图片",
+      "dragActiveText": "将文件拖放到此处",
+      "uploadModelText": "上传您的图片。",
+      "uploadClothingText": "上传图片。",
+      "uploadInstructions": "点击或拖拽上传",
+      "supportedFormats": "支持 JPG、PNG、WEBP 文件",
+      "selectSampleImage": "选择示例图片",
+      "sampleSelectionTitle": "选择示例",
+      "selectionComplete": "选择完成",
+      "imageLoadFailed": "图片加载失败：",
+      "proxyRequestFailed": "代理请求失败：",
+      "sampleImageLoadFailed": "示例图片加载失败："
+    }
+  },
+  "currency": {
+    "won": "₩"
+  }
 }

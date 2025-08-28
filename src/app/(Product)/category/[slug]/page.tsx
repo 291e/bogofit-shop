@@ -130,7 +130,7 @@ export default function CategoryProductsPage() {
       {subCategories.length > 0 && (
         <div className="mb-4 md:mb-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
-            {subCategories.map((subCategory) => (
+      {subCategories.map((subCategory) => (
               <button
                 key={subCategory.keyword}
                 onClick={() => handleSubCategoryClick(subCategory.keyword)}
@@ -140,7 +140,7 @@ export default function CategoryProductsPage() {
                     : "bg-white"
                 }`}
               >
-                {subCategory.name}
+        {"nameKey" in subCategory ? t((subCategory as any).nameKey) : (subCategory as any).name}
               </button>
             ))}
           </div>

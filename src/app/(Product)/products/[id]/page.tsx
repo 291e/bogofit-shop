@@ -777,13 +777,13 @@ export default function ProductDetail() {
                       ?.scrollIntoView({ behavior: "smooth" })
                   }
                   className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-pink-600 hover:bg-pink-50 rounded-xl transition-all duration-200 group relative cursor-pointer"
-                  title="Q&A"
+                  title={t("product.detail.nav.qna")}
                 >
                   <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-400 rounded-lg flex items-center justify-center">
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                   <div className="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    Q&A
+                    {t("product.detail.nav.qna")}
                   </div>
                 </button>
                 <button
@@ -848,10 +848,10 @@ export default function ProductDetail() {
             />
           </div>
 
-          {/* Q&A 섹션 */}
+      {/* Q&A 섹션 */}
           <div id="qna" className="max-w-6xl mx-auto mt-16">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 text-center">Q&A</h2>
+        <h2 className="text-2xl font-bold text-gray-900 text-center">{t("product.detail.nav.qna")}</h2>
               <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
             </div>
             <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
