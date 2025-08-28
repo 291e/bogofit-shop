@@ -1,11 +1,10 @@
-import { useI18n } from "@/providers/I18nProvider";
-
 export default function Cart() {
-  const { t } = useI18n();
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">{t("myPage.cart.title")}</h2>
-      <div className="text-gray-500">{t("myPage.cart.desc")}</div>
+      <h2 className="text-xl font-bold mb-4">장바구니</h2>
+      <div className="text-gray-500">
+        장바구니에 담긴 상품이 이곳에 표시됩니다.
+      </div>
     </div>
   );
 }

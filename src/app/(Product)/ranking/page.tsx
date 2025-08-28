@@ -12,12 +12,12 @@ import { subCategoryMap, categoryMap } from "@/contents/Category/subCategories";
 
 const LIMIT = 30;
 
-// 메인 카테고리 4가지 (i18n 키 사용)
+// 메인 카테고리 4가지
 const mainCategories = [
-  { key: "top", label: "category.top" },
-  { key: "bottom", label: "category.bottom" },
-  { key: "outer", label: "category.outer" },
-  { key: "onepiece", label: "category.onepiece" },
+  { key: "top", label: "상의", koLabel: "상의" },
+  { key: "bottom", label: "하의", koLabel: "하의" },
+  { key: "outer", label: "아우터", koLabel: "아우터" },
+  { key: "onepiece", label: "원피스", koLabel: "원피스" },
 ];
 
 export default function RankingPage() {
@@ -296,7 +296,7 @@ export default function RankingPage() {
             {t("filters.subCategory")}
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
-      {subCategories.map((subCategory) => (
+            {subCategories.map((subCategory) => (
               <button
                 key={subCategory.keyword}
                 onClick={() => handleSubCategoryClick(subCategory.keyword)}
@@ -306,7 +306,7 @@ export default function RankingPage() {
                     : "bg-white"
                 }`}
               >
-        {t(subCategory.nameKey)}
+                {subCategory.name}
               </button>
             ))}
           </div>
@@ -351,7 +351,7 @@ export default function RankingPage() {
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             {t("ranking.empty.title")}
           </h3>
-          <p className="text-gray-500">{t("ranking.empty.desc")}</p>
+          <p className="text-gray-500">잠시 후 다시 시도해주세요.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
@@ -375,9 +375,9 @@ export default function RankingPage() {
       )}
 
       {/* 업데이트 안내 */}
-    {!isLoading && products.length > 0 && (
+      {!isLoading && products.length > 0 && (
         <div className="mt-12 text-center p-6 bg-gray-50 rounded-lg">
-      <p className="text-gray-600 mb-2">📈 {t("ranking.realtimeUpdate")}</p>
+          <p className="text-gray-600 mb-2">📈 실시간 랭킹이 업데이트됩니다</p>
           <p className="text-sm text-gray-500">
             {t("ranking.updateNote")}
           </p>

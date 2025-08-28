@@ -33,7 +33,6 @@ import {
   useSmsVerification,
   SUPPORTED_COUNTRIES,
 } from "@/hooks/useSmsVerification";
-import { useI18n } from "@/providers/I18nProvider";
 
 // 컴포넌트 Props 인터페이스
 interface SmsVerificationProps {
@@ -60,7 +59,6 @@ export default function SmsVerification({
   showPhoneInput = true,
   defaultCountry = "+82",
 }: SmsVerificationProps) {
-  const { t } = useI18n();
   // UI 상태 관리 (컴포넌트 전용)
   const [step, setStep] = useState<VerificationStep>(
     initialPhoneNumber && !showPhoneInput ? "code" : "phone"
@@ -195,14 +193,15 @@ export default function SmsVerification({
           )}
         </div>
         <CardTitle className="text-xl font-bold">
-          {step === "phone" && t("auth.register.sms.titleShort")}
-          {step === "code" && t("auth.register.sms.codeTitle")}
-          {step === "verified" && t("auth.register.sms.verified")}
+          {step === "phone" && "전화번호 인증"}
+          {step === "code" && "인증 코드 확인"}
+          {step === "verified" && "인증 완료"}
         </CardTitle>
         <CardDescription>
-          {step === "phone" && t("auth.register.sms.descShort")}
-          {step === "code" && t("auth.register.sms.codeDesc")}
-          {step === "verified" && t("auth.register.sms.verifiedDesc")}
+          {step === "phone" &&
+            "전화번호를 입력하시면 인증 코드를 발송해드립니다."}
+          {step === "code" && "발송된 6자리 인증 코드를 입력해주세요."}
+          {step === "verified" && "전화번호 인증이 완료되었습니다."}
         </CardDescription>
       </CardHeader>
 
@@ -230,13 +229,13 @@ export default function SmsVerification({
           <div className="space-y-4">
             {/* 국가 선택 */}
             <div className="space-y-2">
-              <Label htmlFor="country-select">{t("auth.register.sms.country")}</Label>
+              <Label htmlFor="country-select">국가</Label>
               <Select
                 value={selectedCountry}
                 onValueChange={setSelectedCountry}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("auth.register.sms.countryPlaceholder") as string} />
+                  <SelectValue placeholder="국가를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
                   {SUPPORTED_COUNTRIES.map((country) => (
@@ -254,7 +253,7 @@ export default function SmsVerification({
 
             {/* 전화번호 입력 */}
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">{t("auth.register.sms.phone")}</Label>
+              <Label htmlFor="phoneNumber">전화번호</Label>
               <Input
                 id="phoneNumber"
                 ref={phoneInputRef}
@@ -297,12 +296,12 @@ export default function SmsVerification({
               {smsVerification.state.isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  {t("auth.register.sms.sending")}
+                  발송 중...
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
-                  {t("auth.register.sms.sendCode")}
+                  인증 코드 발송
                 </>
               )}
             </Button>
@@ -312,15 +311,15 @@ export default function SmsVerification({
         {/* 인증 코드 입력 단계 */}
         {step === "code" && (
           <div className="space-y-4">
-      {!showPhoneInput && (
+            {!showPhoneInput && (
               <div className="text-center text-sm text-gray-600">
                 <Smartphone className="w-4 h-4 inline mr-1" />
-        {t("auth.register.sms.sentTo")} {formatPhoneNumber(phoneNumber)}
+                {formatPhoneNumber(phoneNumber)}로 발송된 인증 코드
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="verificationCode">{t("auth.register.sms.codeLabel")}</Label>
+              <Label htmlFor="verificationCode">인증 코드 (6자리)</Label>
               <Input
                 id="verificationCode"
                 ref={codeInputRef}
@@ -339,7 +338,7 @@ export default function SmsVerification({
             {smsVerification.state.remainingAttempts !== null && (
               <div className="text-center text-sm text-orange-600">
                 <AlertCircle className="w-4 h-4 inline mr-1" />
-                {t("auth.register.sms.remainingAttemptsPrefix")} {smsVerification.state.remainingAttempts}{t("auth.register.sms.remainingAttemptsSuffix")}
+                남은 시도 횟수: {smsVerification.state.remainingAttempts}회
               </div>
             )}
 
@@ -355,12 +354,12 @@ export default function SmsVerification({
                 {smsVerification.state.isLoading ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    {t("auth.register.sms.verifying")}
+                    확인 중...
                   </>
                 ) : (
                   <>
                     <Shield className="w-4 h-4 mr-2" />
-                    {t("auth.register.sms.verify")}
+                    인증하기
                   </>
                 )}
               </Button>
@@ -369,7 +368,9 @@ export default function SmsVerification({
             <Separator />
 
             <div className="text-center space-y-2">
-      <p className="text-sm text-gray-600">{t("auth.register.sms.notReceived")}</p>
+              <p className="text-sm text-gray-600">
+                인증 코드를 받지 못하셨나요?
+              </p>
               <Button
                 variant="outline"
                 size="sm"
@@ -383,12 +384,12 @@ export default function SmsVerification({
                 {smsVerification.state.countdown > 0 ? (
                   <>
                     <Clock className="w-4 h-4 mr-1" />
-        {smsVerification.state.countdown}{t("auth.register.sms.secondsResend")}
+                    {smsVerification.state.countdown}초 후 재발송
                   </>
                 ) : (
                   <>
                     <RefreshCw className="w-4 h-4 mr-1" />
-        {t("auth.register.sms.resend")}
+                    다시 발송
                   </>
                 )}
               </Button>
@@ -403,7 +404,9 @@ export default function SmsVerification({
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
             <div className="space-y-2">
-              <p className="text-green-600 font-medium">{t("auth.register.sms.verified")}</p>
+              <p className="text-green-600 font-medium">
+                인증이 완료되었습니다!
+              </p>
               <p className="text-sm text-gray-600">
                 {formatPhoneNumber(phoneNumber)}
               </p>
@@ -414,7 +417,7 @@ export default function SmsVerification({
               onClick={restart}
               className="text-sm"
             >
-              {t("auth.register.sms.verifyAgain")}
+              다시 인증하기
             </Button>
           </div>
         )}

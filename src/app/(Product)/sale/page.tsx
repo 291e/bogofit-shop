@@ -210,24 +210,25 @@ export default function SalePage() {
       case "hot":
         return {
           icon: <Flame className="w-5 h-5" />,
-          title: t("sale.tabs.hot"),
-          description: t("sale.tabInfo.hot.desc"),
+          title: "핫딜 특가",
+          description: "지금 가장 인기있는 할인 상품들을 놓치지 마세요!",
           bgColor: "from-red-50 to-orange-50",
           borderColor: "border-red-100",
         };
       case "today":
         return {
           icon: <Clock className="w-5 h-5" />,
-          title: t("sale.tabs.today"),
-          description: t("sale.tabInfo.today.desc"),
+          title: "오늘의 딜",
+          description:
+            "오늘 하루만 특별한 가격으로 만나볼 수 있는 상품들입니다.",
           bgColor: "from-blue-50 to-cyan-50",
           borderColor: "border-blue-100",
         };
       case "weekend":
         return {
           icon: <PartyPopper className="w-5 h-5" />,
-          title: t("sale.tabs.weekend"),
-          description: t("sale.tabInfo.weekend.desc"),
+          title: "주말 특가",
+          description: "주말을 더욱 특별하게! 저렴한 가격의 특가 상품들입니다.",
           bgColor: "from-purple-50 to-pink-50",
           borderColor: "border-purple-100",
         };
@@ -275,7 +276,7 @@ export default function SalePage() {
             {t("nav.specialOffers")}
           </h1>
           <div className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
-            {t("badge.hot")}
+            HOT
           </div>
         </div>
   <p className="text-gray-600 text-sm md:text-base">{t("sale.subheading")}</p>
@@ -291,7 +292,7 @@ export default function SalePage() {
                 {t("sale.timer.title")}
               </h3>
               <p className="text-sm opacity-90">
-                {t("sale.timer.desc")}
+                오늘 자정까지 특가로 만나보세요
               </p>
             </div>
             <div className="text-right">
@@ -368,7 +369,7 @@ export default function SalePage() {
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">{t("filters.subCategory")}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-0">
-      {subCategories.map((subCategory) => (
+            {subCategories.map((subCategory) => (
               <button
                 key={subCategory.keyword}
                 onClick={() => handleSubCategoryClick(subCategory.keyword)}
@@ -378,7 +379,7 @@ export default function SalePage() {
                     : "bg-white"
                 }`}
               >
-        {"nameKey" in subCategory ? t((subCategory as any).nameKey) : (subCategory as any).name}
+                {subCategory.name}
               </button>
             ))}
           </div>

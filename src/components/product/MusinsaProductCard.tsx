@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Product } from "@/types/product";
-import { useI18n } from "@/providers/I18nProvider";
 
 interface MusinsaProductCardProps {
   product: Product;
@@ -16,7 +15,6 @@ export default function MusinsaProductCard({
   product,
   className = "",
 }: MusinsaProductCardProps) {
-  const { t } = useI18n();
   const [isLiked, setIsLiked] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -47,7 +45,7 @@ export default function MusinsaProductCard({
                 {!imageError ? (
                   <Image
                     src={product.imageUrl}
-                    alt={`${product.storeName} ${product.title} ${t("product.detail.imageAltSuffix")}`}
+                    alt={`${product.storeName} ${product.title} 상품 이미지`}
                     fill
                     className="max-w-full w-full absolute m-auto inset-0 h-auto z-0 visible object-cover"
                     loading="lazy"
@@ -56,7 +54,7 @@ export default function MusinsaProductCard({
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">{t("common.noImage")}</span>
+                    <span className="text-gray-400 text-sm">이미지 없음</span>
                   </div>
                 )}
               </div>
@@ -67,7 +65,7 @@ export default function MusinsaProductCard({
           <button
             type="button"
             onClick={handleLikeClick}
-            aria-label={t("common.like")}
+            aria-label="좋아요"
             className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white/80 hover:bg-white rounded-full transition-all duration-200 group-hover:scale-110"
           >
             <Heart
@@ -106,9 +104,7 @@ export default function MusinsaProductCard({
                   : "text-red-600 bg-red-100"
               }`}
             >
-              {product.shippingType === "DOMESTIC"
-                ? t("product.shipping.domestic")
-                : t("product.shipping.overseas")}
+              {product.shippingType === "DOMESTIC" ? "국내" : "해외"}
             </span>
             <div className="flex items-center space-x-1">
               {hasDiscount && (
@@ -117,8 +113,7 @@ export default function MusinsaProductCard({
                 </span>
               )}
               <span className="text-[13px] font-semibold text-black font-pretendard">
-                {product.price.toLocaleString()}
-                {t("currency.won")}
+                {product.price.toLocaleString()}원
               </span>
             </div>
           </div>

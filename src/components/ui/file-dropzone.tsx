@@ -13,7 +13,6 @@ import {
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import type { SampleImage } from "@/contents/VirtualFitting/sampleImages";
-import { useI18n } from "@/providers/I18nProvider";
 
 interface FileDropzoneProps {
   onDrop: (file: File) => void;
@@ -38,7 +37,6 @@ export function FileDropzone({
   onClear,
   type = "clothing", // 기본값은 상의/하의
 }: FileDropzoneProps) {
-  const { t } = useI18n();
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -58,7 +56,7 @@ export function FileDropzone({
         // 로컬 이미지를 Blob으로 변환
         const response = await fetch(imageSrc);
         if (!response.ok) {
-          throw new Error(t("ui.fileDropzone.imageLoadFailed") + " " + response.status);
+          throw new Error(`이미지 로드 실패: ${response.status}`);
         }
 
         const blob = await response.blob();
@@ -75,7 +73,7 @@ export function FileDropzone({
       const response = await fetch(proxyUrl);
 
       if (!response.ok) {
-        throw new Error(t("ui.fileDropzone.proxyRequestFailed") + " " + response.status);
+        throw new Error(`프록시 요청 실패: ${response.status}`);
       }
 
       const blob = await response.blob();
@@ -85,7 +83,7 @@ export function FileDropzone({
       onDrop(file);
       onSampleSelect(imageSrc);
     } catch (error) {
-      console.error(t("ui.fileDropzone.sampleImageLoadFailed"), error);
+      console.error("샘플 이미지 로드 실패:", error);
       // 직접 이미지 URL 사용
       onSampleSelect(imageSrc);
     }
@@ -142,7 +140,7 @@ export function FileDropzone({
                     onClear();
                   }}
                   className="absolute top-3 right-3 w-6 h-6 bg-[#FF84CD] text-white rounded-full flex items-center justify-center hover:bg-[#F9CFB7] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                  title={t("ui.fileDropzone.removeImage")}
+                  title="이미지 제거"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -154,17 +152,17 @@ export function FileDropzone({
                 <Upload className="w-16 h-16 mx-auto text-gray-400 mb-3" />
                 <p className="text-base font-medium text-gray-700 mb-1">
                   {isDragActive
-                    ? t("ui.fileDropzone.dragActiveText")
+                    ? "여기에 파일을 드롭하세요"
                     : type === "model"
-                      ? t("ui.fileDropzone.uploadModelText")
-                      : t("ui.fileDropzone.uploadClothingText")}
+                      ? "자신의 이미지를 업로드하세요."
+                      : "이미지를 업로드하세요."}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {t("ui.fileDropzone.uploadInstructions")}
+                  클릭하거나 드래그하여 업로드
                 </p>
               </div>
               <div className="text-xs text-gray-400 border-t border-gray-200 pt-3 w-full">
-                {t("ui.fileDropzone.supportedFormats")}
+                JPG, PNG, WEBP 파일 지원
               </div>
             </div>
           )}
@@ -182,13 +180,13 @@ export function FileDropzone({
                 className="w-full text-sm font-medium hover:bg-pink-50 hover:border-pink-300 transition-all duration-200"
               >
                 <ImageIcon className="w-4 h-4 mr-2" />
-                {t("ui.fileDropzone.selectSampleImage")}
+                샘플 이미지 선택
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
               <DialogHeader className="pb-4 flex-shrink-0">
                 <DialogTitle className="text-xl font-semibold text-gray-900">
-                  {label} {t("ui.fileDropzone.sampleSelectionTitle")}
+                  {label} 샘플 선택
                 </DialogTitle>
               </DialogHeader>
               <div className="flex-1 overflow-y-auto px-1 min-h-0">
@@ -218,7 +216,7 @@ export function FileDropzone({
               <div className="flex-shrink-0 pt-4 border-t border-gray-200">
                 <DialogClose asChild>
                   <Button variant="outline" className="w-full">
-                    {t("ui.fileDropzone.selectionComplete")}
+                    선택 완료
                   </Button>
                 </DialogClose>
               </div>

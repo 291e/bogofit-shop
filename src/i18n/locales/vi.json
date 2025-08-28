@@ -1,884 +1,178 @@
 {
-  "nav": {
-    "allProducts": "Tất cả sản phẩm",
-    "bestSellers": "Bán chạy",
-    "specialOffers": "Ưu đãi đặc biệt",
-    "newArrivals": "Hàng mới",
-    "featured": "Gợi ý"
-  },
-  "cta": {
-    "viewAll": "Xem tất cả",
-    "loadMore": "Xem thêm",
-    "collapse": "Thu gọn"
-  },
-  "hint": {
-    "bestNow": "Đang được yêu thích",
-    "dontMissDeal": "Ưu đãi không thể bỏ lỡ",
-    "justIn": "Vừa mới về"
-  },
-  "status": {
-    "loadingProducts": "Đang tải sản phẩm...",
-    "noProducts": "Chưa có sản phẩm",
-    "allLoaded": "Đã xem hết tất cả sản phẩm"
-  },
-  "badge": {
-    "best": "BEST",
-    "hot": "HOT",
-    "new": "NEW"
-  },
-  "header": {
-    "recommend": "Gợi ý",
-    "ranking": "Xếp hạng",
-    "sale": "Giảm giá",
-    "brands": "Thương hiệu",
-    "admin": "Quản trị",
-    "login": "Đăng nhập",
-    "logout": "Đăng xuất",
-    "myPage": "Trang của tôi",
-    "profile": "Chỉnh sửa thông tin",
-    "adminDashboard": "Bảng điều khiển quản trị",
-    "menuOpen": "Mở menu"
-  },
-  "auth": {
-    "login": { "subtitle": "Chọn loại tài khoản để đăng nhập" },
-    "tabs": { "user": "Người dùng", "business": "Doanh nghiệp" },
-    "user": { "title": "Đăng nhập người dùng", "desc": "Đăng nhập bằng tài khoản khách hàng" },
-    "business": {
-      "title": "Đăng nhập doanh nghiệp",
-      "desc": "Đăng nhập dành cho thương hiệu/cửa hàng đối tác",
-      "info": {
-        "title": "Thông tin tài khoản doanh nghiệp",
-        "bullets": {
-          "1": "Chỉ dành cho quản trị thương hiệu/cửa hàng đối tác",
-          "2": "Yêu cầu Device ID để tăng cường bảo mật",
-          "3": "Liên hệ tài khoản: bogofit@naver.com"
-        }
-      }
-    },
-    "social": {
-      "orLoginWith": "Hoặc đăng nhập với",
-      "googleAlt": "Đăng nhập với Google",
-      "kakaoAlt": "Đăng nhập với Kakao",
-      "googleLabel": "Google",
-      "kakaoLabel": "Kakao",
-      "googleAuthPrefix": "Lỗi xác thực Google:",
-      "kakaoAuthPrefix": "Lỗi xác thực Kakao:",
-      "googleAuthError": "Đã xảy ra lỗi khi xác thực Google.",
-      "kakaoAuthError": "Đã xảy ra lỗi khi xác thực Kakao.",
-      "google": { "authError": "Đã xảy ra lỗi khi xác thực Google.", "missingClientId": "Thiếu Google Client ID" },
-      "kakao": { "authError": "Đã xảy ra lỗi khi xác thực Kakao.", "missingClientId": "Thiếu Kakao Client ID" }
-    },
-    "labels": {
-      "userId": "Tài khoản",
-      "businessUserId": "Tài khoản doanh nghiệp",
-      "password": "Mật khẩu"
-    },
-    "placeholders": {
-      "userId": "Nhập tài khoản",
-      "businessUserId": "Nhập tài khoản doanh nghiệp",
-      "password": "Nhập mật khẩu"
-    },
-    "cta": {
-      "login": "Đăng nhập",
-      "loggingIn": "Đang đăng nhập...",
-      "businessLogin": "Đăng nhập doanh nghiệp",
-      "businessLoggingIn": "Đang đăng nhập...",
-      "forgotPassword": "Quên mật khẩu?",
-      "signup": "Đăng ký"
-    },
-    "errors": {
-      "requireIdPassword": "Vui lòng nhập tài khoản và mật khẩu.",
-      "loginFailed": "Đăng nhập thất bại.",
-      "loginProcessing": "Có lỗi xảy ra khi đăng nhập.",
-      "graphqlLoginError": "Lỗi khi đăng nhập qua GraphQL.",
-      "businessLoginFailed": "Đăng nhập doanh nghiệp thất bại.",
-      "businessLoginProcessing": "Lỗi khi đăng nhập doanh nghiệp.",
-      "graphqlBusinessLoginFailed": "Lỗi GraphQL khi đăng nhập doanh nghiệp.",
-      "graphqlBusinessLoginError": "Lỗi khi đăng nhập doanh nghiệp qua GraphQL.",
-      "notBusinessAccount": "Không phải tài khoản doanh nghiệp."
-    },
-    "register": {
-      "back": "Quay lại",
-      "backToPrev": "Quay lại bước trước",
-      "haveAccount": "Bạn đã có tài khoản?",
-      "form": {
-        "requiredInfo": "Thông tin bắt buộc",
-        "optionalInfo": "Thông tin tuỳ chọn",
-        "addressInfo": "Địa chỉ (tuỳ chọn)",
-        "terms": "Đồng ý điều khoản"
-      },
-      "gender": { "male": "Nam", "female": "Nữ", "other": "Khác" },
-      "placeholders": {
-        "userId": "Tài khoản (từ 4 ký tự) *",
-        "name": "Họ tên *",
-        "email": "Email *",
-        "password": "Mật khẩu (từ 6 ký tự) *",
-        "confirmPassword": "Xác nhận mật khẩu *",
-        "phone": "Số điện thoại (VD: 090-1234-5678)",
-        "birthDate": "Ngày sinh",
-        "profile": "Giới thiệu (tuỳ chọn)",
-        "zipCode": "Mã bưu điện",
-        "address": "Địa chỉ",
-        "addressDetail": "Địa chỉ chi tiết (tuỳ chọn)",
-        "gender": "Chọn giới tính"
-      },
-      "cta": {
-        "processing": "Đang xử lý...",
-        "next": "Bước tiếp theo",
-        "searchAddress": "Tìm địa chỉ",
-        "cancel": "Huỷ",
-        "agreeAndContinue": "Đồng ý và tiếp tục",
-        "viewAgain": "Xem lại",
-        "viewTerms": "Xem điều khoản"
-      },
-      "verifyChoice": {
-        "title": "Chọn phương thức xác thực",
-        "desc": "Để hoàn tất đăng ký, vui lòng xác minh danh tính của bạn.",
-        "email": {
-          "title": "Xác thực email",
-          "desc": "Gửi mã xác minh đến:"
-        },
-        "sms": {
-          "title": "Xác thực SMS",
-          "desc": "Gửi mã xác minh đến số điện thoại của bạn."
-        }
-      },
-      "email": {
-        "descPrefix": "Gửi mã xác minh đến ",
-        "descSuffix": "",
-        "send": "Gửi mã xác minh",
-        "sending": "Đang gửi...",
-        "checkInbox": "Vui lòng kiểm tra email!",
-        "tipLink": "Nhấn vào liên kết trong email",
-        "tipCode": "Hoặc nhập mã xác minh thủ công",
-        "codePlaceholder": "Nhập mã (6 chữ số)",
-        "verifying": "Đang kiểm tra...",
-        "verify": "Xác nhận mã",
-        "resend": "Gửi lại",
-        "note": {
-          "valid30min": "Mã có hiệu lực trong 30 phút",
-          "checkSpam": "Nếu không nhận được, hãy kiểm tra mục Spam",
-          "devOnly": "🧪 Môi trường dev: chỉ sử dụng email metabank3d@gmail.com",
-          "devReset": "⚠️ Dev: Lưu/khởi động lại sẽ reset mã",
-          "resendIfNotFound": "Không tìm thấy mã? Hãy nhấn Gửi lại"
-        }
-      },
-      "sms": {
-        "title": "Xác thực điện thoại",
-        "desc": "Chúng tôi sẽ gửi mã xác minh qua SMS để xác nhận danh tính.",
-        "titleShort": "Xác minh số điện thoại",
-        "descShort": "Nhập số điện thoại để nhận mã xác minh.",
-        "codeTitle": "Nhập mã xác minh",
-        "codeDesc": "Vui lòng nhập mã 6 chữ số đã gửi.",
-        "verified": "Đã xác minh thành công!",
-        "verifiedDesc": "Xác thực số điện thoại đã hoàn tất.",
-        "country": "Quốc gia",
-        "countryPlaceholder": "Chọn quốc gia",
-        "phone": "Số điện thoại",
-        "sending": "Đang gửi...",
-        "sendCode": "Gửi mã",
-        "sentTo": "Đã gửi mã đến:",
-        "codeLabel": "Mã xác minh (6 chữ số)",
-        "remainingAttemptsPrefix": "Số lần còn lại:",
-        "remainingAttemptsSuffix": " lần",
-        "verifying": "Đang kiểm tra...",
-        "verify": "Xác minh",
-        "notReceived": "Bạn chưa nhận được mã?",
-        "secondsResend": " giây nữa có thể gửi lại",
-        "resend": "Gửi lại",
-        "verifyAgain": "Xác minh lại"
-      },
-      "terms": {
-        "title": "Đồng ý điều khoản",
-        "desc": "Để đăng ký BogoFit Shop, vui lòng đồng ý các điều khoản bên dưới.",
-        "selectAll": "Đồng ý tất cả",
-        "tos": "Đồng ý Điều khoản sử dụng",
-        "privacy": "Đồng ý Chính sách bảo mật",
-        "marketing": "Nhận thông tin khuyến mãi",
-        "marketingDesc": "Bạn có thể nhận tin về sản phẩm mới, sự kiện và ưu đãi qua email/SMS. Không bắt buộc và có thể huỷ bất cứ lúc nào.",
-        "required": "Bắt buộc",
-        "optional": "Tuỳ chọn",
-        "status": {
-          "complete": "Đã đồng ý điều khoản",
-          "requiredStar": "Cần đồng ý điều khoản *"
-        }
-      },
-      "success": {
-        "message": "🎉 Đăng ký thành công! Chào mừng bạn!",
-        "autoRedirect": "Sẽ tự động chuyển đến trang đăng nhập trong giây lát.",
-        "subDesc": "Giờ bạn có thể sử dụng tất cả dịch vụ của BogoFit Shop!",
-        "goLogin": "Đi đến đăng nhập",
-        "goHome": "Về trang chủ",
-        "footer": "Đăng ký đã hoàn tất. Chào mừng bạn! 🚀"
-      },
-      "errors": {
-        "invalidForm": "Vui lòng kiểm tra lại thông tin.",
-        "agreeRequired": "Vui lòng đồng ý điều khoản bắt buộc.",
-        "signupFailed": "Đăng ký thất bại",
-        "unknown": "Đã xảy ra lỗi trong quá trình đăng ký"
-      }
-    }
-  },
-  
-  "brand": {
-    "tagline": "Mua sắm với AI thử đồ trước"
-  },
-  "brands": {
-    "subheading": "Khám phá các sản phẩm từ thương hiệu được tuyển chọn",
-    "errors": {
-      "fetchBrands": "Không tải được danh sách thương hiệu."
-    },
-    "filter": {
-      "title": "Chọn thương hiệu",
-      "all": "Tất cả"
-    },
-    "listEmpty": {
-      "title": "Chưa có thương hiệu nào",
-      "desc": "Hãy trở thành thương hiệu đầu tiên!"
-    },
-    "recommend": "Thương hiệu gợi ý",
-    "productCountSuffix": " sản phẩm",
-    "none": {
-      "title": "Chưa có thương hiệu hợp tác",
-      "desc": "Hãy là thương hiệu đầu tiên đồng hành cùng BOGOFIT! Chúng tôi hoan nghênh thương hiệu mới."
-    },
-    "partner": {
-      "title": "Liên hệ hợp tác thương hiệu",
-      "desc": "Chúng tôi hoan nghênh thương hiệu mới. Cùng nhau phát triển!",
-  "cta": "Đăng ký hợp tác",
-  "noteShort": "Bạn muốn hợp tác cùng BogoFit?"
-    },
-    "selected": {
-      "desc": "Xem sản phẩm của thương hiệu",
-      "clear": "Xem tất cả"
-    },
-    "tabs": {
-      "popular": "Thương hiệu phổ biến",
-      "new": "Thương hiệu mới",
-      "premium": "Thương hiệu cao cấp"
-    },
-    "tabInfo": {
-      "popular": { "desc": "Những thương hiệu được tìm kiếm nhiều nhất." },
-      "new": { "desc": "Các thương hiệu mới gia nhập đáng chú ý." },
-      "premium": { "desc": "Các sản phẩm đặc biệt từ thương hiệu cao cấp." }
-    },
-    "empty": {
-      "title": "Không có sản phẩm từ thương hiệu",
-      "desc": "Hãy chọn thương hiệu khác hoặc thử lại sau."
-    },
-    "emptyForBrand": {
-      "suffix": " không có sản phẩm"
-    },
-    "inquiry": {
-      "title": "Đăng ký hợp tác thương hiệu",
-      "desc": "Vui lòng nhập thông tin để đăng ký hợp tác với BogoFit. Chúng tôi sẽ xem xét và liên hệ lại.",
-      "sections": {
-        "company": "Thông tin công ty",
-        "contact": "Thông tin liên hệ",
-        "brand": "Thông tin thương hiệu",
-        "inquiry": "Nội dung đăng ký",
-        "uploads": {
-          "businessReg": "Giấy đăng ký kinh doanh",
-          "telecomLicense": "Giấy phép kinh doanh TMĐT",
-          "bankbook": "Bản sao sổ ngân hàng"
-        }
-      },
-      "badge": { "required": "Bắt buộc" },
-      "labels": {
-        "companyName": "Tên công ty",
-        "companyNameReq": "Tên công ty *",
-        "businessNumber": "Số đăng ký kinh doanh",
-        "businessNumberReq": "Số đăng ký kinh doanh *",
-        "companyEmail": "Email công ty",
-        "companyEmailReq": "Email công ty *",
-        "companyPhone": "Số điện thoại công ty",
-        "companyPhoneReq": "Số điện thoại công ty *",
-        "addressGroup": "Địa chỉ công ty",
-        "searchAddress": "Tìm địa chỉ",
-        "establishedYear": "Năm thành lập",
-        "contactName": "Người liên hệ",
-        "contactNameReq": "Người liên hệ *",
-        "position": "Chức vụ",
-        "brandName": "Tên thương hiệu",
-        "brandNameReq": "Tên thương hiệu *",
-        "brandCategory": "Danh mục thương hiệu",
-        "brandCategoryReq": "Danh mục thương hiệu *",
-        "brandWebsite": "Website thương hiệu",
-        "brandDescription": "Giới thiệu thương hiệu",
-        "userId": "Tài khoản sử dụng",
-        "userIdReq": "Tài khoản sử dụng *",
-        "password": "Mật khẩu sử dụng",
-        "passwordReq": "Mật khẩu sử dụng *",
-        "inquiryDetails": "Nội dung đăng ký chi tiết",
-        "inquiryDetailsReq": "Nội dung đăng ký chi tiết *"
-      },
-      "placeholders": {
-        "companyName": "Công ty TNHH ABC",
-        "businessNumber": "000-00-00000",
-        "companyEmail": "info@company.com",
-        "companyPhone": "02-0000-0000",
-        "zipCode": "Mã bưu điện",
-        "address": "Vui lòng tìm địa chỉ",
-        "addressDetail": "Địa chỉ chi tiết (tuỳ chọn)",
-        "establishedYear": "2020",
-        "contactName": "Nguyễn Văn A",
-        "position": "Trưởng phòng Marketing",
-        "brandName": "Tên thương hiệu",
-        "brandCategory": "Sportswear, Casual...",
-        "brandWebsite": "https://www.brand.com",
-        "brandDescription": "Giới thiệu ngắn về điểm nổi bật, triết lý, sản phẩm chính...",
-        "userId": "Bao gồm chữ và số, 6~12 ký tự",
-        "password": "Bao gồm chữ, số, ký tự đặc biệt, 8~16 ký tự",
-        "inquiryDetails": "Lý do hợp tác, kỳ vọng và các câu hỏi..."
-      },
-      "uploads": {
-        "chooseFile": "Chọn tệp",
-        "hint": "Hình ảnh hoặc PDF (tối đa 10MB)"
-      },
-      "terms": {
-        "checkbox": "Tôi đồng ý thu thập và sử dụng thông tin cá nhân. (Bắt buộc)",
-        "note": "Thông tin cá nhân chỉ dùng để kiểm tra và phản hồi yêu cầu hợp tác."
-      },
-      "cta": {
-        "cancel": "Huỷ",
-        "sending": "Đang gửi...",
-        "submit": "Gửi yêu cầu"
-      },
-      "success": {
-        "title": "Đã gửi yêu cầu!",
-        "desc1": "Yêu cầu hợp tác đã được gửi thành công.",
-        "desc2": "Chúng tôi sẽ phản hồi trong 3-5 ngày.",
-        "ok": "Xác nhận"
-      },
-      "errors": {
-        "required": "là trường bắt buộc.",
-        "invalidEmail": "Vui lòng nhập email công ty hợp lệ.",
-        "businessNumber10": "Số đăng ký kinh doanh phải gồm 10 chữ số.",
-        "needBusinessReg": "Vui lòng đính kèm Giấy đăng ký kinh doanh.",
-        "needTelecomLicense": "Vui lòng đính kèm Giấy phép kinh doanh TMĐT.",
-        "needBankbook": "Vui lòng đính kèm bản sao sổ ngân hàng.",
-        "needTermsAgree": "Vui lòng đồng ý với điều khoản thu thập và sử dụng thông tin cá nhân.",
-        "uploadInvalid": "Chỉ cho phép tải ảnh (.jpg, .png, .gif) hoặc PDF, dung lượng tối đa 10MB.",
-        "submitFailed": "Gửi yêu cầu thất bại.",
-        "submitError": "Đã xảy ra lỗi khi gửi yêu cầu."
-      }
-    }
-  },
-  "footer": {
-    "menu": "Menu",
-    "companyIntro": "Giới thiệu công ty",
-    "terms": "Điều khoản sử dụng",
-    "privacy": "Chính sách bảo mật",
-    "customerCenter": "Trung tâm CSKH",
-    "productInquiry": "Liên hệ sản phẩm",
-    "partnerInquiry": "Liên hệ hợp tác",
-    "hours": "(Các ngày trong tuần 10:00~18:00)",
-    "companyInfo": "Thông tin công ty",
-    "tagline1": "Thử đồ dễ và nhanh mà không cần đổi trả!",
-    "tagline2": "Tổng hợp sản phẩm hot trên toàn cầu",
-    "tagline3": "Dịch vụ vận chuyển quốc tế uy tín"
-  },
-  "hero": {
-    "mainBanner": "Banner chính",
-    "prev": "Slide trước",
-    "next": "Slide tiếp",
-    "autoplayPause": "Tạm dừng tự động",
-    "autoplayPlay": "Bắt đầu tự động",
-    "slideWord": "Slide",
-    "goToSlide": "Chuyển đến slide",
-    "slides": {
-      "1": {
-        "title": "Ra mắt sản phẩm mới",
-        "subtitle": "Bộ sưu tập mùa hè BOGOFIT",
-        "description": "Chuẩn bị mùa hè hoàn hảo với đồ thể thao mát và thoải mái",
-        "buttonText": "Mua ngay",
-        "alt": "Sản phẩm mới bộ sưu tập mùa hè BOGOFIT",
-        "discount": "Tối đa 50%"
-      },
-      "2": {
-        "title": "Đang diễn ra Flash Sale",
-        "subtitle": "Best-seller giá đặc biệt",
-        "description": "Gặp gỡ các sản phẩm hot với mức giá ưu đãi",
-        "buttonText": "Xem hàng khuyến mãi",
-        "alt": "Sản phẩm khuyến mãi best-seller",
-        "discount": "50% OFF"
-      },
-      "3": {
-        "title": "Quyền lợi hội viên",
-        "subtitle": "Miễn phí vận chuyển + tích điểm",
-        "description": "Đăng ký thành viên để nhận nhiều ưu đãi",
-        "buttonText": "Đăng ký",
-        "alt": "Giới thiệu quyền lợi hội viên"
-      },
-      "4": {
-        "title": "Lookbook xu hướng",
-        "subtitle": "Hướng dẫn phối đồ",
-        "description": "Hoàn thiện set đồ hoàn hảo với item hot mùa này",
-        "buttonText": "Xem lookbook",
-        "alt": "Phong cách lookbook xu hướng"
-      },
-      "5": {
-        "title": "Câu chuyện thương hiệu",
-        "subtitle": "Triết lý của BOGOFIT",
-        "description": "Đồ thể thao cao cấp cho lối sống lành mạnh",
-        "buttonText": "Tìm hiểu thương hiệu",
-        "alt": "Câu chuyện thương hiệu BOGOFIT"
-      },
-      "6": {
-        "title": "Dịch vụ thử đồ AI",
-        "subtitle": "Trải nghiệm mặc thử",
-        "description": "Thử trước bằng AI và tìm size hoàn hảo",
-        "buttonText": "Thử đồ ảo",
-        "alt": "Dịch vụ thử đồ ảo AI"
-      }
-    }
-  },
-  "common": {
-    "loading": "Đang tải...",
-    "retry": "Thử lại",
-  "reset": "Đặt lại",
-  "resetFilters": "Đặt lại bộ lọc",
-  "close": "Đóng",
-  "cancel": "Huỷ",
-  "edit": "Sửa",
-  "save": "Lưu",
-  "delete": "Xoá",
-  "noImage": "Không có hình",
-  "like": "Yêu thích"
-  },
-  "category": {
-    "top": "Áo",
-    "bottom": "Quần/Váy",
-    "outer": "Áo khoác",
-    "onepiece": "Đầm"
-  },
-  "product": {
-    "categoryList": {
-      "title": "Mua sắm theo danh mục",
-      "subtitle": "Tìm nhanh phong cách bạn muốn"
-    },
-    "errors": {
-      "fetchProducts": "Không tải được sản phẩm."
-    },
-    "category": {
-      "totalPrefix": "Tổng ",
-      "totalSuffix": " sản phẩm",
-      "selected": "Danh mục đã chọn"
-    },
-    "empty": {
-      "noResults": "Không có kết quả",
-      "tryAnother": "Hãy thử từ khóa khác hoặc điều chỉnh bộ lọc"
-    },
-    "search": {
-      "resultsPrefix": "Kết quả cho",
-      "resultsSuffix": ""
-    },
-    "badge": {
-      "soldout": "Hết hàng"
-    },
-    "shipping": {
-      "domestic": "Nội địa",
-      "overseas": "Quốc tế"
-    },
-    "filters": {
-      "searchPlaceholder": "Tìm theo tên sản phẩm, thương hiệu...",
-      "showSoldOut": "Hiển thị hàng hết",
-      "sort": {
-        "label": "Sắp xếp",
-        "activePrefix": "Sắp xếp:",
-        "newest": "Mới nhất",
-        "priceLow": "Giá thấp → cao",
-        "priceHigh": "Giá cao → thấp",
-        "name": "Tên (A-Z)",
-        "rating": "Đánh giá cao"
-      }
-    },
-    "cta": {
-      "viewProduct": "Xem sản phẩm",
-      "selectOption": "Vui lòng chọn tuỳ chọn.",
-      "selectedOptionSoldout": "Tuỳ chọn bạn chọn đã hết hàng.",
-      "soldout": "Sản phẩm đã hết hàng.",
-      "addToCart": "Giỏ hàng",
-      "adding": "Đang thêm...",
-      "addedToCart": "Đã thêm vào giỏ hàng!",
-      "addToCartFailed": "Thêm vào giỏ thất bại.",
-      "addToCartFailedPrefix": "Lỗi thêm giỏ hàng:",
-      "productInfoUnavailable": "Không thể kiểm tra thông tin sản phẩm. Vui lòng thử lại sau.",
-      "buyNow": "Mua ngay",
-      "guestOrder": "Đặt hàng không đăng nhập",
-      "buy": "Mua",
-      "order": "Đặt",
-      "guestTip": {
-        "desktop": "Bạn có thể đặt hàng mà không cần đăng nhập!",
-        "mobile": "Hỗ trợ đặt hàng khách lẻ!"
-      },
-      "securePayment": "Được bảo vệ bởi hệ thống thanh toán an toàn",
-      "shippingStart": "Bắt đầu giao trong 1-2 ngày sau khi đặt",
-      "guestTracking": "Khách lẻ có thể tra cứu bằng mã đơn hàng",
-      "securePaymentShort": "Thanh toán an toàn",
-      "shippingStartShort": "Giao 1-2 ngày",
-      "guestTrackingShort": "Có tra cứu đơn"
-    },
-    "subcategory": {
-      "all": "Tất cả",
-      "hoodie": "Áo hoodie",
-      "sweatshirt": "Áo sweatshirt",
-      "knit": "Áo len",
-      "shirt": "Áo sơ mi",
-      "longSleeveT": "Áo thun tay dài",
-      "blouse": "Áo blouse",
-      "vest": "Áo gile",
-      "shortSleeveT": "Áo thun tay ngắn",
-      "sleeveless": "Áo ba lỗ",
-      "tshirt": "Áo thun",
-      "jeans": "Quần jean",
-      "chinos": "Quần kaki",
-      "slacks": "Quần tây",
-      "joggers": "Quần jogger",
-      "shorts": "Quần short",
-      "leggings": "Quần legging",
-      "skirt": "Chân váy",
-      "trainingPants": "Quần thể thao",
-      "coat": "Áo khoác dài",
-      "jacket": "Áo khoác",
-      "puffer": "Áo phao",
-      "jumper": "Áo bomber",
-      "cardigan": "Áo cardigan",
-      "zipup": "Áo zip-up",
-      "blazer": "Áo blazer",
-      "trenchCoat": "Áo trench coat",
-      "miniDress": "Đầm mini",
-      "midiDress": "Đầm midi",
-      "maxiDress": "Đầm maxi",
-      "shirtDress": "Đầm sơ mi",
-      "knitDress": "Đầm len",
-      "tunic": "Áo tunic"
-    },
-    "detail": {
-      "imageAltSuffix": "hình",
-      "reviewSuffix": "đánh giá",
-      "discount": "giảm",
-      "basePrice": "Giá gốc",
-      "optionsTotal": "Tổng tuỳ chọn",
-      "total": "Tổng",
-      "quantity": "Số lượng",
-      "selectPlaceholder": "chọn",
-      "freeShipping": "Miễn phí vận chuyển",
-      "allOrders": "Cho mọi đơn hàng",
-      "qualityAssured": "Bảo đảm chất lượng",
-      "genuine": "Hàng chính hãng 100%",
-      "exchangeReturn": "Đổi/Trả",
-      "within7days": "Trong 7 ngày",
-      "details": "Chi tiết sản phẩm",
-      "detailImageAlt": "Hình chi tiết",
-      "errorTitle": "Không thể tải sản phẩm",
-      "errorDesc": "Vui lòng thử lại sau.",
-      "notFoundTitle": "Không tìm thấy sản phẩm",
-      "notFoundDesc": "Sản phẩm yêu cầu không tồn tại.",
-      "nav": {
-        "info": "Thông tin",
-        "detail": "Chi tiết",
-        "reviews": "Đánh giá",
-        "qna": "Hỏi đáp",
-        "shipping": "Giao hàng/Đổi trả"
-      },
-      "qna": {
-        "emptyTitle": "Chưa có câu hỏi",
-        "emptyDesc": "Nếu bạn có thắc mắc, hãy liên hệ với chúng tôi.",
-        "ask": "Hỏi ngay"
-      },
-      "shipping": {
-        "title": "Giao hàng/Đổi trả",
-        "info": "Thông tin giao hàng",
-        "free": "Phí giao hàng: Miễn phí",
-        "duration": "Thời gian: 7-10 ngày (ngày làm việc)",
-        "region": "Khu vực: Toàn quốc",
-        "carrier": "Đơn vị: CJ Logistics",
-        "exchangeReturn": "Đổi/Trả",
-        "exchangeReturnPeriod": "Trong 7 ngày kể từ nhận hàng",
-        "exchangeReturnCost": "Chi phí: Khách hàng chi trả",
-        "changeOfMind": "Đổi trả do ý kiến cá nhân: tính phí giao hàng hai chiều",
-        "defectOrWrong": "Lỗi/nhầm: Miễn phí đổi",
-        "notes": "Lưu ý",
-        "noReturnAfterWear": "Không được đổi/trả sau khi mặc",
-        "noReturnAfterWash": "Không được đổi/trả sau khi giặt",
-        "noReturnWithoutTag": "Thiếu tag kèm theo không được đổi/trả",
-        "noReturnCustomerFault": "Hư hỏng do khách gây ra không được đổi/trả"
-      },
-      "selectedOptions": "Tổng hợp tuỳ chọn"
-    }
-  },
-  "ranking": {
-    "subheading": "Xem nhanh sản phẩm hot và bán chạy",
-  "realtimeUpdate": "Bảng xếp hạng cập nhật theo thời gian thực",
-    "best": {
-      "desc": "Khám phá những sản phẩm bán chạy nhất."
-    },
-    "popular": {
-      "title": "Phổ biến",
-      "desc": "Khám phá các sản phẩm phổ biến theo lượt xem."
-    },
-    "review": {
-      "title": "Nhiều đánh giá",
-      "desc": "Xếp hạng theo số lượng đánh giá."
-    },
-    "empty": {
-      "title": "Chưa có dữ liệu xếp hạng",
-      "desc": "Vui lòng thử lại sau."
-    },
-    "updateNote": "Cập nhật hàng ngày, hãy ghé thăm thường xuyên!"
-  },
-  "filters": {
-    "category": "Danh mục",
-    "subCategory": "Danh mục con"
-  },
-  "recommend": {
-    "subheading": "Gợi ý sản phẩm phù hợp nhất cho bạn",
-    "tabs": {
-      "ai": "Gợi ý AI",
-      "editor": "Biên tập chọn"
-    },
-    "ai": {
-  "title": "AI chọn đồ phù hợp",
-  "desc": "Thuật toán machine learning phân tích xu hướng và best-seller để gợi ý cho bạn."
-    },
-    "editor": {
-  "title": "Biên tập viên gợi ý",
-  "desc": "Gặp gỡ các item hợp xu hướng do chuyên gia thời trang tuyển chọn."
-    },
-    "empty": {
-      "title": "Chưa có gợi ý",
-      "desc": "Vui lòng thử lại sau."
-    },
-    "more": {
-      "title": "Muốn xem thêm sản phẩm?",
-      "desc": "Hãy duyệt theo danh mục hoặc dùng tìm kiếm."
-    }
-  },
-  "sale": {
-    "subheading": "Giảm giá đến 50%! Săn deal nhanh kẻo lỡ",
-    "tabs": {
-      "hot": "Hot deal",
-      "today": "Deal hôm nay",
-      "weekend": "Cuối tuần"
-    },
-    "timer": {
-      "title": "Đang có flash sale!",
-      "left": "Còn lại",
-      "desc": "Ưu đãi đến hết 24:00 hôm nay"
-    },
-    "tabInfo": {
-      "hot": { "desc": "Đừng bỏ lỡ các sản phẩm giảm giá hot nhất hiện nay!" },
-      "today": { "desc": "Chỉ trong hôm nay, giá đặc biệt cho nhiều sản phẩm." },
-      "weekend": { "desc": "Cuối tuần đặc biệt! Sản phẩm giá tốt hơn." }
-    },
-    "empty": {
-      "title": "Chưa có hàng giảm giá",
-      "desc": "Sẽ sớm cập nhật deal mới."
-    },
-    "more": {
-      "title": "Nhận thêm ưu đãi",
-      "desc": "Đăng ký nhận thêm mã giảm 10%"
-    }
-  },
-  "myPage": {
-    "menu": {
-      "sections": {
-        "shoppingInfo": "Thông tin mua sắm",
-        "activities": "Hoạt động",
-        "account": "Tài khoản"
-      },
-      "items": {
-        "orderHistory": "Lịch sử đơn hàng",
-        "coupons": "Phiếu giảm giá",
-        "addressBook": "Sổ địa chỉ giao hàng",
-        "recentViewed": "Sản phẩm đã xem",
-        "profileEdit": "Chỉnh sửa thông tin",
-        "logout": "Đăng xuất"
-      }
-    },
-    "addressBook": {
-      "title": "Quản lý sổ địa chỉ giao hàng",
-      "maxCount": "Có thể lưu tối đa 10 địa chỉ",
-      "add": "+ Thêm địa chỉ",
-      "form": {
-        "editTitle": "Chỉnh sửa địa chỉ",
-        "newTitle": "Thêm địa chỉ mới",
-        "label": "Tên địa chỉ",
-        "recipient": "Người nhận",
-        "zipCode": "Mã bưu điện",
-        "searchAddress": "Tìm địa chỉ",
-        "address1": "Địa chỉ",
-        "address2": "Địa chỉ bổ sung (tuỳ chọn)",
-        "tel": "Điện thoại bàn",
-        "phone": "Điện thoại",
-        "saveAsDefault": "Lưu làm địa chỉ mặc định"
-      },
-      "errors": {
-        "requiredFields": "Vui lòng điền đầy đủ các mục bắt buộc.",
-        "invalidLogin": "Thông tin đăng nhập không hợp lệ. Vui lòng đăng nhập lại."
-      },
-      "confirm": {
-        "delete": "Bạn có chắc muốn xoá địa chỉ này?"
-      },
-      "empty": {
-        "title": "Chưa có địa chỉ giao hàng",
-        "desc": "Thêm địa chỉ để mua sắm nhanh hơn.",
-        "add": "+ Thêm địa chỉ"
-      },
-      "list": {
-        "default": "Mặc định",
-        "recipient": "Người nhận",
-        "address": "Địa chỉ",
-        "phone": "Liên hệ",
-        "setDefault": "Đặt làm địa chỉ mặc định"
-      }
-    },
-    "cart": {
-      "title": "Giỏ hàng",
-      "desc": "Sản phẩm bạn thêm sẽ hiển thị tại đây."
-    },
-    "coupons": {
-      "title": "Phiếu giảm giá",
-      "desc": "Phiếu giảm giá bạn đang có sẽ hiển thị tại đây."
-    },
-    "logout": {
-      "title": "Đăng xuất"
-    },
-    "recentProducts": {
-      "title": "Sản phẩm đã xem",
-      "loading": "Đang tải danh sách đã xem...",
-      "empty": "Chưa có sản phẩm nào.",
-      "cart": "Giỏ hàng",
-      "buy": "Mua"
-    },
-    "profile": {
-      "title": "Hồ sơ của tôi",
-      "userId": "Tài khoản",
-      "email": "Email",
-      "emailPlaceholder": "Email",
-      "profileUrl": "URL ảnh hồ sơ",
-      "profileUrlPlaceholder": "URL ảnh hồ sơ",
-      "password": "Xác nhận mật khẩu",
-      "passwordPlaceholder": "Nhập mật khẩu để xác nhận thay đổi",
-      "submit": "Cập nhật hồ sơ",
-      "submitting": "Đang cập nhật...",
-      "success": "Cập nhật hồ sơ thành công.",
-      "errors": {
-        "missingPassword": "Vui lòng nhập mật khẩu để thay đổi.",
-        "updateFailed": "Cập nhật hồ sơ thất bại.",
-        "updateError": "Đã xảy ra lỗi khi cập nhật hồ sơ."
-      },
-      "dangerZone": {
-        "title": "Khu vực nguy hiểm",
-        "desc": "Nếu xoá tài khoản, toàn bộ dữ liệu sẽ bị xoá vĩnh viễn và không thể khôi phục.",
-        "deleteAccount": "Xoá tài khoản"
-      },
-      "loading": "Đang tải..."
-    },
-    "orderHistory": {
-      "title": "Lịch sử đơn hàng",
-      "empty": "Chưa có đơn hàng nào.",
-      "errors": {
-        "fetch": "Không tải được lịch sử thanh toán."
-      }
-    }
-  },
-  "virtualFitting": {
-    "title": "Thử đồ ảo",
-    "uploadTitle": "Tải lên hình ảnh",
-    "labels": {
-      "modelImage": "Hình người mẫu",
-      "topImage": "Hình áo",
-      "bottomImage": "Hình quần (tuỳ chọn)"
-    },
-    "descriptions": {
-      "modelImage": "Vui lòng tải lên ảnh có ít nhất phần thân trên"
-    },
-    "guide": {
-      "title": "📝 Hướng dẫn tải file",
-      "supportedFormats": "Định dạng hỗ trợ: JPG, PNG, WEBP",
-      "humanImage": "Hình người: ảnh rõ nét có ít nhất phần thân trên",
-      "clothingImage": "Hình quần áo: nền sạch và thấy rõ quần áo"
-    },
-    "backgroundDisabled": {
-      "title": "Tạm ngưng tính năng hình nền",
-      "description": "Tính năng tải lên hình nền đã tạm thời vô hiệu hóa để đảm bảo tính ổn định của máy chủ.\nTính năng thử đồ ảo cơ bản vẫn hoạt động bình thường."
-    },
-    "options": {
-      "aiVideoGeneration": "Kích hoạt tạo video AI"
-    },
-    "startButton": "Bắt đầu thử đồ ảo",
-    "processing": "Đang xử lý...",
-    "aiGeneratingImage": "AI đang tạo hình ảnh thử đồ ảo.",
-    "pleaseWait": "Vui lòng đợi...",
-    "aiGeneratingVideo": "AI đang tạo video...",
-    "generatedImageAlt": "Hình đã tạo",
-    "status": {
-      "generatingImage": "Đang tạo hình ảnh...",
-      "communicatingAI": "Đang giao tiếp với máy chủ AI...",
-      "imageGenerationComplete": "Hoàn thành tạo hình ảnh!",
-      "generatingVideo": "Đang tạo video...",
-      "videoGenerationComplete": "Hoàn thành tạo video!",
-      "backgroundWarning": "Bao gồm hình nền có thể khiến thời gian xử lý lâu hơn...",
-      "connecting": "Đang kết nối...",
-      "startingWorkflow": "Đang bắt đầu quy trình...",
-      "startingWorkflowWithBackground": "Đang bắt đầu quy trình bao gồm tổng hợp nền..."
-    },
-    "errors": {
-      "unsupportedFormat": "Định dạng file không được hỗ trợ. Chỉ có thể tải lên file JPG, PNG, WEBP.",
-      "imageLoadFailed": "Tải hình ảnh thất bại",
-      "proxyRequestFailed": "Yêu cầu proxy thất bại",
-      "imageDownloadFailed": "Tải xuống hình ảnh thất bại:",
-      "autoUploadFailed": "Tự động tải lên thất bại:",
-      "fileReadError": "Lỗi khi đọc file. Vui lòng thử hình ảnh khác.",
-      "invalidImageFile": "File hình ảnh bị hỏng hoặc không hợp lệ. Vui lòng chọn hình ảnh khác.",
-      "uploadError": "Lỗi tải lên",
-      "backgroundProcessingError": "Lỗi máy chủ khi xử lý hình nền. Vui lòng thử lại không có hình nền.",
-      "serverInternalError": "Lỗi nội bộ máy chủ. Vui lòng kiểm tra chất lượng hình ảnh và thử lại.",
-      "jsonParsingFailed": "Phân tích JSON thất bại:",
-      "htmlResponse": "Máy chủ trả về phản hồi HTML. Vui lòng liên hệ quản trị viên.",
-      "backgroundProcessingErrorGeneric": "Lỗi khi xử lý hình nền. Vui lòng thử không có hình nền.",
-      "minimumUpperBody": "Hình người phải bao gồm ít nhất phần thân trên!",
-      "serverResponseParsingFailed": "Phân tích phản hồi máy chủ thất bại",
-      "videoGenerationServerError": "Lỗi máy chủ tạo video",
-      "videoGenerationFailed": "Tạo video thất bại",
-      "unknownError": "Lỗi không xác định",
-      "imageGenerationFailed": "Tạo hình ảnh thất bại",
-      "backgroundProcessingErrorRetry": "Lỗi khi xử lý hình nền. Vui lòng bỏ hình nền và thử lại.",
-      "requestTimeout": "Yêu cầu quá thời gian. Vui lòng thử lại.",
-      "networkError": "Lỗi mạng",
-      "connectionError": "Lỗi kết nối"
-    },
-    "alerts": {
-      "uploadRequiredFiles": "Vui lòng tải lên tất cả file bắt buộc."
-    },
-    "logs": {
-      "sendingFiles": "Thông tin file gửi:",
-      "serverResponse": "Trạng thái phản hồi máy chủ:",
-      "serverHeaders": "Header phản hồi máy chủ:",
-      "serverText": "Văn bản phản hồi máy chủ (500 ký tự đầu):",
-      "responseFullText": "Toàn bộ văn bản phản hồi:",
-      "imageUrlExtracted": "Trích xuất URL hình ảnh từ phản hồi:"
-    }
-  },
-  "ui": {
-    "fileDropzone": {
-      "removeImage": "Xóa hình ảnh",
-      "dragActiveText": "Thả file ở đây",
-      "uploadModelText": "Tải lên hình ảnh của bạn.",
-      "uploadClothingText": "Tải lên hình ảnh.",
-      "uploadInstructions": "Nhấp hoặc kéo thả để tải lên",
-      "supportedFormats": "Hỗ trợ file JPG, PNG, WEBP",
-      "selectSampleImage": "Chọn hình ảnh mẫu",
-      "sampleSelectionTitle": "Chọn mẫu",
-      "selectionComplete": "Hoàn tất lựa chọn",
-      "imageLoadFailed": "Tải hình ảnh thất bại:",
-      "proxyRequestFailed": "Yêu cầu proxy thất bại:",
-      "sampleImageLoadFailed": "Tải hình ảnh mẫu thất bại:"
-    }
-  },
-  "currency": {
-    "won": "₩"
-  }
+  "nav.allProducts": "Tất cả sản phẩm",
+  "nav.bestSellers": "Bán chạy",
+  "nav.specialOffers": "Ưu đãi đặc biệt",
+  "nav.newArrivals": "Hàng mới",
+  "nav.featured": "Gợi ý",
+  "cta.viewAll": "Xem tất cả",
+  "cta.loadMore": "Xem thêm",
+  "cta.collapse": "Thu gọn",
+  "hint.bestNow": "Đang được yêu thích",
+  "hint.dontMissDeal": "Ưu đãi không thể bỏ lỡ",
+  "hint.justIn": "Vừa mới về",
+  "status.loadingProducts": "Đang tải sản phẩm...",
+  "status.noProducts": "Chưa có sản phẩm",
+  "status.allLoaded": "Đã xem hết tất cả sản phẩm",
+  "badge.best": "BEST",
+  "badge.hot": "HOT",
+  "badge.new": "NEW",
+  "header.recommend": "Gợi ý",
+  "header.ranking": "Xếp hạng",
+  "header.sale": "Giảm giá",
+  "header.brands": "Thương hiệu",
+  "header.admin": "Quản trị",
+  "header.login": "Đăng nhập",
+  "header.logout": "Đăng xuất",
+  "header.myPage": "Trang của tôi",
+  "header.profile": "Chỉnh sửa thông tin",
+  "header.adminDashboard": "Bảng điều khiển quản trị",
+  "header.menuOpen": "Mở menu",
+  "brand.tagline": "Mua sắm với AI thử đồ trước",
+  "footer.menu": "Menu",
+  "footer.companyIntro": "Giới thiệu công ty",
+  "footer.terms": "Điều khoản sử dụng",
+  "footer.privacy": "Chính sách bảo mật",
+  "footer.customerCenter": "Trung tâm CSKH",
+  "footer.productInquiry": "Liên hệ sản phẩm",
+  "footer.partnerInquiry": "Liên hệ hợp tác",
+  "footer.hours": "(Các ngày trong tuần 10:00~18:00)",
+  "footer.companyInfo": "Thông tin công ty",
+  "footer.tagline1": "Thử đồ dễ và nhanh mà không cần đổi trả!",
+  "footer.tagline2": "Tổng hợp sản phẩm hot trên toàn cầu",
+  "footer.tagline3": "Dịch vụ vận chuyển quốc tế uy tín",
+  "hero.mainBanner": "Banner chính",
+  "hero.prev": "Slide trước",
+  "hero.next": "Slide tiếp",
+  "hero.autoplayPause": "Tạm dừng tự động",
+  "hero.autoplayPlay": "Bắt đầu tự động",
+  "hero.slideWord": "Slide",
+  "hero.goToSlide": "Chuyển đến slide",
+  "hero.slides.1.title": "Ra mắt sản phẩm mới",
+  "hero.slides.1.subtitle": "Bộ sưu tập mùa hè BOGOFIT",
+  "hero.slides.1.description": "Chuẩn bị mùa hè hoàn hảo với đồ thể thao mát và thoải mái",
+  "hero.slides.1.buttonText": "Mua ngay",
+  "hero.slides.1.alt": "Sản phẩm mới bộ sưu tập mùa hè BOGOFIT",
+  "hero.slides.1.discount": "Tối đa 50%",
+  "hero.slides.2.title": "Đang diễn ra Flash Sale",
+  "hero.slides.2.subtitle": "Best-seller giá đặc biệt",
+  "hero.slides.2.description": "Gặp gỡ các sản phẩm hot với mức giá ưu đãi",
+  "hero.slides.2.buttonText": "Xem hàng khuyến mãi",
+  "hero.slides.2.alt": "Sản phẩm khuyến mãi best-seller",
+  "hero.slides.2.discount": "50% OFF",
+  "hero.slides.3.title": "Quyền lợi hội viên",
+  "hero.slides.3.subtitle": "Miễn phí vận chuyển + tích điểm",
+  "hero.slides.3.description": "Đăng ký thành viên để nhận nhiều ưu đãi",
+  "hero.slides.3.buttonText": "Đăng ký",
+  "hero.slides.3.alt": "Giới thiệu quyền lợi hội viên",
+  "hero.slides.4.title": "Lookbook xu hướng",
+  "hero.slides.4.subtitle": "Hướng dẫn phối đồ",
+  "hero.slides.4.description": "Hoàn thiện set đồ hoàn hảo với item hot mùa này",
+  "hero.slides.4.buttonText": "Xem lookbook",
+  "hero.slides.4.alt": "Phong cách lookbook xu hướng",
+  "hero.slides.5.title": "Câu chuyện thương hiệu",
+  "hero.slides.5.subtitle": "Triết lý của BOGOFIT",
+  "hero.slides.5.description": "Đồ thể thao cao cấp cho lối sống lành mạnh",
+  "hero.slides.5.buttonText": "Tìm hiểu thương hiệu",
+  "hero.slides.5.alt": "Câu chuyện thương hiệu BOGOFIT",
+  "hero.slides.6.title": "Dịch vụ thử đồ AI",
+  "hero.slides.6.subtitle": "Trải nghiệm mặc thử",
+  "hero.slides.6.description": "Thử trước bằng AI và tìm size hoàn hảo",
+  "hero.slides.6.buttonText": "Thử đồ ảo",
+  "hero.slides.6.alt": "Dịch vụ thử đồ ảo AI"
+  ,
+  "common.loading": "Đang tải...",
+  "common.retry": "Thử lại",
+  "common.reset": "Đặt lại",
+  "common.resetFilters": "Đặt lại bộ lọc",
+  "category.top": "Áo",
+  "category.bottom": "Quần/Váy",
+  "category.outer": "Áo khoác",
+  "category.onepiece": "Đầm",
+  "product.categoryList.title": "Mua sắm theo danh mục",
+  "product.categoryList.subtitle": "Tìm nhanh phong cách bạn muốn",
+  "product.errors.fetchProducts": "Không tải được sản phẩm.",
+  "product.category.totalPrefix": "Tổng ",
+  "product.category.totalSuffix": " sản phẩm",
+  "product.category.selected": "Danh mục đã chọn",
+  "product.empty.noResults": "Không có kết quả",
+  "product.empty.tryAnother": "Hãy thử từ khóa khác hoặc điều chỉnh bộ lọc",
+  "product.search.resultsPrefix": "Kết quả cho",
+  "product.search.resultsSuffix": ""
+  ,
+  "ranking.subheading": "Xem nhanh sản phẩm hot và bán chạy",
+  "ranking.best.desc": "Khám phá những sản phẩm bán chạy nhất.",
+  "ranking.popular.title": "Phổ biến",
+  "ranking.popular.desc": "Khám phá các sản phẩm phổ biến theo lượt xem.",
+  "ranking.review.title": "Nhiều đánh giá",
+  "ranking.review.desc": "Xếp hạng theo số lượng đánh giá.",
+  "ranking.empty.title": "Chưa có dữ liệu xếp hạng",
+  "ranking.empty.desc": "Vui lòng thử lại sau.",
+  "ranking.updateNote": "Cập nhật hàng ngày, hãy ghé thăm thường xuyên!",
+  "filters.category": "Danh mục",
+  "filters.subCategory": "Danh mục con",
+  "recommend.subheading": "Gợi ý sản phẩm phù hợp nhất cho bạn",
+  "recommend.tabs.ai": "Gợi ý AI",
+  "recommend.tabs.editor": "Biên tập chọn",
+  "recommend.ai.title": "AI chọn đồ phù hợp",
+  "recommend.editor.title": "Biên tập viên gợi ý",
+  "recommend.empty.title": "Chưa có gợi ý",
+  "recommend.empty.desc": "Vui lòng thử lại sau.",
+  "recommend.more.title": "Muốn xem thêm sản phẩm?",
+  "recommend.more.desc": "Hãy duyệt theo danh mục hoặc dùng tìm kiếm.",
+  "sale.subheading": "Giảm giá đến 50%! Săn deal nhanh kẻo lỡ",
+  "sale.tabs.hot": "Hot deal",
+  "sale.tabs.today": "Deal hôm nay",
+  "sale.tabs.weekend": "Cuối tuần",
+  "sale.timer.title": "Đang có flash sale!",
+  "sale.timer.left": "Còn lại",
+  "sale.empty.title": "Chưa có hàng giảm giá",
+  "sale.empty.desc": "Sẽ sớm cập nhật deal mới.",
+  "sale.more.title": "Nhận thêm ưu đãi",
+  "sale.more.desc": "Đăng ký nhận thêm mã giảm 10%",
+  "currency.won": "₩",
+  "product.badge.soldout": "Hết hàng",
+  "product.detail.imageAltSuffix": "hình",
+  "product.detail.reviewSuffix": "đánh giá",
+  "product.detail.discount": "giảm",
+  "product.detail.basePrice": "Giá gốc",
+  "product.detail.optionsTotal": "Tổng tuỳ chọn",
+  "product.detail.total": "Tổng",
+  "product.detail.quantity": "Số lượng",
+  "product.detail.selectPlaceholder": "chọn",
+  "product.detail.freeShipping": "Miễn phí vận chuyển",
+  "product.detail.allOrders": "Cho mọi đơn hàng",
+  "product.detail.qualityAssured": "Bảo đảm chất lượng",
+  "product.detail.genuine": "Hàng chính hãng 100%",
+  "product.detail.exchangeReturn": "Đổi/Trả",
+  "product.detail.within7days": "Trong 7 ngày",
+  "product.detail.details": "Chi tiết sản phẩm",
+  "product.detail.detailImageAlt": "Hình chi tiết",
+  "product.detail.errorTitle": "Không thể tải sản phẩm",
+  "product.detail.errorDesc": "Vui lòng thử lại sau.",
+  "product.detail.notFoundTitle": "Không tìm thấy sản phẩm",
+  "product.detail.notFoundDesc": "Sản phẩm yêu cầu không tồn tại.",
+  "product.detail.nav.info": "Thông tin",
+  "product.detail.nav.detail": "Chi tiết",
+  "product.detail.nav.reviews": "Đánh giá",
+  "product.detail.nav.shipping": "Giao hàng/Đổi trả",
+  "product.detail.qna.emptyTitle": "Chưa có câu hỏi",
+  "product.detail.qna.emptyDesc": "Nếu bạn có thắc mắc, hãy liên hệ với chúng tôi.",
+  "product.detail.qna.ask": "Hỏi ngay",
+  "product.detail.shipping.title": "Giao hàng/Đổi trả",
+  "product.detail.shipping.info": "Thông tin giao hàng",
+  "product.detail.shipping.free": "Phí giao hàng: Miễn phí",
+  "product.detail.shipping.duration": "Thời gian: 7-10 ngày (ngày làm việc)",
+  "product.detail.shipping.region": "Khu vực: Toàn quốc",
+  "product.detail.shipping.carrier": "Đơn vị: CJ Logistics",
+  "product.detail.shipping.exchangeReturn": "Đổi/Trả",
+  "product.detail.shipping.exchangeReturnPeriod": "Trong 7 ngày kể từ nhận hàng",
+  "product.detail.shipping.exchangeReturnCost": "Chi phí: Khách hàng chi trả",
+  "product.detail.shipping.changeOfMind": "Đổi trả do ý kiến cá nhân: tính phí giao hàng hai chiều",
+  "product.detail.shipping.defectOrWrong": "Lỗi/nhầm: Miễn phí đổi",
+  "product.detail.shipping.notes": "Lưu ý",
+  "product.detail.shipping.noReturnAfterWear": "Không được đổi/trả sau khi mặc",
+  "product.detail.shipping.noReturnAfterWash": "Không được đổi/trả sau khi giặt",
+  "product.detail.shipping.noReturnWithoutTag": "Thiếu tag kèm theo không được đổi/trả",
+  "product.detail.shipping.noReturnCustomerFault": "Hư hỏng do khách gây ra không được đổi/trả",
+  "product.detail.selectedOptions": "Tổng hợp tuỳ chọn"
 }

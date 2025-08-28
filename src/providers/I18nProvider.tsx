@@ -7,7 +7,7 @@ import zh from "@/i18n/locales/zh.json";
 
 export type Locale = "ko" | "vi" | "zh";
 
-type Messages = Record<string, any>;
+type Messages = Record<string, string>;
 
 const dictionaries: Record<Locale, Messages> = { ko, vi, zh } as const;
 
@@ -44,24 +44,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const t = useMemo(() => {
     const dict = dictionaries[locale] || {};
-    const getByPath = (obj: any, path: string): any => {
-      if (!obj) return undefined;
-      if (Object.prototype.hasOwnProperty.call(obj, path)) return obj[path];
-      const parts = path.split(".");
-      let cur: any = obj;
-      for (const p of parts) {
-        if (cur && typeof cur === "object" && p in cur) {
-          cur = cur[p];
-        } else {
-          return undefined;
-        }
-      }
-      return cur;
-    };
-    return (key: string) => {
-      const val = getByPath(dict, key);
-      return typeof val === "string" ? val : key;
-    };
+    return (key: string) => dict[key] ?? key;
   }, [locale]);
 
   const value = useMemo(() => ({ locale, t, setLocale }), [locale, t]);

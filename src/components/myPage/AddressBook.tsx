@@ -5,7 +5,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { Pencil, Trash, Check, Search, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useI18n } from "@/providers/I18nProvider";
+
 interface AddressFormState {
   id?: string;
   label: string;
@@ -50,7 +50,6 @@ function loadDaumPostcodeScript() {
 }
 
 export default function AddressBook() {
-  const { t } = useI18n();
   const { user } = useAuth();
   const userId = user?.id;
   console.log("AddressBook - user:", user);
@@ -98,11 +97,11 @@ export default function AddressBook() {
       !form.address1 ||
       !form.phone
     ) {
-      setFormError(t("myPage.addressBook.errors.requiredFields"));
+      setFormError("필수 항목을 모두 입력해주세요.");
       return;
     }
     if (!userId || typeof userId !== "string") {
-      setFormError(t("myPage.addressBook.errors.invalidLogin"));
+      setFormError("로그인 정보가 올바르지 않습니다. 다시 로그인 해주세요.");
       return;
     }
     const addressData = {
@@ -123,7 +122,7 @@ export default function AddressBook() {
   };
   // 주소 삭제
   const handleDelete = async (id: string) => {
-  if (window.confirm(t("myPage.addressBook.confirm.delete"))) {
+    if (window.confirm("정말로 이 주소를 삭제하시겠습니까?")) {
       await deleteAddress(id);
     }
   };
@@ -192,17 +191,17 @@ export default function AddressBook() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-6">{t("myPage.addressBook.title")}</h2>
+      <h2 className="text-xl font-bold mb-6">배송 주소록 관리</h2>
       <div className="flex justify-between items-center mb-4">
-        <div className="text-sm text-gray-600">{t("myPage.addressBook.maxCount")}</div>
+        <div className="text-sm text-gray-600">최대 10개까지 등록 가능</div>
         {!isEditing && !showForm && (
           <Button onClick={handleOpenForm} variant="default" size="sm">
-            {t("myPage.addressBook.add")}
+            + 배송지 등록
           </Button>
         )}
         {(isEditing || showForm) && (
           <Button onClick={handleCloseForm} variant="outline" size="sm">
-            {t("common.close")}
+            닫기
           </Button>
         )}
       </div>
@@ -210,9 +209,7 @@ export default function AddressBook() {
       {(showForm || isEditing) && (
         <div className="bg-white rounded-lg shadow p-6 mb-6 border border-gray-200">
           <h3 className="text-lg font-semibold mb-4">
-            {isEditing
-              ? t("myPage.addressBook.form.editTitle")
-              : t("myPage.addressBook.form.newTitle")}
+            {isEditing ? "배송지 수정" : "새 배송지 등록"}
           </h3>
           <form
             onSubmit={handleSubmit}
@@ -220,7 +217,7 @@ export default function AddressBook() {
           >
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t("myPage.addressBook.form.label")} <span className="text-red-500">*</span>
+                배송지명 <span className="text-red-500">*</span>
               </label>
               <Input
                 value={form.label}
@@ -232,7 +229,7 @@ export default function AddressBook() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t("myPage.addressBook.form.recipient")} <span className="text-red-500">*</span>
+                성명 <span className="text-red-500">*</span>
               </label>
               <Input
                 value={form.recipient}
@@ -245,7 +242,7 @@ export default function AddressBook() {
             <div className="col-span-2 flex gap-2">
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-1">
-                  {t("myPage.addressBook.form.zipCode")} <span className="text-red-500">*</span>
+                  우편번호 <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={form.zipCode}
@@ -261,12 +258,12 @@ export default function AddressBook() {
                 className="mt-6"
                 onClick={handleSearchAddress}
               >
-                <Search className="w-4 h-4 mr-1" /> {t("myPage.addressBook.form.searchAddress")}
+                <Search className="w-4 h-4 mr-1" /> 주소검색
               </Button>
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium mb-1">
-                {t("myPage.addressBook.form.address1")} <span className="text-red-500">*</span>
+                기본주소 <span className="text-red-500">*</span>
               </label>
               <Input
                 value={form.address1}
@@ -278,7 +275,7 @@ export default function AddressBook() {
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium mb-1">
-                {t("myPage.addressBook.form.address2")}
+                나머지 주소 (선택)
               </label>
               <Input
                 value={form.address2}
@@ -288,7 +285,7 @@ export default function AddressBook() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t("myPage.addressBook.form.tel")}</label>
+              <label className="block text-sm font-medium mb-1">일반전화</label>
               <Input
                 value={form.tel}
                 onChange={(e) =>
@@ -299,7 +296,7 @@ export default function AddressBook() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t("myPage.addressBook.form.phone")} <span className="text-red-500">*</span>
+                휴대전화 <span className="text-red-500">*</span>
               </label>
               <Input
                 value={form.phone}
@@ -321,7 +318,7 @@ export default function AddressBook() {
                 className="mr-2"
               />
               <label htmlFor="isDefault" className="text-sm">
-                {t("myPage.addressBook.form.saveAsDefault")}
+                기본 배송지로 저장
               </label>
             </div>
             {formError && (
@@ -330,11 +327,11 @@ export default function AddressBook() {
             <div className="col-span-2 flex gap-2 mt-2 justify-end">
               {(isEditing || showForm) && (
                 <Button type="button" variant="outline" onClick={handleCancel}>
-                  {t("common.cancel")}
+                  취소
                 </Button>
               )}
               <Button type="submit" disabled={loading}>
-                {isEditing ? t("common.edit") : t("common.save")}
+                {isEditing ? "수정" : "등록"}
               </Button>
             </div>
           </form>
@@ -342,21 +339,21 @@ export default function AddressBook() {
       )}
       {/* 주소 목록 */}
       {loading ? (
-        <div className="text-center py-8 text-gray-500">{t("common.loading")}</div>
+        <div className="text-center py-8 text-gray-500">로딩 중...</div>
       ) : error ? (
         <div className="text-center py-8 text-red-500">{error}</div>
       ) : addresses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-gray-50 border border-dashed border-gray-300 rounded-lg shadow-inner">
           <MapPin className="w-12 h-12 text-gray-400 mb-3" />
           <div className="text-lg font-semibold text-gray-700 mb-1">
-            {t("myPage.addressBook.empty.title")}
+            등록된 배송지가 없습니다.
           </div>
           <div className="text-gray-500 mb-4">
-            {t("myPage.addressBook.empty.desc")}
+            배송지를 등록하고 빠른 쇼핑을 경험하세요.
           </div>
           {!showForm && (
             <Button onClick={handleOpenForm} variant="default">
-              {t("myPage.addressBook.empty.add")}
+              + 배송지 등록
             </Button>
           )}
         </div>
@@ -372,16 +369,16 @@ export default function AddressBook() {
                   <span className="font-semibold">{addr.label}</span>
                   {addr.isDefault && (
                     <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">
-                      {t("myPage.addressBook.list.default")}
+                      기본
                     </span>
                   )}
                 </div>
                 <div className="text-sm text-gray-600">
-                  <div>{t("myPage.addressBook.list.recipient")}: {addr.recipient}</div>
+                  <div>받는 사람: {addr.recipient}</div>
                   <div>
-                    {t("myPage.addressBook.list.address")}: ({addr.zipCode}) {addr.address1} {addr.address2 || ""}
+                    주소: ({addr.zipCode}) {addr.address1} {addr.address2 || ""}
                   </div>
-                  <div>{t("myPage.addressBook.list.phone")}: {addr.phone}</div>
+                  <div>연락처: {addr.phone}</div>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -390,7 +387,7 @@ export default function AddressBook() {
                     size="sm"
                     variant="ghost"
                     onClick={() => handleSetDefault(addr.id)}
-                    title={t("myPage.addressBook.list.setDefault")}
+                    title="기본 배송지로 설정"
                   >
                     <Check className="w-4 h-4" />
                   </Button>
@@ -399,7 +396,7 @@ export default function AddressBook() {
                   size="sm"
                   variant="ghost"
                   onClick={() => handleEdit(addr)}
-                  title={t("common.edit")}
+                  title="수정"
                 >
                   <Pencil className="w-4 h-4" />
                 </Button>
@@ -407,7 +404,7 @@ export default function AddressBook() {
                   size="sm"
                   variant="ghost"
                   onClick={() => handleDelete(addr.id)}
-                  title={t("common.delete")}
+                  title="삭제"
                 >
                   <Trash className="w-4 h-4" />
                 </Button>

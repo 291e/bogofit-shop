@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/product";
 import { calculateReviewStats } from "@/contents/Sample/sampleReviews";
-import { useI18n } from "@/providers/I18nProvider";
 
 interface ProductCardProps {
   product: Product;
@@ -20,7 +19,6 @@ export default function ProductCard({
   showAddToCart = true,
   className = "",
 }: ProductCardProps) {
-  const { t } = useI18n();
   const finalPrice = product.price;
   // 옵션이 있으면 모든 옵션에 "품절"이 포함되어 있을 때만 품절, 옵션이 없으면 품절 아님
   const isOutOfStock = product.badge === "SOLDOUT" ? true : false;
@@ -105,24 +103,23 @@ export default function ProductCard({
           <div className="pt-2 flex flex-col gap-2">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-lg font-bold text-pink-600">
-                {finalPrice.toLocaleString()}
-                {t("currency.won")}
+                {finalPrice.toLocaleString()}원
               </span>
               {/* 배지들 */}
               <div className="flex flex-col gap-1 mt-2">
                 {product.badge === "BEST" && (
                   <Badge variant="destructive" className="text-xs">
-                    {t("badge.best")}
+                    BEST
                   </Badge>
                 )}
                 {product.badge === "SOLDOUT" && (
                   <Badge variant="secondary" className="text-xs">
-                    {t("product.badge.soldout")}
+                    SOLDOUT
                   </Badge>
                 )}
                 {product.badge === "New" && (
                   <Badge variant="secondary" className="text-xs">
-                    {t("badge.new")}
+                    NEW
                   </Badge>
                 )}
               </div>
@@ -134,11 +131,11 @@ export default function ProductCard({
                 disabled={isOutOfStock}
               >
                 {isOutOfStock ? (
-                  t("product.badge.soldout")
+                  "품절"
                 ) : (
                   <>
                     <ShoppingCart className="w-4 h-4 mr-2" />
-                    {t("product.cta.viewProduct")}
+                    상품 보기
                   </>
                 )}
               </Button>

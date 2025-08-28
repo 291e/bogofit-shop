@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useI18n } from "@/providers/I18nProvider";
 
 interface RegisterSuccessStepProps {
   success: string;
@@ -10,7 +9,6 @@ interface RegisterSuccessStepProps {
 
 export function RegisterSuccessStep({ success }: RegisterSuccessStepProps) {
   const router = useRouter();
-  const { t } = useI18n();
 
   return (
     <div className="mt-8 text-center space-y-6">
@@ -23,8 +21,10 @@ export function RegisterSuccessStep({ success }: RegisterSuccessStepProps) {
       )}
 
       <div className="text-gray-600 space-y-2">
-        <p>{t("auth.register.success.autoRedirect")}</p>
-        <p className="text-sm">{t("auth.register.success.subDesc")}</p>
+        <p>잠시 후 로그인 페이지로 자동 이동됩니다.</p>
+        <p className="text-sm">
+          이제 BogoFit Shop의 모든 서비스를 이용하실 수 있습니다!
+        </p>
       </div>
 
       <div className="space-y-3">
@@ -32,7 +32,7 @@ export function RegisterSuccessStep({ success }: RegisterSuccessStepProps) {
           onClick={() => router.replace("/login")}
           className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
         >
-          {t("auth.register.success.goLogin")}
+          지금 로그인하러 가기
         </Button>
 
         <Button
@@ -40,12 +40,12 @@ export function RegisterSuccessStep({ success }: RegisterSuccessStepProps) {
           onClick={() => router.replace("/")}
           className="w-full"
         >
-          {t("auth.register.success.goHome")}
+          홈페이지로 이동
         </Button>
       </div>
 
       <div className="text-xs text-gray-400 mt-6">
-        <p>{t("auth.register.success.footer")}</p>
+        <p>회원가입이 완료되었습니다. 환영합니다! 🚀</p>
       </div>
     </div>
   );
