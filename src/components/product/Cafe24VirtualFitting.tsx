@@ -11,7 +11,6 @@ import {
   humanSamples,
   garmentSamples,
   lowerSamples,
-  backgroundSamples,
 } from "@/contents/VirtualFitting/sampleImages";
 
 interface Cafe24VirtualFittingProps {
@@ -593,14 +592,12 @@ export default function Cafe24VirtualFitting({
 
   return (
     <div className="w-full max-w-6xl mx-auto">
-      {/* 가상 피팅 헤더 (항상 표시) */}
-
       {/* 가상 피팅 콘텐츠 */}
       <div className="transition-all duration-500 ease-in-out max-h-none opacity-100 overflow-visible">
         <div
           className={`transition-all duration-700 ease-in-out ${
             showResults
-              ? "flex flex-col md:grid md:grid-cols-2 gap-6"
+              ? "flex flex-col md:grid md:grid-cols-2 gap-8"
               : "grid grid-cols-1"
           }`}
         >
@@ -608,9 +605,9 @@ export default function Cafe24VirtualFitting({
           <Card
             className={`transition-all duration-700 ease-in-out ${
               showResults ? "md:transform md:-translate-x-2" : ""
-            } order-1`}
+            } order-1 bg-white border border-gray-200 shadow-sm`}
           >
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between px-6 pt-6 pb-0">
               <CardTitle className="text-lg">이미지 업로드</CardTitle>
               {showResults && (
                 <Button
@@ -623,217 +620,148 @@ export default function Cafe24VirtualFitting({
                 </Button>
               )}
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col md:flex-row gap-6 md:gap-8">
-                {/* 필수 파일들 */}
-                <div className="flex-1 space-y-3">
-                  <FileDropzone
-                    onDrop={(file) => handleFileChange("human_file", file)}
-                    preview={previews.human_file}
-                    label="사람 이미지"
-                    required
-                    description="최소한 상반신이 포함된 사진을 업로드해주세요"
-                    sampleImages={humanSamples}
-                    onSampleSelect={(imageSrc) =>
-                      handleSampleSelect("human_file", imageSrc)
-                    }
-                    onClear={() => handleFileChange("human_file", null)}
-                  />
-
-                  {/* 사람 이미지 오류 메시지 */}
-                  {fileErrors.human_file && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="flex items-start space-x-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-red-800">
-                          <p className="font-medium">업로드 오류</p>
-                          <p className="mt-1">{fileErrors.human_file}</p>
+            <CardContent className="space-y-6 px-6 pb-6 pt-4">
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="flex flex-row space-x-4">
+                  <div className="flex-1">
+                    <FileDropzone
+                      onDrop={(file) => handleFileChange("human_file", file)}
+                      preview={previews.human_file}
+                      label="사람 이미지"
+                      required
+                      description="최소한 상반신이 포함된 사진을 업로드해주세요"
+                      sampleImages={humanSamples}
+                      onSampleSelect={(imageSrc) =>
+                        handleSampleSelect("human_file", imageSrc)
+                      }
+                      onClear={() => handleFileChange("human_file", null)}
+                    />
+                    {/* 사람 이미지 오류 메시지 */}
+                    {fileErrors.human_file && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-red-800">
+                            <p className="font-medium">업로드 오류</p>
+                            <p className="mt-1">{fileErrors.human_file}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-
-                  <FileDropzone
-                    onDrop={(file) => handleFileChange("garment_file", file)}
-                    preview={
-                      previews.garment_file ||
-                      (currentImage &&
-                      (productCategory === "상의" ||
-                        productCategory === "아우터" ||
-                        productCategory === "원피스") &&
-                      !files.garment_file // 파일이 해제되지 않은 경우만 currentImage 표시
-                        ? currentImage
-                        : "")
-                    }
-                    label="상의 이미지"
-                    required
-                    sampleImages={garmentSamples}
-                    onSampleSelect={(imageSrc) =>
-                      handleSampleSelect("garment_file", imageSrc)
-                    }
-                    onClear={() => handleFileChange("garment_file", null)}
-                  />
-
-                  {/* 상의 이미지 오류 메시지 */}
-                  {fileErrors.garment_file && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="flex items-start space-x-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-red-800">
-                          <p className="font-medium">업로드 오류</p>
-                          <p className="mt-1">{fileErrors.garment_file}</p>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <FileDropzone
+                      onDrop={(file) => handleFileChange("garment_file", file)}
+                      preview={
+                        previews.garment_file ||
+                        (currentImage &&
+                        (productCategory === "상의" ||
+                          productCategory === "아우터" ||
+                          productCategory === "원피스") &&
+                        !files.garment_file
+                          ? currentImage
+                          : "")
+                      }
+                      label="상의 이미지"
+                      description="&nbsp;"
+                      required
+                      sampleImages={garmentSamples}
+                      onSampleSelect={(imageSrc) =>
+                        handleSampleSelect("garment_file", imageSrc)
+                      }
+                      onClear={() => handleFileChange("garment_file", null)}
+                    />
+                    {/* 상의 이미지 오류 메시지 */}
+                    {fileErrors.garment_file && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-red-800">
+                            <p className="font-medium">업로드 오류</p>
+                            <p className="mt-1">{fileErrors.garment_file}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 선택 파일들 */}
-                <div className="flex-1 space-y-3">
-                  <FileDropzone
-                    onDrop={(file) => handleFileChange("lower_file", file)}
-                    preview={
-                      previews.lower_file ||
-                      (currentImage &&
-                      productCategory === "하의" &&
-                      !files.lower_file // 파일이 해제되지 않은 경우만 currentImage 표시
-                        ? currentImage
-                        : "")
-                    }
-                    label="하의 이미지 (선택)"
-                    description="&nbsp;"
-                    sampleImages={lowerSamples}
-                    onSampleSelect={(imageSrc) =>
-                      handleSampleSelect("lower_file", imageSrc)
-                    }
-                    onClear={() => handleFileChange("lower_file", null)}
-                  />
-
-                  {/* 하의 이미지 오류 메시지 */}
-                  {fileErrors.lower_file && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="flex items-start space-x-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-red-800">
-                          <p className="font-medium">업로드 오류</p>
-                          <p className="mt-1">{fileErrors.lower_file}</p>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <FileDropzone
+                      onDrop={(file) => handleFileChange("lower_file", file)}
+                      preview={
+                        previews.lower_file ||
+                        (currentImage &&
+                        productCategory === "하의" &&
+                        !files.lower_file
+                          ? currentImage
+                          : "")
+                      }
+                      label="하의 이미지 (선택)"
+                      description="&nbsp;"
+                      sampleImages={lowerSamples}
+                      onSampleSelect={(imageSrc) =>
+                        handleSampleSelect("lower_file", imageSrc)
+                      }
+                      onClear={() => handleFileChange("lower_file", null)}
+                    />
+                    {/* 하의 이미지 오류 메시지 */}
+                    {fileErrors.lower_file && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-red-800">
+                            <p className="font-medium">업로드 오류</p>
+                            <p className="mt-1">{fileErrors.lower_file}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   {/* 배경 이미지 업로드 - 일시적으로 비활성화 */}
-                  {false && ( // TODO: 서버 오류 수정 후 true로 변경
-                    <>
-                      <FileDropzone
-                        onDrop={(file) =>
-                          handleFileChange("background_file", file)
-                        }
-                        preview={previews.background_file}
-                        label="배경 이미지 (선택)"
-                        description="처리 시간이 더 오래 걸릴 수 있습니다"
-                        sampleImages={backgroundSamples}
-                        onSampleSelect={(imageSrc) =>
-                          handleSampleSelect("background_file", imageSrc)
-                        }
-                        onClear={() =>
-                          handleFileChange("background_file", null)
-                        }
-                      />
-
-                      {/* 배경 이미지 오류 메시지 */}
-                      {fileErrors.background_file && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <div className="flex items-start space-x-2">
-                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-red-800">
-                              <p className="font-medium">업로드 오류</p>
-                              <p className="mt-1">
-                                {fileErrors.background_file}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 배경 이미지 사용 시 주의사항 */}
-                      {files.background_file && (
-                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                          <div className="flex items-start space-x-2">
-                            <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-sm text-yellow-800">
-                              <p className="font-medium">
-                                배경 이미지 사용 시 주의사항:
-                              </p>
-                              <ul className="mt-1 space-y-1 text-xs">
-                                <li>
-                                  • 처리 시간이 최대 2분까지 소요될 수 있습니다
-                                </li>
-                                <li>
-                                  • 서버 오류 발생 시 배경 이미지를 제거하고
-                                  다시 시도해주세요
-                                </li>
-                              </ul>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  handleFileChange("background_file", null)
-                                }
-                                className="mt-2 h-6 text-xs bg-white"
-                              >
-                                배경 이미지 제거
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* 배경 이미지 비활성화 안내 */}
-                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="flex items-start space-x-2">
-                      <AlertTriangle className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-gray-700">
-                        <p className="font-medium">
-                          배경 이미지 기능 일시 중단
-                        </p>
-                        <p className="mt-1 text-xs">
-                          서버 안정성을 위해 배경 이미지 업로드 기능을
-                          일시적으로 비활성화했습니다.
-                          <br />
-                          기본 가상 피팅 기능은 정상적으로 사용 가능합니다.
-                        </p>
-                      </div>
+                  {false && <>{/* ...배경 이미지 업로드 UI... */}</>}
+                </div>
+              </div>
+              {/* 배경 이미지 비활성화 안내 */}
+              <div className="mt-2">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-gray-700">
+                      <p className="font-medium">배경 이미지 기능 일시 중단</p>
+                      <p className="mt-1 text-xs">
+                        서버 안정성을 위해 배경 이미지 업로드 기능을 일시적으로
+                        비활성화했습니다.
+                        <br />
+                        기본 가상 피팅 기능은 정상적으로 사용 가능합니다.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
-
               {/* 파일 업로드 도움말 */}
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="text-sm text-blue-800">
-                  <p className="font-medium mb-2">📝 파일 업로드 가이드</p>
-                  <ul className="space-y-1 text-xs">
-                    <li>• 지원 형식: JPG, PNG, WEBP</li>
-                    <li>• 사람 이미지: 최소한 상반신이 포함된 선명한 사진</li>
-                    <li>
-                      • 의류 이미지: 배경이 깔끔하고 의류가 잘 보이는 사진
-                    </li>
-                  </ul>
+              <div className="mt-4">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium mb-2">📝 파일 업로드 가이드</p>
+                    <ul className="space-y-1 text-xs">
+                      <li>• 지원 형식: JPG, PNG, WEBP</li>
+                      <li>• 사람 이미지: 최소한 상반신이 포함된 선명한 사진</li>
+                      <li>
+                        • 의류 이미지: 배경이 깔끔하고 의류가 잘 보이는 사진
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-
               {/* 옵션 및 실행 버튼 */}
-              <div className="space-y-4 pt-4 border-t">
+              <div className="space-y-4 mt-6">
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     id="is_pro"
                     checked={isProEnabled}
                     onChange={(e) => setIsProEnabled(e.target.checked)}
-                    className="rounded"
+                    className="rounded border-gray-300"
                   />
                   <label htmlFor="is_pro" className="text-sm font-medium">
                     AI 비디오 생성 활성화
@@ -842,7 +770,6 @@ export default function Cafe24VirtualFitting({
                     </Badge>
                   </label>
                 </div>
-
                 <Button
                   onClick={handleStartWorkflow}
                   disabled={
@@ -871,52 +798,51 @@ export default function Cafe24VirtualFitting({
                     </>
                   )}
                 </Button>
-              </div>
-
-              {/* 상태 표시 */}
-              {status && (
-                <div
-                  className={`p-3 rounded-lg ${
-                    status.includes("실패") ||
-                    status.includes("오류") ||
-                    status.includes("상반신")
-                      ? "bg-red-50 border border-red-200"
-                      : status.includes("완료")
-                      ? "bg-green-50 border border-green-200"
-                      : "bg-blue-50 border border-blue-200"
-                  }`}
-                >
-                  <p
-                    className={`text-sm ${
+                {/* 상태 표시 */}
+                {status && (
+                  <div
+                    className={`p-3 rounded-lg mt-2 ${
                       status.includes("실패") ||
                       status.includes("오류") ||
                       status.includes("상반신")
-                        ? "text-red-800"
+                        ? "bg-red-50 border border-red-200"
                         : status.includes("완료")
-                        ? "text-green-800"
-                        : "text-blue-800"
+                          ? "bg-green-50 border border-green-200"
+                          : "bg-blue-50 border border-blue-200"
                     }`}
                   >
-                    {status}
-                  </p>
-                </div>
-              )}
+                    <p
+                      className={`text-sm ${
+                        status.includes("실패") ||
+                        status.includes("오류") ||
+                        status.includes("상반신")
+                          ? "text-red-800"
+                          : status.includes("완료")
+                            ? "text-green-800"
+                            : "text-blue-800"
+                      }`}
+                    >
+                      {status}
+                    </p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
           {/* 결과 섹션 (슬라이드 애니메이션) */}
           {showResults && (
             <Card
-              className={`transition-all duration-700 ease-in-out transform order-2 ${
+              className={`transition-all duration-700 ease-in-out transform order-2 bg-white border border-gray-200 shadow-sm ${
                 showResults
                   ? "translate-x-0 opacity-100 md:translate-x-2"
                   : "translate-x-full opacity-0"
               }`}
             >
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row items-center justify-between px-6 pt-6 pb-0">
                 <CardTitle className="text-lg">결과</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 px-6 pb-6 pt-4">
                 <div className="flex flex-col gap-6">
                   {/* 로딩 상태 표시 */}
                   {isProcessing && !generatedImage && (
@@ -936,17 +862,15 @@ export default function Cafe24VirtualFitting({
                       </div>
                     </div>
                   )}
-
                   {/* 생성된 이미지 */}
                   {generatedImage && (
                     <div className="space-y-3">
                       <h3 className="font-medium">생성된 이미지</h3>
                       <div className="relative">
-                        {/* Next.js Image 대신 일반 img 태그 사용 (외부 도메인 이슈 회피) */}
                         <img
                           src={generatedImage}
                           alt="생성된 이미지"
-                          className=" mx-auto w-full max-w-sm h-auto"
+                          className="mx-auto w-full max-w-sm h-auto rounded-lg border border-gray-100 shadow"
                           style={{ maxHeight: "400px", objectFit: "contain" }}
                         />
                         <Button
@@ -960,7 +884,6 @@ export default function Cafe24VirtualFitting({
                       </div>
                     </div>
                   )}
-
                   {/* 비디오 생성 로딩 상태 */}
                   {isProEnabled &&
                     generatedImage &&
@@ -980,7 +903,6 @@ export default function Cafe24VirtualFitting({
                         </div>
                       </div>
                     )}
-
                   {/* 생성된 비디오 */}
                   {generatedVideo && (
                     <div className="space-y-3">

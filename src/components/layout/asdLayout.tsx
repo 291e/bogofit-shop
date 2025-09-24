@@ -2,8 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/providers/AuthProvider";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import HeaderLayout from "@/components/layout/HeaderLayout";
+import FooterLayout from "@/components/layout/FooterLayout";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -21,11 +21,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <AuthProvider>
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-white via-gray-50 to-pink-50">
         {/* /solution 또는 /business 경로가 아니면 Header, Footer 보임 */}
-        {!isNoLayoutPage && <Header />}
+        {!isNoLayoutPage && <HeaderLayout />}
         <main className="flex-1 w-full mx-auto">
           <div>{children}</div>
         </main>
-        {!isNoLayoutPage && <Footer />}
+        {!isNoLayoutPage && <FooterLayout />}
       </div>
     </AuthProvider>
   );
