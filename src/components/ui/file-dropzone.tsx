@@ -125,13 +125,22 @@ export function FileDropzone({
           <input {...getInputProps()} />
           {preview ? (
             <div className="relative w-full h-full">
-              <Image
-                src={preview}
-                alt={label}
-                fill
-                className="rounded-xl object-contain"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
+              {preview.startsWith('data:') || preview.startsWith('blob:') ? (
+                <img
+                  src={preview}
+                  alt={label}
+                  className="w-full h-full rounded-xl object-contain"
+                />
+              ) : (
+                <Image
+                  src={preview}
+                  alt={label}
+                  fill
+                  className="rounded-xl object-contain"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  unoptimized={preview.startsWith('http')}
+                />
+              )}
 
               {/* 삭제 버튼 */}
               {onClear && (

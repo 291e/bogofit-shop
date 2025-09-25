@@ -6,7 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Progress } from "@/components/ui/progress";
-import { Play, Download, X, AlertTriangle } from "lucide-react";
+import { Play, Download, AlertTriangle } from "lucide-react";
+import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   humanSamples,
   garmentSamples,
@@ -55,7 +62,7 @@ export default function Cafe24VirtualFitting({
   const [generatedImage, setGeneratedImage] = useState("");
   const [generatedVideo, setGeneratedVideo] = useState("");
 
-  const [showResults, setShowResults] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
 
   // 파일 업로드 오류 상태 추가
   const [fileErrors, setFileErrors] = useState<{
@@ -186,7 +193,19 @@ export default function Cafe24VirtualFitting({
       }
     };
 
-    autoUploadCurrentImage();
+    // currentImage가 있고 해당 필드에 파일이 없을 때만 자동 설정
+    if (currentImage && productCategory) {
+      if (
+        (productCategory === "상의" ||
+          productCategory === "아우터" ||
+          productCategory === "원피스") &&
+        !files.garment_file
+      ) {
+        autoUploadCurrentImage();
+      } else if (productCategory === "하의" && !files.lower_file) {
+        autoUploadCurrentImage();
+      }
+    }
   }, [currentImage, productCategory, productTitle]);
 
   // 파일 업로드 핸들러 (개선된 버전)
@@ -227,7 +246,7 @@ export default function Cafe24VirtualFitting({
       };
 
       // 이미지 파일인지 추가 검증
-      const img = new Image();
+      const img = new window.Image();
 
       // 임시 URL로 이미지 유효성 검사
       const tempUrl = URL.createObjectURL(file);
@@ -247,9 +266,8 @@ export default function Cafe24VirtualFitting({
         }));
       };
     } else {
-      // 파일이 null인 경우 프리뷰도 초기화
-      setFiles((prev) => ({ ...prev, [fieldName]: null }));
-      setPreviews((prev) => ({ ...prev, [fieldName]: "" }));
+      // 파일이 null인 경우 handleClearFile 사용
+      handleClearFile(fieldName);
     }
   };
 
@@ -261,6 +279,29 @@ export default function Cafe24VirtualFitting({
     // 샘플 이미지는 검증된 이미지이므로 에러 초기화
     setFileErrors((prev) => ({ ...prev, [fieldName]: "" }));
     setPreviews((prev) => ({ ...prev, [fieldName]: imageSrc }));
+  };
+
+  // 파일 클리어 핸들러 (currentImage로 되돌리기)
+  const handleClearFile = (fieldName: keyof typeof files) => {
+    setFiles((prev) => ({ ...prev, [fieldName]: null }));
+    setFileErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    
+    // currentImage가 있고 해당 카테고리와 일치하면 currentImage로 되돌리기
+    if (currentImage && productCategory) {
+      if (
+        (fieldName === "garment_file" &&
+          (productCategory === "상의" ||
+            productCategory === "아우터" ||
+            productCategory === "원피스")) ||
+        (fieldName === "lower_file" && productCategory === "하의")
+      ) {
+        setPreviews((prev) => ({ ...prev, [fieldName]: currentImage }));
+      } else {
+        setPreviews((prev) => ({ ...prev, [fieldName]: "" }));
+      }
+    } else {
+      setPreviews((prev) => ({ ...prev, [fieldName]: "" }));
+    }
   };
 
   // 워크플로우 직접 실행
@@ -522,7 +563,16 @@ export default function Cafe24VirtualFitting({
 
   // 워크플로우 실행
   const runWorkflow = async () => {
+    // Debug logging
+    console.log("=== Workflow Debug Info ===");
+    console.log("Files state:", files);
+    console.log("File errors:", fileErrors);
+    console.log("Is processing:", isProcessing);
+    console.log("Current image:", currentImage);
+    console.log("Product category:", productCategory);
+    
     if (!files.human_file || !files.garment_file) {
+      console.log("Missing required files - human_file:", !!files.human_file, "garment_file:", !!files.garment_file);
       alert("필수 파일을 모두 업로드해주세요.");
       return;
     }
@@ -568,19 +618,9 @@ export default function Cafe24VirtualFitting({
   };
 
   const handleStartWorkflow = async () => {
-    setShowResults(true);
     await runWorkflow();
   };
 
-  const resetComponent = () => {
-    clearProgressTimer(); // 타이머 정리
-    setShowResults(false);
-    setGeneratedImage("");
-    setGeneratedVideo("");
-    setStatus("");
-    setProgress(0);
-    setIsProcessing(false);
-  };
 
   useEffect(() => {
     return () => {
@@ -594,35 +634,15 @@ export default function Cafe24VirtualFitting({
     <div className="w-full max-w-6xl mx-auto">
       {/* 가상 피팅 콘텐츠 */}
       <div className="transition-all duration-500 ease-in-out max-h-none opacity-100 overflow-visible">
-        <div
-          className={`transition-all duration-700 ease-in-out ${
-            showResults
-              ? "flex flex-col md:grid md:grid-cols-2 gap-8"
-              : "grid grid-cols-1"
-          }`}
-        >
+        <div className="grid grid-cols-1">
           {/* 가상 피팅 입력 섹션 */}
-          <Card
-            className={`transition-all duration-700 ease-in-out ${
-              showResults ? "md:transform md:-translate-x-2" : ""
-            } order-1 bg-white border border-gray-200 shadow-sm`}
-          >
-            <CardHeader className="flex flex-row items-center justify-between px-6 pt-6 pb-0">
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader className="px-6 pt-6 pb-0">
               <CardTitle className="text-lg">이미지 업로드</CardTitle>
-              {showResults && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetComponent}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
             </CardHeader>
             <CardContent className="space-y-6 px-6 pb-6 pt-4">
-              <div className="flex flex-col md:flex-row gap-8">
-                <div className="flex flex-row space-x-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="flex-1">
                     <FileDropzone
                       onDrop={(file) => handleFileChange("human_file", file)}
@@ -653,14 +673,14 @@ export default function Cafe24VirtualFitting({
                     <FileDropzone
                       onDrop={(file) => handleFileChange("garment_file", file)}
                       preview={
-                        previews.garment_file ||
-                        (currentImage &&
-                        (productCategory === "상의" ||
-                          productCategory === "아우터" ||
-                          productCategory === "원피스") &&
-                        !files.garment_file
+                        files.garment_file
+                          ? previews.garment_file
+                          : currentImage &&
+                            (productCategory === "상의" ||
+                              productCategory === "아우터" ||
+                              productCategory === "원피스")
                           ? currentImage
-                          : "")
+                          : previews.garment_file
                       }
                       label="상의 이미지"
                       description="&nbsp;"
@@ -669,7 +689,7 @@ export default function Cafe24VirtualFitting({
                       onSampleSelect={(imageSrc) =>
                         handleSampleSelect("garment_file", imageSrc)
                       }
-                      onClear={() => handleFileChange("garment_file", null)}
+                      onClear={() => handleClearFile("garment_file")}
                     />
                     {/* 상의 이미지 오류 메시지 */}
                     {fileErrors.garment_file && (
@@ -688,12 +708,11 @@ export default function Cafe24VirtualFitting({
                     <FileDropzone
                       onDrop={(file) => handleFileChange("lower_file", file)}
                       preview={
-                        previews.lower_file ||
-                        (currentImage &&
-                        productCategory === "하의" &&
-                        !files.lower_file
+                        files.lower_file
+                          ? previews.lower_file
+                          : currentImage && productCategory === "하의"
                           ? currentImage
-                          : "")
+                          : previews.lower_file
                       }
                       label="하의 이미지 (선택)"
                       description="&nbsp;"
@@ -701,7 +720,7 @@ export default function Cafe24VirtualFitting({
                       onSampleSelect={(imageSrc) =>
                         handleSampleSelect("lower_file", imageSrc)
                       }
-                      onClear={() => handleFileChange("lower_file", null)}
+                      onClear={() => handleClearFile("lower_file")}
                     />
                     {/* 하의 이미지 오류 메시지 */}
                     {fileErrors.lower_file && (
@@ -753,6 +772,40 @@ export default function Cafe24VirtualFitting({
                   </div>
                 </div>
               </div>
+              {/* 파일 상태 표시 */}
+              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium mb-2">📁 파일 업로드 상태</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className={`flex items-center space-x-2 ${files.human_file ? 'text-green-600' : 'text-red-500'}`}>
+                      <div className={`w-2 h-2 rounded-full ${files.human_file ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span>사람 이미지: {files.human_file ? '✓ 업로드됨' : '✗ 필요'}</span>
+                    </div>
+                    <div className={`flex items-center space-x-2 ${files.garment_file ? 'text-green-600' : 'text-red-500'}`}>
+                      <div className={`w-2 h-2 rounded-full ${files.garment_file ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span>상의 이미지: {files.garment_file ? '✓ 업로드됨' : '✗ 필요'}</span>
+                    </div>
+                    <div className={`flex items-center space-x-2 ${files.lower_file ? 'text-green-600' : 'text-gray-500'}`}>
+                      <div className={`w-2 h-2 rounded-full ${files.lower_file ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span>하의 이미지: {files.lower_file ? '✓ 업로드됨' : '○ 선택사항'}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-500">
+                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                      <span>배경 이미지: ○ 비활성화</span>
+                    </div>
+                  </div>
+                  {Object.values(fileErrors).some(error => error) && (
+                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700">
+                      <p className="font-medium">⚠️ 오류 발생:</p>
+                      {Object.entries(fileErrors).map(([key, error]) => 
+                        error && <p key={key} className="text-xs">• {key}: {error}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            
               {/* 옵션 및 실행 버튼 */}
               <div className="space-y-4 mt-6">
                 <div className="flex items-center space-x-2">
@@ -771,7 +824,14 @@ export default function Cafe24VirtualFitting({
                   </label>
                 </div>
                 <Button
-                  onClick={handleStartWorkflow}
+                  onClick={() => {
+                    console.log("Button clicked - checking state...");
+                    console.log("isProcessing:", isProcessing);
+                    console.log("files.human_file:", !!files.human_file);
+                    console.log("files.garment_file:", !!files.garment_file);
+                    console.log("fileErrors:", fileErrors);
+                    handleStartWorkflow();
+                  }}
                   disabled={
                     isProcessing ||
                     !files.human_file ||
@@ -785,7 +845,7 @@ export default function Cafe24VirtualFitting({
                 >
                   {isProcessing ? (
                     <div className="flex flex-col items-center w-full">
-                      <div className="flex items-center mb-2">
+                      <div className="flex items-center mb-2 mt-2">
                         <Play className="w-4 h-4 mr-2" />
                         처리 중... {progress}%
                       </div>
@@ -830,109 +890,358 @@ export default function Cafe24VirtualFitting({
             </CardContent>
           </Card>
 
-          {/* 결과 섹션 (슬라이드 애니메이션) */}
-          {showResults && (
-            <Card
-              className={`transition-all duration-700 ease-in-out transform order-2 bg-white border border-gray-200 shadow-sm ${
-                showResults
-                  ? "translate-x-0 opacity-100 md:translate-x-2"
-                  : "translate-x-full opacity-0"
-              }`}
-            >
-              <CardHeader className="flex flex-row items-center justify-between px-6 pt-6 pb-0">
-                <CardTitle className="text-lg">결과</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 px-6 pb-6 pt-4">
-                <div className="flex flex-col gap-6">
-                  {/* 로딩 상태 표시 */}
-                  {isProcessing && !generatedImage && (
+        </div>
+      </div>
+
+      {/* 결과 섹션 - hiển thị ở dưới */}
+      {(files.human_file || files.garment_file || files.lower_file || generatedImage) && (
+        <div className="mt-8">
+          <Card className="bg-white border border-gray-200 shadow-sm">
+            <CardHeader className="px-6 pt-6 pb-0">
+              <CardTitle className="text-lg">가상 피팅 결과</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 px-6 pb-6 pt-4">
+              <div className="space-y-6">
+                {/* 업로드된 이미지 미리보기 */}
+                <div className="space-y-3">
+                  <h3 className="font-medium">업로드된 이미지</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {files.human_file && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-700">사람 이미지</p>
+                        <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200">
+                          {previews.human_file.startsWith('data:') || previews.human_file.startsWith('blob:') ? (
+                            <Image
+                              src={previews.human_file}
+                              alt="사람 이미지"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Image
+                              src={previews.human_file}
+                              alt="사람 이미지"
+                              fill
+                              className="object-cover"
+                              unoptimized={previews.human_file.startsWith('http')}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {files.garment_file && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-700">상의 이미지</p>
+                        <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200">
+                          {previews.garment_file.startsWith('data:') || previews.garment_file.startsWith('blob:') ? (
+                            <Image
+                              src={previews.garment_file}
+                              alt="상의 이미지"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Image
+                              src={previews.garment_file}
+                              alt="상의 이미지"
+                              fill
+                              className="object-cover"
+                              unoptimized={previews.garment_file.startsWith('http')}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {files.lower_file && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-700">하의 이미지</p>
+                        <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200">
+                          {previews.lower_file.startsWith('data:') || previews.lower_file.startsWith('blob:') ? (
+                            <Image
+                              src={previews.lower_file}
+                              alt="하의 이미지"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Image
+                              src={previews.lower_file}
+                              alt="하의 이미지"
+                              fill
+                              className="object-cover"
+                              unoptimized={previews.lower_file.startsWith('http')}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 생성된 이미지 */}
+                {generatedImage && (
+                  <div className="space-y-3">
+                    <h3 className="font-medium">AI 생성 이미지</h3>
+                    <div className="relative">
+                      <img
+                        src={generatedImage}
+                        alt="생성된 이미지"
+                        className="mx-auto w-full h-auto rounded-lg border border-gray-100 shadow"
+                        style={{ maxHeight: "600px", objectFit: "contain" }}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute top-2 right-2"
+                        onClick={() => window.open(generatedImage, "_blank")}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 비디오 생성 로딩 상태 */}
+                {isProEnabled &&
+                  generatedImage &&
+                  isProcessing &&
+                  !generatedVideo && (
                     <div className="space-y-3">
                       <h3 className="font-medium">
-                        이미지 생성 중... {progress}%
+                        비디오 생성 중... {progress}%
                       </h3>
-                      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                      <div className="flex flex-col items-center justify-center py-8 space-y-4">
                         <div className="w-full max-w-xs">
                           <Progress value={progress} className="w-full h-3" />
                         </div>
                         <p className="text-sm text-gray-600 text-center">
-                          AI가 가상 피팅 이미지를 생성하고 있습니다.
-                          <br />
-                          잠시만 기다려주세요...
+                          AI가 비디오를 생성하고 있습니다...
                         </p>
                       </div>
                     </div>
                   )}
-                  {/* 생성된 이미지 */}
-                  {generatedImage && (
-                    <div className="space-y-3">
-                      <h3 className="font-medium">생성된 이미지</h3>
-                      <div className="relative">
-                        <img
-                          src={generatedImage}
-                          alt="생성된 이미지"
-                          className="mx-auto w-full max-w-sm h-auto rounded-lg border border-gray-100 shadow"
-                          style={{ maxHeight: "400px", objectFit: "contain" }}
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="absolute top-2 right-2"
-                          onClick={() => window.open(generatedImage, "_blank")}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
+
+                {/* 생성된 비디오 */}
+                {generatedVideo && (
+                  <div className="space-y-3">
+                    <h3 className="font-medium">AI 생성 비디오</h3>
+                    <div className="relative">
+                      <video
+                        src={generatedVideo}
+                        controls
+                        loop
+                        muted
+                        autoPlay
+                        className="w-full rounded-lg shadow-lg mx-auto"
+                        style={{ maxHeight: "600px" }}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute top-2 right-2"
+                        onClick={() => window.open(generatedVideo, "_blank")}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* 로딩 상태 표시 - 하단에만 표시 */}
+                {isProcessing && !generatedImage && (
+                  <div className="space-y-3 border-t border-gray-200 pt-6">
+                    <h3 className="font-medium text-center">
+                      AI 이미지 생성 중... {progress}%
+                    </h3>
+                    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                      <div className="w-full max-w-sm">
+                        <Progress value={progress} className="w-full h-3" />
+                      </div>
+                      <p className="text-sm text-gray-600 text-center">
+                        AI가 가상 피팅 이미지를 생성하고 있습니다.
+                        <br />
+                        잠시만 기다려주세요...
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 결과 모달 */}
+      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
+        <DialogContent className="max-w-full overflow-hidden flex flex-col" >
+          <DialogHeader className="pb-4 flex-shrink-0">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              가상 피팅 결과
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-1 min-h-0">
+            <div className="space-y-6">
+              {/* 업로드된 이미지 미리보기 */}
+              <div className="space-y-3">
+                <h3 className="font-medium">업로드된 이미지</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {files.human_file && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-700">사람 이미지</p>
+                      <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200">
+                        {previews.human_file.startsWith('data:') || previews.human_file.startsWith('blob:') ? (
+                          <Image
+                            src={previews.human_file}
+                            alt="사람 이미지"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Image
+                            src={previews.human_file}
+                            alt="사람 이미지"
+                            fill
+                            className="object-cover"
+                            unoptimized={previews.human_file.startsWith('http')}
+                          />
+                        )}
                       </div>
                     </div>
                   )}
-                  {/* 비디오 생성 로딩 상태 */}
-                  {isProEnabled &&
-                    generatedImage &&
-                    isProcessing &&
-                    !generatedVideo && (
-                      <div className="space-y-3">
-                        <h3 className="font-medium">
-                          비디오 생성 중... {progress}%
-                        </h3>
-                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                          <div className="w-full max-w-xs">
-                            <Progress value={progress} className="w-full h-3" />
-                          </div>
-                          <p className="text-sm text-gray-600 text-center">
-                            AI가 비디오를 생성하고 있습니다...
-                          </p>
-                        </div>
+                  {files.garment_file && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-700">상의 이미지</p>
+                      <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200">
+                        {previews.garment_file.startsWith('data:') || previews.garment_file.startsWith('blob:') ? (
+                          <Image
+                            src={previews.garment_file}
+                            alt="상의 이미지"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Image
+                            src={previews.garment_file}
+                            alt="상의 이미지"
+                            fill
+                            className="object-cover"
+                            unoptimized={previews.garment_file.startsWith('http')}
+                          />
+                        )}
                       </div>
-                    )}
-                  {/* 생성된 비디오 */}
-                  {generatedVideo && (
-                    <div className="space-y-3">
-                      <h3 className="font-medium">생성된 비디오</h3>
-                      <div className="relative">
-                        <video
-                          src={generatedVideo}
-                          controls
-                          loop
-                          muted
-                          autoPlay
-                          className="w-full max-w-sm rounded-lg shadow-lg mx-auto"
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="absolute top-2 right-2"
-                          onClick={() => window.open(generatedVideo, "_blank")}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
+                    </div>
+                  )}
+                  {files.lower_file && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-700">하의 이미지</p>
+                      <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200">
+                        {previews.lower_file.startsWith('data:') || previews.lower_file.startsWith('blob:') ? (
+                          <Image
+                            src={previews.lower_file}
+                            alt="하의 이미지"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Image
+                            src={previews.lower_file}
+                            alt="하의 이미지"
+                            fill
+                            className="object-cover"
+                            unoptimized={previews.lower_file.startsWith('http')}
+                          />
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+              </div>
+
+              {/* 생성된 이미지 */}
+              {generatedImage && (
+                <div className="space-y-3">
+                  <h3 className="font-medium">AI 생성 이미지</h3>
+                  <div className="relative">
+                    <Image
+                      src={generatedImage}
+                      alt="생성된 이미지"
+                      className="mx-auto w-full h-auto rounded-lg border border-gray-100 shadow"
+                      style={{ maxHeight: "80vh", maxWidth: "90vw", objectFit: "contain" }}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-2 right-2"
+                      onClick={() => window.open(generatedImage, "_blank")}
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* 비디오 생성 로딩 상태 */}
+              {isProEnabled &&
+                generatedImage &&
+                isProcessing &&
+                !generatedVideo && (
+                  <div className="space-y-3">
+                    <h3 className="font-medium">
+                      비디오 생성 중... {progress}%
+                    </h3>
+                    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                      <div className="w-full max-w-xs">
+                        <Progress value={progress} className="w-full h-3" />
+                      </div>
+                      <p className="text-sm text-gray-600 text-center">
+                        AI가 비디오를 생성하고 있습니다...
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {/* 생성된 비디오 */}
+              {generatedVideo && (
+                <div className="space-y-3">
+                  <h3 className="font-medium">AI 생성 비디오</h3>
+                  <div className="relative">
+                    <video
+                      src={generatedVideo}
+                      controls
+                      loop
+                      muted
+                      autoPlay
+                      className="w-full rounded-lg shadow-lg mx-auto"
+                      style={{ maxHeight: "80vh", maxWidth: "90vw" }}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-2 right-2"
+                      onClick={() => window.open(generatedVideo, "_blank")}
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {/* 로딩 상태 표시 - 하단에만 표시 */}
+              {isProcessing && !generatedImage && (
+                <div className="space-y-3 border-t border-gray-200 pt-6">
+                  <h3 className="font-medium text-center">
+                    AI 이미지 생성 중... {progress}%
+                  </h3>
+                  <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                    <div className="w-full max-w-sm">
+                      <Progress value={progress} className="w-full h-3" />
+                    </div>
+                    <p className="text-sm text-gray-600 text-center">
+                      AI가 가상 피팅 이미지를 생성하고 있습니다.
+                      <br />
+                      잠시만 기다려주세요...
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
