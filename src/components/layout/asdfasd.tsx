@@ -2,8 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/providers/AuthProvider";
-import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
+import Header from "@/components/layout/HeaderLayout";
+import Footer from "@/components/layout/FooterLayout";
 
 interface MainLayoutProps {
   children: React.ReactNode;

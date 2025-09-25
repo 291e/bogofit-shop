@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
-import MainLayout from "@/components/layout/MainLayout";
+import MainLayout from "@/components/layout/asdfasd";
 import { Providers } from "@/providers/ApolloProvider";
 import { I18nProvider } from "@/providers/I18nProvider";
 
