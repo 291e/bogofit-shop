@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Package, Loader2, Sparkles, ChevronDown } from "lucide-react";
+import { ArrowRight, Package, Loader2, Sparkles } from "lucide-react";
 import { Product } from "@/types/product";
 import MusinsaProductCard from "@/components/product/MusinsaProductCard";
-import { Button } from "@/components/ui/button";
 import { useI18n } from "@/providers/I18nProvider";
 
 interface Cafe24AllProductsProps {
@@ -17,68 +16,75 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(2); // 페이지 3부터 무한 스크롤 시작
-  const LOAD_SIZE = 12; // 클릭당 추가 로드 개수 (6열 기준 2행)
+  const LOAD_SIZE = 12; // 스크롤당 추가 로드 개수 (6열 기준 2행)
   const { t } = useI18n();
+  const observerRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false); // Ref để track loading state
 
-  // Hydration 안전한 반응형 계산
-  const [columnsCount, setColumnsCount] = useState(6); // 서버와 클라이언트 동일한 초기값
+  // Hydration 안전한 반응형 계산 - removed unused code
 
+  // Intersection Observer를 사용한 무한 스크롤
   useEffect(() => {
-    const getColumnsCount = () => {
-      const width = window.innerWidth;
-      if (width < 640) return 2; // 모바일: 2열
-      if (width < 1024) return 3; // 태블릿: 3열
-      return 6; // 데스크톱: 6열
-    };
+    const loadMoreProducts = async () => {
+      if (loadingRef.current || !hasMore) return;
 
-    const updateColumnsCount = () => {
-      setColumnsCount(getColumnsCount());
-    };
+      loadingRef.current = true;
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `${
+            process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+          }/api/products?page=${page}&limit=${LOAD_SIZE}`
+        );
 
-    // 초기 설정
-    updateColumnsCount();
+        if (!response.ok) throw new Error("Failed to fetch products");
 
-    // 리사이즈 이벤트 처리
-    window.addEventListener("resize", updateColumnsCount);
-    return () => window.removeEventListener("resize", updateColumnsCount);
-  }, []);
+        const data = await response.json();
+        const newProducts = data.products || [];
 
-  // 다음 페이지 데이터 로드 함수
-  const loadMoreProducts = useCallback(async () => {
-    if (loading || !hasMore) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-        }/api/products?page=${page + 1}&limit=${LOAD_SIZE}`
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch products");
-
-      const data = await response.json();
-      const newProducts = data.products || [];
-
-      if (newProducts.length === 0) {
+        if (newProducts.length === 0) {
+          setHasMore(false);
+        } else {
+          setProducts((prev) => {
+            // 중복 제거 로직
+            const existingIds = new Set(prev.map((p: Product) => p.id));
+            const uniqueNewProducts = newProducts.filter((p: Product) => !existingIds.has(p.id));
+            return [...prev, ...uniqueNewProducts];
+          });
+          setPage((prev) => prev + 1);
+        }
+      } catch (error) {
+        console.error("Error loading more products:", error);
         setHasMore(false);
-      } else {
-        // 임시로 중복 제거 로직 비활성화 (무한 스크롤 테스트용)
-        setProducts((prev) => {
-          // 모든 새 상품을 추가 (중복 제거 없이)
-          return [...prev, ...newProducts];
-        });
-        setPage((prev) => prev + 1);
+      } finally {
+        loadingRef.current = false;
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading more products:", error);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, hasMore, page, columnsCount]);
+    };
 
-  // 자동 무한 스크롤 제거, 버튼 클릭으로 로드하도록 변경
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingRef.current && hasMore) {
+          loadMoreProducts();
+        }
+      },
+      {
+        threshold: 0.5,
+        rootMargin: '800px',
+      }
+    );
+
+    const currentObserverRef = observerRef.current;
+    if (currentObserverRef) {
+      observer.observe(currentObserverRef);
+    }
+
+    return () => {
+      if (currentObserverRef) {
+        observer.unobserve(currentObserverRef);
+      }
+    };
+  }, [page, hasMore]); // Chỉ depend vào page và hasMore
 
   // 상품이 없는 경우 처리
   if (!products || products.length === 0) {
@@ -139,26 +145,19 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
           ))}
         </div>
 
-        {/* 로딩/더보기 영역 */}
-        <div className="flex justify-center items-center py-8">
+        {/* 무한 스크롤 로딩 영역 */}
+        <div ref={observerRef} className="flex justify-center items-center py-8">
           {loading ? (
             <div className="flex items-center gap-2 text-gray-500">
               <Loader2 className="h-5 w-5 animate-spin" />
               <span className="text-sm">{t("status.loadingProducts")}</span>
             </div>
-          ) : hasMore ? (
-            <Button
-              onClick={loadMoreProducts}
-              variant="outline"
-              className="flex items-center gap-2 px-8 py-3 text-gray-800 border-gray-300 hover:bg-white/80 hover:border-gray-400 shadow-sm"
-            >
-              {t("cta.loadMore")}
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          ) : (
+          ) : !hasMore ? (
             <div className="text-center text-gray-500">
               <p className="text-sm">{t("status.allLoaded")}</p>
             </div>
+          ) : (
+            <div className="h-8" /> // 공간 확보용
           )}
         </div>
       </div>
