@@ -73,12 +73,13 @@ export default function Cafe24InstallPage() {
       // const authUrl = `/api/cafe24/oauth/authorize?mall_id=${encodeURIComponent(
       //   mallId
       // )}`;
+      // https://bogofit.cafe24.com/api/v2/oauth/authorize?response_type=code&client_id=thjShCJSL5CuKFKkItvLqD&state=app_install&redirect_uri=https://bogofit.kr/api/cafe24/oauth/callback&scope=mall.read_category,mall.write_category,mall.read_product,mall.write_product
       const authUrl = `https://${mallId}.cafe24api.com/api/v2/oauth/authorize
   ?response_type=code
   &client_id=${process.env.NEXT_PUBLIC_CAFE24_CLIENT_ID}
   &state=app_install
-  &redirect_uri=${encodeURIComponent("https://bogofit.kr/api/cafe24/oauth/callback")}
-  &scope=${encodeURIComponent("mall.read_category mall.write_category mall.read_product mall.write_product")}`;
+  &redirect_uri=https://www.bogofit.kr/api/cafe24/oauth/callback
+  &scope=mall.read_application,mall.write_application,mall.read_category,mall.write_category,mall.read_product,mall.write_product`;
 
       window.location.href = authUrl;
 

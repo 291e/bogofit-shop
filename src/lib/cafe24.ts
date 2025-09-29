@@ -425,7 +425,10 @@ export class Cafe24OAuth {
         return mallIdFromCookie;
       }
     } catch (error) {
-      console.warn("⚠️  쿠키에서 Cafe24 Mall ID를 읽는 데 실패했습니다.", error);
+      console.warn(
+        "⚠️  쿠키에서 Cafe24 Mall ID를 읽는 데 실패했습니다.",
+        error
+      );
     }
 
     return this.resolveMallId();
@@ -436,9 +439,13 @@ export class Cafe24OAuth {
   }
 
   private getBasicAuthHeader(): string {
-    return Buffer.from(
+    const authHeader = Buffer.from(
       `${this.config.clientId}:${this.config.clientSecret}`
     ).toString("base64");
+
+    console.log("🔄 authHeader: ", authHeader);
+
+    return authHeader;
   }
 
   private async storeTokens(tokenData: Cafe24TokenResponse): Promise<void> {
