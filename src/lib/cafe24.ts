@@ -14,17 +14,17 @@ export class Cafe24OAuth {
 
   constructor() {
     // 카페24 공식 문서에 따른 환경변수 검증
-    const mallId = process.env.CAFE24_MALL_ID || "";
+    // mallId는 동적으로 전달받아야 하므로 환경변수에서 가져오지 않음
     const clientId = process.env.CAFE24_CLIENT_ID || "";
     const clientSecret = process.env.CAFE24_CLIENT_SECRET || "";
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
 
     this.config = {
-      mallId,
+      mallId: "", // 사용 시 동적으로 전달됨
       clientId,
       clientSecret,
       redirectUri: `${baseUrl}/api/cafe24/oauth/callback`,
-      baseUrl: mallId ? this.buildApiBaseUrl(mallId) : "",
+      baseUrl: "", // 사용 시 동적으로 생성됨
     };
 
     // 필수 환경변수 검증
@@ -42,13 +42,7 @@ export class Cafe24OAuth {
     }
 
     console.log("✅ 카페24 OAuth 설정 완료");
-    if (mallId) {
-      console.log(`- Mall ID: ${mallId}`);
-    } else {
-      console.warn(
-        "⚠️  CAFE24_MALL_ID가 설정되지 않았습니다. mall_id는 요청 시 동적으로 전달되어야 합니다."
-      );
-    }
+    console.log("⚠️  Mall ID는 동적으로 전달됩니다 (URL 파라미터 또는 state)");
     console.log(`- Redirect URI: ${this.config.redirectUri}`);
   }
 
@@ -431,23 +425,15 @@ export class Cafe24OAuth {
     console.log("- mallIdOverride type:", typeof mallIdOverride);
     console.log("- mallIdOverride truthy:", !!mallIdOverride);
 
-    // mallIdOverride가 있으면 우선 사용
+    // mallIdOverride가 있으면 사용 (필수)
     if (mallIdOverride) {
       console.log("✅ mallIdOverride 사용:", mallIdOverride);
       return mallIdOverride;
     }
 
-    // 환경변수에서 fallback (선택사항)
-    const envMallId = this.config.mallId;
-    console.log("- envMallId:", envMallId);
-    if (envMallId) {
-      console.log("⚠️  환경변수 mallId 사용:", envMallId);
-      return envMallId;
-    }
-
-    // 둘 다 없으면 에러
+    // mallIdOverride가 없으면 에러 (환경변수 fallback 제거)
     throw new Error(
-      "카페24 Mall ID가 필요합니다. mall_id 파라미터를 전달하거나 CAFE24_MALL_ID 환경변수를 설정하세요."
+      "카페24 Mall ID가 필요합니다. mall_id 파라미터를 전달해주세요."
     );
   }
 
