@@ -426,14 +426,22 @@ export class Cafe24OAuth {
   }
 
   private resolveMallId(mallIdOverride?: string | null): string {
+    console.log("🔍 resolveMallId 호출:");
+    console.log("- mallIdOverride:", mallIdOverride);
+    console.log("- mallIdOverride type:", typeof mallIdOverride);
+    console.log("- mallIdOverride truthy:", !!mallIdOverride);
+
     // mallIdOverride가 있으면 우선 사용
     if (mallIdOverride) {
+      console.log("✅ mallIdOverride 사용:", mallIdOverride);
       return mallIdOverride;
     }
 
     // 환경변수에서 fallback (선택사항)
     const envMallId = this.config.mallId;
+    console.log("- envMallId:", envMallId);
     if (envMallId) {
+      console.log("⚠️  환경변수 mallId 사용:", envMallId);
       return envMallId;
     }
 

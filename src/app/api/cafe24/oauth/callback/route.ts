@@ -8,6 +8,13 @@ import { cafe24OAuth } from "@/lib/cafe24";
  * Authorization Code를 받아서 Access Token으로 교환합니다.
  */
 export async function GET(request: NextRequest) {
+  // 환경별 baseUrl 설정
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.NODE_ENV === "production"
+      ? process.env.NEXT_PUBLIC_BASE_URL || "https://www.bogofit.kr"
+      : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000");
+
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
@@ -16,12 +23,14 @@ export async function GET(request: NextRequest) {
 
   console.log("=== Cafe24 OAuth 콜백 처리 ===");
   console.log("- Request URL:", request.url);
+  console.log("- Base URL:", baseUrl);
+  console.log("- NODE_ENV:", process.env.NODE_ENV);
+  console.log("- Host Header:", request.headers.get("host"));
+  console.log("- X-Forwarded-Host:", request.headers.get("x-forwarded-host"));
   console.log("- Code:", code ? code.substring(0, 8) + "..." : "❌ 없음");
   console.log("- State:", state ? state.substring(0, 8) + "..." : "❌ 없음");
   console.log("- Error:", error || "없음");
   console.log("- Error Description:", errorDescription || "없음");
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:7780";
 
   // Cafe24에서 반환된 에러가 있는 경우
   if (error) {
