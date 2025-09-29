@@ -61,7 +61,8 @@ export class Cafe24OAuth {
    */
   getAuthorizationUrl(
     scopes: string[] = ["mall.read_application", "mall.write_application"],
-    mallIdOverride?: string
+    mallIdOverride?: string,
+    customRedirectUri?: string
   ): string {
     const mallId = this.resolveMallId(mallIdOverride);
     // 공식 문서에 따른 단순한 CSRF 토큰 생성
@@ -70,7 +71,7 @@ export class Cafe24OAuth {
       response_type: "code",
       client_id: this.config.clientId,
       state: state,
-      redirect_uri: this.config.redirectUri,
+      redirect_uri: customRedirectUri || this.config.redirectUri,
       scope: scopes.join(","),
     });
 
@@ -471,14 +472,18 @@ export class Cafe24OAuth {
   /**
    * URL에서 mallId 추출
    * https://trusong.cafe24api.com/api/v2/oauth/authorize → trusong
+   * https://trusong.cafe24.com/api/v2/oauth/authorize → trusong
+   * https://바로뒤에나오는.앞까지만 파싱
    */
-  private extractMallIdFromUrl(url: string): string | null {
+  extractMallIdFromUrl(url: string): string | null {
     try {
       const urlObj = new URL(url);
       const hostname = urlObj.hostname;
 
-      // {mall_id}.cafe24api.com 패턴에서 mallId 추출
-      const match = hostname.match(/^([^.]+)\.cafe24api\.com$/);
+      // https://바로뒤에나오는.앞까지만 파싱
+      // trusong.cafe24api.com → trusong
+      // trusong.cafe24.com → trusong
+      const match = hostname.match(/^([^.]+)\./);
       if (match) {
         return match[1];
       }

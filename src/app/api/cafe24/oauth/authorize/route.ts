@@ -29,10 +29,18 @@ export async function GET(request: NextRequest) {
 
     console.log("- 요청 스코프:", scopes.join(", "));
 
-        // OAuth 인증 URL 생성
+    // OAuth 인증 URL 생성 (redirect_uri에 mallId 포함)
+    const baseRedirectUri = cafe24OAuth.getConfig().redirectUri;
+    const redirectUriWithMallId = mallIdParam
+      ? `${baseRedirectUri}?mall_id=${encodeURIComponent(mallIdParam)}`
+      : baseRedirectUri;
+
+    console.log("🔗 Redirect URI with mallId:", redirectUriWithMallId);
+
     const authUrl = cafe24OAuth.getAuthorizationUrl(
       scopes,
-      mallIdParam || undefined
+      mallIdParam || undefined,
+      redirectUriWithMallId
     );
     // mallId를 쿠키에 저장 (callback에서 사용)
     const response = NextResponse.redirect(authUrl);
@@ -47,8 +55,6 @@ export async function GET(request: NextRequest) {
       });
       console.log("🍪 임시 mallId 쿠키 설정:", mallIdParam);
     }
-
-
 
     console.log("🔄 Cafe24 OAuth URL 생성 완료");
     console.log("- Auth URL:", authUrl);

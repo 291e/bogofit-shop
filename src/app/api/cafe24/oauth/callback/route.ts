@@ -67,25 +67,30 @@ export async function GET(request: NextRequest) {
     console.log("🔄 Authorization Code를 Access Token으로 교환 중...");
 
     // Authorization Code를 Access Token으로 교환
-    // mallId는 Referer 헤더에서 추출 (가장 정확한 방법)
+    // mallId는 여러 방법으로 추출 시도
+
+    // 1. URL 파라미터에서 추출 (가장 확실한 방법)
+    const mallIdFromUrl = searchParams.get("mall_id");
+    console.log("🔍 URL 파라미터에서 mallId:", mallIdFromUrl);
+
+    // 2. Referer 헤더에서 추출 (extractMallIdFromUrl 함수 사용)
     const referer = request.headers.get("referer");
     let mallIdFromReferer: string | null = null;
 
     if (referer) {
       console.log("🔍 Referer URL:", referer);
-      // URL에서 mallId 추출: https://trusong.cafe24api.com/... → trusong
-      const urlMatch = referer.match(/https:\/\/([^.]+)\.cafe24api\.com/);
-      if (urlMatch) {
-        mallIdFromReferer = urlMatch[1];
+      mallIdFromReferer = cafe24OAuth.extractMallIdFromUrl(referer);
+      if (mallIdFromReferer) {
         console.log("✅ Referer에서 mallId 추출:", mallIdFromReferer);
       }
     }
 
-    // 쿠키에서도 시도 (fallback)
+    // 3. 쿠키에서 추출 (fallback)
     const mallIdFromCookie = request.cookies.get("cafe24_temp_mall_id")?.value;
-    console.log("🔍 쿠키에서 mallId 추출:", mallIdFromCookie);
+    console.log("🔍 쿠키에서 mallId:", mallIdFromCookie);
 
-    const finalMallId = mallIdFromReferer || mallIdFromCookie;
+    // 우선순위: URL 파라미터 > Referer > 쿠키
+    const finalMallId = mallIdFromUrl || mallIdFromReferer || mallIdFromCookie;
     console.log("🔍 최종 mallId:", finalMallId);
 
     const tokenData = await cafe24OAuth.exchangeCodeForToken(
