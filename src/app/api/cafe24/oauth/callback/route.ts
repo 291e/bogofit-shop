@@ -66,10 +66,21 @@ export async function GET(request: NextRequest) {
   try {
     console.log("🔄 Authorization Code를 Access Token으로 교환 중...");
 
-    // Authorization Code를 Access Token으로 교환 (state 포함)
+    // Authorization Code를 Access Token으로 교환 (state에서 mallId 복원)
+    let mallIdFromState: string | null = null;
+    try {
+      if (state) {
+        const decoded = Buffer.from(state, "base64url").toString("utf8");
+        mallIdFromState = JSON.parse(decoded).mallId;
+        console.log("🔍 Parsed mallId from state:", mallIdFromState);
+      }
+    } catch (e) {
+      console.warn("⚠️ state 파싱 실패:", e);
+    }
+
     const tokenData = await cafe24OAuth.exchangeCodeForToken(
       code,
-      state || undefined
+      mallIdFromState || undefined
     );
 
     console.log("✅ Cafe24 OAuth 인증 성공!");
