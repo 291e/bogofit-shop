@@ -67,15 +67,31 @@ export async function GET(request: NextRequest) {
     console.log("🔄 Authorization Code를 Access Token으로 교환 중...");
 
     // Authorization Code를 Access Token으로 교환
-    // mallId는 쿠키에서 추출 (authorize에서 설정됨)
-    const mallIdFromCookie = request.cookies.get("cafe24_temp_mall_id")?.value;
+    // mallId는 Referer 헤더에서 추출 (가장 정확한 방법)
+    const referer = request.headers.get("referer");
+    let mallIdFromReferer: string | null = null;
 
+    if (referer) {
+      console.log("🔍 Referer URL:", referer);
+      // URL에서 mallId 추출: https://trusong.cafe24api.com/... → trusong
+      const urlMatch = referer.match(/https:\/\/([^.]+)\.cafe24api\.com/);
+      if (urlMatch) {
+        mallIdFromReferer = urlMatch[1];
+        console.log("✅ Referer에서 mallId 추출:", mallIdFromReferer);
+      }
+    }
+
+    // 쿠키에서도 시도 (fallback)
+    const mallIdFromCookie = request.cookies.get("cafe24_temp_mall_id")?.value;
     console.log("🔍 쿠키에서 mallId 추출:", mallIdFromCookie);
+
+    const finalMallId = mallIdFromReferer || mallIdFromCookie;
+    console.log("🔍 최종 mallId:", finalMallId);
 
     const tokenData = await cafe24OAuth.exchangeCodeForToken(
       code,
       state || undefined,
-      mallIdFromCookie || undefined
+      finalMallId || undefined
     );
 
     console.log("✅ Cafe24 OAuth 인증 성공!");

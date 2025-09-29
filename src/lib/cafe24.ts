@@ -27,6 +27,8 @@ export class Cafe24OAuth {
       baseUrl: "", // 사용 시 동적으로 생성됨
     };
 
+    console.log("🔄 config: ", this.config);
+
     // 필수 환경변수 검증
     if (!clientId || !clientSecret || !baseUrl) {
       const missing = [];
@@ -464,6 +466,28 @@ export class Cafe24OAuth {
 
   private buildApiBaseUrl(mallId: string): string {
     return `https://${mallId}.cafe24api.com/api/v2`;
+  }
+
+  /**
+   * URL에서 mallId 추출
+   * https://trusong.cafe24api.com/api/v2/oauth/authorize → trusong
+   */
+  private extractMallIdFromUrl(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname;
+
+      // {mall_id}.cafe24api.com 패턴에서 mallId 추출
+      const match = hostname.match(/^([^.]+)\.cafe24api\.com$/);
+      if (match) {
+        return match[1];
+      }
+
+      return null;
+    } catch (error) {
+      console.warn("⚠️ URL에서 mallId 추출 실패:", error);
+      return null;
+    }
   }
 
   private getBasicAuthHeader(): string {

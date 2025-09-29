@@ -33,6 +33,7 @@ export default function Cafe24InstallPage() {
   useEffect(() => {
     // URL 파라미터에서 mall_id 및 error 확인
     const params = new URLSearchParams(window.location.search);
+    console.log("🔄 params: ", params);
     const mallIdParam = params.get("mall_id");
     const errorParam = params.get("error");
 
