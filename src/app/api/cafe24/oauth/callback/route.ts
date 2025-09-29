@@ -72,12 +72,19 @@ export async function GET(request: NextRequest) {
     );
 
     // 성공 페이지로 리디렉션
-    const successUrl = new URL("/cafe24/success", request.url);
-    successUrl.searchParams.set("mall_id", tokenData.mall_id);
-    successUrl.searchParams.set("user_id", tokenData.user_id);
 
-    console.log("🎉 성공 페이지로 리디렉션:", successUrl.toString());
+    const successUrl = new URL("/solution", request.url);
+    successUrl.searchParams.set("mall_id", tokenData.mall_id);
+
+    console.log("🎉 최종 페이지로 리디렉션:", successUrl.toString());
     return NextResponse.redirect(successUrl);
+
+    // const successUrl = new URL("/cafe24/success", request.url);
+    // successUrl.searchParams.set("mall_id", tokenData.mall_id);
+    // successUrl.searchParams.set("user_id", tokenData.user_id);
+
+    // console.log("🎉 성공 페이지로 리디렉션:", successUrl.toString());
+    // return NextResponse.redirect(successUrl);
   } catch (error) {
     console.error("❌ Cafe24 OAuth 토큰 교환 실패:");
     console.error("- Error:", error);
