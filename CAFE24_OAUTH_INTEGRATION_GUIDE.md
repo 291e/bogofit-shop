@@ -6,6 +6,8 @@
 
 ### ✅ **1. OAuth 엔드포인트 수정**
 
+https://bogofit.cafe24api.com/api/v2/oauth/authorize?response_type=code&client_id=thjShCJSL5CuKFKkItvLqD&state=app_install&redirect_uri=https://bogofit.kr/solution&scope=mall.read_category,mall.write_category,mall.read_product,mall.write_product
+
 - **인증 URL**: `https://{mall_id}.cafe24.com/api/v2/oauth/authorize`
 - **토큰 URL**: `https://{mall_id}.cafe24api.com/api/v2/oauth/token`
 - 카페24 공식 문서 기준으로 정확한 엔드포인트 사용
@@ -143,7 +145,6 @@ curl http://localhost:3000/api/cafe24/status
    ```
 
 2. **OAuth 인증 실패**
-
    - 카페24 개발자센터에서 리디렉션 URI 확인
    - Client ID/Secret 정보 재확인
    - 권한 스코프 설정 확인

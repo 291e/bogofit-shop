@@ -24,13 +24,12 @@ export class Cafe24OAuth {
       clientId,
       clientSecret,
       redirectUri: `${baseUrl}/api/cafe24/oauth/callback`,
-      baseUrl: `https://${mallId}.cafe24api.com/api/v2`, // API 호출용
+      baseUrl: mallId ? this.buildApiBaseUrl(mallId) : "",
     };
 
     // 필수 환경변수 검증
-    if (!mallId || !clientId || !clientSecret || !baseUrl) {
+    if (!clientId || !clientSecret || !baseUrl) {
       const missing = [];
-      if (!mallId) missing.push("CAFE24_MALL_ID");
       if (!clientId) missing.push("CAFE24_CLIENT_ID");
       if (!clientSecret) missing.push("CAFE24_CLIENT_SECRET");
       if (!baseUrl) missing.push("NEXT_PUBLIC_BASE_URL");
@@ -43,7 +42,13 @@ export class Cafe24OAuth {
     }
 
     console.log("✅ 카페24 OAuth 설정 완료");
-    console.log(`- Mall ID: ${mallId}`);
+    if (mallId) {
+      console.log(`- Mall ID: ${mallId}`);
+    } else {
+      console.warn(
+        "⚠️  CAFE24_MALL_ID가 설정되지 않았습니다. mall_id는 요청 시 동적으로 전달되어야 합니다."
+      );
+    }
     console.log(`- Redirect URI: ${this.config.redirectUri}`);
   }
 
@@ -59,9 +64,11 @@ export class Cafe24OAuth {
    * 브라우저에서 이 URL로 리디렉션하여 사용자 인증을 받습니다.
    */
   getAuthorizationUrl(
-    scopes: string[] = ["mall.read_application", "mall.write_application"]
+    scopes: string[] = ["mall.read_application", "mall.write_application"],
+    mallIdOverride?: string
   ): string {
-    const state = this.generateState();
+    const mallId = this.resolveMallId(mallIdOverride);
+    const state = this.generateState({ mallId });
     const params = new URLSearchParams({
       response_type: "code",
       client_id: this.config.clientId,
@@ -76,13 +83,15 @@ export class Cafe24OAuth {
     }
 
     // 카페24 공식 OAuth 인증 엔드포인트
-    const authUrl = `https://${
-      this.config.mallId
-    }.cafe24.com/api/v2/oauth/authorize?${params.toString()}`;
+    // 참고: 카페24 OAuth 2.0 인증 URL 형식 (공식 문서 기준)
+    const authUrl = `https://${mallId}.cafe24api.com/api/v2/oauth/authorize?${params.toString()}`;
 
     console.log("🔗 카페24 OAuth 인증 URL 생성");
     console.log(`- URL: ${authUrl}`);
     console.log(`- Scopes: ${scopes.join(", ")}`);
+    console.log(`- Client ID: ${this.config.clientId}`);
+    console.log(`- Redirect URI: ${this.config.redirectUri}`);
+    console.log(`- Mall ID: ${mallId}`);
 
     return authUrl;
   }
@@ -95,6 +104,9 @@ export class Cafe24OAuth {
     state?: string
   ): Promise<Cafe24TokenResponse> {
     try {
+      const statePayload = this.parseState(state);
+      const mallId = this.resolveMallId(statePayload?.mallId);
+
       // state 검증 (CSRF 방지)
       if (state && typeof window !== "undefined") {
         const storedState = sessionStorage.getItem("cafe24_oauth_state");
@@ -111,11 +123,12 @@ export class Cafe24OAuth {
       };
 
       // 카페24 공식 토큰 엔드포인트
-      const tokenUrl = `https://${this.config.mallId}.cafe24api.com/api/v2/oauth/token`;
+      const tokenUrl = `https://${mallId}.cafe24api.com/api/v2/oauth/token`;
 
       console.log("🔗 카페24 토큰 교환 요청");
       console.log(`- URL: ${tokenUrl}`);
       console.log(`- Grant Type: ${tokenRequest.grant_type}`);
+      console.log(`- Mall ID: ${mallId}`);
 
       const response = await fetch(tokenUrl, {
         method: "POST",
@@ -156,27 +169,33 @@ export class Cafe24OAuth {
     try {
       const cookieStore = await cookies();
       const refreshToken = cookieStore.get("cafe24_refresh_token")?.value;
+      const mallIdFromCookie = cookieStore.get("cafe24_mall_id")?.value;
 
       if (!refreshToken) {
         throw new Error("리프레시 토큰이 없습니다");
       }
+
+      const mallId = this.resolveMallId(mallIdFromCookie);
 
       const refreshRequest: Cafe24RefreshTokenRequest = {
         grant_type: "refresh_token",
         refresh_token: refreshToken,
       };
 
-      const response = await fetch(`${this.config.baseUrl}/oauth/token`, {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${this.getBasicAuthHeader()}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          grant_type: refreshRequest.grant_type,
-          refresh_token: refreshRequest.refresh_token,
-        }),
-      });
+      const response = await fetch(
+        `${this.buildApiBaseUrl(mallId)}/oauth/token`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${this.getBasicAuthHeader()}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            grant_type: refreshRequest.grant_type,
+            refresh_token: refreshRequest.refresh_token,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData: Cafe24ApiError = await response.json();
@@ -240,7 +259,8 @@ export class Cafe24OAuth {
       );
     }
 
-    const url = `${this.config.baseUrl}${endpoint}`;
+    const mallId = await this.resolveMallIdForServer();
+    const url = `${this.buildApiBaseUrl(mallId)}${endpoint}`;
     const headers: HeadersInit = {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
@@ -349,10 +369,70 @@ export class Cafe24OAuth {
 
   // Private Helper Methods
 
-  private generateState(): string {
-    return Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString(
-      "base64url"
-    );
+  private generateState(payload: Record<string, unknown> = {}): string {
+    const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+    const nonce = Buffer.from(randomBytes).toString("base64url");
+    const statePayload = { nonce, ...payload };
+
+    return Buffer.from(JSON.stringify(statePayload)).toString("base64url");
+  }
+
+  private parseState(
+    state?: string
+  ): { nonce?: string; mallId?: string } | null {
+    if (!state) {
+      return null;
+    }
+
+    try {
+      const decoded = Buffer.from(state, "base64url").toString("utf8");
+      const payload = JSON.parse(decoded) as {
+        nonce?: string;
+        mallId?: string;
+      };
+
+      return payload;
+    } catch (error) {
+      console.warn("⚠️  Cafe24 OAuth state 파싱에 실패했습니다.", error);
+      return null;
+    }
+  }
+
+  private resolveMallId(mallIdOverride?: string | null): string {
+    const mallId = mallIdOverride || this.config.mallId;
+
+    if (!mallId) {
+      throw new Error(
+        "카페24 Mall ID를 찾을 수 없습니다. mall_id 파라미터 또는 CAFE24_MALL_ID 환경변수를 확인하세요."
+      );
+    }
+
+    return mallId;
+  }
+
+  private async resolveMallIdForServer(
+    mallIdOverride?: string | null
+  ): Promise<string> {
+    if (mallIdOverride) {
+      return mallIdOverride;
+    }
+
+    try {
+      const cookieStore = await cookies();
+      const mallIdFromCookie = cookieStore.get("cafe24_mall_id")?.value;
+
+      if (mallIdFromCookie) {
+        return mallIdFromCookie;
+      }
+    } catch (error) {
+      console.warn("⚠️  쿠키에서 Cafe24 Mall ID를 읽는 데 실패했습니다.", error);
+    }
+
+    return this.resolveMallId();
+  }
+
+  private buildApiBaseUrl(mallId: string): string {
+    return `https://${mallId}.cafe24api.com/api/v2`;
   }
 
   private getBasicAuthHeader(): string {

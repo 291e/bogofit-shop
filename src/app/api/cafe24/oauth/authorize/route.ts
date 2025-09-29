@@ -28,11 +28,17 @@ export async function GET(request: NextRequest) {
     console.log("- 요청 스코프:", scopes.join(", "));
 
     // OAuth 인증 URL 생성
-    const authUrl = cafe24OAuth.getAuthorizationUrl(scopes);
+    const authUrl = cafe24OAuth.getAuthorizationUrl(
+      scopes,
+      mallIdParam || undefined
+    );
+    const resolvedMallId = mallIdParam || cafe24OAuth.getConfig().mallId;
 
     console.log("🔄 Cafe24 OAuth URL 생성 완료");
     console.log("- Auth URL:", authUrl);
     console.log("- Redirect URI:", cafe24OAuth.getConfig().redirectUri);
+    console.log("- Mall ID:", resolvedMallId);
+    console.log("- Client ID:", cafe24OAuth.getConfig().clientId);
 
     // 카페24 OAuth 페이지로 리디렉션
     return NextResponse.redirect(authUrl);
@@ -43,6 +49,13 @@ export async function GET(request: NextRequest) {
     if (error instanceof Error) {
       // 환경변수 오류 시 설치 페이지로 리디렉션
       if (error.message.includes("환경변수")) {
+        const installUrl = `/cafe24/install?error=${encodeURIComponent(
+          error.message
+        )}`;
+        return NextResponse.redirect(new URL(installUrl, request.url));
+      }
+
+      if (error.message.includes("Mall ID")) {
         const installUrl = `/cafe24/install?error=${encodeURIComponent(
           error.message
         )}`;
@@ -73,7 +86,9 @@ export async function GET(request: NextRequest) {
                 "mall.read_application",
                 "mall.write_application",
                 "mall.read_product",
+                "mall.write_product",
                 "mall.read_category",
+                "mall.write_category",
               ],
             },
             진단_도구: {

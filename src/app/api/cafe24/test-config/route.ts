@@ -15,7 +15,12 @@ export async function GET() {
     };
 
     // OAuth URL 수동 생성 테스트
-    const testScopes = ["mall.read_product", "mall.read_category"];
+    const testScopes = [
+      "mall.read_product",
+      "mall.write_product",
+      "mall.read_category",
+      "mall.write_category",
+    ];
     const state = "test_state_" + Date.now();
 
     const oauthParams = new URLSearchParams({
@@ -37,7 +42,7 @@ export async function GET() {
       testOAuthUrl,
       suggestions: [
         "1. Cafe24 Developers Admin에서 앱 상태가 '활성화'인지 확인",
-        "2. 권한 스코프에서 'mall.read_product', 'mall.read_category'가 체크되어 있는지 확인",
+        "2. 권한 스코프에서 'mall.read_product', 'mall.write_product', 'mall.read_category', 'mall.write_category'가 체크되어 있는지 확인",
         "3. Redirect URI가 정확히 일치하는지 확인",
         "4. Client ID가 정확한지 확인",
         "5. 쇼핑몰 관리자 권한으로 로그인했는지 확인",
