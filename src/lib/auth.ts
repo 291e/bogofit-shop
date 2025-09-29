@@ -1,35 +1,38 @@
-import { NextRequest } from "next/server";
-import { getUserFromRequest as getJwtUser } from "./jwt-server";
+// Authentication utilities
+export const AUTH_TOKEN_KEY = 'auth_token';
 
-/**
- * @deprecated 기존 토큰 기반 인증 - JWT 쿠키 기반으로 마이그레이션됨
- * 호환성을 위해 유지하지만 새로운 getUserFromRequest 사용 권장
- */
-export async function getUserFromRequestLegacy(req: NextRequest) {
-  try {
-    const token = req.headers.get("Authorization")?.split(" ")[1];
-    if (!token) return null;
+export const authUtils = {
+  // Save token to localStorage
+  setToken: (token: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+    }
+  },
 
-    // 토큰 검증 및 사용자 정보 조회
-    const response = await fetch(`${process.env.AUTH_API_URL}/verify`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) return null;
-
-    const user = await response.json();
-    return user;
-  } catch (error) {
-    console.error("[Auth] 토큰 검증 실패:", error);
+  // Get token from localStorage
+  getToken: (): string | null => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(AUTH_TOKEN_KEY);
+    }
     return null;
-  }
-}
+  },
 
-/**
- * JWT 쿠키 기반 사용자 정보 조회 (새로운 방식)
- */
-export async function getUserFromRequest(req: NextRequest) {
-  return await getJwtUser(req);
-}
+  // Remove token from localStorage
+  removeToken: (): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: (): boolean => {
+    const token = authUtils.getToken();
+    return !!token;
+  },
+
+  // Get token for API requests
+  getAuthHeaders: (): Record<string, string> => {
+    const token = authUtils.getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+};

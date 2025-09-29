@@ -1,21 +1,38 @@
-import { useContext } from "react";
-import { AuthContext } from "@/providers/AuthProvider";
+"use client";
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-}
+import { useState, useEffect, useCallback } from 'react';
+import { authUtils } from '@/lib/auth';
 
-// 편의를 위한 별칭 함수들
-export const useLogin = () => {
-  const { loginWithCredentials } = useAuth();
-  return loginWithCredentials;
-};
+export const useAuth = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-export const useLogout = () => {
-  const { logout } = useAuth();
-  return logout;
+  useEffect(() => {
+    // Check if user is authenticated on mount
+    const token = authUtils.getToken();
+    setIsAuthenticated(!!token);
+    setIsLoading(false);
+  }, []);
+
+  const login = useCallback((token: string) => {
+    authUtils.setToken(token);
+    setIsAuthenticated(true);
+  }, []);
+
+  const logout = useCallback(() => {
+    authUtils.removeToken();
+    setIsAuthenticated(false);
+  }, []);
+
+  const getToken = useCallback(() => {
+    return authUtils.getToken();
+  }, []);
+
+  return {
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    getToken,
+  };
 };

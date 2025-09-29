@@ -1,35 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import localFont from "next/font/local";
 import "./globals.css";
-import QueryProvider from "@/providers/QueryProvider";
-import MainLayout from "@/components/layout/mainLayout";
-import { Providers } from "@/providers/ApolloProvider";
-import { I18nProvider } from "@/providers/I18nProvider";
+import Header from "@/components/(Public)/layout/Header";
 
 const inter = Inter({ subsets: ["latin"] });
-
-const lineSeedKR = localFont({
-  src: [
-    {
-      path: "./fonts/LINESeedKR-Th.woff",
-      weight: "300",
-      style: "normal",
-    },
-    {
-      path: "./fonts/LINESeedKR-Rg.woff",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "./fonts/LINESeedKR-Bd.woff",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-line-seed-kr",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "보고핏 - AI 가상피팅 쇼핑몰, 내 몸에 딱 맞는 패션 추천",
@@ -127,7 +101,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       </head>
       <body
         suppressHydrationWarning
-        className={`${inter.className} ${lineSeedKR.variable}`}
+        className={inter.className}
       >
         <noscript>
           <iframe
@@ -137,13 +111,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
-        <Providers>
-          <QueryProvider>
-            <I18nProvider>
-              <MainLayout>{children}</MainLayout>
-            </I18nProvider>
-          </QueryProvider>
-        </Providers>
+        <Header />
+        {children}
       </body>
     </html>
   );
