@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 /**
  * 사용자별 카페24 쇼핑몰 설정 관리
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const cookieStore = await cookies();
     const currentMallId = cookieStore.get("cafe24_mall_id")?.value;
