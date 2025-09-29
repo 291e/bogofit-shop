@@ -57,28 +57,26 @@ export async function GET(request: NextRequest) {
   try {
     console.log("🔄 Authorization Code를 Access Token으로 교환 중...");
 
-    // Authorization Code를 Access Token으로 교환
-    const tokenData = await cafe24OAuth.exchangeCodeForToken(code);
-    // const tokenData = await cafe24OAuth.exchangeCodeForToken(
-    //   code,
-    //   state || undefined
-    // );
+    // Authorization Code를 Access Token으로 교환 (state 포함)
+    const tokenData = await cafe24OAuth.exchangeCodeForToken(
+      code,
+      state || undefined
+    );
 
     console.log("✅ Cafe24 OAuth 인증 성공!");
-    console.log("tokenData: ", tokenData);
-    // console.log("- Mall ID:", tokenData.mall_id);
-    // console.log("- User ID:", tokenData.user_id);
-    // console.log("- Scopes:", tokenData.scopes);
-    // console.log("- Expires At:", tokenData.expires_at);
-    // console.log(
-    //   "- Access Token:",
-    //   tokenData.access_token?.substring(0, 10) + "..."
-    // );
+    console.log("- Mall ID:", tokenData.mall_id);
+    console.log("- User ID:", tokenData.user_id);
+    console.log("- Scopes:", tokenData.scopes);
+    console.log("- Expires At:", tokenData.expires_at);
+    console.log(
+      "- Access Token:",
+      tokenData.access_token?.substring(0, 10) + "..."
+    );
 
-    // 성공 페이지로 리디렉션
-
+    // 성공 페이지로 리디렉션 (mallId 정보 포함)
     const successUrl = new URL("/solution", baseUrl);
-    // successUrl.searchParams.set("mall_id", tokenData.mall_id);
+    successUrl.searchParams.set("mall_id", tokenData.mall_id);
+    successUrl.searchParams.set("user_id", tokenData.user_id);
 
     console.log("🎉 최종 페이지로 리디렉션:", successUrl.toString());
     return NextResponse.redirect(successUrl);

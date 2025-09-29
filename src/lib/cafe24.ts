@@ -104,8 +104,15 @@ export class Cafe24OAuth {
     state?: string
   ): Promise<Cafe24TokenResponse> {
     try {
+      console.log("🔄 토큰 교환 시작");
+      console.log("- Code:", code ? code.substring(0, 8) + "..." : "없음");
+      console.log("- State:", state ? state.substring(0, 8) + "..." : "없음");
+
       const statePayload = this.parseState(state);
+      console.log("- Parsed State:", statePayload);
+
       const mallId = this.resolveMallId(statePayload?.mallId);
+      console.log("- Resolved Mall ID:", mallId);
 
       // state 검증 (CSRF 방지)
       if (state && typeof window !== "undefined") {
