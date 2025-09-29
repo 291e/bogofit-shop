@@ -62,7 +62,8 @@ export class Cafe24OAuth {
     mallIdOverride?: string
   ): string {
     const mallId = this.resolveMallId(mallIdOverride);
-    const state = this.generateState({ mallId });
+    // 공식 문서에 따른 단순한 CSRF 토큰 생성
+    const state = this.generateState();
     const params = new URLSearchParams({
       response_type: "code",
       client_id: this.config.clientId,
@@ -95,17 +96,16 @@ export class Cafe24OAuth {
    */
   async exchangeCodeForToken(
     code: string,
-    state?: string
+    state?: string,
+    mallIdOverride?: string
   ): Promise<Cafe24TokenResponse> {
     try {
       console.log("🔄 토큰 교환 시작");
       console.log("- Code:", code ? code.substring(0, 8) + "..." : "없음");
       console.log("- State:", state ? state.substring(0, 8) + "..." : "없음");
+      console.log("- MallId Override:", mallIdOverride);
 
-      const statePayload = this.parseState(state);
-      console.log("- Parsed State:", statePayload);
-
-      const mallId = this.resolveMallId(statePayload?.mallId);
+      const mallId = this.resolveMallId(mallIdOverride);
       console.log("- Resolved Mall ID:", mallId);
 
       // state 검증 (CSRF 방지)
@@ -390,12 +390,10 @@ export class Cafe24OAuth {
 
   // Private Helper Methods
 
-  private generateState(payload: Record<string, unknown> = {}): string {
+  private generateState(): string {
+    // 공식 문서에 따른 단순한 CSRF 토큰 생성
     const randomBytes = crypto.getRandomValues(new Uint8Array(16));
-    const nonce = Buffer.from(randomBytes).toString("base64url");
-    const statePayload = { nonce, ...payload };
-
-    return Buffer.from(JSON.stringify(statePayload)).toString("base64url");
+    return Buffer.from(randomBytes).toString("base64url");
   }
 
   private parseState(
@@ -426,12 +424,12 @@ export class Cafe24OAuth {
     console.log("- mallIdOverride truthy:", !!mallIdOverride);
 
     // mallIdOverride가 있으면 사용 (필수)
-    if (mallIdOverride) {
+    if (mallIdOverride && mallIdOverride.trim()) {
       console.log("✅ mallIdOverride 사용:", mallIdOverride);
       return mallIdOverride;
     }
 
-    // mallIdOverride가 없으면 에러 (환경변수 fallback 제거)
+    // mallIdOverride가 없으면 에러 (환경변수 fallback 완전 제거)
     throw new Error(
       "카페24 Mall ID가 필요합니다. mall_id 파라미터를 전달해주세요."
     );

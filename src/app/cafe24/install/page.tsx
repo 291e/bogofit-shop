@@ -70,13 +70,9 @@ export default function Cafe24InstallPage() {
       console.log("🔄 카페24 앱 설치 시작...");
 
       // OAuth 인증 URL로 리디렉션 (API 라우트 사용)
-      const state = Buffer.from(JSON.stringify({ mallId })).toString(
-        "base64url"
-      );
-      const authUrl = `https://${mallId}.cafe24api.com/api/v2/oauth/authorize?response_type=code&client_id=${process.env.NEXT_PUBLIC_CAFE24_CLIENT_ID}&state=${state}&redirect_uri=https://www.bogofit.kr/api/cafe24/oauth/callback&scope=mall.read_application,mall.write_application,mall.read_category,mall.write_category,mall.read_product,mall.write_product`;
-      // const authUrl = `/api/cafe24/oauth/authorize?mall_id=${encodeURIComponent(
-      //   mallId
-      // )}`;
+      const authUrl = `/api/cafe24/oauth/authorize?mall_id=${encodeURIComponent(
+        mallId
+      )}`;
 
       console.log("✅ OAuth 인증 URL 생성 완료:", authUrl);
 

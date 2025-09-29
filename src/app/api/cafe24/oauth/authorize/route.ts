@@ -29,21 +29,34 @@ export async function GET(request: NextRequest) {
 
     console.log("- 요청 스코프:", scopes.join(", "));
 
+    // mallId를 쿠키에 저장 (callback에서 사용)
+    const response = NextResponse.redirect(authUrl);
+
+    if (mallIdParam) {
+      response.cookies.set("cafe24_temp_mall_id", mallIdParam, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 5, // 5분
+      });
+      console.log("🍪 임시 mallId 쿠키 설정:", mallIdParam);
+    }
+
     // OAuth 인증 URL 생성
     const authUrl = cafe24OAuth.getAuthorizationUrl(
       scopes,
       mallIdParam || undefined
     );
-    const resolvedMallId = mallIdParam || cafe24OAuth.getConfig().mallId;
 
     console.log("🔄 Cafe24 OAuth URL 생성 완료");
     console.log("- Auth URL:", authUrl);
     console.log("- Redirect URI:", cafe24OAuth.getConfig().redirectUri);
-    console.log("- Mall ID:", resolvedMallId);
+    console.log("- Mall ID:", mallIdParam);
     console.log("- Client ID:", cafe24OAuth.getConfig().clientId);
 
     // 카페24 OAuth 페이지로 리디렉션
-    return NextResponse.redirect(authUrl);
+    return response;
   } catch (error) {
     console.error("❌ Cafe24 OAuth 인증 시작 실패:", error);
 
