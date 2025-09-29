@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
       "mall.read_application",
       "mall.write_application",
       "mall.read_product",
+      "mall.write_product",
       "mall.read_category",
+      "mall.write_category",
     ];
 
     console.log("- 요청 스코프:", scopes.join(", "));

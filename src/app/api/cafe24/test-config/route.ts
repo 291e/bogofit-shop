@@ -16,6 +16,8 @@ export async function GET() {
 
     // OAuth URL 수동 생성 테스트
     const testScopes = [
+      "mall.read_application",
+      "mall.write_application",
       "mall.read_product",
       "mall.write_product",
       "mall.read_category",
