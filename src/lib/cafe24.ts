@@ -249,7 +249,8 @@ export class Cafe24OAuth {
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
     body?: Record<string, unknown>,
-    retryOnUnauthorized: boolean = true
+    retryOnUnauthorized: boolean = true,
+    mallIdOverride?: string
   ): Promise<T> {
     const accessToken = await this.getAccessToken();
 
@@ -259,7 +260,7 @@ export class Cafe24OAuth {
       );
     }
 
-    const mallId = await this.resolveMallIdForServer();
+    const mallId = await this.resolveMallIdForServer(mallIdOverride);
     const url = `${this.buildApiBaseUrl(mallId)}${endpoint}`;
     const headers: HeadersInit = {
       Authorization: `Bearer ${accessToken}`,
@@ -314,9 +315,16 @@ export class Cafe24OAuth {
   /**
    * 상품 정보 가져오기
    */
-  async getProduct(productNo: number): Promise<Cafe24Product> {
+  async getProduct(
+    productNo: number,
+    mallIdOverride?: string
+  ): Promise<Cafe24Product> {
     return await this.apiCall<{ product: Cafe24Product }>(
-      `/admin/products/${productNo}`
+      `/admin/products/${productNo}`,
+      "GET",
+      undefined,
+      true,
+      mallIdOverride
     ).then((response) => response.product);
   }
 
@@ -327,6 +335,7 @@ export class Cafe24OAuth {
     category?: number;
     limit?: number;
     offset?: number;
+    mallId?: string;
   }): Promise<Cafe24Product[]> {
     const queryParams = new URLSearchParams();
 
@@ -339,15 +348,22 @@ export class Cafe24OAuth {
       queryParams.toString() ? `?${queryParams.toString()}` : ""
     }`;
 
-    return await this.apiCall<{ products: Cafe24Product[] }>(endpoint).then(
-      (response) => response.products
-    );
+    return await this.apiCall<{ products: Cafe24Product[] }>(
+      endpoint,
+      "GET",
+      undefined,
+      true,
+      params?.mallId
+    ).then((response) => response.products);
   }
 
   /**
    * 상품 이미지 정보 가져오기
    */
-  async getProductImages(productNo: number): Promise<
+  async getProductImages(
+    productNo: number,
+    mallIdOverride?: string
+  ): Promise<
     Array<{
       image_no: number;
       image_url: string;
@@ -362,9 +378,13 @@ export class Cafe24OAuth {
         image_type: string;
         image_path: string;
       }>;
-    }>(`/admin/products/${productNo}/images`).then(
-      (response) => response.images
-    );
+    }>(
+      `/admin/products/${productNo}/images`,
+      "GET",
+      undefined,
+      true,
+      mallIdOverride
+    ).then((response) => response.images);
   }
 
   // Private Helper Methods
@@ -399,24 +419,32 @@ export class Cafe24OAuth {
   }
 
   private resolveMallId(mallIdOverride?: string | null): string {
-    const mallId = mallIdOverride || this.config.mallId;
-
-    if (!mallId) {
-      throw new Error(
-        "카페24 Mall ID를 찾을 수 없습니다. mall_id 파라미터 또는 CAFE24_MALL_ID 환경변수를 확인하세요."
-      );
+    // mallIdOverride가 있으면 우선 사용
+    if (mallIdOverride) {
+      return mallIdOverride;
     }
 
-    return mallId;
+    // 환경변수에서 fallback (선택사항)
+    const envMallId = this.config.mallId;
+    if (envMallId) {
+      return envMallId;
+    }
+
+    // 둘 다 없으면 에러
+    throw new Error(
+      "카페24 Mall ID가 필요합니다. mall_id 파라미터를 전달하거나 CAFE24_MALL_ID 환경변수를 설정하세요."
+    );
   }
 
   private async resolveMallIdForServer(
     mallIdOverride?: string | null
   ): Promise<string> {
+    // mallIdOverride가 있으면 우선 사용
     if (mallIdOverride) {
       return mallIdOverride;
     }
 
+    // 쿠키에서 mallId 조회
     try {
       const cookieStore = await cookies();
       const mallIdFromCookie = cookieStore.get("cafe24_mall_id")?.value;
@@ -431,6 +459,7 @@ export class Cafe24OAuth {
       );
     }
 
+    // 환경변수 fallback
     return this.resolveMallId();
   }
 
@@ -504,8 +533,11 @@ export const cafe24OAuth = new Cafe24OAuth();
 /**
  * @deprecated cafe24OAuth.getProduct()를 사용하세요
  */
-export async function getProduct(productNo: number): Promise<Cafe24Product> {
-  return await cafe24OAuth.getProduct(productNo);
+export async function getProduct(
+  productNo: number,
+  mallId?: string
+): Promise<Cafe24Product> {
+  return await cafe24OAuth.getProduct(productNo, mallId);
 }
 
 /**
@@ -513,15 +545,19 @@ export async function getProduct(productNo: number): Promise<Cafe24Product> {
  */
 export async function getProducts(
   limit: number = 10,
-  offset: number = 0
+  offset: number = 0,
+  mallId?: string
 ): Promise<Cafe24Product[]> {
-  return await cafe24OAuth.getProducts({ limit, offset });
+  return await cafe24OAuth.getProducts({ limit, offset, mallId });
 }
 
 /**
  * @deprecated cafe24OAuth.getProductImages()를 사용하세요
  */
-export async function getProductImages(productNo: number): Promise<
+export async function getProductImages(
+  productNo: number,
+  mallId?: string
+): Promise<
   Array<{
     image_no: number;
     image_url: string;
@@ -529,7 +565,7 @@ export async function getProductImages(productNo: number): Promise<
     image_path: string;
   }>
 > {
-  return await cafe24OAuth.getProductImages(productNo);
+  return await cafe24OAuth.getProductImages(productNo, mallId);
 }
 
 /**
@@ -539,13 +575,15 @@ export async function cafe24ApiCall<T>(
   endpoint: string,
   method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
   body?: Record<string, unknown>,
-  retryOnUnauthorized: boolean = true
+  retryOnUnauthorized: boolean = true,
+  mallId?: string
 ): Promise<T> {
   return await cafe24OAuth.apiCall<T>(
     endpoint,
     method,
     body,
-    retryOnUnauthorized
+    retryOnUnauthorized,
+    mallId
   );
 }
 

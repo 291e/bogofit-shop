@@ -58,20 +58,22 @@ export async function GET(request: NextRequest) {
     console.log("🔄 Authorization Code를 Access Token으로 교환 중...");
 
     // Authorization Code를 Access Token으로 교환
-    const tokenData = await cafe24OAuth.exchangeCodeForToken(
-      code,
-      state || undefined
-    );
+    const tokenData = await cafe24OAuth.exchangeCodeForToken(code);
+    // const tokenData = await cafe24OAuth.exchangeCodeForToken(
+    //   code,
+    //   state || undefined
+    // );
 
     console.log("✅ Cafe24 OAuth 인증 성공!");
-    console.log("- Mall ID:", tokenData.mall_id);
-    console.log("- User ID:", tokenData.user_id);
-    console.log("- Scopes:", tokenData.scopes);
-    console.log("- Expires At:", tokenData.expires_at);
-    console.log(
-      "- Access Token:",
-      tokenData.access_token?.substring(0, 10) + "..."
-    );
+    console.log("tokenData: ", tokenData);
+    // console.log("- Mall ID:", tokenData.mall_id);
+    // console.log("- User ID:", tokenData.user_id);
+    // console.log("- Scopes:", tokenData.scopes);
+    // console.log("- Expires At:", tokenData.expires_at);
+    // console.log(
+    //   "- Access Token:",
+    //   tokenData.access_token?.substring(0, 10) + "..."
+    // );
 
     // 성공 페이지로 리디렉션
 
