@@ -36,6 +36,9 @@ export default function Cafe24InstallPage() {
     const mallIdParam = params.get("mall_id");
     const errorParam = params.get("error");
 
+    console.log("🔄 mallIdParam: ", mallIdParam);
+    console.log("🔄 errorParam: ", errorParam);
+
     if (mallIdParam) {
       setMallId(mallIdParam);
     }
@@ -67,9 +70,17 @@ export default function Cafe24InstallPage() {
       console.log("🔄 카페24 앱 설치 시작...");
 
       // OAuth 인증 URL로 리디렉션
-      const authUrl = `/api/cafe24/oauth/authorize?mall_id=${encodeURIComponent(
-        mallId
-      )}`;
+      // const authUrl = `/api/cafe24/oauth/authorize?mall_id=${encodeURIComponent(
+      //   mallId
+      // )}`;
+      const authUrl = `https://${mallId}.cafe24api.com/api/v2/oauth/authorize
+  ?response_type=code
+  &client_id=${process.env.NEXT_PUBLIC_CAFE24_CLIENT_ID}
+  &state=app_install
+  &redirect_uri=${encodeURIComponent("https://bogofit.kr/api/cafe24/oauth/callback")}
+  &scope=${encodeURIComponent("mall.read_category mall.write_category mall.read_product mall.write_product")}`;
+
+      window.location.href = authUrl;
 
       console.log("✅ OAuth 인증 URL 생성 완료:", authUrl);
 
