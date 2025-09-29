@@ -104,8 +104,8 @@ export class Cafe24OAuth {
   ): Promise<Cafe24TokenResponse> {
     try {
       console.log("🔄 토큰 교환 시작");
-      console.log("- Code:", code ? code.substring(0, 8) + "..." : "없음");
-      console.log("- State:", state ? state.substring(0, 8) + "..." : "없음");
+      console.log("- Code:", code);
+      console.log("- State:", state);
       console.log("- MallId Override:", mallIdOverride);
 
       const mallId = this.resolveMallId(mallIdOverride);
