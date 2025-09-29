@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
   console.log("- Error:", error || "없음");
   console.log("- Error Description:", errorDescription || "없음");
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:7780";
+
   // Cafe24에서 반환된 에러가 있는 경우
   if (error) {
     console.error("❌ Cafe24 OAuth 에러 발생:");
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       new URL(
         `/cafe24/error?error=${encodeURIComponent(errorMessage)}`,
-        request.url
+        baseUrl
       )
     );
   }
@@ -48,7 +50,7 @@ export async function GET(request: NextRequest) {
     console.error("  3. 리디렉션 URI가 일치하지 않습니다");
 
     return NextResponse.redirect(
-      new URL("/cafe24/error?error=missing_code", request.url)
+      new URL("/cafe24/error?error=missing_code", baseUrl)
     );
   }
 
@@ -73,8 +75,8 @@ export async function GET(request: NextRequest) {
 
     // 성공 페이지로 리디렉션
 
-    const successUrl = new URL("/solution", request.url);
-    successUrl.searchParams.set("mall_id", tokenData.mall_id);
+    const successUrl = new URL("/solution", baseUrl);
+    // successUrl.searchParams.set("mall_id", tokenData.mall_id);
 
     console.log("🎉 최종 페이지로 리디렉션:", successUrl.toString());
     return NextResponse.redirect(successUrl);
@@ -113,7 +115,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const errorUrl = new URL(`/cafe24/error`, request.url);
+    const errorUrl = new URL(`/cafe24/error`, baseUrl);
     errorUrl.searchParams.set("error", errorMessage);
     if (troubleshooting) {
       errorUrl.searchParams.set("troubleshooting", troubleshooting);
