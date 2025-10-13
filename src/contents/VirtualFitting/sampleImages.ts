@@ -7,45 +7,41 @@ export interface SampleImage {
 
 // 사람 이미지 샘플 (hero/image1~8.png)
 export const humanSamples: SampleImage[] = [
-  {
-    id: "human-1",
-    src: "/images/human/image1.jpg",
-    alt: "모델 이미지 1",
-  },
+
   {
     id: "human-2",
     src: "/images/human/image2.jpg",
-    alt: "모델 이미지 2",
+    alt: "모델 이미지 1",
   },
   {
     id: "human-3",
     src: "/images/human/image3.jpg",
-    alt: "모델 이미지 3",
+    alt: "모델 이미지 2",
   },
   {
     id: "human-4",
     src: "/images/human/image4.jpg",
-    alt: "모델 이미지 4",
+    alt: "모델 이미지 3",
   },
   {
     id: "human-5",
     src: "/images/human/image5.jpg",
-    alt: "모델 이미지 5",
+    alt: "모델 이미지 4",
   },
   {
     id: "human-6",
     src: "/images/human/image6.jpg",
-    alt: "모델 이미지 6",
+    alt: "모델 이미지 5",
   },
   {
     id: "human-7",
     src: "/images/human/image7.jpg",
-    alt: "모델 이미지 7",
+    alt: "모델 이미지 6",
   },
   {
     id: "human-8",
     src: "/images/human/image8.jpg",
-    alt: "모델 이미지 8",
+    alt: "모델 이미지 7",
   },
 ];
 

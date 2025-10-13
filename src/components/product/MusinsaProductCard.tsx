@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Product } from "@/types/product";
 import { useI18n } from "@/providers/I18nProvider";
+import { formatNumber } from "@/lib/formatters";
 
 interface MusinsaProductCardProps {
   product: Product;
@@ -47,7 +48,7 @@ export default function MusinsaProductCard({
                 {!imageError ? (
                   <Image
                     src={product.imageUrl}
-                    alt={`${product.storeName} ${product.title} ${t("product.detail.imageAltSuffix")}`}
+                    alt={`${product.brand?.name || "보고핏"} ${product.title} ${t("product.detail.imageAltSuffix")}`}
                     fill
                     className="max-w-full w-full absolute m-auto inset-0 h-auto z-0 visible object-cover"
                     loading="lazy"
@@ -85,7 +86,7 @@ export default function MusinsaProductCard({
           {/* 브랜드명 */}
           <div className="block mb-1">
             <p className="text-[11px] font-semibold line-clamp-1 break-all whitespace-break-spaces text-black font-pretendard">
-              {product.storeName}
+              {product.brand?.name || "보고핏"}
             </p>
           </div>
 
@@ -117,7 +118,7 @@ export default function MusinsaProductCard({
                 </span>
               )}
               <span className="text-[13px] font-semibold text-black font-pretendard">
-                {product.price.toLocaleString()}
+                {formatNumber(product.price)}
                 {t("currency.won")}
               </span>
             </div>

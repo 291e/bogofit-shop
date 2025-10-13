@@ -209,13 +209,13 @@ export default function ProductDetail() {
   // 최종 가격 계산 (기본 가격 + 선택된 옵션의 가격 차이)
   const finalPrice = product.price + totalPriceDiff;
 
-  // 품절 확인 (옵션값에 "품절" 단어 포함 여부)
+  // 품절 확인 (stock = 0 여부)
   const isOutOfStock = matchingVariant
-    ? matchingVariant.optionValue.includes("품절")
+    ? matchingVariant.stock === 0
     : selectedVariant
-      ? selectedVariant.optionValue.includes("품절")
+      ? selectedVariant.stock === 0
       : product.variants && product.variants.length > 0
-        ? product.variants.every((v) => v.optionValue.includes("품절"))
+        ? product.variants.every((v) => v.stock === 0)
         : false;
 
   // 옵션이 없는 상품의 경우 기본 variant ID 설정 (첫 번째 variant 또는 product.id 사용)
@@ -550,7 +550,7 @@ export default function ProductDetail() {
                               <SelectItem
                                 key={variant.id}
                                 value={variant.optionValue}
-                                disabled={variant.optionValue.includes("품절")}
+                                disabled={variant.stock === 0}
                                 className="rounded-lg"
                               >
                                 <div className="flex justify-between items-center w-full">
@@ -564,12 +564,20 @@ export default function ProductDetail() {
                                         {variant.priceDiff.toLocaleString()}원
                                       </span>
                                     )}
-                  {variant.optionValue.includes("품절") && (
+                                    {variant.stock === 0 && (
                                       <Badge
                                         variant="destructive"
                                         className="text-xs"
                                       >
-                    {t("product.badge.soldout")}
+                                        {t("product.badge.soldout")}
+                                      </Badge>
+                                    )}
+                                    {variant.stock > 0 && variant.stock <= 5 && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs bg-yellow-100 text-yellow-800"
+                                      >
+                                        재고 {variant.stock}개
                                       </Badge>
                                     )}
                                   </div>

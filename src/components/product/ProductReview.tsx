@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Star, ThumbsUp, MessageCircle, Camera, X } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -392,7 +392,7 @@ export default function ProductReview({
   const [page] = useState(1);
 
   // 리뷰 데이터 가져오기
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -420,11 +420,11 @@ export default function ProductReview({
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, sortBy, filterRating, page]);
 
   useEffect(() => {
     fetchReviews();
-  }, [productId, sortBy, filterRating, page]);
+  }, [fetchReviews]);
 
   // 별점별 리뷰 개수 계산
   const ratingCounts = [5, 4, 3, 2, 1].map((rating, index) => ({
@@ -529,7 +529,7 @@ export default function ProductReview({
               </div>
               <StarRating rating={avgRating} size="w-6 h-6" />
               <p className="text-gray-600 mt-2">
-                총 {reviewCount.toLocaleString()}개의 리뷰
+                총 {reviewCount.toLocaleString("ko-KR")}개의 리뷰
               </p>
             </div>
 

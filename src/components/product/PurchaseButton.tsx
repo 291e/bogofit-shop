@@ -46,13 +46,6 @@ export function PurchaseButton({
         alert(t("product.cta.selectOption"));
         return;
       }
-      if (
-        typeof selectedOption === "string" &&
-        selectedOption.includes("품절")
-      ) {
-        alert(t("product.cta.selectedOptionSoldout"));
-        return;
-      }
     }
 
     if (isOutOfStock) {
@@ -94,13 +87,6 @@ export function PurchaseButton({
     if (hasOptions) {
       if (typeof selectedOption === "string" && selectedOption.trim() === "") {
         alert(t("product.cta.selectOption"));
-        return;
-      }
-      if (
-        typeof selectedOption === "string" &&
-        selectedOption.includes("품절")
-      ) {
-        alert(t("product.cta.selectedOptionSoldout"));
         return;
       }
     }

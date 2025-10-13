@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/product";
 import { calculateReviewStats } from "@/contents/Sample/sampleReviews";
 import { useI18n } from "@/providers/I18nProvider";
+import { formatNumber } from "@/lib/formatters";
 
 interface ProductCardProps {
   product: Product;
@@ -22,8 +23,8 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { t } = useI18n();
   const finalPrice = product.price;
-  // 옵션이 있으면 모든 옵션에 "품절"이 포함되어 있을 때만 품절, 옵션이 없으면 품절 아님
-  const isOutOfStock = product.badge === "SOLDOUT" ? true : false;
+  // 옵션이 있으면 모든 variant의 stock이 0일 때 품절
+  const isOutOfStock = product.isSoldOut || product.badge === "SOLDOUT" || false;
 
   return (
     <div
@@ -53,9 +54,9 @@ export default function ProductCard({
       </div>
       {/* 상품 정보 */}
       <div className="flex flex-col justify-between p-4 h-full">
-        {/* 스토어명 */}
+        {/* 브랜드명 */}
         <div className="text-xs text-gray-500 font-medium flex flex-col gap-1">
-          <span>{product.storeName}</span>
+          <span>{product.brand?.name || "보고핏"}</span>
           <Link href={`/products/${product.id}`} className="block">
             <h3 className="font-semibold text-sm line-clamp-2 hover:text-pink-600 transition-colors">
               {product.title}
@@ -94,7 +95,7 @@ export default function ProductCard({
                 <span className="font-medium">
                   {stats.avgRating.toFixed(1)}
                 </span>
-                <span>({stats.reviewCount.toLocaleString()})</span>
+                <span>({formatNumber(stats.reviewCount)})</span>
               </div>
             )
           );
@@ -105,7 +106,7 @@ export default function ProductCard({
           <div className="pt-2 flex flex-col gap-2">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-lg font-bold text-pink-600">
-                {finalPrice.toLocaleString()}
+                {formatNumber(finalPrice)}
                 {t("currency.won")}
               </span>
               {/* 배지들 */}

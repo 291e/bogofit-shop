@@ -111,6 +111,7 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
     const brand = searchParams.get("brand") || "";
+    const brandId = searchParams.get("brandId"); // Brand ID로 필터링
     const storeName = searchParams.get("storeName") || "";
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
@@ -119,14 +120,14 @@ export async function GET(request: Request) {
     const showSoldOut = searchParams.get("showSoldOut") === "true";
 
     // 필터 조건 구성
-    const where: Prisma.ProductWhereInput = {
+    const where: Prisma.ProductWhereInput = { 
       isActive: true,
     };
 
     // soldout 상품 제외 (데이터베이스 레벨에서 처리)
     if (!showSoldOut) {
       where.OR = where.OR || [];
-      // variant가 없는 상품 OR variant가 있지만 품절이 아닌 상품
+      // variant가 없는 상품 OR variant가 있지만 stock이 0이 아닌 옵션이 하나라도 있는 상품
       const soldOutFilter = {
         OR: [
           // variant가 없는 상품
@@ -135,14 +136,12 @@ export async function GET(request: Request) {
               none: {},
             },
           },
-          // variant가 있지만 품절이 아닌 옵션이 하나라도 있는 상품
+          // variant가 있지만 stock > 0인 옵션이 하나라도 있는 상품
           {
             variants: {
               some: {
-                optionValue: {
-                  not: {
-                    contains: "품절",
-                  },
+                stock: {
+                  gt: 0,
                 },
               },
             },
@@ -174,8 +173,13 @@ export async function GET(request: Request) {
       where.category = category;
     }
 
-    // 브랜드 정확 매칭
-    if (brand) {
+    // 브랜드 ID로 필터링 (가장 정확한 방법)
+    if (brandId) {
+      where.brandId = parseInt(brandId, 10);
+    }
+
+    // 브랜드명 정확 매칭 (fallback)
+    if (brand && !brandId) {
       where.brand = {
         name: { equals: brand, mode: "insensitive" },
       };
@@ -295,6 +299,7 @@ export async function GET(request: Request) {
               optionName: true,
               optionValue: true,
               priceDiff: true,
+              stock: true,
             },
           },
           reviews: {
@@ -335,6 +340,7 @@ export async function GET(request: Request) {
                 optionName: true,
                 optionValue: true,
                 priceDiff: true,
+                stock: true,
               },
             },
             reviews: {
@@ -360,11 +366,13 @@ export async function GET(request: Request) {
       }
     } else {
       // 일반 조회 (기존 로직)
+      // DISTINCT 사용하여 중복 방지
       products = await prisma.product.findMany({
         where,
         skip,
         take: limit,
         orderBy,
+        distinct: ['id'], // ID 기반 중복 제거
         include: {
           brand: {
             select: {
@@ -380,6 +388,7 @@ export async function GET(request: Request) {
               optionName: true,
               optionValue: true,
               priceDiff: true,
+              stock: true,
             },
           },
           reviews: {
@@ -391,42 +400,30 @@ export async function GET(request: Request) {
       });
     }
 
-    // 중복 제거 및 평균 평점 계산
-    const seenTitles = new Set<string>();
-    const productsWithRating = products
-      .map((product) => {
-        const avgRating =
-          product.reviews.length > 0
-            ? product.reviews.reduce((sum, review) => sum + review.rating, 0) /
-              product.reviews.length
-            : 0;
+    // 평균 평점 계산 및 데이터 가공
+    const productsWithRating = products.map((product) => {
+      const avgRating =
+        product.reviews.length > 0
+          ? product.reviews.reduce((sum, review) => sum + review.rating, 0) /
+            product.reviews.length
+          : 0;
 
-        // 품절 여부 확인
-        const isSoldOut =
-          product.variants && product.variants.length > 0
-            ? product.variants.every((variant) =>
-                variant.optionValue.includes("품절")
-              )
-            : false;
+      // 품절 여부 확인 (모든 variant의 stock이 0인 경우)
+      const isSoldOut =
+        product.variants && product.variants.length > 0
+          ? product.variants.every((variant) => variant.stock === 0)
+          : false;
 
-        return {
-          ...product,
-          avgRating: Math.round(avgRating * 10) / 10,
-          reviewCount: product.reviews.length,
-          isSoldOut,
-          // storeName 우선, 없으면 브랜드명 사용 (업체명 ≠ 브랜드명)
-          storeName: product.storeName || product.brand?.name || "보고핏",
-          reviews: undefined,
-        };
-      })
-      .filter((product) => {
-        // 같은 제목의 상품이 이미 있으면 제외
-        if (seenTitles.has(product.title)) {
-          return false;
-        }
-        seenTitles.add(product.title);
-        return true;
-      });
+      return {
+        ...product,
+        avgRating: Math.round(avgRating * 10) / 10,
+        reviewCount: product.reviews.length,
+        isSoldOut,
+        // 브랜드명 우선, 없으면 storeName, 둘 다 없으면 보고핏
+        storeName: product.brand?.name || product.storeName || "보고핏",
+        reviews: undefined,
+      };
+    });
 
     // soldout 상품은 이미 데이터베이스 레벨에서 제외됨
     return NextResponse.json({

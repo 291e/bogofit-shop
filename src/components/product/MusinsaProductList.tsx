@@ -67,9 +67,21 @@ export default function MusinsaProductList({
     initialPageParam: 1,
   });
 
-  // 모든 상품 데이터 평탄화
-  const allProducts =
-    data?.pages.flatMap((page) => page.products) ?? initialProducts;
+  // 모든 상품 데이터 평탄화 및 중복 제거
+  const allProducts = React.useMemo(() => {
+    const merged = data?.pages.flatMap((page) => page.products) ?? initialProducts;
+    
+    // ID 기반 중복 제거 (title로 dedup하면 다른 상품이 같은 이름일 수 있음)
+    const seenIds = new Set<number>();
+    return merged.filter((product) => {
+      if (seenIds.has(product.id)) {
+        return false;
+      }
+      seenIds.add(product.id);
+      return true;
+    });
+  }, [data?.pages, initialProducts]);
+  
   const totalCount = data?.pages[0]?.total ?? 0;
 
   // Intersection Observer를 사용한 무한 스크롤
@@ -125,7 +137,7 @@ export default function MusinsaProductList({
         <div className="mb-6">
           <h1 className="text-2xl font-bold mb-2 text-black">전체 상품</h1>
           <p className="text-gray-600">
-            총 {totalCount.toLocaleString()}개의 상품
+            총 {totalCount.toLocaleString("ko-KR")}개의 상품
           </p>
         </div>
 

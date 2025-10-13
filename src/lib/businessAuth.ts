@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireBusinessAuth } from "./jwt-server";
 
-// 테스트용 고정 브랜드 ID (개발 편의성을 위해)
-const FIXED_BRAND_ID = 1;
-const FIXED_USER_ID = "test-business-user";
-
 export interface BusinessUser {
   id: string;
   userId: string;
@@ -25,63 +21,6 @@ export interface BusinessUser {
 export interface BusinessAuthError {
   error: string;
   status: number;
-}
-
-/**
- * 테스트용 고정 브랜드 정보를 반환하는 함수
- * @returns BusinessUser 또는 BusinessAuthError
- */
-export async function getFixedBusinessUser(): Promise<
-  BusinessUser | BusinessAuthError
-> {
-  try {
-    // 고정 브랜드 조회 (없으면 생성)
-    let brand = await prisma.brand.findFirst({
-      where: { id: FIXED_BRAND_ID },
-    });
-
-    if (!brand) {
-      // 브랜드가 없으면 테스트용 브랜드 생성
-      brand = await prisma.brand.create({
-        data: {
-          id: FIXED_BRAND_ID,
-          name: "테스트 브랜드",
-          slug: "test-brand",
-          description: "Business API 테스트용 브랜드입니다",
-          logo: "/logo.png",
-          status: "APPROVED",
-          isActive: true,
-          businessNumber: "123-45-67890",
-          commissionRate: 0.05,
-          bankAccount: "123456789",
-          bankCode: "088",
-          accountHolder: "테스트 브랜드",
-        },
-      });
-    }
-
-    return {
-      id: FIXED_USER_ID,
-      userId: FIXED_USER_ID,
-      name: "테스트 비즈니스 사용자",
-      email: "business@example.com",
-      isBusiness: true,
-      brandId: brand.id,
-      brand: {
-        id: brand.id,
-        name: brand.name,
-        slug: brand.slug,
-        status: brand.status,
-        isActive: brand.isActive,
-      },
-    };
-  } catch (error) {
-    console.error("Fixed business user error:", error);
-    return {
-      error: "브랜드 정보 조회 중 오류가 발생했습니다",
-      status: 500,
-    };
-  }
 }
 
 /**
@@ -142,21 +81,17 @@ export async function checkBusinessAuth(
       ];
     }
 
-    // 브랜드가 없으면 자동 생성
-    let brand = user.brand;
-    if (!brand) {
-      console.log(`[BusinessAuth] 사용자 ${user.id}용 브랜드 자동 생성`);
-      brand = await createBrandForUser(user.id, user.name || user.userId);
-
-      // 사용자에게 브랜드 연결
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { brandId: brand.id },
-      });
-
-      console.log(
-        `[BusinessAuth] 브랜드 연결 완료: ${brand.name} (ID: ${brand.id})`
-      );
+    // 브랜드가 없으면 에러 (자동 생성 안 함!)
+    const brand = user.brand;
+    if (!brand || !user.brandId) {
+      console.log(`[BusinessAuth] 사용자 ${user.id}에게 브랜드가 할당되지 않았습니다`);
+      return [
+        null,
+        NextResponse.json(
+          { error: "브랜드가 할당되지 않았습니다. 관리자에게 문의하세요." },
+          { status: 403 }
+        ),
+      ];
     }
 
     const businessUser: BusinessUser = {
@@ -188,13 +123,7 @@ export async function checkBusinessAuth(
   }
 }
 
-/**
- * 고정 브랜드 ID를 반환하는 헬퍼 함수
- * @returns 고정 브랜드 ID
- */
-export function getFixedBrandId(): number {
-  return FIXED_BRAND_ID;
-}
+
 
 /**
  * x-user-id 헤더에서 사용자 ID 추출
@@ -330,17 +259,14 @@ export async function getUserBusinessInfo(
       return { error: "비즈니스 계정이 아닙니다", status: 403 };
     }
 
-    // 브랜드가 없으면 생성
-    let brand = user.brand;
-    if (!brand) {
-      console.log(`[BusinessAuth] 사용자 ${user.id}용 브랜드 생성`);
-      brand = await createBrandForUser(user.id, user.name || user.userId);
-
-      // 사용자에게 브랜드 연결
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { brandId: brand.id },
-      });
+    // 브랜드가 없으면 에러 (자동 생성 안 함!)
+    const brand = user.brand;
+    if (!brand || !user.brandId) {
+      console.log(`[BusinessAuth] 사용자 ${user.id}에게 브랜드가 할당되지 않았습니다`);
+      return { 
+        error: "브랜드가 할당되지 않았습니다. 관리자에게 문의하세요.", 
+        status: 403 
+      };
     }
 
     return {

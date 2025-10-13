@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,17 +22,7 @@ function ResetPasswordCompleteContent() {
 
   const [resetPasswordMutation] = useMutation(RESET_PASSWORD);
 
-  useEffect(() => {
-    if (!userId || !email) {
-      setError("잘못된 접근입니다. userId와 email이 필요합니다.");
-      return;
-    }
-
-    // 자동으로 비밀번호 초기화 실행
-    handleResetPassword();
-  }, [userId, email]);
-
-  const handleResetPassword = async () => {
+  const handleResetPassword = useCallback(async () => {
     if (!userId || !email) return;
 
     setIsProcessing(true);
@@ -60,7 +50,17 @@ function ResetPasswordCompleteContent() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [userId, email, resetPasswordMutation]);
+
+  useEffect(() => {
+    if (!userId || !email) {
+      setError("잘못된 접근입니다. userId와 email이 필요합니다.");
+      return;
+    }
+
+    // 자동으로 비밀번호 초기화 실행
+    handleResetPassword();
+  }, [userId, email, handleResetPassword]);
 
   const handleGoToLogin = () => {
     router.push("/login");

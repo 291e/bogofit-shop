@@ -35,7 +35,7 @@ export default function SalePage() {
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
   const [filters, setFilters] = useState<ProductFiltersType>({
     sortBy: "newest",
-    showSoldOut: false,
+    showSoldOut: true, // Hiển thị cả sản phẩm sold out
   });
 
   // 선택된 메인 카테고리의 세부 카테고리들

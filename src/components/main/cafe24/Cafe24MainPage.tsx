@@ -114,10 +114,9 @@ async function fetchRandomProducts(): Promise<{
 
 async function fetchAllProducts(): Promise<Product[]> {
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/products?page=1&limit=12`, // 초기 12개 (2행)
+      `${baseUrl}/api/products?page=1&limit=12&showSoldOut=true`, // 초기 12개 (2행)
       {
         next: { revalidate: 300 }, // 5분 캐시
       }
@@ -125,6 +124,7 @@ async function fetchAllProducts(): Promise<Product[]> {
 
     if (!response.ok) throw new Error("Failed to fetch all products");
     const data = await response.json();
+    console.log("📦 전체 상품 초기 데이터:", data.products?.length || 0, "개");
     return data.products || [];
   } catch (error) {
     console.error("Error fetching all products:", error);

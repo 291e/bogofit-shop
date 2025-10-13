@@ -38,6 +38,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 import {
   Plus,
@@ -52,17 +61,12 @@ import {
 import Link from "next/link";
 import { ProductStatus } from "@/types/business";
 import ProductDetailModal from "@/components/business/ProductDetailModal";
+import Image from "next/image";
 
 export default function BusinessProductsPage() {
-  const {
-    products,
-    loading,
-    deleteProduct,
-    refetch: refreshProducts,
-  } = useBusinessProducts();
-
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ProductStatus | "ALL">(
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">(
     "ALL"
   );
   const [categoryFilter, setCategoryFilter] = useState("ALL");
@@ -72,21 +76,33 @@ export default function BusinessProductsPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
 
-  // 필터링된 상품 목록
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "ALL" || product.status === statusFilter;
-    const matchesCategory =
-      categoryFilter === "ALL" || product.category === categoryFilter;
+  const {
+    products,
+    loading,
+    pagination,
+    stats,
+    deleteProduct,
+    refetch: refreshProducts,
+    goToPage,
+  } = useBusinessProducts(currentPage, 10, searchTerm, statusFilter, categoryFilter);
 
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
+  // Server-side filtering is now handled by the API
+  const filteredProducts = products;
 
   // 카테고리 목록 추출
   const categories = Array.from(new Set(products.map((p) => p.category)));
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    goToPage(newPage);
+  };
+
+  // 필터 변경 시 첫 페이지로 리셋
+  const handleFilterChange = () => {
+    setCurrentPage(1);
+    goToPage(1);
+  };
 
   const handleDeleteProduct = async (productId: string) => {
     try {
@@ -96,21 +112,21 @@ export default function BusinessProductsPage() {
     }
   };
 
-  const handleStatusChange = async (
+  const handleActiveChange = async (
     productId: string,
-    newStatus: ProductStatus
+    isActive: boolean
   ) => {
     setStatusUpdating(productId);
     try {
       const response = await fetch(
-        `/api/business/products/${productId}/status`,
+        `/api/business/products/${productId}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
           credentials: "include",
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ isActive }),
         }
       );
 
@@ -148,9 +164,7 @@ export default function BusinessProductsPage() {
 
   const getStatusBadge = (status: ProductStatus) => {
     const statusConfig = {
-      APPROVED: { label: "상품 활성화", variant: "default" as const },
-      INACTIVE: { label: "상품 비활성화", variant: "outline" as const },
-      // 기존 상태들은 호환성을 위해 유지하되 사용하지 않음
+      APPROVED: { label: "승인완료", variant: "default" as const },
       DRAFT: { label: "임시저장", variant: "secondary" as const },
       PENDING: { label: "승인대기", variant: "default" as const },
       REJECTED: { label: "승인거부", variant: "destructive" as const },
@@ -158,6 +172,14 @@ export default function BusinessProductsPage() {
 
     const config = statusConfig[status];
     return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getActiveBadge = (isActive: boolean) => {
+    return isActive ? (
+      <Badge variant="default" className="bg-green-500">활성화</Badge>
+    ) : (
+      <Badge variant="outline" className="text-gray-500">비활성화</Badge>
+    );
   };
 
   if (loading) {
@@ -194,7 +216,7 @@ export default function BusinessProductsPage() {
               <Package className="h-4 w-4 text-blue-600" />
               <div>
                 <p className="text-sm font-medium">전체 상품</p>
-                <p className="text-2xl font-bold">{products.length}</p>
+                <p className="text-2xl font-bold">{pagination.total}</p>
               </div>
             </div>
           </CardContent>
@@ -205,9 +227,7 @@ export default function BusinessProductsPage() {
               <Package className="h-4 w-4 text-green-600" />
               <div>
                 <p className="text-sm font-medium">활성화 상품</p>
-                <p className="text-2xl font-bold">
-                  {products.filter((p) => p.status === "APPROVED").length}
-                </p>
+                <p className="text-2xl font-bold">{stats.active}</p>
               </div>
             </div>
           </CardContent>
@@ -218,9 +238,7 @@ export default function BusinessProductsPage() {
               <Package className="h-4 w-4 text-gray-600" />
               <div>
                 <p className="text-sm font-medium">비활성화 상품</p>
-                <p className="text-2xl font-bold">
-                  {products.filter((p) => p.status === "INACTIVE").length}
-                </p>
+                <p className="text-2xl font-bold">{stats.inactive}</p>
               </div>
             </div>
           </CardContent>
@@ -237,27 +255,37 @@ export default function BusinessProductsPage() {
                 <Input
                   placeholder="상품명으로 검색..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    handleFilterChange();
+                  }}
                   className="pl-10"
                 />
               </div>
             </div>
             <Select
               value={statusFilter}
-              onValueChange={(value) =>
-                setStatusFilter(value as ProductStatus | "ALL")
-              }
+              onValueChange={(value) => {
+                setStatusFilter(value as "ALL" | "ACTIVE" | "INACTIVE");
+                handleFilterChange();
+              }}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="상태 필터" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">모든 상태</SelectItem>
-                <SelectItem value="APPROVED">상품 활성화</SelectItem>
+                <SelectItem value="ACTIVE">상품 활성화</SelectItem>
                 <SelectItem value="INACTIVE">상품 비활성화</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select 
+              value={categoryFilter} 
+              onValueChange={(value) => {
+                setCategoryFilter(value);
+                handleFilterChange();
+              }}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="카테고리" />
               </SelectTrigger>
@@ -277,7 +305,13 @@ export default function BusinessProductsPage() {
       {/* 상품 목록 테이블 */}
       <Card>
         <CardHeader>
-          <CardTitle>상품 목록 ({filteredProducts.length}개)</CardTitle>
+          <CardTitle>
+            상품 목록 ({pagination.total}개 중 {filteredProducts.length}개 표시)
+          </CardTitle>
+          <div className="text-sm text-gray-600">
+            페이지 {pagination.page} / {pagination.totalPages} 
+            ({pagination.limit}개씩 표시)
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -299,16 +333,20 @@ export default function BusinessProductsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         {product.imageUrl ? (
-                          <img
+                          <Image
                             src={product.imageUrl}
                             alt={product.title}
+                            width={48}
+                            height={48}
                             className="w-12 h-12 object-cover rounded"
                           />
                         ) : product.thumbnailImages &&
                           product.thumbnailImages.length > 0 ? (
-                          <img
+                          <Image
                             src={product.thumbnailImages[0]}
                             alt={product.title}
+                            width={48}
+                            height={48}
                             className="w-12 h-12 object-cover rounded"
                           />
                         ) : (
@@ -359,36 +397,43 @@ export default function BusinessProductsPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(product.status)}
-                        <Select
-                          value={product.status}
-                          onValueChange={(newStatus) =>
-                            handleStatusChange(
-                              product.id,
-                              newStatus as ProductStatus
-                            )
-                          }
-                          disabled={statusUpdating === product.id}
-                        >
-                          <SelectTrigger className="w-32 h-8">
-                            <RefreshCw
-                              className={`h-3 w-3 ${
-                                statusUpdating === product.id
-                                  ? "animate-spin"
-                                  : ""
-                              }`}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="APPROVED">
-                              상품 활성화
-                            </SelectItem>
-                            <SelectItem value="INACTIVE">
-                              상품 비활성화
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">승인:</span>
+                          {getStatusBadge(product.status)}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">활성:</span>
+                          {getActiveBadge(product.isActive)}
+                          <Select
+                            value={product.isActive ? "active" : "inactive"}
+                            onValueChange={(newValue) =>
+                              handleActiveChange(
+                                product.id,
+                                newValue === "active"
+                              )
+                            }
+                            disabled={statusUpdating === product.id}
+                          >
+                            <SelectTrigger className="w-24 h-7">
+                              <RefreshCw
+                                className={`h-3 w-3 ${
+                                  statusUpdating === product.id
+                                    ? "animate-spin"
+                                    : ""
+                                }`}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">
+                                활성화
+                              </SelectItem>
+                              <SelectItem value="inactive">
+                                비활성화
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -467,6 +512,78 @@ export default function BusinessProductsPage() {
               )}
             </TableBody>
           </Table>
+          
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (pagination.hasPrev) {
+                          handlePageChange(currentPage - 1);
+                        }
+                      }}
+                      className={!pagination.hasPrev ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          href="#"  
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageChange(pageNum);
+                          }}
+                          isActive={currentPage === pageNum}
+                          className="cursor-pointer"
+                          size="icon"
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  {pagination.totalPages > 5 && currentPage < pagination.totalPages - 2 && (
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  )}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (pagination.hasNext) {
+                          handlePageChange(currentPage + 1);
+                        } 
+                      }}
+                      className={!pagination.hasNext ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 

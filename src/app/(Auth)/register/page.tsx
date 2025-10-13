@@ -125,7 +125,7 @@ function RegisterPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [formData, termsAgreement, selectedVerificationMethod, login]);
+  }, [formData, termsAgreement, selectedVerificationMethod, login, t]);
 
   // URL 파라미터에서 초기 단계 설정
   useEffect(() => {
@@ -159,7 +159,7 @@ function RegisterPageContent() {
 
     setError("");
     setStep("verification-choice");
-  }, [validateForm, hasAgreedToTerms, t]);
+  }, [validateForm, hasAgreedToTerms, t, setStep]);
 
   const handleVerificationChoice = useCallback((method: VerificationMethod) => {
     setSelectedVerificationMethod(method);
@@ -168,7 +168,7 @@ function RegisterPageContent() {
     } else {
       setStep("sms-verification");
     }
-  }, [t]);
+  }, []);
 
   const handleEmailVerified = useCallback(() => {
   console.log("Email verified, continue registration");

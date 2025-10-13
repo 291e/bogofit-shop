@@ -15,13 +15,11 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(2); // 페이지 3부터 무한 스크롤 시작
+  const [page, setPage] = useState(2); // Initial page=1 loaded, start from page 2
   const LOAD_SIZE = 12; // 스크롤당 추가 로드 개수 (6열 기준 2행)
   const { t } = useI18n();
   const observerRef = useRef<HTMLDivElement>(null);
-  const loadingRef = useRef(false); // Ref để track loading state
-
-  // Hydration 안전한 반응형 계산 - removed unused code
+  const loadingRef = useRef(false); // Track loading state to prevent concurrent fetches
 
   // Intersection Observer를 사용한 무한 스크롤
   useEffect(() => {
@@ -31,16 +29,20 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
       loadingRef.current = true;
       setLoading(true);
       try {
+        // Client-side: Dùng relative URL để tránh CORS issues
         const response = await fetch(
-          `${
-            process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-          }/api/products?page=${page}&limit=${LOAD_SIZE}`
+          `/api/products?page=${page}&limit=${LOAD_SIZE}&showSoldOut=true`
         );
 
-        if (!response.ok) throw new Error("Failed to fetch products");
+        if (!response.ok) {
+          console.error("Response not OK:", response.status, response.statusText);
+          throw new Error("Failed to fetch products");
+        }
 
         const data = await response.json();
         const newProducts = data.products || [];
+
+        console.log(`📦 Loaded page ${page}:`, newProducts.length, "products");
 
         if (newProducts.length === 0) {
           setHasMore(false);
@@ -69,8 +71,8 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
         }
       },
       {
-        threshold: 0.5,
-        rootMargin: '800px',
+        threshold: 0.1,
+        rootMargin: '200px', // Giảm xuống 200px để tránh load quá sớm
       }
     );
 

@@ -2,6 +2,63 @@
 @import "tw-animate-css";
 @import "flag-icons/css/flag-icons.min.css";
 
+/* Performance optimizations for smooth scrolling */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-y: scroll; /* Force scrollbar to prevent layout shift */
+}
+
+body {
+  overscroll-behavior-y: none; /* Prevent bounce scroll on mobile */
+}
+
+/* GPU acceleration for animations */
+.transform-gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Optimize hover effects */
+.group:hover {
+  transform: translateZ(0);
+}
+
+/* Contain paint for product cards */
+.contain-layout {
+  contain: layout style paint;
+}
+
+/* Smooth transitions for interactive elements */
+a, button, [role="button"] {
+  transition-property: transform, opacity, background-color, border-color, color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* Optimize image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Prevent layout shifts during loading */
+.grid {
+  content-visibility: auto;
+}
+
+/* Performance hints for Chrome */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    scroll-behavior: smooth;
+  }
+}
+
 @font-face {
   font-family: "BagelFatOne";
   src: url("https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap")
@@ -257,7 +314,4 @@
   background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }
 
-/* 부드러운 스크롤 */
-html {
-  scroll-behavior: smooth;
-}
+/* Smooth scrolling already defined above */

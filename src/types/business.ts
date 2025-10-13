@@ -82,8 +82,7 @@ export type ProductStatus =
   | "DRAFT"
   | "PENDING"
   | "APPROVED"
-  | "REJECTED"
-  | "INACTIVE";
+  | "REJECTED";
 
 export interface BusinessOrder {
   id: string;

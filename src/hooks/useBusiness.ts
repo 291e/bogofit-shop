@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/providers/AuthProvider";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Business,
   BusinessStats,
@@ -15,42 +15,35 @@ import {
 } from "@/types/business";
 
 export const useBusiness = () => {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth(); // ✅ Use AuthProvider
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // 공통 헤더 생성 함수
   const getAuthHeaders = () => {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (authStorage) {
-      try {
-        const authData = JSON.parse(authStorage);
-        const user = authData.state?.user;
-        const headers: Record<string, string> = {
-          "x-user-id": user?.id || "test-user",
-        };
-
-        if (user) {
-          const userData = {
-            userId: user.userId,
-            email: user.email,
-            name: user.userId,
-            isBusiness: user.isBusiness,
-          };
-          headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
-        }
-
-        return headers;
-      } catch (e) {
-        console.error("auth-storage 파싱 실패:", e);
-      }
+    if (!authUser || !authUser.id) {
+      console.error("[useBusiness] No authenticated user");
+      throw new Error("로그인이 필요합니다");
     }
-    return { "x-user-id": "test-user" };
+
+    const headers: Record<string, string> = {
+      "x-user-id": authUser.id,  // ✅ Use real user ID from AuthProvider
+    };
+
+    const userData = {
+      userId: authUser.userId,
+      email: authUser.email,
+      name: authUser.name || authUser.userId,
+      isBusiness: authUser.isBusiness,
+    };
+    headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+
+    return headers;
   };
 
-  const fetchBusiness = async () => {
-    if (!user?.isBusiness) {
+  const fetchBusiness = useCallback(async () => {
+    if (!authUser?.isBusiness) {
       setLoading(false);
       return;
     }
@@ -75,7 +68,7 @@ export const useBusiness = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authUser?.isBusiness]);
 
   const createBusiness = async (input: BusinessCreateInput) => {
     try {
@@ -132,10 +125,10 @@ export const useBusiness = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (authUser) {
       fetchBusiness();
     }
-  }, [user]);
+  }, [authUser, fetchBusiness]);
 
   return {
     business,
@@ -148,40 +141,34 @@ export const useBusiness = () => {
 };
 
 export const useBusinessStats = () => {
+  const { user: authUser } = useAuth(); // ✅ Use AuthProvider
   const [stats, setStats] = useState<BusinessStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // 공통 헤더 생성 함수
   const getAuthHeaders = () => {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (authStorage) {
-      try {
-        const authData = JSON.parse(authStorage);
-        const user = authData.state?.user;
-        const headers: Record<string, string> = {
-          "x-user-id": user?.id || "test-user",
-        };
-
-        if (user) {
-          const userData = {
-            userId: user.userId,
-            email: user.email,
-            name: user.userId,
-            isBusiness: user.isBusiness,
-          };
-          headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
-        }
-
-        return headers;
-      } catch (e) {
-        console.error("auth-storage 파싱 실패:", e);
-      }
+    if (!authUser || !authUser.id) {
+      console.error("[useBusinessStats] No authenticated user");
+      throw new Error("로그인이 필요합니다");
     }
-    return { "x-user-id": "test-user" };
+
+    const headers: Record<string, string> = {
+      "x-user-id": authUser.id,  // ✅ Use real user ID from AuthProvider
+    };
+
+    const userData = {
+      userId: authUser.userId,
+      email: authUser.email,
+      name: authUser.name || authUser.userId,
+      isBusiness: authUser.isBusiness,
+    };
+    headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+
+    return headers;
   };
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/business/stats", {
@@ -202,11 +189,11 @@ export const useBusinessStats = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
 
   return {
     stats,
@@ -216,15 +203,45 @@ export const useBusinessStats = () => {
   };
 };
 
-export const useBusinessProducts = () => {
+export const useBusinessProducts = (
+  page: number = 1, 
+  limit: number = 10,
+  searchTerm: string = "",
+  statusFilter: string = "ALL",
+  categoryFilter: string = "ALL"
+) => {
   const [products, setProducts] = useState<BusinessProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  });
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+  });
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async (pageNum: number = page, limitNum: number = limit) => {
     try {
       setLoading(true);
-      const response = await fetch("/api/business/products", {
+      
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: pageNum.toString(),
+        limit: limitNum.toString(),
+      });
+      
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter !== 'ALL') params.append('status', statusFilter);
+      if (categoryFilter !== 'ALL') params.append('category', categoryFilter);
+      
+      const response = await fetch(`/api/business/products?${params.toString()}`, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -237,12 +254,16 @@ export const useBusinessProducts = () => {
 
       const data = await response.json();
       setProducts(data.products);
+      setPagination(data.pagination);
+      if (data.stats) {
+        setStats(data.stats);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "알 수 없는 오류");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, searchTerm, statusFilter, categoryFilter]);
 
   const createProduct = async (input: ProductCreateInput) => {
     try {
@@ -313,55 +334,52 @@ export const useBusinessProducts = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    fetchProducts(page, limit);
+  }, [page, limit, searchTerm, statusFilter, categoryFilter, fetchProducts]);
 
   return {
     products,
     loading,
     error,
+    pagination,
+    stats,
     createProduct,
     updateProduct,
     deleteProduct,
     refetch: fetchProducts,
+    goToPage: (newPage: number) => fetchProducts(newPage, limit),
   };
 };
 
 export const useBusinessOrders = () => {
+  const { user: authUser } = useAuth(); // ✅ Use AuthProvider instead of localStorage
   const [orders, setOrders] = useState<BusinessOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // 공통 헤더 생성 함수
   const getAuthHeaders = () => {
-    const authStorage = localStorage.getItem("auth-storage");
-    if (authStorage) {
-      try {
-        const authData = JSON.parse(authStorage);
-        const user = authData.state?.user;
-        const headers: Record<string, string> = {
-          "x-user-id": user?.id || "test-user",
-        };
-
-        if (user) {
-          const userData = {
-            userId: user.userId,
-            email: user.email,
-            name: user.userId,
-            isBusiness: user.isBusiness,
-          };
-          headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
-        }
-
-        return headers;
-      } catch (e) {
-        console.error("auth-storage 파싱 실패:", e);
-      }
+    if (!authUser || !authUser.id) {
+      console.error("[useBusinessOrders] No authenticated user");
+      throw new Error("로그인이 필요합니다");
     }
-    return { "x-user-id": "test-user" };
+
+    const headers: Record<string, string> = {
+      "x-user-id": authUser.id,  // ✅ Use real user ID from AuthProvider
+    };
+
+    const userData = {
+      userId: authUser.userId,
+      email: authUser.email,
+      name: authUser.name || authUser.userId,
+      isBusiness: authUser.isBusiness,
+    };
+    headers["x-user-data"] = encodeURIComponent(JSON.stringify(userData));
+
+    return headers;
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/business/orders", {
@@ -372,7 +390,8 @@ export const useBusinessOrders = () => {
       });
 
       if (!response.ok) {
-        throw new Error("주문 목록을 가져오는데 실패했습니다");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "주문 목록을 가져오는데 실패했습니다");
       }
 
       const data = await response.json();
@@ -382,7 +401,7 @@ export const useBusinessOrders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const updateOrderStatus = async (
     orderId: string,
@@ -414,8 +433,12 @@ export const useBusinessOrders = () => {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    if (authUser && authUser.isBusiness) {
+      fetchOrders();
+    } else {
+      setLoading(false);
+    }
+  }, [authUser, fetchOrders]);
 
   return {
     orders,
@@ -423,5 +446,118 @@ export const useBusinessOrders = () => {
     error,
     updateOrderStatus,
     refetch: fetchOrders,
+  };
+};
+
+// 재고 관리를 위한 Hook
+interface InventoryProduct {
+  id: string;
+  productId: number;
+  variantId: number;
+  title: string;
+  variantName: string;
+  sku: string;
+  category: string;
+  imageUrl?: string;
+  currentStock: number;
+  minStock: number;
+  maxStock: number;
+  unitPrice: number;
+  stockValue: number;
+  status: "in_stock" | "low_stock" | "out_of_stock";
+  lastUpdated: string;
+}
+
+export const useBusinessInventory = (page: number = 1, limit: number = 10) => {
+  const [products, setProducts] = useState<InventoryProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  const [stats, setStats] = useState({
+    totalValue: 0,
+    lowStockCount: 0,
+    outOfStockCount: 0,
+    totalProducts: 0,
+  });
+
+  const fetchInventory = async (pageNum: number = page, limitNum: number = limit) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `/api/business/inventory?page=${pageNum}&limit=${limitNum}`,
+        {
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) throw new Error("재고 목록을 불러오는데 실패했습니다");
+
+      const data = await response.json();
+      setProducts(data.products || []);
+      setPagination(data.pagination || { page: pageNum, limit: limitNum, total: 0, totalPages: 0 });
+      setStats(data.stats || { totalValue: 0, lowStockCount: 0, outOfStockCount: 0, totalProducts: 0 });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "알 수 없는 오류");
+      console.error("Inventory fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const adjustStock = async (
+    productId: number,
+    variantId: number,
+    type: "increase" | "decrease",
+    quantity: number,
+    reason: string
+  ) => {
+    try {
+      const response = await fetch(`/api/business/inventory`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          productId,
+          variantId,
+          type,
+          quantity,
+          reason,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "재고 조정에 실패했습니다");
+      }
+
+      await fetchInventory(page, limit);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "알 수 없는 오류");
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchInventory(page, limit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit]);
+
+  return {
+    products,
+    loading,
+    error,
+    pagination,
+    stats,
+    adjustStock,
+    refetch: fetchInventory,
+    goToPage: (newPage: number) => fetchInventory(newPage, limit),
   };
 };

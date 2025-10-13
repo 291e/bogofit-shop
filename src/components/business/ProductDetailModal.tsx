@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -70,13 +70,7 @@ export default function ProductDetailModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && productId) {
-      fetchProductDetail();
-    }
-  }, [isOpen, productId]);
-
-  const fetchProductDetail = async () => {
+  const fetchProductDetail = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -92,7 +86,13 @@ export default function ProductDetailModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
+
+  useEffect(() => {
+    if (isOpen && productId) {
+      fetchProductDetail();
+    }
+  }, [isOpen, productId, fetchProductDetail]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {

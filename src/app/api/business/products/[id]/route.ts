@@ -80,8 +80,11 @@ export async function PUT(
 
     const productData = await request.json();
 
-    // 필수 필드 검증
-    if (!productData.title || !productData.price || !productData.category) {
+    // isActive만 업데이트하는 경우 validation skip
+    const isOnlyActiveUpdate = Object.keys(productData).length === 1 && 'isActive' in productData;
+    
+    // 필수 필드 검증 (전체 업데이트 시에만)
+    if (!isOnlyActiveUpdate && (!productData.title || !productData.price || !productData.category)) {
       return NextResponse.json(
         { error: "필수 필드가 누락되었습니다 (title, price, category)" },
         { status: 400 }
@@ -104,6 +107,25 @@ export async function PUT(
     }
 
     try {
+      // isActive만 업데이트하는 경우 간단하게 처리
+      if (isOnlyActiveUpdate) {
+        const updatedProduct = await prisma.product.update({
+          where: { id: productId },
+          data: {
+            isActive: productData.isActive,
+            updatedAt: new Date(),
+          },
+        });
+
+        console.log(`상품 활성화 상태 변경 성공: ${updatedProduct.id} - isActive: ${updatedProduct.isActive}`);
+
+        return NextResponse.json({
+          success: true,
+          data: { product: updatedProduct },
+          message: "상품 상태가 성공적으로 변경되었습니다",
+        });
+      }
+
       // 트랜잭션으로 Product와 ProductVariant 동시 수정
       const result = await prisma.$transaction(async (prisma) => {
         // 1. 기존 variants 삭제 (cascade로 자동 삭제됨)

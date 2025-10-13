@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ export default function AddressPage() {
   const [currentAddress, setCurrentAddress] = useState<Address | null>(null);
 
   // 주소 목록 불러오기
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -48,7 +48,7 @@ export default function AddressPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   // 로그인 상태 확인 및 주소 목록 로드
   useEffect(() => {

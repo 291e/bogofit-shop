@@ -56,13 +56,11 @@ export default function BrandsPage() {
     queryFn: async () => {
       let url = `/api/products?badge=BEST&limit=${LIMIT}`;
       if (selectedBrandInfo) {
-        // 브랜드명으로 검색 (브랜드명과 스토어명 모두 매칭)
-        url = `/api/products?search=${encodeURIComponent(
-          selectedBrandInfo.name
-        )}&badge=BEST&limit=${LIMIT}`;
+        // 브랜드 ID로 정확하게 필터링
+        url = `/api/products?brandId=${selectedBrandInfo.id}&badge=BEST&limit=${LIMIT}`;
       }
       const res = await fetch(url);
-  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
+      if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
       const data = await res.json();
       return data.products || [];
     },
@@ -76,13 +74,11 @@ export default function BrandsPage() {
       queryFn: async () => {
         let url = `/api/products?badge=NEW&limit=${LIMIT}`;
         if (selectedBrandInfo) {
-          // 브랜드명으로 검색 (브랜드명과 스토어명 모두 매칭)
-          url = `/api/products?search=${encodeURIComponent(
-            selectedBrandInfo.name
-          )}&badge=NEW&limit=${LIMIT}`;
+          // 브랜드 ID로 정확하게 필터링
+          url = `/api/products?brandId=${selectedBrandInfo.id}&badge=NEW&limit=${LIMIT}`;
         }
         const res = await fetch(url);
-  if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
+        if (!res.ok) throw new Error(t("product.errors.fetchProducts"));
         const data = await res.json();
         return data.products || [];
       },
@@ -98,10 +94,8 @@ export default function BrandsPage() {
     queryFn: async () => {
       let url = `/api/products?sortBy=price_high&limit=${LIMIT}`;
       if (selectedBrandInfo) {
-        // 브랜드명으로 검색 (브랜드명과 스토어명 모두 매칭)
-        url = `/api/products?search=${encodeURIComponent(
-          selectedBrandInfo.name
-        )}&sortBy=price_high&limit=${LIMIT}`;
+        // 브랜드 ID로 정확하게 필터링
+        url = `/api/products?brandId=${selectedBrandInfo.id}&sortBy=price_high&limit=${LIMIT}`;
       }
       const res = await fetch(url);
       if (!res.ok)

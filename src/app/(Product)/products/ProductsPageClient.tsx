@@ -14,7 +14,7 @@ export default function ProductsPageClient() {
   const category = searchParams.get("category") || "";
   const sortBy =
     (searchParams.get("sortBy") as ProductFilters["sortBy"]) || "newest";
-  const showSoldOut = searchParams.get("showSoldOut") === "true";
+  const showSoldOut = searchParams.get("showSoldOut") !== "false"; // Mặc định hiển thị cả sold out
 
   // 필터 객체 구성
   const filters: ProductFilters = {

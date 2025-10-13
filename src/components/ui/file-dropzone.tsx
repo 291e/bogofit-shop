@@ -126,10 +126,11 @@ export function FileDropzone({
           {preview ? (
             <div className="relative w-full h-full">
               {preview.startsWith('data:') || preview.startsWith('blob:') ? (
-                <img
+                <Image
                   src={preview}
                   alt={label}
                   className="w-full h-full rounded-xl object-contain"
+                  fill
                 />
               ) : (
                 <Image

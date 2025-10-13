@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ProductStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { checkBusinessAuth } from "@/lib/businessAuth";
 
 /**
@@ -107,7 +107,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (status && status !== "ALL") {
-      where.status = status as ProductStatus;
+      if (status === "ACTIVE") {
+        where.isActive = true;
+      } else if (status === "INACTIVE") {
+        where.isActive = false;
+      }
     }
 
     if (category) {
@@ -150,18 +154,19 @@ export async function GET(request: NextRequest) {
     ]);
 
     // 상품 통계 계산
-    const stats = await prisma.product.groupBy({
-      by: ["status"],
-      where: { brandId: businessUser!.brandId },
-      _count: { status: true },
-    });
+    const [activeCount, inactiveCount] = await Promise.all([
+      prisma.product.count({
+        where: { brandId: businessUser!.brandId, isActive: true },
+      }),
+      prisma.product.count({
+        where: { brandId: businessUser!.brandId, isActive: false },
+      }),
+    ]);
 
     const statusStats = {
       total: totalCount,
-      pending: stats.find((s) => s.status === "PENDING")?._count.status || 0,
-      approved: stats.find((s) => s.status === "APPROVED")?._count.status || 0,
-      rejected: stats.find((s) => s.status === "REJECTED")?._count.status || 0,
-      draft: stats.find((s) => s.status === "DRAFT")?._count.status || 0,
+      active: activeCount,
+      inactive: inactiveCount,
     };
 
     // 응답 데이터 변환

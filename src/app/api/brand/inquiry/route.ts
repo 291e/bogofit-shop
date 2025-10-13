@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/resend";
 import { SmsNotificationService, isTestMode } from "@/lib/sms-notifications";
+import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 interface BrandInquiryData {
   // 회사 정보
@@ -28,6 +30,10 @@ interface BrandInquiryData {
   productCount: string;
   averagePrice: string;
   monthlyRevenue: string;
+
+  // 계정 정보
+  userId: string;
+  password: string;
 
   // 추가 정보
   hasOnlineStore: boolean;
@@ -480,6 +486,8 @@ export async function POST(request: Request) {
       "brandName",
       "brandCategory",
       "inquiryDetails",
+      "userId",
+      "password",
     ];
 
     for (const field of requiredFields) {
@@ -500,11 +508,105 @@ export async function POST(request: Request) {
       );
     }
 
-    // 관리자에게 이메일 전송
+    // userId 중복 체크
+    const existingUser = await prisma.user.findUnique({
+      where: { userId: data.userId! },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { success: false, message: "이미 사용 중인 아이디입니다." },
+        { status: 400 }
+      );
+    }
+
+    // 이메일 중복 체크
+    const existingEmail = await prisma.user.findUnique({
+      where: { email: data.companyEmail! },
+    });
+
+    if (existingEmail) {
+      return NextResponse.json(
+        { success: false, message: "이미 사용 중인 이메일입니다." },
+        { status: 400 }
+      );
+    }
+
+    // Brand 이름 중복 체크
+    const existingBrand = await prisma.brand.findUnique({
+      where: { name: data.brandName! },
+    });
+
+    if (existingBrand) {
+      return NextResponse.json(
+        { success: false, message: "이미 사용 중인 브랜드명입니다." },
+        { status: 400 }
+      );
+    }
+
+    // Password hash
+    const hashedPassword = await bcrypt.hash(data.password!, 10);
+
+    // Brand slug 생성
+    const brandSlug = (data.brandName || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9가-힣]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    // Transaction으로 User + Brand 동시 생성
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Brand 생성 (PENDING 상태)
+      const newBrand = await tx.brand.create({
+        data: {
+          name: data.brandName!,
+          slug: brandSlug,
+          description: data.brandDescription || null,
+          businessNumber: data.businessNumber || null,
+          status: "PENDING", // 관리자 승인 대기
+          isActive: false, // 승인 전까지 비활성화
+        },
+      });
+
+      // 2. User 생성 (비즈니스 계정)
+      const newUser = await tx.user.create({
+        data: {
+          userId: data.userId!,
+          password: hashedPassword,
+          email: data.companyEmail!,
+          name: data.contactName!,
+          phoneNumber: data.companyPhone || null,
+          isBusiness: true,
+          isAdmin: false,
+          brandId: newBrand.id,
+        },
+      });
+
+      return { user: newUser, brand: newBrand };
+    });
+
+    console.log(
+      `✅ Brand application created: User=${result.user.userId}, Brand=${result.brand.name}`
+    );
+
+    // 관리자에게 이메일 전송 (계정 생성 완료 알림 포함)
     const emailResult = await sendEmail({
       to: "bogofit@naver.com",
-      subject: `[BogoFit] 브랜드 입점 문의 - ${data.brandName} (${data.companyName})`,
-      html: generateBrandInquiryEmail(data as BrandInquiryData),
+      subject: `[BogoFit] 🆕 새 브랜드 입점 신청 - ${data.brandName} (${data.companyName})`,
+      html: `
+        ${generateBrandInquiryEmail(data as BrandInquiryData)}
+        <hr style="margin: 30px 0; border: none; border-top: 2px solid #10b981;">
+        <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+          <h3 style="color: #065f46; margin-top: 0;">✅ 계정 생성 완료</h3>
+          <p style="margin: 5px 0;"><strong>사용자 ID:</strong> ${result.user.userId}</p>
+          <p style="margin: 5px 0;"><strong>이메일:</strong> ${result.user.email}</p>
+          <p style="margin: 5px 0;"><strong>브랜드:</strong> ${result.brand.name}</p>
+          <p style="margin: 5px 0;"><strong>상태:</strong> <span style="color: #f59e0b;">승인 대기</span></p>
+          <p style="margin: 15px 0 5px 0; color: #065f46;">
+            ⚠️ 관리자 페이지에서 승인 처리가 필요합니다.
+          </p>
+        </div>
+      `,
       attachments: attachments.length > 0 ? attachments : undefined,
     });
 
@@ -515,9 +617,9 @@ export async function POST(request: Request) {
         "❌ Failed to send brand inquiry email:",
         emailResult.error
       );
-      return NextResponse.json(
-        { success: false, message: "이메일 전송에 실패했습니다." },
-        { status: 500 }
+      // Email 실패해도 계정은 이미 생성되었으므로 success 반환
+      console.warn(
+        "⚠️ Email failed but account was created successfully"
       );
     }
 
@@ -549,25 +651,44 @@ export async function POST(request: Request) {
       );
     }
 
-    // 문의자에게 확인 이메일 전송 (선택사항)
+    // 문의자에게 확인 이메일 전송 (계정 생성 정보 포함)
     try {
       await sendEmail({
         to: data.companyEmail!,
-        subject: "✅ [BogoFit] 브랜드 입점 문의가 접수되었습니다",
+        subject: "✅ [BogoFit] 브랜드 계정이 생성되었습니다",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #2563eb;">브랜드 입점 문의 접수 완료</h2>
+            <h2 style="color: #10b981;">브랜드 계정 생성 완료</h2>
             <p>안녕하세요, <strong>${data.contactName}</strong>님!</p>
-            <p><strong>${data.brandName}</strong> 브랜드의 BogoFit 입점 문의가 성공적으로 접수되었습니다.</p>
+            <p><strong>${data.brandName}</strong> 브랜드의 BogoFit 입점 신청이 접수되었으며, 계정이 생성되었습니다.</p>
             
-            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin: 0 0 10px 0; color: #1e40af;">접수 정보</h3>
-              <p style="margin: 5px 0;">📅 접수일시: ${new Date().toLocaleDateString("ko-KR")}</p>
-              <p style="margin: 5px 0;">🏢 회사명: ${data.companyName}</p>
-              <p style="margin: 5px 0;">🏷️ 브랜드명: ${data.brandName}</p>
+            <div style="background: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+              <h3 style="margin: 0 0 15px 0; color: #065f46;">🔐 계정 정보</h3>
+              <p style="margin: 5px 0;"><strong>사용자 ID:</strong> ${result.user.userId}</p>
+              <p style="margin: 5px 0;"><strong>이메일:</strong> ${result.user.email}</p>
+              <p style="margin: 5px 0;"><strong>브랜드명:</strong> ${result.brand.name}</p>
+              <p style="margin: 15px 0 5px 0; color: #dc2626; font-weight: bold;">
+                ⚠️ 현재 상태: 승인 대기 중
+              </p>
             </div>
             
-            <p>담당자가 검토 후 <strong>3-5 영업일</strong> 내에 연락드리겠습니다.</p>
+            <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+              <h4 style="margin: 0 0 10px 0; color: #92400e;">📋 다음 단계</h4>
+              <ol style="margin: 5px 0; padding-left: 20px; color: #78350f;">
+                <li>관리자가 제출하신 서류를 검토합니다</li>
+                <li>승인 완료 시 이메일 및 SMS로 알림을 받습니다</li>
+                <li>승인 후 로그인하여 상품을 등록할 수 있습니다</li>
+              </ol>
+            </div>
+            
+            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin: 0 0 10px 0; color: #1e40af;">📌 접수 정보</h3>
+              <p style="margin: 5px 0;">📅 접수일시: ${new Date().toLocaleString("ko-KR")}</p>
+              <p style="margin: 5px 0;">🏢 회사명: ${data.companyName}</p>
+              <p style="margin: 5px 0;">📞 연락처: ${data.companyPhone}</p>
+            </div>
+            
+            <p style="margin: 20px 0;">검토는 <strong>3-5 영업일</strong> 소요될 예정입니다.</p>
             <p>추가 문의사항이 있으시면 언제든지 연락해 주세요.</p>
             
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
@@ -586,7 +707,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "브랜드 입점 문의가 성공적으로 전송되었습니다.",
+      message: "브랜드 계정이 생성되었습니다. 관리자 승인 후 이용 가능합니다.",
+      data: {
+        userId: result.user.userId,
+        brandName: result.brand.name,
+        status: "PENDING",
+      },
     });
   } catch (error) {
     console.error("❌ Brand inquiry API error:", error);
