@@ -257,7 +257,12 @@
   background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }
 
-/* 부드러운 스크롤 */
+/* 부드러운 스크롤 - chỉ cho anchor links, không cho general scroll */
 html {
+  scroll-behavior: auto;
+}
+
+/* Smooth scroll chỉ khi click vào anchor links */
+html[data-scroll-to-anchor] {
   scroll-behavior: smooth;
 }

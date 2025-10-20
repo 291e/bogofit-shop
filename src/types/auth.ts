@@ -1,54 +1,62 @@
-// Authentication DTOs
-export interface LoginRequest {
+// types/auth.ts
+export interface User {
+  id: string;
   userId: string;
-  password: string;
-  isBusiness: boolean;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  isAdmin: boolean;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface LoginResponse {
+export interface AuthResponse {
   success: boolean;
   message: string;
-  token?: string;
-  user?: {
-    id: string;
-    userId: string;
-    name: string;
-    isBusiness?: boolean;
-  };
+  user: User;
+  token: string;
+  refreshToken?: string;
 }
 
-export interface RegisterRequest {
+export interface LoginDto {
   userId: string;
+  password: string;
+}
+
+export interface LoginByEmailDto {
+  email: string;
+  password: string;
+}
+
+export interface RegisterDto {
+  userId: string;
+  name: string;
   email: string;
   password: string;
   phone: string;
+}
+
+export interface UpdatePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface UpdatePhoneDto {
+  phone: string;
+}
+
+export interface UpdateEmailDto {
+  email: string;
+}
+
+export interface UpdateNameDto {
   name: string;
 }
 
-export interface RegisterResponse {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
-  token?: string;
-  user?: {
-    id: string;
-    userId: string;
-    email: string;
-    phone: string;
-    name: string;
-    isAdmin: boolean;
-  };
-}
-
-// Form state types
-export interface LoginFormData {
-  userId: string;
-  password: string;
-}
-
-export interface RegisterFormData {
-  userId: string;
-  email: string;
-  password: string;
-  phone: string;
-  name: string; // For UI display only
+  data?: T;
+  user?: User;
 }

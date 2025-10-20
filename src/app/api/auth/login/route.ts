@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { LoginRequest, LoginResponse } from '@/types/auth';
+import { LoginDto } from '@/types/auth';
 
-const API_URL = process.env.API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export async function POST(request: NextRequest) {
   try {
-    const body: LoginRequest = await request.json();
+    const body: LoginDto = await request.json();
     
-    const response = await fetch(`${API_URL}/Auth/login`, {
+    const response = await fetch(`${API_URL}/api/Auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
