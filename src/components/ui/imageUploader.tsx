@@ -7,6 +7,7 @@ import { ImageFolderType } from '@/types/image';
 import { X, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { toast } from 'sonner';
 
 interface ImageUploaderProps {
   /** 이미 업로드된 이미지 URL들 */
@@ -125,15 +126,21 @@ export const ImageUploader = ({
   // Handle delete image
   const handleDelete = async (urlToDelete: string) => {
     try {
+      console.log('🗑️ Deleting image:', urlToDelete);
+      
       // Extract S3 key from URL
       const urlParts = urlToDelete.split('.amazonaws.com/');
       if (urlParts.length < 2) {
+        console.log('❌ Invalid S3 URL format');
         onError?.('잘못된 이미지 URL입니다.');
         return;
       }
       const s3Key = urlParts[1];
+      console.log('🔑 S3 Key:', s3Key);
 
       const success = await deleteImage(s3Key);
+      console.log('✅ Delete result:', success);
+      
       if (success) {
         if (single) {
           onChange?.(null);
@@ -141,8 +148,11 @@ export const ImageUploader = ({
           const newUrls = currentUrls.filter(url => url !== urlToDelete);
           onChange?.(newUrls.length > 0 ? newUrls : null);
         }
+        console.log('✅ Image removed from form and S3');
+        toast.success('이미지가 삭제되었습니다');
       }
     } catch (err) {
+      console.error('❌ Delete error:', err);
       onError?.(err instanceof Error ? err.message : '이미지 삭제에 실패했습니다.');
     }
   };

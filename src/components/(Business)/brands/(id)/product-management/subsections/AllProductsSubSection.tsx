@@ -16,6 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/authProvider";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ProductDeleteConfirmModal from "./ProductForm/ProductDeleteConfirmModal";
 
 interface AllProductsSubSectionProps {
   brandId?: string;
@@ -29,6 +31,11 @@ export default function AllProductsSubSection({
   const [pageNumber, setPageNumber] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [togglingProducts, setTogglingProducts] = useState<Set<string>>(new Set());
+  const [deletingProducts, setDeletingProducts] = useState<Set<string>>(new Set());
+  const [selectedProduct, setSelectedProduct] = useState<ProductResponseDto | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<ProductResponseDto | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   // Debounce search term to avoid spamming API
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -82,6 +89,11 @@ export default function AllProductsSubSection({
 
   // No need for client-side filtering anymore - backend handles search
   const filteredProducts = products;
+
+  const handleViewProduct = (product: ProductResponseDto) => {
+    setSelectedProduct(product);
+    setShowDetailModal(true);
+  };
 
   const handleEditProduct = (product: ProductResponseDto) => {
     // Navigate to edit page with product ID
@@ -221,8 +233,53 @@ export default function AllProductsSubSection({
   };
 
   const handleDeleteProduct = (product: ProductResponseDto) => {
-    // Navigate to delete confirmation page
-    router.push(`/business/brands/${brandId}/products/${product.id}/delete`);
+    // Show delete confirmation modal instead of window.confirm
+    setProductToDelete(product);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    
+    // Add to deleting set for loading state
+    setDeletingProducts(prev => new Set(prev).add(productToDelete.id));
+    
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/product/${productToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        toast.success('상품이 삭제되었습니다');
+        
+        // ✅ Invalidate products list and product detail caches
+        queryClient.invalidateQueries({ queryKey: [...PRODUCTS_QUERY_KEY, brandId] });
+        queryClient.invalidateQueries({ queryKey: [...PRODUCT_DETAIL_QUERY_KEY, productToDelete.id] });
+        
+        // Close modal
+        setShowDeleteModal(false);
+        setProductToDelete(null);
+      } else {
+        toast.error(data.message || '상품 삭제에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('❌ Delete product error:', error);
+      toast.error('상품 삭제 중 오류가 발생했습니다');
+    } finally {
+      // Remove from deleting set
+      setDeletingProducts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productToDelete.id);
+        return newSet;
+      });
+    }
   };
 
   if (isLoading) {
@@ -312,7 +369,7 @@ export default function AllProductsSubSection({
               </div>
               
               {filteredProducts?.map((product, index) => (
-                <div key={product.id} className={`border-l-2 border-r-2 border-b-2 border-gray-200 ${index === filteredProducts.length - 1 ? 'rounded-b-lg' : ''} hover:bg-gray-50 transition-colors`}>
+                <div key={product.id} className={`border-l-2 border-r-2 border-b-2 border-gray-200 ${index === filteredProducts.length - 1 ? 'rounded-b-lg' : ''} hover:bg-gray-50 transition-colors cursor-pointer`} onClick={() => handleViewProduct(product)}>
                   <div className="flex items-center py-3 px-4">
                     {/* 상품 SKU */}
                     <div className="flex-1 text-center border-r border-gray-300 pr-2">
@@ -396,7 +453,7 @@ export default function AllProductsSubSection({
                     </div>
                     
                     {/* 활성 (Active) - EDITABLE */}
-                    <div className="w-20 text-center border-r border-gray-300 pr-2">
+                    <div className="w-20 text-center border-r border-gray-300 pr-2" onClick={(e) => e.stopPropagation()}>
                       <Switch
                         checked={product.isActive ?? true}
                         onCheckedChange={(checked) => handleToggleActive(product.id, checked)}
@@ -426,12 +483,15 @@ export default function AllProductsSubSection({
                     </div>
                     
                     {/* 액션 버튼 */}
-                    <div className="w-32 flex justify-center gap-1 pl-2">
+                    <div className="w-32 flex justify-center gap-1 pl-2" onClick={(e) => e.stopPropagation()}>
                       <Button 
                         size="sm" 
                         variant="outline" 
                         className="text-xs px-2 py-1 h-6"
-                        onClick={() => handleEditProduct(product)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProduct(product);
+                        }}
                       >
                         편집
                       </Button>
@@ -439,9 +499,13 @@ export default function AllProductsSubSection({
                         size="sm" 
                         variant="outline" 
                         className="text-xs px-2 py-1 h-6"
-                        onClick={() => handleDeleteProduct(product)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProduct(product);
+                        }}
+                        disabled={deletingProducts.has(product.id)}
                       >
-                        삭제
+                        {deletingProducts.has(product.id) ? '삭제 중...' : '삭제'}
                       </Button>
                       <Button size="sm" variant="outline" className="text-xs px-2 py-1 h-6">
                         복사
@@ -496,6 +560,160 @@ export default function AllProductsSubSection({
           </div>
         </div>
       </div>
+
+      {/* Product Delete Confirmation Modal */}
+      <ProductDeleteConfirmModal
+        product={productToDelete}
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        onConfirm={confirmDeleteProduct}
+        isDeleting={productToDelete ? deletingProducts.has(productToDelete.id) : false}
+      />
+
+      {/* Product Detail Modal */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>상품 상세 정보</DialogTitle>
+          </DialogHeader>
+          
+          {selectedProduct && (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Image
+                    src={selectedProduct.thumbUrl || selectedProduct.images?.[0] || "/logo.png"}
+                    alt={selectedProduct.name}
+                    width={400}
+                    height={400}
+                    className="rounded-lg border w-full h-auto object-cover"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500">상품명</p>
+                    <p className="font-semibold text-lg">{selectedProduct.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">SKU</p>
+                    <p>{selectedProduct.sku || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">기본 가격</p>
+                    <p className="text-xl font-bold">{selectedProduct.basePrice?.toLocaleString()}원</p>
+                  </div>
+                  {selectedProduct.baseCompareAtPrice && selectedProduct.baseCompareAtPrice > 0 && (
+                    <div>
+                      <p className="text-sm text-gray-500">비교 가격</p>
+                      <p className="text-gray-400 line-through">{selectedProduct.baseCompareAtPrice.toLocaleString()}원</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm text-gray-500">상태</p>
+                    <Badge variant={selectedProduct.isActive ? "default" : "secondary"}>
+                      {selectedProduct.isActive ? '활성' : '비활성'}
+                    </Badge>
+                  </div>
+                  {selectedProduct.quantity !== null && selectedProduct.quantity !== undefined && (
+                    <div>
+                      <p className="text-sm text-gray-500">상품 재고</p>
+                      <p>{selectedProduct.quantity === null ? '무제한' : `${selectedProduct.quantity}개`}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
+              {selectedProduct.description && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">상품 설명</p>
+                  <p className="text-gray-700 whitespace-pre-wrap">{selectedProduct.description}</p>
+                </div>
+              )}
+
+              {/* Variants */}
+              {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-3">변형 옵션 ({selectedProduct.variants.length}개)</p>
+                  <div className="space-y-2">
+                    {selectedProduct.variants.map((variant, index) => {
+                      let optionsDisplay = '-';
+                      try {
+                        if (variant.optionsJson) {
+                          const options = JSON.parse(variant.optionsJson);
+                          optionsDisplay = options.map((opt: Record<string, string>) => 
+                            Object.entries(opt).map(([key, value]) => `${key}: ${value}`).join(', ')
+                          ).join(' / ');
+                        }
+                      } catch (e) {
+                        console.error('Failed to parse options:', e);
+                      }
+
+                      return (
+                        <div key={variant.id || index} className="border rounded-lg p-3 bg-gray-50">
+                          <div className="grid grid-cols-4 gap-3 text-sm">
+                            <div>
+                              <p className="text-gray-500">옵션</p>
+                              <p className="font-medium">{optionsDisplay}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">가격</p>
+                              <p className="font-medium">{variant.price?.toLocaleString()}원</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">재고</p>
+                              <p className="font-medium">{variant.quantity}개</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500">상태</p>
+                              <Badge variant={variant.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                                {variant.status === 'active' ? '활성' : variant.status === 'paused' ? '일시정지' : '보관'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Images */}
+              {selectedProduct.images && selectedProduct.images.length > 0 && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-3">상세 이미지 ({selectedProduct.images.length}개)</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {selectedProduct.images.map((image, index) => (
+                      <Image
+                        key={index}
+                        src={image}
+                        alt={`${selectedProduct.name} ${index + 1}`}
+                        width={150}
+                        height={150}
+                        className="rounded border w-full h-auto object-cover"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 justify-end pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowDetailModal(false)}>
+                  닫기
+                </Button>
+                <Button onClick={() => {
+                  setShowDetailModal(false);
+                  handleEditProduct(selectedProduct);
+                }}>
+                  편집하기
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

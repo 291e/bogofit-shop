@@ -17,6 +17,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { ProductResponseDto } from "@/types/product";
 import Image from "next/image";
+import VariantEditModal from "./ProductForm/VariantEditModal";
+import { toast } from "sonner";
+import { useAuth } from "@/providers/authProvider";
+import { useQueryClient } from "@tanstack/react-query";
+import { PRODUCTS_QUERY_KEY, PRODUCT_DETAIL_QUERY_KEY } from "@/hooks/useProducts";
 
 
 interface InventorySubSectionProps {
@@ -27,9 +32,18 @@ export default function InventorySubSection({
   brandId 
 }: InventorySubSectionProps) {
   const { brandId: contextBrandId } = useBrandContext();
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
   const [pageNumber, setPageNumber] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<ProductResponseDto | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<{
+    variant: any;
+    productName: string;
+    productId: string;
+  } | null>(null);
+  const [showVariantEditModal, setShowVariantEditModal] = useState(false);
+  const [isSavingVariant, setIsSavingVariant] = useState(false);
   
   // Debounce search term to avoid spamming API
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -56,6 +70,53 @@ export default function InventorySubSection({
 
   // No need for client-side filtering anymore - backend handles search
   const filteredProducts = products;
+
+  // Handler to save variant updates
+  const handleSaveVariant = async (variantId: string, updates: any) => {
+    if (!selectedVariant) return;
+    
+    setIsSavingVariant(true);
+    
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/product/${selectedVariant.productId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          updateVariants: [{
+            id: variantId,
+            quantity: updates.quantity,
+            price: updates.price,
+            compareAtPrice: updates.compareAtPrice
+          }]
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        toast.success('변형 재고가 업데이트되었습니다');
+        
+        // Invalidate cache
+        queryClient.invalidateQueries({ queryKey: [...PRODUCTS_QUERY_KEY, brandId || contextBrandId] });
+        queryClient.invalidateQueries({ queryKey: [...PRODUCT_DETAIL_QUERY_KEY, selectedVariant.productId] });
+        
+        // Close modal
+        setShowVariantEditModal(false);
+        setSelectedVariant(null);
+      } else {
+        toast.error(data.message || '변형 업데이트에 실패했습니다');
+      }
+    } catch (error) {
+      console.error('❌ Variant update error:', error);
+      toast.error('변형 업데이트 중 오류가 발생했습니다');
+    } finally {
+      setIsSavingVariant(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -121,6 +182,7 @@ export default function InventorySubSection({
               <div className="w-20 text-center">SKU</div>
               <div className="w-20 text-center border-l border-gray-300 pl-2">이미지</div>
               <div className="w-32 text-center border-l border-gray-300 pl-2">상품명</div>
+              <div className="w-24 text-center border-l border-gray-300 pl-2">레벨</div>
               <div className="flex-1 text-center border-l border-gray-300 pl-2">옵션</div>
               <div className="flex-1 text-center border-l border-gray-300 pl-2">재고</div>
               <div className="flex-1 text-center border-l border-gray-300 pl-2">가격</div>
@@ -128,42 +190,139 @@ export default function InventorySubSection({
               <div className="w-24 text-center border-l border-gray-300 pl-2">액션</div>
             </div>
             
-            {/* Variant Rows - Each variant is a separate row */}
+            {/* Product + Variant Rows - v2.0: Show product first, then variants */}
             {filteredProducts.flatMap((product) => {
-              // If product has variants, create a row for each variant
+              const rows = [];
+              
+              // 1. ALWAYS show product-level row first
+              rows.push(
+                <div key={`${product.id}-product`} className="border-b border-gray-200 bg-blue-50 hover:bg-blue-100 transition-colors">
+                  <div className="flex items-center py-3 px-4">
+                    {/* SKU */}
+                    <div className="w-20 text-center">
+                      <p className="text-xs font-mono text-gray-600 truncate">{product.sku}</p>
+                    </div>
+                    
+                    {/* 이미지 */}
+                    <div className="w-20 flex justify-center border-l border-gray-300 pl-2">
+                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center border border-gray-200">
+                        {product.thumbUrl ? (
+                          <Image 
+                            src={product.thumbUrl} 
+                            alt={product.name}
+                            className="w-full h-full object-cover rounded"
+                            width={48}
+                            height={48}
+                          />
+                        ) : (
+                          <Package className="h-6 w-6 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* 상품명 */}
+                    <div className="w-32 text-center border-l border-gray-300 pl-2">
+                      <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                    </div>
+                    
+                    {/* 레벨 */}
+                    <div className="w-24 text-center border-l border-gray-300 pl-2">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        상품
+                      </span>
+                    </div>
+                    
+                    {/* 옵션 */}
+                    <div className="flex-1 text-center border-l border-gray-300 pl-2">
+                      <div className="text-xs text-gray-600 font-medium">
+                        {product.variants && product.variants.length > 0 
+                          ? `${product.variants.length}개`
+                          : '0개'}
+                      </div>
+                    </div>
+                    
+                    {/* 재고 */}
+                    <div className="flex-1 text-center border-l border-gray-300 pl-2">
+                      <p className="text-sm font-semibold text-blue-900">
+                        {product.variants && product.variants.length > 0 
+                          ? `${product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)}개`
+                          : (product.quantity === null ? '무제한' : `${product.quantity}개`)}
+                      </p>
+                    </div>
+                    
+                    {/* 가격 */}
+                    <div className="flex-1 text-center border-l border-gray-300 pl-2">
+                      <p className="text-sm font-medium">{product.basePrice.toLocaleString()}원</p>
+                    </div>
+                    
+                    {/* 비교가격 */}
+                    <div className="flex-1 text-center border-l border-gray-300 pl-2">
+                      {product.baseCompareAtPrice ? (
+                        <p className="text-sm text-gray-400 line-through">
+                          {product.baseCompareAtPrice.toLocaleString()}원
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-400">-</p>
+                      )}
+                    </div>
+                    
+                    {/* 액션 */}
+                    <div className="w-24 flex justify-center gap-1 border-l border-gray-300 pl-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs px-2 py-1 h-6"
+                        onClick={() => setSelectedProduct(product)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+              
+              // 2. Then show variant rows if they exist
               if (product.variants && product.variants.length > 0) {
-                return product.variants.map((variant, variantIndex) => (
-                  <div key={`${product.id}-${variant.id || variantIndex}`} className="border-b border-gray-200 last:rounded-b-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center py-3 px-4">
-                      {/* SKU */}
-                      <div className="w-20 text-center">
-                        <p className="text-xs font-mono text-gray-600 truncate">{product.sku}</p>
-                      </div>
-                      
-                      {/* 이미지 */}
-                      <div className="w-20 flex justify-center border-l border-gray-300 pl-2">
-                        <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center border border-gray-200">
-                          {product.thumbUrl ? (
-                            <Image 
-                              src={product.thumbUrl} 
-                              alt={product.name}
-                              className="w-full h-full object-cover rounded"
-                              width={48}
-                              height={48}
-                            />
-                          ) : (
-                            <Package className="h-6 w-6 text-gray-400" />
-                          )}
+                product.variants.forEach((variant, variantIndex) => {
+                  rows.push(
+                    <div key={`${product.id}-${variant.id || variantIndex}`} className="border-b border-gray-200 bg-green-50 hover:bg-green-100 transition-colors">
+                      <div className="flex items-center py-3 px-4 pl-8">
+                        {/* SKU */}
+                        <div className="w-20 text-center">
+                          <p className="text-xs font-mono text-gray-400 truncate">↳ {product.sku}</p>
                         </div>
-                      </div>
-                      
-                      {/* 상품명 */}
-                      <div className="w-32 text-center border-l border-gray-300 pl-2">
-                        <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                      </div>
-                      
-                      {/* 옵션 */}
-                      <div className="flex-1 text-center border-l border-gray-300 pl-2">
+                        
+                        {/* 이미지 */}
+                        <div className="w-20 flex justify-center border-l border-gray-300 pl-2">
+                          <div className="w-12 h-12 bg-white rounded flex items-center justify-center border border-gray-200">
+                            {product.thumbUrl ? (
+                              <Image 
+                                src={product.thumbUrl} 
+                                alt={product.name}
+                                className="w-full h-full object-cover rounded opacity-60"
+                                width={48}
+                                height={48}
+                              />
+                            ) : (
+                              <Package className="h-6 w-6 text-gray-300" />
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* 상품명 */}
+                        <div className="w-32 text-center border-l border-gray-300 pl-2">
+                          <h3 className="font-normal text-xs text-gray-500 truncate">{product.name}</h3>
+                        </div>
+                        
+                        {/* 레벨 */}
+                        <div className="w-24 text-center border-l border-gray-300 pl-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            변형
+                          </span>
+                        </div>
+                        
+                        {/* 옵션 */}
+                        <div className="flex-1 text-center border-l border-gray-300 pl-2">
                         <div className="text-xs text-gray-600">
                           {variant.optionsJson ? (
                             <div className="flex flex-wrap gap-1 justify-center">
@@ -215,7 +374,14 @@ export default function InventorySubSection({
                           size="sm"
                           variant="outline"
                           className="text-xs px-2 py-1 h-6"
-                          onClick={() => setSelectedProduct(product)}
+                          onClick={() => {
+                            setSelectedVariant({
+                              variant,
+                              productName: product.name,
+                              productId: product.id
+                            });
+                            setShowVariantEditModal(true);
+                          }}
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
@@ -228,83 +394,12 @@ export default function InventorySubSection({
                         </Button>
                       </div>
                     </div>
-                  </div>
-                ));
-              } else {
-                // Product without variants - show one row
-                return [(
-                  <div key={product.id} className="border-b border-gray-200 last:rounded-b-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center py-3 px-4">
-                      {/* SKU */}
-                      <div className="w-20 text-center">
-                        <p className="text-xs font-mono text-gray-600 truncate">{product.sku}</p>
-                      </div>
-                      
-                      {/* 이미지 */}
-                      <div className="w-20 flex justify-center border-l border-gray-300 pl-2">
-                        <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center border border-gray-200">
-                          {product.thumbUrl ? (
-                            <Image 
-                              src={product.thumbUrl} 
-                              alt={product.name}
-                              className="w-full h-full object-cover rounded"
-                              width={48}
-                              height={48}
-                            />
-                          ) : (
-                            <Package className="h-6 w-6 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* 상품명 */}
-                      <div className="w-32 text-center border-l border-gray-300 pl-2">
-                        <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                      </div>
-                      
-                      {/* 옵션 */}
-                      <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                        <div className="text-xs text-gray-400">
-                          변형 없음
-                        </div>
-                      </div>
-                      
-                      {/* 재고 */}
-                      <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                        <p className="text-sm font-medium">0개</p>
-                      </div>
-                      
-                      {/* 가격 */}
-                      <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                        <p className="text-sm font-medium">{product.basePrice.toLocaleString()}원</p>
-                      </div>
-                      
-                      {/* 비교가격 */}
-                      <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                        {product.baseCompareAtPrice ? (
-                          <p className="text-sm text-gray-400 line-through">
-                            {product.baseCompareAtPrice.toLocaleString()}원
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-400">-</p>
-                        )}
-                      </div>
-                      
-                      {/* 액션 */}
-                      <div className="w-24 flex justify-center gap-1 border-l border-gray-300 pl-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs px-2 py-1 h-6"
-                          onClick={() => setSelectedProduct(product)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
                     </div>
-                  </div>
-                )];
+                  );
+                });
               }
+              
+              return rows;
             })}
           </div>
         </CardContent>
@@ -367,57 +462,16 @@ export default function InventorySubSection({
         </div>
       </div>
 
-      {/* Variant Management Modal */}
-      {selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">{selectedProduct.name} - 재고관리</h2>
-              <Button variant="outline" onClick={() => setSelectedProduct(null)}>
-                닫기
-              </Button>
-            </div>
-            
-            {/* Variant Management Content */}
-            <div className="space-y-4">
-                              {selectedProduct.variants?.map((variant, index) => (
-                                <Card key={index}>
-                                  <CardContent className="p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <h4 className="font-medium">
-                                          {variant.optionsJson ? 
-                                            JSON.parse(variant.optionsJson).map((opt: Record<string, string>) => Object.entries(opt).map(([key, value]) => `${key}: ${value}`).join(', ')).join(', ') :
-                                            `변형 ${index + 1}`
-                                          }
-                                        </h4>
-                        <p className="text-sm text-gray-600">
-                          현재 재고: {variant.quantity || 0}개
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-4 w-4 mr-1" />
-                          수정
-                        </Button>
-                        <Button size="sm" variant="destructive">
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          삭제
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              <Button className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                새 변형 추가
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Variant Edit Modal */}
+      <VariantEditModal
+        variant={selectedVariant?.variant || null}
+        productName={selectedVariant?.productName || ""}
+        productId={selectedVariant?.productId || ""}
+        open={showVariantEditModal}
+        onOpenChange={setShowVariantEditModal}
+        onSave={handleSaveVariant}
+        isSaving={isSavingVariant}
+      />
     </div>
   );
 }

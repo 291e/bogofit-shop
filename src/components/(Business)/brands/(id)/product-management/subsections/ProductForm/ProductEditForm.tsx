@@ -27,6 +27,10 @@ export default function ProductEditForm({
   className 
 }: ProductEditFormProps) {
   const router = useRouter();
+  
+  // 🔍 Debug: Log props
+  console.log('🔍 ProductEditForm mounted with props:', { brandId, productId });
+  
   // const { token } = useBrandContext(); // Unused - using React Query
   
   // ✅ Use React Query for categories with caching
@@ -35,6 +39,15 @@ export default function ProductEditForm({
   
   // ✅ Use React Query for product with caching
   const { data: productData, isLoading: isLoadingProduct, error: productError } = useProduct(productId);
+  
+  // 🔍 Debug: Log productData state
+  console.log('🔍 useProduct result:', {
+    productId,
+    hasData: !!productData,
+    isLoading: isLoadingProduct,
+    hasError: !!productError,
+    productData
+  });
   
   // ✅ Use mutation hook for product update (handles toast & cache automatically)
   const updateProductMutation = useUpdateProduct(brandId, productId);
@@ -72,8 +85,17 @@ export default function ProductEditForm({
 
   // ✅ Load product data from React Query
   useEffect(() => {
-    if (productData?.success && productData.data) {
-      const product = productData.data;
+    // ✅ FIX: API returns productData.product, not productData.data
+    const product = productData?.data || productData?.product;
+    
+    if (productData?.success && product) {
+      console.log('📝 Loading product data for edit:', product);
+      console.log('  - Name:', product.name);
+      console.log('  - ThumbUrl:', product.thumbUrl);
+      console.log('  - Images:', product.images);
+      console.log('  - BasePrice:', product.basePrice);
+      console.log('  - Variants:', product.variants);
+      
       setFormData({
         brandId: product.brandId,
         name: product.name,
@@ -103,8 +125,11 @@ export default function ProductEditForm({
       
       // Store variant IDs
       setVariantIds(product.variants?.map((v: { id?: string }) => v.id) || []);
+      
+      console.log('✅ Form data set successfully');
     } else if (productError) {
-      console.error("상품 정보를 불러올 수 없습니다.");
+      console.error("❌ Failed to load product:", productError);
+      toast.error("상품 정보를 불러올 수 없습니다.");
       router.push(`/business/brands/${brandId}/products`);
     }
   }, [productData, productError, brandId, router]);
@@ -265,6 +290,16 @@ export default function ProductEditForm({
         deleteVariants: deletedVariantIds.length > 0 ? deletedVariantIds : undefined
       };
 
+      // 🔍 Debug: Log update payload
+      console.log('📤 Submitting product update:', {
+        hasOptions: formData.hasOptions,
+        updateVariantsCount: updateVariants.length,
+        newVariantsCount: newVariants.length,
+        deleteVariantsCount: deletedVariantIds.length,
+        deleteVariantIds: deletedVariantIds,
+        dto
+      });
+
       // ✅ Use mutation hook - handles API call, toast, and cache update
       await updateProductMutation.mutateAsync(dto);
       
@@ -292,6 +327,15 @@ export default function ProductEditForm({
       </div>
     );
   }
+
+  // Debug: Log current form data before rendering
+  console.log('🎨 Rendering form with data:', {
+    name: formData.name,
+    slug: formData.slug,
+    thumbUrl: formData.thumbUrl,
+    basePrice: formData.basePrice,
+    variantsCount: formData.variants.length
+  });
 
   return (
     <form onSubmit={handleSubmit} className={`space-y-6 ${className}`}>
@@ -465,6 +509,16 @@ export default function ProductEditForm({
                 <Switch
                   checked={formData.hasOptions}
                   onCheckedChange={(checked) => {
+                    if (!checked) {
+                      // ✅ When disabling options, mark all existing variants for deletion
+                      const existingVariantIds = variantIds.filter((id): id is string => !!id);
+                      if (existingVariantIds.length > 0) {
+                        setDeletedVariantIds(prev => [...prev, ...existingVariantIds]);
+                        console.log('🗑️ Marking variants for deletion:', existingVariantIds);
+                      }
+                      setVariantIds([]);
+                    }
+                    
                     setFormData(prev => ({
                       ...prev,
                       hasOptions: checked,
@@ -478,26 +532,43 @@ export default function ProductEditForm({
                         options: []
                       }] : (checked ? prev.variants : [])
                     }));
-                    setVariantIds(checked ? (variantIds.length ? variantIds : [undefined]) : []);
+                    
+                    if (checked && variantIds.length === 0) {
+                      setVariantIds([undefined]);
+                    }
                   }}
                 />
                 <Label className="cursor-pointer">옵션 사용 (사이즈/색상 등)</Label>
               </div>
             </div>
 
-            {!formData.hasOptions && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>상품 수량 (비변형)</Label>
-                  <Input
-                    type="number"
-                    value={formData.quantity ?? ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value === '' ? null : Number(e.target.value) }))}
-                    placeholder="무제한 재고는 비워두세요"
-                  />
-                </div>
+            {/* Product-level quantity - always visible */}
+            <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <Label className="text-base font-semibold text-blue-900">상품 재고 (Product Level)</Label>
               </div>
-            )}
+              <div>
+                <Label htmlFor="quantity">상품 수량</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  value={formData.quantity ?? ''}
+                  onChange={(e) => setFormData(prev => ({ 
+                    ...prev, 
+                    quantity: e.target.value === '' ? null : Number(e.target.value) 
+                  }))}
+                  placeholder="무제한 재고는 비워두세요"
+                  className="mt-2"
+                />
+                <p className="text-sm text-blue-700 mt-2">
+                  ✅ <strong>v2.1:</strong> 상품 자체의 재고 수량입니다. 비워두면 무제한 재고로 설정됩니다.
+                  {formData.hasOptions 
+                    ? " (변형이 있어도 상품 레벨 재고를 함께 관리할 수 있습니다)" 
+                    : " (변형 없이 이 재고만 사용합니다)"}
+                </p>
+              </div>
+            </div>
 
             {formData.hasOptions && (
             <div className="grid grid-cols-2 gap-4">

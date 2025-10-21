@@ -41,7 +41,8 @@ export interface GetProductsResponse {
  */
 interface GetProductResponse {
   success: boolean;
-  data: ProductResponseDto;
+  data?: ProductResponseDto;  // Legacy format
+  product?: ProductResponseDto;  // ✅ Actual API format
   message?: string;
 }
 

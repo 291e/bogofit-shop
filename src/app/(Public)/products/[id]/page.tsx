@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ShoppingCart, Heart, Share2, Star, Package, Truck, RefreshCcw } from "lucide-react";
 import { ProductResponseDto } from "@/types/product";
 import Image from "next/image";
+import { getStockText, getDisplayPrice } from "@/lib/inventory";
 
 async function fetchProduct(id: string): Promise<ProductResponseDto | null> {
   try {
@@ -32,13 +33,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const defaultVariant = product.variants?.[0];
+  // v2.0: Use inventory utility for price and stock
   const mainImage = product.images?.[0] || "/logo.png";
-  const price = defaultVariant?.price || product.basePrice;
-  const originalPrice = defaultVariant?.compareAtPrice || product.baseCompareAtPrice;
-  const discount = originalPrice && price
-    ? Math.round(((originalPrice - price) / originalPrice) * 100)
-    : undefined;
+  const priceInfo = getDisplayPrice(product);
+  const stockText = getStockText(product);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -55,9 +53,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                   className="object-cover"
                   priority
                 />
-                {discount && (
+                {priceInfo.hasDiscount && priceInfo.discountPercent && (
                   <div className="absolute top-4 left-4 bg-red-500 text-white font-bold px-3 py-1.5 rounded">
-                    {discount}% OFF
+                    {priceInfo.discountPercent}% OFF
                   </div>
                 )}
               </div>
@@ -98,23 +96,23 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
               {/* Price */}
               <div className="mb-8 pb-8 border-b">
-                {originalPrice && discount ? (
+                {priceInfo.hasDiscount ? (
                   <>
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-3xl font-bold text-rose-600">
-                        {new Intl.NumberFormat('ko-KR').format(price)}원
+                        {new Intl.NumberFormat('ko-KR').format(priceInfo.price)}원
                       </span>
                       <span className="text-xl font-bold text-red-500 bg-red-50 px-2 py-1 rounded">
-                        {discount}%
+                        {priceInfo.discountPercent}%
                       </span>
                     </div>
                     <span className="text-lg text-gray-400 line-through">
-                      {new Intl.NumberFormat('ko-KR').format(originalPrice)}원
+                      {new Intl.NumberFormat('ko-KR').format(priceInfo.originalPrice!)}원
                     </span>
                   </>
                 ) : (
                   <span className="text-3xl font-bold text-gray-900">
-                    {new Intl.NumberFormat('ko-KR').format(price)}원
+                    {new Intl.NumberFormat('ko-KR').format(priceInfo.price)}원
                   </span>
                 )}
               </div>
@@ -168,7 +166,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                   <div>
                     <p className="font-medium text-gray-900">재고</p>
                     <p className="text-gray-600">
-                      {defaultVariant?.quantity ? `${defaultVariant.quantity}개 남음` : '재고 확인 필요'}
+                      {stockText}
                     </p>
                   </div>
                 </div>

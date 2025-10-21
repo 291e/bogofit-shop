@@ -13,19 +13,20 @@ import { Cafe24ProductCard } from "@/components/(Public)/mainPage/sections/Cafe2
 
 // Convert ProductResponseDto to display format
 const convertToDisplayProduct = (product: ProductResponseDto) => {
-  const defaultVariant = product.variants?.[0];
+  // v2.0: Use first variant instead of default variant
+  const firstVariant = product.variants?.[0];
   const defaultImage = product.images?.[0] || "/logo.png";
   
   return {
     id: product.id,
     name: product.name,
     slug: product.slug, // Product slug for SEO-friendly URLs
-    price: defaultVariant?.price || product.basePrice,
-    originalPrice: defaultVariant?.compareAtPrice || product.baseCompareAtPrice,
+    price: firstVariant?.price || product.basePrice,
+    originalPrice: firstVariant?.compareAtPrice || product.baseCompareAtPrice,
     image: defaultImage,
     brand: product.brand?.name || "BOGOFIT",
-    discount: defaultVariant?.compareAtPrice && defaultVariant?.price 
-      ? Math.round(((defaultVariant.compareAtPrice - defaultVariant.price) / defaultVariant.compareAtPrice) * 100)
+    discount: firstVariant?.compareAtPrice && firstVariant?.price 
+      ? Math.round(((firstVariant.compareAtPrice - firstVariant.price) / firstVariant.compareAtPrice) * 100)
       : undefined,
   };
 };

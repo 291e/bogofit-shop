@@ -121,14 +121,20 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
     // Get category name first
     const categoryName = await getParentCategoryName(product.categoryId);
 
+    // Debug image URLs
+    console.log('🖼️ Product Images Debug:');
+    console.log('  - thumbUrl:', product.thumbUrl);
+    console.log('  - images array:', product.images);
+    console.log('  - Final imageUrl:', product.thumbUrl || product.images?.[0] || "/logo.png");
+
     // Convert to expected format
     return {
       id: product.id,
       title: product.name,
       price: product.basePrice,
       originalPrice: product.baseCompareAtPrice,
-      imageUrl: product.images?.[0] || "/logo.png",
-      thumbnailImages: product.images?.slice(1) || [],
+      imageUrl: product.thumbUrl || product.images?.[0] || "/logo.png",
+      thumbnailImages: product.images || [],
       description: product.description,
       category: categoryName,
       subCategory: undefined,

@@ -101,6 +101,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+
     // Add cache headers for better performance
     const headers = new Headers();
     headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600'); // 5 min cache, 10 min stale
@@ -129,10 +130,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Validate variants
-    if (!body.variants || body.variants.length === 0) {
+    // ✅ v2.1: Variants are optional - validate based on hasOptions
+    const hasOptions = body.hasOptions || false;
+    if (hasOptions && (!body.variants || body.variants.length === 0)) {
       return NextResponse.json(
-        { success: false, message: 'At least one variant is required' },
+        { success: false, message: 'Variants are required when hasOptions is true' },
         { status: 400 }
       );
     }
@@ -150,14 +152,15 @@ export async function POST(request: NextRequest) {
       images: body.images || [],
       basePrice: body.basePrice,
       baseCompareAtPrice: body.baseCompareAtPrice || null,
-      variants: body.variants.map((variant: CreateProductVariantDto) => ({
+      quantity: body.quantity || null, // ✅ v2.1: Product-level inventory
+      variants: hasOptions ? body.variants.map((variant: CreateProductVariantDto) => ({
         price: variant.price ?? null,
         compareAtPrice: variant.compareAtPrice ?? null,
         quantity: variant.quantity ?? 0, // ✅ Required field
         weightGrams: variant.weightGrams ?? null,
         status: variant.status || 'active', // ✅ Required field với validation
         optionsJson: variant.optionsJson || undefined // ✅ camelCase - Optional for products without options
-      }))
+      })) : [] // ✅ v2.1: Empty array when no variants
     };
 
     const response = await fetch(`${API_URL}/api/Product`, {
