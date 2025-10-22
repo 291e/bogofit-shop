@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 // import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Star, Calendar, User, Tag, ShoppingCart } from "lucide-react";
+import Image from "next/image";
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -172,10 +173,12 @@ export default function ProductDetailModal({
                     {product.imageUrl && (
                       <div>
                         <h4 className="font-medium mb-2">메인 이미지</h4>
-                        <img
+                        <Image
                           src={product.imageUrl}
                           alt={product.title}
                           className="w-full h-64 object-cover rounded-lg border"
+                          width={300}
+                          height={300}
                         />
                       </div>
                     )}
@@ -186,11 +189,13 @@ export default function ProductDetailModal({
                           <h4 className="font-medium mb-2">썸네일 이미지</h4>
                           <div className="grid grid-cols-3 gap-2">
                             {product.thumbnailImages.map((thumbnail, index) => (
-                              <img
+                              <Image
                                 key={index}
                                 src={thumbnail}
                                 alt={`썸네일 ${index + 1}`}
                                 className="w-full h-20 object-cover rounded border"
+                                width={300}
+                                height={300}
                               />
                             ))}
                           </div>

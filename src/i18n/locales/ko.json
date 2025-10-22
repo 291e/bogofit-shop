@@ -389,19 +389,19 @@
     "slides": {
       "1": {
         "title": "신상품 런칭 기념",
-        "subtitle": "보고핏 여름 컬렉션",
-        "description": "시원하고 편안한 운동복으로 완벽한 여름을 준비하세요",
+        "subtitle": "보고핏 계절 컬렉션",
+        "description": "시원하고 편안한 운동복으로 완벽한 계절을 준비하세요",
         "buttonText": "지금 쇼핑하기",
-        "alt": "보고핏 여름 컬렉션 신상품",
+        "alt": "보고핏 계절 컬렉션 신상품",
         "discount": "최대 50%"
       },
       "2": {
-        "title": "타임세일 진행중",
-        "subtitle": "베스트셀러 특가전",
-        "description": "인기 상품들을 특별가로 만나보세요",
-        "buttonText": "특가 상품 보기",
-        "alt": "베스트셀러 특가전 상품",
-        "discount": "50% OFF"
+        "title": "입어보고 쇼핑하는",
+        "subtitle": "보고핏 AI 쇼핑몰",
+        "description": "AI 가상 피팅으로 편리하게 쇼핑하세요",
+        "buttonText": "지금 체험하기",
+        "alt": "보고핏 AI 가상 피팅 쇼핑몰",
+        "discount": "NEW"
       },
       "3": {
         "title": "멤버십 혜택",

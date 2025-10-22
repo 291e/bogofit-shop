@@ -388,19 +388,19 @@
     "slides": {
       "1": {
         "title": "新品上市纪念",
-        "subtitle": "BOGOFIT 夏季系列",
-        "description": "用清爽舒适的运动装迎接完美夏天",
+        "subtitle": "BOGOFIT 季节系列",
+        "description": "用清爽舒适的运动装迎接完美季节",
         "buttonText": "立即购买",
-        "alt": "BOGOFIT 夏季系列新品",
+        "alt": "BOGOFIT 季节系列新品",
         "discount": "最高 50%"
       },
       "2": {
-        "title": "限时特卖进行中",
-        "subtitle": "畅销款特价",
-        "description": "热门商品特惠入手",
-        "buttonText": "查看特价商品",
-        "alt": "畅销款特价商品",
-        "discount": "50% OFF"
+        "title": "试穿后购物",
+        "subtitle": "BOGOFIT AI 购物中心",
+        "description": "使用AI虚拟试衣便捷购物",
+        "buttonText": "立即体验",
+        "alt": "BOGOFIT AI 虚拟试衣购物中心",
+        "discount": "NEW"
       },
       "3": {
         "title": "会员福利",

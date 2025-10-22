@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, Save, Upload, Camera } from "lucide-react";
+import Image from "next/image";
 
 interface BrandInfo {
   id?: number;
@@ -345,10 +346,12 @@ export default function BrandSettingsPage() {
             {/* 현재 로고 미리보기 */}
             {brandInfo.logo && (
               <div className="aspect-square bg-gray-50 rounded-lg border border-dashed border-gray-300 p-4">
-                <img
+                <Image
                   src={brandInfo.logo}
                   alt="업체 로고"
                   className="w-full h-full object-contain"
+                  width={300}
+                  height={300}
                 />
               </div>
             )}

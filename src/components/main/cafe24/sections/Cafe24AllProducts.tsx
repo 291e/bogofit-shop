@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Package, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, Package, Loader2 } from "lucide-react";
 import { Product } from "@/types/product";
 import MusinsaProductCard from "@/components/product/MusinsaProductCard";
 import { useI18n } from "@/providers/I18nProvider";
@@ -115,9 +115,8 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-sky-500 to-indigo-500" />
-              <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
-                <Package className="h-5 w-5 text-sky-600" /> {t("nav.allProducts")}
-                <Sparkles className="h-4 w-4 text-indigo-500" />
+              <h2 className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
+                {t("nav.allProducts")}
               </h2>
               <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full">
                 전체 상품을 둘러보세요

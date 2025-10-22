@@ -389,16 +389,16 @@
     "slides": {
       "1": {
         "title": "Ra mắt sản phẩm mới",
-        "subtitle": "Bộ sưu tập mùa hè BOGOFIT",
-        "description": "Chuẩn bị mùa hè hoàn hảo với đồ thể thao mát và thoải mái",
+        "subtitle": "Bộ sưu tập theo mùa BOGOFIT",
+        "description": "Chuẩn bị hoàn hảo với đồ thể thao mát và thoải mái",
         "buttonText": "Mua ngay",
-        "alt": "Sản phẩm mới bộ sưu tập mùa hè BOGOFIT",
+        "alt": "Sản phẩm mới bộ sưu tập BOGOFIT",
         "discount": "Tối đa 50%"
       },
       "2": {
-        "title": "Đang diễn ra Flash Sale",
-        "subtitle": "Best-seller giá đặc biệt",
-        "description": "Gặp gỡ các sản phẩm hot với mức giá ưu đãi",
+        "title": "Thử đồ và mua sắm",
+        "subtitle": "BOGOFIT AI Shopping Mall",
+        "description": "Mua sắm tiện lợi với AI thử đồ ảo",
         "buttonText": "Xem hàng khuyến mãi",
         "alt": "Sản phẩm khuyến mãi best-seller",
         "discount": "50% OFF"

@@ -272,6 +272,10 @@ export async function GET(request: Request) {
 
     // 전체 상품 수 조회 (필터 조건 적용)
     const totalCount = await prisma.product.count({ where });
+    
+    // Debug: 전체 상품 수와 필터된 상품 수 로그
+    const totalProductsInDb = await prisma.product.count({ where: { isActive: true } });
+    console.log(`📊 Database Stats: Total=${totalProductsInDb}, Filtered=${totalCount}, showSoldOut=${showSoldOut}`);
 
     // dateSeed가 있으면 24시간 기준 일관된 랜덤 순서 생성
     let products;

@@ -980,7 +980,7 @@ export default function Cafe24VirtualFitting({
                   <div className="space-y-3">
                     <h3 className="font-medium">AI 생성 이미지</h3>
                     <div className="relative">
-                      <img
+                      <Image
                         src={generatedImage}
                         alt="생성된 이미지"
                         className="mx-auto w-full h-auto rounded-lg border border-gray-100 shadow"

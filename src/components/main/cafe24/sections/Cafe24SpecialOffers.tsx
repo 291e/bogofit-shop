@@ -6,8 +6,6 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
-  BadgePercent,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { Product } from "@/types/product";
@@ -49,6 +47,7 @@ export function Cafe24SpecialOffers({ products }: Cafe24SpecialOffersProps) {
   // 표시할 상품 계산
   const displayedProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
+    console.log("⚡ SpecialOffers - Total products:", products.length, "FirstRowCount:", firstRowCount, "IsExpanded:", isExpanded);
     return isExpanded ? products : products.slice(0, firstRowCount);
   }, [products, isExpanded, firstRowCount]);
 
@@ -79,11 +78,9 @@ export function Cafe24SpecialOffers({ products }: Cafe24SpecialOffersProps) {
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <BadgePercent className="h-6 w-6 text-rose-500" />
               <h2 className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-orange-600 to-amber-500">
                 {t("nav.specialOffers")}
               </h2>
-              <Sparkles className="h-5 w-5 text-amber-500" />
             </div>
             <div className="hidden sm:block">
               <span className="rounded-full border border-rose-200 bg-rose-100 px-3 py-1 text-sm text-rose-700">

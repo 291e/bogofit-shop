@@ -20,6 +20,7 @@ import {
   lowerSamples,
 } from "@/contents/VirtualFitting/sampleImages";
 import { useI18n } from "@/providers/I18nProvider";
+import Image from "next/image";
 
 interface VirtualFittingProps {
   productTitle?: string;
@@ -235,7 +236,7 @@ export default function VirtualFitting({
       };
 
       // 이미지 파일인지 추가 검증
-      const img = new Image();
+      const img = new window.Image();
 
       // 임시 URL로 이미지 유효성 검사
       const tempUrl = URL.createObjectURL(file);
@@ -905,10 +906,12 @@ export default function VirtualFitting({
               {/* 생성된 이미지 */}
               {generatedImage && (
                 <div className="relative">
-                  <img
+                  <Image
                     src={generatedImage}
                     alt={t("virtualFitting.generatedImageAlt")}
                     className="w-full h-auto rounded-lg shadow-lg"
+                    width={300}
+                    height={300}
                   />
                   <Button
                     size="sm"

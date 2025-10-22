@@ -7,8 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   Crown,
-  Flame,
-  Sparkles,
 } from "lucide-react";
 import { Product } from "@/types/product";
 import MusinsaProductCard from "@/components/product/MusinsaProductCard";
@@ -49,6 +47,7 @@ export function Cafe24BestSellers({ products }: Cafe24BestSellersProps) {
   // 표시할 상품 계산
   const displayedProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
+    console.log("🏆 BestSellers - Total products:", products.length, "FirstRowCount:", firstRowCount, "IsExpanded:", isExpanded);
     return isExpanded ? products : products.slice(0, firstRowCount);
   }, [products, isExpanded, firstRowCount]);
 
@@ -83,9 +82,8 @@ export function Cafe24BestSellers({ products }: Cafe24BestSellersProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-rose-500 to-orange-400" />
-              <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
-                <Flame className="h-5 w-5 text-rose-500" /> {t("nav.bestSellers")}
-                <Sparkles className="h-4 w-4 text-orange-500" />
+              <h2 className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
+                {t("nav.bestSellers")}
               </h2>
               <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full animate-[pulse_2.8s_ease-in-out_infinite]">
                 {t("hint.bestNow")}

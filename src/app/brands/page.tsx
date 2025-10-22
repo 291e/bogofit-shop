@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Store, Crown, Sparkles, Gem, Star, Handshake } from "lucide-react";
 import Link from "next/link";
 import { useI18n } from "@/providers/I18nProvider";
+import Image from "next/image";
 
 const LIMIT = 30;
 
@@ -220,10 +221,12 @@ export default function BrandsPage() {
               >
                 <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-r from-pink-100 to-purple-100 rounded-full flex items-center justify-center group-hover:from-pink-200 group-hover:to-purple-200 transition-colors">
                   {brand.logo ? (
-                    <img
+                    <Image
                       src={brand.logo}
                       alt={brand.name}
                       className="w-8 h-8 rounded-full object-cover"
+                      width={300}
+                      height={300}
                     />
                   ) : (
                     <span className="text-xl font-bold text-gray-700">
