@@ -56,24 +56,24 @@ async function fetchProducts(
   searchKeyword?: string
 ): Promise<GetProductsResponse> {
   if (!token) throw new Error('Authentication token not found.');
-  
+
   // Build URL with optional search keyword
-  let url = `/api/product?brandId=${brandId}&pageNumber=${pageNumber}&pageSize=10&include=true`;
+  let url = `/api/product?brandId=${brandId}&pageNumber=${pageNumber}&pageSize=10&include=true&promotion=true`;
   if (searchKeyword && searchKeyword.trim()) {
     url += `&search=${encodeURIComponent(searchKeyword.trim())}`;
   }
-  
+
   const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch products: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
@@ -85,18 +85,18 @@ async function fetchProduct(
   token: string
 ): Promise<GetProductResponse> {
   if (!token) throw new Error('Authentication token not found.');
-  
+
   const response = await fetch(`/api/product/${productId}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch product: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
@@ -116,7 +116,7 @@ async function fetchProduct(
  */
 export function useProducts(brandId?: string, pageNumber: number = 1, searchKeyword?: string) {
   const { token, isAuthenticated } = useAuth();
-  
+
   return useQuery({
     queryKey: [...PRODUCTS_QUERY_KEY, brandId, pageNumber, searchKeyword],
     queryFn: () => fetchProducts(brandId!, pageNumber, token!, searchKeyword),
@@ -140,7 +140,7 @@ export function useProducts(brandId?: string, pageNumber: number = 1, searchKeyw
  */
 export function useProduct(productId?: string) {
   const { token, isAuthenticated } = useAuth();
-  
+
   return useQuery({
     queryKey: [...PRODUCT_DETAIL_QUERY_KEY, productId],
     queryFn: () => fetchProduct(productId!, token!),
@@ -164,23 +164,23 @@ export function useProduct(productId?: string) {
  */
 export function useInvalidateProducts() {
   const queryClient = useQueryClient();
-  
+
   return (brandId?: string) => {
     if (brandId) {
       // Invalidate specific brand's products
-      queryClient.invalidateQueries({ 
-        queryKey: [...PRODUCTS_QUERY_KEY, brandId] 
+      queryClient.invalidateQueries({
+        queryKey: [...PRODUCTS_QUERY_KEY, brandId]
       });
     } else {
       // Invalidate all products
-      queryClient.invalidateQueries({ 
-        queryKey: PRODUCTS_QUERY_KEY 
+      queryClient.invalidateQueries({
+        queryKey: PRODUCTS_QUERY_KEY
       });
     }
-    
+
     // Also invalidate product details
-    queryClient.invalidateQueries({ 
-      queryKey: PRODUCT_DETAIL_QUERY_KEY 
+    queryClient.invalidateQueries({
+      queryKey: PRODUCT_DETAIL_QUERY_KEY
     });
   };
 }
@@ -202,11 +202,11 @@ export function useInvalidateProducts() {
 export function useCreateProduct(brandId: string) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (productData: CreateProductDto) => {
       if (!token) throw new Error('Authentication token not found.');
-      
+
       const response = await fetch('/api/product', {
         method: 'POST',
         headers: {
@@ -230,13 +230,13 @@ export function useCreateProduct(brandId: string) {
           { queryKey: [...PRODUCTS_QUERY_KEY, brandId] },
           (oldData: GetProductsResponse | undefined) => {
             if (!oldData) return oldData;
-            
+
             const currentProducts = Array.isArray(oldData.data?.data)
               ? oldData.data.data
               : Array.isArray(oldData.products)
-              ? oldData.products
-              : [];
-            
+                ? oldData.products
+                : [];
+
             return {
               ...oldData,
               data: {
@@ -246,7 +246,7 @@ export function useCreateProduct(brandId: string) {
           }
         );
       }
-      
+
       // ✅ Show success toast
       toast.success("상품이 등록되었습니다!");
     },
@@ -274,11 +274,11 @@ export function useCreateProduct(brandId: string) {
 export function useUpdateProduct(brandId: string, productId: string) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (productData: UpdateProductDto) => {
       if (!token) throw new Error('Authentication token not found.');
-      
+
       const response = await fetch(`/api/product/${productId}`, {
         method: 'PATCH',
         headers: {
@@ -302,17 +302,17 @@ export function useUpdateProduct(brandId: string, productId: string) {
           { queryKey: [...PRODUCTS_QUERY_KEY, brandId] },
           (oldData: GetProductsResponse | undefined) => {
             if (!oldData) return oldData;
-            
+
             const currentProducts = Array.isArray(oldData.data?.data)
               ? oldData.data.data
               : Array.isArray(oldData.products)
-              ? oldData.products
-              : [];
-            
-            const updatedProducts = currentProducts.map(p => 
+                ? oldData.products
+                : [];
+
+            const updatedProducts = currentProducts.map(p =>
               p.id === productId ? data.data : p
             );
-            
+
             return {
               ...oldData,
               data: {
@@ -321,7 +321,7 @@ export function useUpdateProduct(brandId: string, productId: string) {
             };
           }
         );
-        
+
         // ✅ Update product detail cache
         queryClient.setQueryData(
           [...PRODUCT_DETAIL_QUERY_KEY, productId],
@@ -331,7 +331,7 @@ export function useUpdateProduct(brandId: string, productId: string) {
           }
         );
       }
-      
+
       // ✅ Show success toast
       toast.success("상품이 수정되었습니다!");
     },
@@ -391,7 +391,7 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
       const params = new URLSearchParams();
       params.append('page', pageNumber.toString());
       params.append('pageSize', pageSize.toString());
-      
+
       if (searchKeyword && searchKeyword.trim()) {
         params.append('search', searchKeyword.trim());
       }
@@ -404,17 +404,17 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
       if (categoryId) {
         params.append('categoryId', categoryId);
       }
-      
+
       const response = await fetch(`/api/product?${params.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.status}`);
       }
-      
+
       return response.json();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

@@ -6,25 +6,29 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Package, Loader2 } from "lucide-react";
+import { Package, Loader2, Eye } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useOrders } from "@/hooks/useOrders";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatOrderItemOptions, OrderStatus, OrderItem, Order, OrderGroup } from "@/types/order";
+import OrderDetailModal from "./OrderDetailModal";
 
 export default function OrderSection() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedOrderType, setSelectedOrderType] = useState<'order' | 'group'>('order');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { data, isLoading, error } = useOrders(page, 10);
-  
+
   const groups = data?.groups || [];
   const singles = data?.singles || [];
   const totalGroups = data?.totalGroups || 0;
   const totalSingles = data?.totalSingles || 0;
   const hasOrders = groups.length > 0 || singles.length > 0;
   const totalOrders = totalGroups + totalSingles;
-  
+
   const toggleGroup = (groupId: string) => {
     const newSet = new Set(expandedGroups);
     if (newSet.has(groupId)) {
@@ -33,6 +37,17 @@ export default function OrderSection() {
       newSet.add(groupId);
     }
     setExpandedGroups(newSet);
+  };
+
+  const openOrderDetail = (orderId: string, orderType: 'order' | 'group') => {
+    setSelectedOrderId(orderId);
+    setSelectedOrderType(orderType);
+    setIsModalOpen(true);
+  };
+
+  const closeOrderDetail = () => {
+    setIsModalOpen(false);
+    setSelectedOrderId(null);
   };
 
   if (isLoading) {
@@ -129,7 +144,7 @@ export default function OrderSection() {
                           />
                         </div>
                       )}
-                        <div className="text-left">
+                      <div className="text-left">
                         <div className="font-semibold">{order.brand?.name || "브랜드"}</div>
                         <div className="text-xs text-gray-500 font-mono">{order.orderNo}</div>
                         <div className="text-sm text-gray-600">
@@ -201,6 +216,18 @@ export default function OrderSection() {
                   </span>
                 </div>
               </div>
+
+              {/* Group Actions */}
+              <div className="mt-4 pt-4 border-t border-purple-200">
+                <Button
+                  onClick={() => openOrderDetail(group.id, 'group')}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  주문 상세보기
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -212,10 +239,10 @@ export default function OrderSection() {
         const isOrderGroup = 'orders' in singleData && Array.isArray(singleData.orders);
         const order = isOrderGroup ? singleData.orders[0] : singleData as Order;
         const groupData = isOrderGroup ? singleData as OrderGroup : null;
-        
+
         // Skip if no order data
         if (!order) return null;
-        
+
         return (
           <Card key={order.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
@@ -262,7 +289,7 @@ export default function OrderSection() {
                     <p className="text-sm font-semibold">₩{item.rowTotal.toLocaleString()}</p>
                   </div>
                 ))}
-                
+
                 {(order.items?.length || 0) > 2 && (
                   <p className="text-sm text-gray-500 text-center">
                     +{(order.items?.length || 0) - 2}개 상품 더보기
@@ -281,14 +308,24 @@ export default function OrderSection() {
               </div>
 
               {/* Actions */}
-              {order.status === "pending" && (
-                <Button 
-                  onClick={() => router.push(`/payment/${order.groupId || order.id}`)}
-                  className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => openOrderDetail(order.id, 'order')}
+                  variant="outline"
+                  className="flex-1"
                 >
-                  결제하기
+                  <Eye className="w-4 h-4 mr-2" />
+                  상세보기
                 </Button>
-              )}
+                {order.status === "pending" && (
+                  <Button
+                    onClick={() => router.push(`/payment/${order.groupId || order.id}`)}
+                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                  >
+                    결제하기
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         );
@@ -317,6 +354,16 @@ export default function OrderSection() {
             다음
           </Button>
         </div>
+      )}
+
+      {/* Order Detail Modal */}
+      {selectedOrderId && (
+        <OrderDetailModal
+          isOpen={isModalOpen}
+          onClose={closeOrderDetail}
+          orderId={selectedOrderId}
+          orderType={selectedOrderType}
+        />
       )}
     </div>
   );

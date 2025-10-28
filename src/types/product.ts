@@ -80,7 +80,8 @@ export interface UpdateProductDto {
   basePrice?: number;
   baseCompareAtPrice?: number;
   quantity?: number | null; // v2.0: product-level inventory (null = unlimited)
-  
+  promotionId?: string | null; // ✅ v2.2: Assign/remove promotion (use "00000000-0000-0000-0000-000000000000" to remove)
+
   // Variant operations
   newVariants?: CreateProductVariantDto[];
   updateVariants?: UpdateProductVariantDto[];
@@ -102,6 +103,19 @@ export interface ProductResponseDto {
   images?: string[];
   basePrice: number;
   baseCompareAtPrice?: number;
+  finalPrice?: number | null;        // ✅ v2.3: Auto-calculated from promotion (computed on-the-fly)
+  promotionId?: string | null;        // ✅ v2.2: Active promotion ID
+  promotion?: {                        // ✅ v2.2: Promotion details (if include=true)
+    id: string;
+    name: string;
+    description?: string;
+    type: 'percentage' | 'fixed_amount' | 'free_shipping';
+    value?: number;
+    startDate: string;
+    endDate: string;
+    status: string;
+    isActive: boolean;
+  };
   quantity?: number | null; // v2.0
   createdAt: string;
   updatedAt: string;
@@ -147,6 +161,7 @@ export interface ProductVariantResponseDto {
   productId: string;
   price?: number;
   compareAtPrice?: number;
+  finalPrice?: number | null;  // ✅ Auto-calculated from promotion (computed on-the-fly)
   quantity: number;
   weightGrams?: number;
   status: string;
@@ -195,6 +210,7 @@ export interface ProductForm {
   basePrice: number;
   baseCompareAtPrice?: number;
   quantity?: number | null; // v2.0
+  promotionId?: string | null; // ✅ v2.2: Promotion assignment
   variants: ProductVariantForm[]; // Can be empty for products without options
   hasOptions: boolean; // New field to indicate if product has options
 }

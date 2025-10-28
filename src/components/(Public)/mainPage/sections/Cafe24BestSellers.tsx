@@ -13,7 +13,7 @@ interface Cafe24BestSellersProps {
 
 export function Cafe24BestSellers({ products: initialProducts }: Cafe24BestSellersProps) {
   const [showAll, setShowAll] = useState(false);
-  
+
   // ✅ Only use hook if no initial products provided (standalone usage)
   const { data: hookData } = usePublicProducts({
     pageNumber: 3, // ✅ Changed to page 3 for best sellers
@@ -35,8 +35,8 @@ export function Cafe24BestSellers({ products: initialProducts }: Cafe24BestSelle
     originalPrice: product.baseCompareAtPrice || undefined,
     discount: product.baseCompareAtPrice
       ? Math.round(
-          ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
-        )
+        ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
+      )
       : undefined,
     image: product.images?.[0] || "/images/placeholder-product.png",
     brand: product.brand?.name || undefined,

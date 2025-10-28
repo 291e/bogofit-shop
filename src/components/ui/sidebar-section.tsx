@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 interface SubSectionItem {
   id: string;
@@ -26,11 +26,12 @@ interface SideBarSectionProps {
   className?: string;
 }
 
-export default function SideBarSection({ 
-  mainSection, 
+export default function SideBarSection({
+  mainSection,
   className,
 }: SideBarSectionProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isExpanded, setIsExpanded] = useState(true);
 
   const toggleSection = () => {
@@ -38,22 +39,44 @@ export default function SideBarSection({
   };
 
   const hasSubSections = mainSection.subSections && mainSection.subSections.length > 0;
-  
-  // Check if any subsection is active
-  const isActive = mainSection.subSections?.some(sub => sub.href && pathname === sub.href) || false;
+
+  // Check if any subsection is active (including query params)
+  const isActive = mainSection.subSections?.some(sub => {
+    if (!sub.href) return false;
+
+    // For "all-orders" - only active when on orders page with no status or status=all
+    if (sub.id === 'all-orders') {
+      const currentStatus = searchParams.get('status');
+      return pathname.includes('/orders') && (!currentStatus || currentStatus === 'all');
+    }
+
+    // For status-specific items - only active when pathname matches and status matches
+    if (sub.href.includes('?')) {
+      const [basePath, queryString] = sub.href.split('?');
+      if (pathname === basePath) {
+        const urlParams = new URLSearchParams(queryString);
+        const statusParam = urlParams.get('status');
+        const currentStatus = searchParams.get('status');
+        return statusParam === currentStatus;
+      }
+      return false; // Not on the right path
+    }
+
+    // Exact pathname match for other cases
+    return pathname === sub.href;
+  }) || false;
 
   return (
-    <div className={cn("bg-white border-r border-gray-200", className)}>
-      <div className="border-b border-red-500 h-1"></div>
-      
-      <div className="py-2">
+    <div className={cn("", className)}>
+
+      <div>
         {/* Main Section Header */}
         <div
           className={cn(
-            "flex items-center justify-between py-3 px-4 cursor-pointer transition-colors",
-            isActive 
-              ? "bg-blue-100 text-blue-900 font-medium border-b border-blue-200" 
-              : "bg-gray-100 text-gray-900 font-medium border-b border-gray-200"
+            "flex items-center justify-between py-3 px-4 cursor-pointer transition-colors hover:bg-gray-50",
+            isActive
+              ? "bg-blue-50 text-blue-900 font-medium"
+              : "text-gray-700 font-medium"
           )}
           onClick={() => hasSubSections && toggleSection()}
         >
@@ -71,7 +94,7 @@ export default function SideBarSection({
               {mainSection.label}
             </span>
           </div>
-          
+
           {mainSection.count !== undefined && (
             <div className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
               {mainSection.count}
@@ -83,27 +106,52 @@ export default function SideBarSection({
         {hasSubSections && isExpanded && (
           <div className="bg-white">
             {mainSection.subSections!.map((subSection) => {
-              const isSubActive = pathname === subSection.href;
+              // Check if subsection is active (including query params)
+              const isSubActive = (() => {
+                if (!subSection.href) return false;
+
+                // For "all-orders" - only active when on orders page with no status or status=all
+                if (subSection.id === 'all-orders') {
+                  const currentStatus = searchParams.get('status');
+                  return pathname.includes('/orders') && (!currentStatus || currentStatus === 'all');
+                }
+
+                // For status-specific items - only active when pathname matches and status matches
+                if (subSection.href.includes('?')) {
+                  const [basePath, queryString] = subSection.href.split('?');
+                  if (pathname === basePath) {
+                    const urlParams = new URLSearchParams(queryString);
+                    const statusParam = urlParams.get('status');
+                    const currentStatus = searchParams.get('status');
+                    return statusParam === currentStatus;
+                  }
+                  return false; // Not on the right path
+                }
+
+                // Exact pathname match for other cases
+                return pathname === subSection.href;
+              })();
+
               return (
                 <Link
                   key={subSection.id}
                   href={subSection.href || "#"}
                   className={cn(
-                    "flex items-center justify-between py-3 px-4 cursor-pointer transition-colors pl-8",
-                    isSubActive 
-                      ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500" 
-                      : "hover:bg-gray-50 text-gray-700"
+                    "flex items-center justify-between py-2 px-4 cursor-pointer transition-colors pl-8 hover:bg-gray-50",
+                    isSubActive
+                      ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500 font-medium"
+                      : "text-gray-600"
                   )}
                 >
                   <span className="text-sm font-normal">
                     {subSection.label}
                   </span>
-                  
+
                   {subSection.count !== undefined && (
                     <div className={cn(
                       "text-xs px-2 py-1 rounded-full min-w-[20px] text-center",
-                      isSubActive 
-                        ? "bg-blue-200 text-blue-800" 
+                      isSubActive
+                        ? "bg-blue-200 text-blue-800"
                         : "bg-gray-200 text-gray-600"
                     )}>
                       {subSection.count}

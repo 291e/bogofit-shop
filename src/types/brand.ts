@@ -55,3 +55,45 @@ export interface GetBrandResponse {
   brand?: BrandResponseDto;
 }
 
+// Backend API Response Types
+export interface BackendBrandResponse {
+  success: boolean;
+  message: string;
+  brand?: {
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+    description?: string;
+    logoUrl?: string;
+    bannerUrl?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    websiteUrl?: string;
+    address?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export interface BackendBrandsResponse {
+  success: boolean;
+  message: string;
+  brands?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+    description?: string;
+    logoUrl?: string;
+    bannerUrl?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    websiteUrl?: string;
+    address?: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  count?: number;
+}
+

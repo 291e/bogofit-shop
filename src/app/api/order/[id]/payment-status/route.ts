@@ -18,7 +18,7 @@ export async function PUT(
 
     const { id: orderId } = await params;
     const token = request.headers.get("authorization");
-    
+
     if (!token) {
       console.error("❌ [ORDER-UPDATE] No authorization token");
       return NextResponse.json(
@@ -41,7 +41,7 @@ export async function PUT(
 
     // Forward to C# Backend - Using Payment/confirm endpoint as per documentation
     console.log(`🔄 [ORDER-UPDATE] Calling backend: ${API_URL}/api/Payment/confirm`);
-    
+
     const response = await fetch(`${API_URL}/api/Payment/confirm`, {
       method: "POST",
       headers: {
@@ -55,6 +55,24 @@ export async function PUT(
         tossData: tossPaymentData, // C# Backend expects tossData
       }),
     });
+
+    // Check if response is JSON
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      console.error("❌ [ORDER-UPDATE] Backend returned non-JSON response", {
+        status: response.status,
+        contentType,
+        url: `${API_URL}/api/Payment/confirm`
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Backend returned non-JSON response (${response.status})`,
+          status: response.status
+        },
+        { status: response.status }
+      );
+    }
 
     const data = await response.json();
 

@@ -22,7 +22,7 @@ interface ProductVariant {
 interface VariantEditModalProps {
   variant: ProductVariant | null;
   productName: string;
-  productId: string;
+  // productId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (variantId: string, updates: Partial<ProductVariant>) => Promise<void>;
@@ -32,7 +32,7 @@ interface VariantEditModalProps {
 export default function VariantEditModal({
   variant,
   productName,
-  productId,
+  // productId,
   open,
   onOpenChange,
   onSave,
@@ -58,7 +58,7 @@ export default function VariantEditModal({
   try {
     if (variant.optionsJson) {
       const options = JSON.parse(variant.optionsJson);
-      optionsDisplay = options.map((opt: Record<string, string>) => 
+      optionsDisplay = options.map((opt: Record<string, string>) =>
         Object.entries(opt).map(([key, value]) => `${key}: ${value}`).join(', ')
       ).join(' / ');
     }
@@ -166,7 +166,7 @@ export default function VariantEditModal({
                 className="mt-1"
               />
               <p className="text-xs text-gray-500 mt-1">
-                {variant.compareAtPrice 
+                {variant.compareAtPrice
                   ? `현재: ${variant.compareAtPrice.toLocaleString()}원`
                   : '설정되지 않음'}
               </p>

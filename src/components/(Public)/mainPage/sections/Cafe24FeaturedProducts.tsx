@@ -13,7 +13,7 @@ interface Cafe24FeaturedProductsProps {
 
 export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24FeaturedProductsProps) {
   const [showAll, setShowAll] = useState(false);
-  
+
   // ✅ Only use hook if no initial products provided (standalone usage)
   const { data: hookData } = usePublicProducts({
     pageNumber: 2, // ✅ Changed to page 2 for featured products
@@ -34,8 +34,8 @@ export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24Feat
     originalPrice: product.baseCompareAtPrice || undefined,
     discount: product.baseCompareAtPrice
       ? Math.round(
-          ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
-        )
+        ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
+      )
       : undefined,
     image: product.images?.[0] || "/images/placeholder-product.png",
     brand: product.brand?.name || undefined,

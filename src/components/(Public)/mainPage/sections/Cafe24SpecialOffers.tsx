@@ -13,7 +13,7 @@ interface Cafe24SpecialOffersProps {
 
 export function Cafe24SpecialOffers({ products: initialProducts }: Cafe24SpecialOffersProps) {
   const [showAll, setShowAll] = useState(false);
-  
+
   // ✅ Only use hook if no initial products provided (standalone usage)
   const { data: hookData } = usePublicProducts({
     pageNumber: 1,
@@ -24,8 +24,8 @@ export function Cafe24SpecialOffers({ products: initialProducts }: Cafe24Special
 
   // Use initialProducts from server (preferred) or hookData from client (fallback)
   const allProducts = hookData?.data?.data || hookData?.products || [];
-  const filteredProducts = allProducts.filter(product => 
-    product.baseCompareAtPrice && 
+  const filteredProducts = allProducts.filter(product =>
+    product.baseCompareAtPrice &&
     product.baseCompareAtPrice > product.basePrice
   );
   const products = initialProducts || filteredProducts.slice(0, 30);
@@ -39,8 +39,8 @@ export function Cafe24SpecialOffers({ products: initialProducts }: Cafe24Special
     originalPrice: product.baseCompareAtPrice || undefined,
     discount: product.baseCompareAtPrice
       ? Math.round(
-          ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
-        )
+        ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
+      )
       : undefined,
     image: product.images?.[0] || "/images/placeholder-product.png",
     brand: product.brand?.name || undefined,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { safeJsonParse } from "@/lib/api-utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -27,7 +28,13 @@ export async function GET(
       },
     });
 
-    const data = await response.json();
+    const result = await safeJsonParse(response);
+    
+    if (!result.success) {
+      return NextResponse.json(result, { status: result.status || 500 });
+    }
+
+    const data = result.data;
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

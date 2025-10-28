@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { safeJsonParse } from "@/lib/api-utils";
 import { GetCategoriesResponse, GetCategoriesParams } from '@/types/category';
 
 // Backend API base URL - có thể config từ environment variables
@@ -8,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 async function callBackendAPI(params: GetCategoriesParams): Promise<GetCategoriesResponse> {
   try {
     const queryParams = new URLSearchParams();
-    
+
     if (params.status) queryParams.append('status', params.status);
     if (params.parentId) queryParams.append('parentId', params.parentId);
     if (params.slug) queryParams.append('slug', params.slug);
@@ -17,7 +18,7 @@ async function callBackendAPI(params: GetCategoriesParams): Promise<GetCategorie
     if (params.isTree) queryParams.append('isTree', 'true');
 
     const url = `${API_URL}/api/Category?${queryParams.toString()}`;
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -31,7 +32,13 @@ async function callBackendAPI(params: GetCategoriesParams): Promise<GetCategorie
       throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const result = await safeJsonParse(response);
+
+    if (!result.success) {
+      throw new Error(result.message || 'Backend API error');
+    }
+
+    const data = result.data as GetCategoriesResponse;
     return data;
   } catch (error) {
     console.error('Backend API call failed:', error);
@@ -42,7 +49,7 @@ async function callBackendAPI(params: GetCategoriesParams): Promise<GetCategorie
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     const params: GetCategoriesParams = {
       status: searchParams.get('status') || undefined,
       parentId: searchParams.get('parentId') || undefined,
@@ -55,7 +62,7 @@ export async function GET(request: NextRequest) {
     try {
       // Gọi backend API thực tế
       const backendResponse = await callBackendAPI(params);
-      
+
       if (backendResponse && backendResponse.success) {
         return NextResponse.json(backendResponse);
       } else {
@@ -66,7 +73,7 @@ export async function GET(request: NextRequest) {
       }
     } catch (backendError) {
       console.warn('Backend API không khả dụng:', backendError);
-      
+
       // Trả về mock data để UI hoạt động
       const mockCategories = [
         {
@@ -89,7 +96,7 @@ export async function GET(request: NextRequest) {
               parentId: "1"
             },
             {
-              id: "12", 
+              id: "12",
               name: "맨투맨",
               slug: "sweatshirt",
               status: "active",
@@ -101,7 +108,7 @@ export async function GET(request: NextRequest) {
             {
               id: "13",
               name: "셔츠",
-              slug: "shirt", 
+              slug: "shirt",
               status: "active",
               sortOrder: 3,
               createdAt: new Date().toISOString(),
@@ -114,7 +121,7 @@ export async function GET(request: NextRequest) {
           id: "2",
           name: "하의",
           slug: "bottom",
-          status: "active", 
+          status: "active",
           sortOrder: 2,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -131,7 +138,7 @@ export async function GET(request: NextRequest) {
             },
             {
               id: "22",
-              name: "슬랙스", 
+              name: "슬랙스",
               slug: "slacks",
               status: "active",
               sortOrder: 2,
@@ -164,7 +171,7 @@ export async function GET(request: NextRequest) {
               id: "32",
               name: "코트",
               slug: "coat",
-              status: "active", 
+              status: "active",
               sortOrder: 2,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -194,7 +201,7 @@ export async function GET(request: NextRequest) {
             {
               id: "42",
               name: "맥시원피스",
-              slug: "maxi-dress", 
+              slug: "maxi-dress",
               status: "active",
               sortOrder: 2,
               createdAt: new Date().toISOString(),
@@ -204,13 +211,13 @@ export async function GET(request: NextRequest) {
           ]
         }
       ];
-      
+
       const response: GetCategoriesResponse = {
         success: true,
         message: "Backend API không khả dụng, sử dụng mock data",
         data: mockCategories
       };
-      
+
       return NextResponse.json(response);
     }
   } catch (error) {

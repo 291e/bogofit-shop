@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+import { safeJsonParse } from "@/lib/api-utils";
+import { ApiApplicationResponse } from '@/types/application';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 /**
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Try-catch for backend call
     try {
-      const response = await fetch(`${API_URL}/api/SellApplication`, {
+      const response: Response = await fetch(`${API_URL}/api/SellApplication`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -29,37 +30,22 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      const data = await response.json();
-      
-      // Convert API response to our DTO format
-      const convertedData = {
-        success: data.success || response.ok,
-        message: data.message || (response.ok ? '신청서를 성공적으로 가져왔습니다.' : '신청서를 가져오는데 실패했습니다.'),
-        application: data.application ? {
-          id: data.application.id,
-          appCode: data.application.appCode,
-          status: data.application.status,
-          businessName: data.application.businessName,
-          bizRegNo: data.application.bizRegNo,
-          contactName: data.application.contactName,
-          contactPhone: data.application.contactPhone,
-          contactEmail: data.application.contactEmail,
-          docs: data.application.docs,
-          noteAdmin: data.application.noteAdmin,
-          ownerUser: data.application.ownerUser,
-          createdAt: data.application.createdAt,
-          decidedAt: data.application.decidedAt,
-        } : undefined
-      };
-      
+      const result = await safeJsonParse(response);
+
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 500 });
+      }
+
+      const data = result.data as ApiApplicationResponse;
+
       // Add security headers
       const responseHeaders = new Headers();
       responseHeaders.set('X-Content-Type-Options', 'nosniff');
       responseHeaders.set('X-Frame-Options', 'DENY');
       responseHeaders.set('X-XSS-Protection', '1; mode=block');
       responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-      
-      return NextResponse.json(convertedData, { 
+
+      return NextResponse.json(data, {
         status: response.status,
         headers: responseHeaders
       });
@@ -141,56 +127,35 @@ export async function POST(request: NextRequest) {
         }),
       });
 
-      const data = await response.json();
-      
-      // Convert API response to our DTO format
-      const convertedData = {
-        success: data.success || response.ok,
-        message: data.message || (response.ok ? '신청서가 성공적으로 생성되었습니다.' : '신청서 생성에 실패했습니다.'),
-        application: data.application ? {
-          id: data.application.id,
-          appCode: data.application.appCode,
-          status: data.application.status,
-          businessName: data.application.businessName,
-        } : undefined
-      };
+      const result = await safeJsonParse(response);
 
-      // Handle backend validation errors
-      if (!response.ok && data.errors) {
-        const validationResponse = {
-          success: false,
-          message: data.title || '입력 데이터에 오류가 있습니다.',
-          application: undefined,
-        };
-        
-        // Add security headers
-        const responseHeaders = new Headers();
-        responseHeaders.set('X-Content-Type-Options', 'nosniff');
-        responseHeaders.set('X-Frame-Options', 'DENY');
-        responseHeaders.set('X-XSS-Protection', '1; mode=block');
-        responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        
-        return NextResponse.json(validationResponse, { 
-          status: 400,
-          headers: responseHeaders
-        });
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 500 });
       }
-      
+
+      const data = result.data as ApiApplicationResponse;
+
+      // Convert API response to our DTO format
+      // Handle backend validation errors
+      if (!response.ok) {
+        return NextResponse.json(data, { status: 400 });
+      }
+
       // Add security headers
       const responseHeaders = new Headers();
       responseHeaders.set('X-Content-Type-Options', 'nosniff');
       responseHeaders.set('X-Frame-Options', 'DENY');
       responseHeaders.set('X-XSS-Protection', '1; mode=block');
       responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-      
+
       // Return appropriate status based on backend response
       if (response.ok && data.success) {
-        return NextResponse.json(convertedData, { 
+        return NextResponse.json(data, {
           status: 200,
           headers: responseHeaders
         });
       } else {
-        return NextResponse.json(convertedData, { 
+        return NextResponse.json(data, {
           status: response.status,
           headers: responseHeaders
         });
@@ -272,56 +237,35 @@ export async function PATCH(request: NextRequest) {
         }),
       });
 
-      const data = await response.json();
-      
-      // Convert API response to our DTO format
-      const convertedData = {
-        success: data.success || response.ok,
-        message: data.message || (response.ok ? '신청서가 성공적으로 수정되었습니다.' : '신청서 수정에 실패했습니다.'),
-        application: data.application ? {
-          id: data.application.id,
-          appCode: data.application.appCode,
-          status: data.application.status,
-          businessName: data.application.businessName,
-        } : undefined
-      };
+      const result = await safeJsonParse(response);
 
-      // Handle backend validation errors
-      if (!response.ok && data.errors) {
-        const validationResponse = {
-          success: false,
-          message: data.title || '입력 데이터에 오류가 있습니다.',
-          application: undefined,
-        };
-        
-        // Add security headers
-        const responseHeaders = new Headers();
-        responseHeaders.set('X-Content-Type-Options', 'nosniff');
-        responseHeaders.set('X-Frame-Options', 'DENY');
-        responseHeaders.set('X-XSS-Protection', '1; mode=block');
-        responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        
-        return NextResponse.json(validationResponse, { 
-          status: 400,
-          headers: responseHeaders
-        });
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 500 });
       }
-      
+
+      const data = result.data as ApiApplicationResponse;
+
+      // Convert API response to our DTO format
+      // Handle backend validation errors
+      if (!response.ok) {
+        return NextResponse.json(data, { status: 400 });
+      }
+
       // Add security headers
       const responseHeaders = new Headers();
       responseHeaders.set('X-Content-Type-Options', 'nosniff');
       responseHeaders.set('X-Frame-Options', 'DENY');
       responseHeaders.set('X-XSS-Protection', '1; mode=block');
       responseHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-      
+
       // Return appropriate status based on backend response
       if (response.ok && data.success) {
-        return NextResponse.json(convertedData, { 
+        return NextResponse.json(data, {
           status: 200,
           headers: responseHeaders
         });
       } else {
-        return NextResponse.json(convertedData, { 
+        return NextResponse.json(data, {
           status: response.status,
           headers: responseHeaders
         });

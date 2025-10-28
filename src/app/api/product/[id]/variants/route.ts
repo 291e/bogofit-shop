@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+import { safeJsonParse } from "@/lib/api-utils";
+import { ProductVariantResponseDto } from '@/types/product';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // GET /api/product/[id]/variants - Get product variants
@@ -7,7 +8,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try { 
+  try {
     const { id } = await params;
 
     // Get token from incoming request headers
@@ -22,11 +23,17 @@ export async function GET(
       }
     });
 
-    const data = await response.json();
+    const result = await safeJsonParse(response);
+
+    if (!result.success) {
+      return NextResponse.json(result, { status: result.status || 500 });
+    }
+
+    const data = result.data as ProductVariantResponseDto[];
 
     if (!response.ok) {
       return NextResponse.json(
-        { success: false, message: data.message || 'Failed to fetch product variants' },
+        { success: false, message: 'Failed to fetch product variants' },
         { status: response.status }
       );
     }
@@ -62,8 +69,8 @@ export async function POST(
       Quantity: body.quantity ?? 0,
       WeightGrams: body.weightGrams ?? null,
       Status: body.status || 'active',
-      OptionsJson: typeof body.options === 'object' 
-        ? JSON.stringify(body.options) 
+      OptionsJson: typeof body.options === 'object'
+        ? JSON.stringify(body.options)
         : body.optionsJson || undefined
     };
 
@@ -77,16 +84,22 @@ export async function POST(
       body: JSON.stringify(createVariantDto)
     });
 
-    const data = await response.json();
+    const result = await safeJsonParse(response);
+
+    if (!result.success) {
+      return NextResponse.json(result, { status: result.status || 500 });
+    }
+
+    const data = result.data as ProductVariantResponseDto | undefined;
 
     if (!response.ok) {
       return NextResponse.json(
-        { success: false, message: data.message || 'Failed to create product variant' },
+        { success: false, message: 'Failed to create product variant' },
         { status: response.status }
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data as ProductVariantResponseDto);
   } catch (error) {
     console.error('Error creating product variant:', error);
     return NextResponse.json(

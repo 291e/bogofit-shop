@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { safeJsonParse } from "@/lib/api-utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /**
  * GET /api/order/[id]
- * Get single order by ID
+ * Smart Order Detail - Backend handles detection:
+ * - If id is UUID → Returns OrderGroup (for buyers)
+ * - If id is OrderNo (BOGOFIT-xxx) → Returns Order (for sellers)
  */
 export async function GET(
   request: NextRequest,
@@ -13,7 +16,7 @@ export async function GET(
   try {
     const { id } = await params;
     const token = request.headers.get("authorization");
-    
+
     if (!token) {
       return NextResponse.json(
         { success: false, message: "Authorization required" },
@@ -29,7 +32,13 @@ export async function GET(
       },
     });
 
-    const data = await response.json();
+    const result = await safeJsonParse(response);
+    
+    if (!result.success) {
+      return NextResponse.json(result, { status: result.status || 500 });
+    }
+
+    const data = result.data;
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

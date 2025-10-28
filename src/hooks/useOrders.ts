@@ -24,9 +24,99 @@ export const ORDER_QUERY_KEYS = {
   detail: (id: string) => [...ORDER_QUERY_KEYS.details(), id] as const,
   groups: () => [...ORDER_QUERY_KEYS.all, "group"] as const,
   group: (id: string) => [...ORDER_QUERY_KEYS.groups(), id] as const,
+  // Seller orders
+  seller: () => [...ORDER_QUERY_KEYS.all, "seller"] as const,
+  sellerList: (status: string | undefined, page: number, pageSize: number) =>
+    [...ORDER_QUERY_KEYS.seller(), status || "all", page, pageSize] as const,
 };
 
 // ==================== FETCHER FUNCTIONS ====================
+
+/**
+ * Get seller's orders with pagination and status filter
+ * Uses Next.js API route as proxy to backend
+ */
+async function fetchSellerOrders(
+  status: string | undefined,
+  page: number,
+  pageSize: number,
+  token: string
+): Promise<{
+  orders: Order[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+  };
+}> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+  });
+
+  if (status) {
+    params.append('status', status);
+  }
+
+  console.log('🔍 useSellerOrders: Fetching seller orders');
+  console.log('📤 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+  console.log('📤 URL:', `/api/order/seller?${params.toString()}`);
+
+  const response = await fetch(
+    `/api/order/seller?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch seller orders: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to fetch seller orders");
+  }
+
+  return {
+    orders: data.data || [],
+    pagination: data.pagination || { page, pageSize, totalCount: 0 },
+  };
+}
+
+/**
+ * Update order status (seller only)
+ * Uses Next.js API route as proxy to backend
+ */
+async function updateOrderStatus(
+  orderId: string,
+  status: string,
+  note: string | undefined,
+  token: string
+): Promise<void> {
+  const response = await fetch(`/api/order/${orderId}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status, note }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to update order status");
+  }
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update order status");
+  }
+}
 
 /**
  * Create order from cart
@@ -134,7 +224,7 @@ async function fetchOrderGroup(
   groupId: string,
   token: string
 ): Promise<OrderGroup> {
-  const response = await fetch(`/api/order/group/${groupId}`, {
+  const response = await fetch(`/api/order/${groupId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -183,10 +273,10 @@ export function useCreateOrderFromCart() {
     onSuccess: (order) => {
       // Invalidate cart queries
       queryClient.invalidateQueries({ queryKey: ["cart"] });
-      
+
       // Invalidate order queries
       queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.all });
-      
+
       toast.success("주문이 생성되었습니다!");
       console.log("✅ Order created:", order.orderNo);
     },
@@ -264,6 +354,88 @@ export function useOrderGroup(groupId: string | undefined) {
     enabled: isAuthenticated && !!token && !!groupId,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// ==================== SELLER HOOKS ====================
+
+/**
+ * Hook to fetch seller's orders with pagination and status filter
+ * 
+ * @example
+ * ```tsx
+ * const { data, isLoading } = useSellerOrders('paid', 1, 20);
+ * const orders = data?.orders || [];
+ * ```
+ */
+export function useSellerOrders(
+  status: string | undefined = undefined,
+  page: number = 1,
+  pageSize: number = 20
+) {
+  const { token, isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ORDER_QUERY_KEYS.sellerList(status, page, pageSize),
+    queryFn: () => {
+      if (!token) throw new Error("Authentication required");
+      return fetchSellerOrders(status, page, pageSize, token);
+    },
+    enabled: isAuthenticated && !!token,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Hook to update order status (seller only)
+ * 
+ * @example
+ * ```tsx
+ * const updateStatus = useUpdateOrderStatus();
+ * 
+ * const handleStatusUpdate = async () => {
+ *   await updateStatus.mutateAsync({
+ *     orderId: 'BOGOFIT-xxx',
+ *     status: 'fulfilling',
+ *     note: 'Order is being prepared'
+ *   });
+ * };
+ * ```
+ */
+export function useUpdateOrderStatus() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      status,
+      note,
+    }: {
+      orderId: string;
+      status: string;
+      note?: string;
+    }) => {
+      if (!token) throw new Error("Authentication required");
+      return updateOrderStatus(orderId, status, note, token);
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate seller orders queries
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_KEYS.seller() });
+
+      // Invalidate specific order detail
+      queryClient.invalidateQueries({
+        queryKey: ORDER_QUERY_KEYS.detail(variables.orderId)
+      });
+
+      toast.success(`주문 상태가 '${variables.status}'로 변경되었습니다!`);
+      console.log("✅ Order status updated:", variables.orderId, variables.status);
+    },
+    onError: (error: Error) => {
+      console.error("❌ Order status update failed:", error.message);
+      toast.error(error.message || "주문 상태 변경 실패");
+    },
   });
 }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { safeJsonParse } from "@/lib/api-utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -9,9 +10,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 export async function POST(request: NextRequest) {
   try {
     console.log("🔵 [API/ORDER] Received order creation request");
-    
+
     const token = request.headers.get("authorization");
-    
+
     if (!token) {
       console.error("❌ [API/ORDER] No authorization token provided");
       return NextResponse.json(
@@ -40,15 +41,21 @@ export async function POST(request: NextRequest) {
     });
 
     console.log("📡 [API/ORDER] Backend response status:", response.status);
-    const data = await response.json();
-    
+    const result = await safeJsonParse(response);
+
+    if (!result.success) {
+      return NextResponse.json(result, { status: result.status || 500 });
+    }
+
+    const data = result.data as Record<string, unknown>;
+
     if (data.success) {
       console.log("✅ [API/ORDER] Order created successfully");
       console.log("📝 [API/ORDER] Response data:", {
-        orderId: data.data?.id,
-        orderNo: data.data?.orderNo,
-        groupId: data.data?.groupId,
-        status: data.data?.status
+        orderId: (data.data as Record<string, unknown>)?.id,
+        orderNo: (data.data as Record<string, unknown>)?.orderNo,
+        groupId: (data.data as Record<string, unknown>)?.groupId,
+        status: (data.data as Record<string, unknown>)?.status
       });
     } else {
       console.error("❌ [API/ORDER] Order creation failed:", data.message);

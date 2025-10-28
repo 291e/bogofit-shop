@@ -1,46 +1,59 @@
 import { ProductResponseDto } from "@/types/product";
 
 /**
- * Get stock text for display
+ * Get display price information including discounts
  */
-export function getStockText(product: ProductResponseDto): string {
-  // If product has variants, use variant stock
-  if (product.variants && product.variants.length > 0) {
-    const totalStock = product.variants.reduce((sum, variant) => sum + variant.quantity, 0);
-    if (totalStock === 0) return "품절";
-    return `${totalStock}개 남음`;
-  }
-  
-  // If product has no variants, use product-level quantity
-  if (product.quantity === null) return "무제한";
-  if (product.quantity === 0) return "품절";
-  return `${product.quantity}개 남음`;
+export function getDisplayPrice(product: ProductResponseDto) {
+    const basePrice = product.basePrice || 0;
+
+    // Check if product has promotion and calculate discount
+    if (product.promotion) {
+        let discountAmount = 0;
+        switch (product.promotion.type) {
+            case "percentage":
+                discountAmount = Math.round(basePrice * ((product.promotion.value || 0) / 100));
+                break;
+            case "fixed_amount":
+                discountAmount = product.promotion.value || 0;
+                break;
+            case "free_shipping":
+                discountAmount = 0; // Free shipping doesn't reduce product price
+                break;
+        }
+
+        const discountedPrice = basePrice - discountAmount;
+        const discountPercent = discountAmount > 0 ? Math.round((discountAmount / basePrice) * 100) : 0;
+
+        return {
+            price: discountedPrice,
+            originalPrice: basePrice,
+            hasDiscount: discountAmount > 0,
+            discountPercent: discountPercent,
+        };
+    }
+
+    return {
+        price: basePrice,
+        originalPrice: null,
+        hasDiscount: false,
+        discountPercent: null,
+    };
 }
 
 /**
- * Get display price information
+ * Get stock status text
  */
-export function getDisplayPrice(product: ProductResponseDto) {
-  // If product has variants, use first variant price
-  if (product.variants && product.variants.length > 0) {
-    const firstVariant = product.variants[0];
-    return {
-      price: firstVariant.price ?? product.basePrice,
-      originalPrice: firstVariant.compareAtPrice ?? product.baseCompareAtPrice,
-      discountPercent: firstVariant.compareAtPrice && firstVariant.price 
-        ? Math.round(((firstVariant.compareAtPrice - firstVariant.price) / firstVariant.compareAtPrice) * 100)
-        : null,
-      hasDiscount: !!(firstVariant.compareAtPrice && firstVariant.price && firstVariant.compareAtPrice > firstVariant.price)
-    };
-  }
-  
-  // If product has no variants, use product base price
-  return {
-    price: product.basePrice,
-    originalPrice: product.baseCompareAtPrice,
-    discountPercent: product.baseCompareAtPrice 
-      ? Math.round(((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100)
-      : null,
-    hasDiscount: !!(product.baseCompareAtPrice && product.baseCompareAtPrice > product.basePrice)
-  };
+export function getStockText(product: ProductResponseDto): string {
+    const stock = product.quantity || 0;
+
+    if (stock === 0) {
+        return "품절";
+    } else if (stock < 10) {
+        return `재고 부족 (${stock}개 남음)`;
+    } else if (stock < 50) {
+        return `재고 있음 (${stock}개)`;
+    } else {
+        return "충분한 재고";
+    }
 }
+

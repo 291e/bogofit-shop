@@ -7,11 +7,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Support both 'page' and 'pageNumber' for backward compatibility
     const page = searchParams.get('page') || searchParams.get('pageNumber') || '1';
     const pageSize = searchParams.get('pageSize') || '10';
-    
+
     // Filter parameters
     const id = searchParams.get('id');
     const slug = searchParams.get('slug');
@@ -26,17 +26,21 @@ export async function GET(request: NextRequest) {
 
     // Build query parameters based on backend API documentation
     const queryParams = new URLSearchParams();
-    
+
+    const promotion = searchParams.get('promotion'); // Include promotion data
+
     // Priority 1: Get by ID (single product)
     if (id) {
       queryParams.set('id', id);
       if (include) queryParams.set('include', include);
+      if (promotion) queryParams.set('promotion', promotion);
     }
     // Priority 2: Get by slug + brandId (single product)
     else if (slug && brandId) {
       queryParams.set('slug', slug);
       queryParams.set('brandId', brandId);
       if (include) queryParams.set('include', include);
+      if (promotion) queryParams.set('promotion', promotion);
     }
     // Priority 2.5: Get by slug + brand slug (single product - SEO-friendly)
     else if (slug && brand) {
@@ -44,12 +48,13 @@ export async function GET(request: NextRequest) {
       queryParams.set('slug', slug);
       queryParams.set('brand', brand);
       if (include) queryParams.set('include', include);
+      if (promotion) queryParams.set('promotion', promotion);
     }
     // Priority 3: List with filters
     else {
       queryParams.set('page', page);
       queryParams.set('pageSize', pageSize);
-      
+
       // Only add brandId if provided (for public access, this can be empty)
       if (brandId) queryParams.set('brandId', brandId);
       if (categoryId) queryParams.set('categoryId', categoryId);
@@ -58,6 +63,7 @@ export async function GET(request: NextRequest) {
       if (isActive) queryParams.set('isActive', isActive);
       if (search) queryParams.set('search', search);
       if (include) queryParams.set('include', include);
+      if (promotion) queryParams.set('promotion', promotion);
     }
 
     // Get authorization header from the incoming request
@@ -73,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     const responseText = await response.text();
     let data;
-    
+
     if (responseText.trim()) {
       try {
         data = JSON.parse(responseText);
@@ -105,7 +111,7 @@ export async function GET(request: NextRequest) {
     // Add cache headers for better performance
     const headers = new Headers();
     headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600'); // 5 min cache, 10 min stale
-    
+
     return NextResponse.json(data, { headers });
   } catch (error) {
     console.error('❌ Error fetching products:', error);
@@ -121,7 +127,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const authHeader = request.headers.get('authorization');
-    
+
     // ✅ Validate required fields
     if (!body.brandId || !body.name || !body.slug || !body.basePrice) {
       return NextResponse.json(
@@ -174,7 +180,7 @@ export async function POST(request: NextRequest) {
 
     const responseText = await response.text();
     let data;
-    
+
     if (responseText.trim()) {
       try {
         data = JSON.parse(responseText);

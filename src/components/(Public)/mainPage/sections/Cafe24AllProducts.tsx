@@ -14,8 +14,24 @@ interface Cafe24AllProductsProps {
 const convertToDisplayProduct = (product: ProductResponseDto) => {
   // v2.0: Use first variant instead of default variant
   const firstVariant = product.variants?.[0];
-  const defaultImage = product.images?.[0] || "/logo.png";
-  
+
+  // Better image handling with validation
+  let defaultImage = "/logo.png"; // Default fallback
+
+  // Try images array first
+  if (product.images && product.images.length > 0) {
+    const firstImage = product.images[0];
+    if (firstImage && (firstImage.startsWith('http') || firstImage.startsWith('/'))) {
+      defaultImage = firstImage;
+    }
+  }
+  // Fallback to thumbUrl if images array is empty
+  else if (product.thumbUrl) {
+    if (product.thumbUrl.startsWith('http') || product.thumbUrl.startsWith('/')) {
+      defaultImage = product.thumbUrl;
+    }
+  }
+
   return {
     id: product.id,
     name: product.name,
@@ -25,7 +41,7 @@ const convertToDisplayProduct = (product: ProductResponseDto) => {
     image: defaultImage,
     brand: product.brand?.name || "BOGOFIT",
     brandSlug: product.brand?.slug, // Brand slug for SEO-friendly URLs
-    discount: firstVariant?.compareAtPrice && firstVariant?.price 
+    discount: firstVariant?.compareAtPrice && firstVariant?.price
       ? Math.round(((firstVariant.compareAtPrice - firstVariant.price) / firstVariant.compareAtPrice) * 100)
       : undefined,
     rating: undefined,
@@ -49,7 +65,7 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
 
       loadingRef.current = true;
       setLoading(true);
-      
+
       try {
         const response = await fetch(
           `/api/product?page=${page}&pageSize=${LOAD_SIZE}&isActive=true`

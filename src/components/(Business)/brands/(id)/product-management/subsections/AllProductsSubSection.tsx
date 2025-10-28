@@ -16,15 +16,16 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/authProvider";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ProductDeleteConfirmModal from "./ProductForm/ProductDeleteConfirmModal";
+import ProductDetailModal from "./ProductDetailModal";
+import BulkPromotionAssign from "../components/BulkPromotionAssign";
 
 interface AllProductsSubSectionProps {
   brandId?: string;
 }
 
-export default function AllProductsSubSection({ 
-  brandId 
+export default function AllProductsSubSection({
+  brandId
 }: AllProductsSubSectionProps) {
   const router = useRouter();
   const { getToken } = useAuth();
@@ -36,31 +37,35 @@ export default function AllProductsSubSection({
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<ProductResponseDto | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
+
+  // Bulk promotion assign state
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+  const [showBulkPromotionModal, setShowBulkPromotionModal] = useState(false);
+
   // Debounce search term to avoid spamming API
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  
+
   // Reset to page 1 when search term changes
   useEffect(() => {
     if (debouncedSearchTerm) {
       setPageNumber(1);
     }
   }, [debouncedSearchTerm]);
-  
+
   // ✅ Use React Query for products with backend search
   const { data, isLoading, error } = useProducts(brandId, pageNumber, debouncedSearchTerm);
-  
+
   // ✅ Use query client for cache invalidation
   const queryClient = useQueryClient();
-  
+
   // Extract products and pagination from response
   const products: ProductResponseDto[] = useMemo(() => {
-    return Array.isArray(data?.data?.data) 
-      ? data.data.data 
-      : Array.isArray(data?.data) 
-        ? data.data 
-        : Array.isArray(data?.products) 
-          ? data.products 
+    return Array.isArray(data?.data?.data)
+      ? data.data.data
+      : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.products)
+          ? data.products
           : [];
   }, [data]);
 
@@ -70,21 +75,23 @@ export default function AllProductsSubSection({
       console.log('🔍 First product data:', products[0]);
       console.log('🔍 Product status:', products[0].status);
       console.log('🔍 Product isActive:', products[0].isActive);
+      console.log('🔍 Product promotion:', products[0].promotion);
+      console.log('🔍 Product promotionId:', products[0].promotionId);
     }
   }, [products]);
-  
+
   // Pagination is inside data.data, NOT data.pagination
   const totalPages = data?.data?.totalPages || data?.pagination?.totalPages || data?.totalPages || 1;
   const totalProducts = data?.data?.totalCount || data?.pagination?.totalCount || products.length;
   const currentPage = data?.data?.page || data?.pagination?.currentPage || pageNumber;
-  
+
   // Debug logging
   console.log('🔍 AllProducts - pageNumber:', pageNumber, 'brandId:', brandId);
-  console.log('📊 AllProducts - Pagination:', { 
-    totalPages, 
-    totalProducts, 
+  console.log('📊 AllProducts - Pagination:', {
+    totalPages,
+    totalProducts,
     currentPage,
-    productsCount: products.length 
+    productsCount: products.length
   });
 
   // No need for client-side filtering anymore - backend handles search
@@ -104,11 +111,37 @@ export default function AllProductsSubSection({
     router.push(`/business/brands/${brandId}/products/register`);
   };
 
+  // Bulk promotion handlers
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProductIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProductIds.size === filteredProducts.length) {
+      setSelectedProductIds(new Set());
+    } else {
+      setSelectedProductIds(new Set(filteredProducts.map(p => p.id)));
+    }
+  };
+
+  const handleBulkPromotionSuccess = () => {
+    setSelectedProductIds(new Set());
+    queryClient.invalidateQueries({ queryKey: [...PRODUCTS_QUERY_KEY, brandId] });
+  };
+
   // ✅ Handle toggle isActive using custom mutation
   const handleToggleActive = async (productId: string, isActive: boolean) => {
     // Add to toggling set for loading state
     setTogglingProducts(prev => new Set(prev).add(productId));
-    
+
     try {
       const token = getToken();
       if (!token) {
@@ -127,11 +160,11 @@ export default function AllProductsSubSection({
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ 
-          success: false, 
-          message: 'Unknown error' 
+        const errorData = await response.json().catch(() => ({
+          success: false,
+          message: 'Unknown error'
         }));
-        
+
         // ✅ Debug: Log error response from backend
         console.log('🔍 Product Update Error Response:', {
           status: response.status,
@@ -141,14 +174,14 @@ export default function AllProductsSubSection({
           errorType: errorData.errorType,
           fullErrorData: errorData
         });
-        
+
         // ✅ Check backend response format first
         if (errorData.success === false && errorData.message) {
           // Backend returned proper error format
           toast.error(errorData.message);
           return;
         }
-        
+
         // ✅ Fallback to status code based errors
         if (response.status === 401) {
           toast.error('Invalid token - Please login again');
@@ -166,7 +199,7 @@ export default function AllProductsSubSection({
           toast.error('Server error - Please try again later');
           return;
         }
-        
+
         // ✅ Generic error with backend message
         const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
         toast.error(`Product status update failed: ${errorMessage}`);
@@ -174,7 +207,7 @@ export default function AllProductsSubSection({
       }
 
       const responseData = await response.json();
-      
+
       // ✅ Debug: Log actual response from backend
       console.log('🔍 Product Update Response:', {
         success: responseData.success,
@@ -182,32 +215,32 @@ export default function AllProductsSubSection({
         data: responseData.data,
         fullResponse: responseData
       });
-      
+
       // ✅ Check backend response format
       if (!responseData.success) {
         toast.error(responseData.message || 'Product status update failed');
         return;
       }
-      
+
       // ✅ Use the same cache update logic as useUpdateProduct
       if (responseData.success && responseData.data) {
         // ✅ Invalidate and refetch the products query to get fresh data
         queryClient.invalidateQueries({
           queryKey: [...PRODUCTS_QUERY_KEY, brandId]
         });
-        
+
         // ✅ Also invalidate the specific product detail query
         queryClient.invalidateQueries({
           queryKey: [...PRODUCT_DETAIL_QUERY_KEY, productId]
         });
       }
-      
+
       // ✅ Show success toast
       toast.success(`상품이 ${isActive ? '활성화' : '비활성화'}되었습니다.`);
-      
+
     } catch (error) {
       console.error('Error toggling product active status:', error);
-      
+
       // ✅ Show specific error messages based on error type
       if (error instanceof TypeError && error.message.includes('fetch')) {
         toast.error('Network connection error - Please check your connection');
@@ -240,10 +273,10 @@ export default function AllProductsSubSection({
 
   const confirmDeleteProduct = async () => {
     if (!productToDelete) return;
-    
+
     // Add to deleting set for loading state
     setDeletingProducts(prev => new Set(prev).add(productToDelete.id));
-    
+
     try {
       const token = getToken();
       const response = await fetch(`/api/product/${productToDelete.id}`, {
@@ -253,16 +286,16 @@ export default function AllProductsSubSection({
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         toast.success('상품이 삭제되었습니다');
-        
+
         // ✅ Invalidate products list and product detail caches
         queryClient.invalidateQueries({ queryKey: [...PRODUCTS_QUERY_KEY, brandId] });
         queryClient.invalidateQueries({ queryKey: [...PRODUCT_DETAIL_QUERY_KEY, productToDelete.id] });
-        
+
         // Close modal
         setShowDeleteModal(false);
         setProductToDelete(null);
@@ -330,22 +363,37 @@ export default function AllProductsSubSection({
               </div>
               <div className="text-sm text-gray-600">
                 총 <span className="font-semibold text-gray-900">{totalProducts}</span>개 상품
+                {selectedProductIds.size > 0 && (
+                  <span className="ml-2 text-purple-600 font-semibold">
+                    ({selectedProductIds.size}개 선택됨)
+                  </span>
+                )}
               </div>
             </div>
-            <Button onClick={handleRegisterClick}>상품 등록</Button>
+            <div className="flex gap-2">
+              {selectedProductIds.size > 0 && (
+                <Button
+                  onClick={() => setShowBulkPromotionModal(true)}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  프로모션 적용 ({selectedProductIds.size})
+                </Button>
+              )}
+              <Button onClick={handleRegisterClick}>상품 등록</Button>
+            </div>
           </div>
-          
+
           {!filteredProducts || filteredProducts.length === 0 ? (
             <div className="border rounded-lg p-8 text-center">
               <p className="text-gray-500">
-                {debouncedSearchTerm 
-                  ? `"${debouncedSearchTerm}"에 대한 검색 결과가 없습니다.` 
+                {debouncedSearchTerm
+                  ? `"${debouncedSearchTerm}"에 대한 검색 결과가 없습니다.`
                   : "등록된 상품이 없습니다."}
               </p>
               {debouncedSearchTerm && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="mt-4"
                   onClick={() => setSearchTerm("")}
                 >
@@ -357,31 +405,51 @@ export default function AllProductsSubSection({
             <div className="space-y-0">
               {/* 헤더 */}
               <div className="flex items-center py-3 px-4 bg-gray-50 rounded-t-lg font-medium text-xs text-gray-600 border-2 border-gray-200">
+                <div className="w-12 text-center border-r border-gray-300 pr-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedProductIds.size === filteredProducts.length && filteredProducts.length > 0}
+                    onChange={handleSelectAll}
+                    onClick={(e) => e.stopPropagation()}
+                    className="cursor-pointer"
+                  />
+                </div>
                 <div className="flex-1 text-center border-r border-gray-300 pr-2">상품 SKU</div>
                 <div className="w-16 text-center border-r border-gray-300 pr-2">이미지</div>
                 <div className="flex-[2] text-center border-r border-gray-300 pr-2">상품명</div>
                 <div className="w-24 text-center border-r border-gray-300 pr-2">상태</div>
                 <div className="w-20 text-center border-r border-gray-300 pr-2">활성</div>
+                <div className="w-32 text-center border-r border-gray-300 pr-2">프로모션</div>
                 <div className="w-28 text-center border-r border-gray-300 pr-2">기본 가격</div>
                 <div className="w-28 text-center border-r border-gray-300 pr-2">비교 가격</div>
                 <div className="w-20 text-center border-r border-gray-300 pr-2">변형 수</div>
                 <div className="w-32 text-center pl-2">액션</div>
               </div>
-              
+
               {filteredProducts?.map((product, index) => (
                 <div key={product.id} className={`border-l-2 border-r-2 border-b-2 border-gray-200 ${index === filteredProducts.length - 1 ? 'rounded-b-lg' : ''} hover:bg-gray-50 transition-colors cursor-pointer`} onClick={() => handleViewProduct(product)}>
                   <div className="flex items-center py-3 px-4">
+                    {/* Checkbox */}
+                    <div className="w-12 text-center border-r border-gray-300 pr-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedProductIds.has(product.id)}
+                        onChange={() => handleSelectProduct(product.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="cursor-pointer"
+                      />
+                    </div>
                     {/* 상품 SKU */}
                     <div className="flex-1 text-center border-r border-gray-300 pr-2">
                       <p className="text-xs font-mono text-gray-600 truncate">{product.sku}</p>
                     </div>
-                    
+
                     {/* 상품 이미지 */}
                     <div className="w-16 flex justify-center border-r border-gray-300 pr-2">
                       <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center border border-gray-200">
                         {product.thumbUrl ? (
-                          <Image 
-                            src={product.thumbUrl} 
+                          <Image
+                            src={product.thumbUrl}
                             alt={product.name}
                             className="w-full h-full object-cover rounded"
                             width={40}
@@ -392,18 +460,18 @@ export default function AllProductsSubSection({
                         )}
                       </div>
                     </div>
-                    
+
                     {/* 상품명 */}
                     <div className="flex-[2] text-center min-w-0 border-r border-gray-300 pr-2">
                       <h3 className="font-semibold text-xs truncate">{product.name}</h3>
                     </div>
-                    
+
                     {/* 상태 (Status) - READ ONLY */}
                     <div className="w-24 text-center border-r border-gray-300 pr-2">
                       {(() => {
                         const status = product.status;
                         console.log(`🔍 Product ${product.name} status:`, status, typeof status);
-                        
+
                         // Handle backend status: pending, approved, rejected, banned
                         if (status === 'approved') {
                           return (
@@ -433,7 +501,7 @@ export default function AllProductsSubSection({
                             </Badge>
                           );
                         }
-                        
+
                         // Show actual status value if it exists but doesn't match expected values
                         if (status && status !== '') {
                           return (
@@ -442,7 +510,7 @@ export default function AllProductsSubSection({
                             </Badge>
                           );
                         }
-                        
+
                         // Default case - no status
                         return (
                           <Badge variant="outline" className="text-gray-500 text-xs">
@@ -451,7 +519,7 @@ export default function AllProductsSubSection({
                         );
                       })()}
                     </div>
-                    
+
                     {/* 활성 (Active) - EDITABLE */}
                     <div className="w-20 text-center border-r border-gray-300 pr-2" onClick={(e) => e.stopPropagation()}>
                       <Switch
@@ -460,12 +528,40 @@ export default function AllProductsSubSection({
                         disabled={togglingProducts.has(product.id)}
                       />
                     </div>
-                    
+
+                    {/* 프로모션 */}
+                    <div className="w-32 text-center border-r border-gray-300 pr-2">
+                      {product.promotion ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5">
+                            {product.promotion.name}
+                          </Badge>
+                          <span className="text-xs font-semibold text-purple-600">
+                            {product.promotion.type === 'percentage'
+                              ? `-${product.promotion.value}%`
+                              : product.promotion.type === 'fixed_amount'
+                                ? `-${product.promotion.value?.toLocaleString()}원`
+                                : '무료배송'
+                            }
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">없음</span>
+                      )}
+                    </div>
+
                     {/* 기본 가격 */}
                     <div className="w-28 text-center border-r border-gray-300 pr-2">
-                      <p className="text-xs font-medium">{product.basePrice.toLocaleString()}원</p>
+                      {product.finalPrice && product.finalPrice < product.basePrice ? (
+                        <div className="flex flex-col">
+                          <p className="text-xs font-bold text-purple-600">{product.finalPrice.toLocaleString()}원</p>
+                          <p className="text-[10px] text-gray-400 line-through">{product.basePrice.toLocaleString()}원</p>
+                        </div>
+                      ) : (
+                        <p className="text-xs font-medium">{product.basePrice.toLocaleString()}원</p>
+                      )}
                     </div>
-                    
+
                     {/* 비교 가격 */}
                     <div className="w-28 text-center border-r border-gray-300 pr-2">
                       {product.baseCompareAtPrice ? (
@@ -476,17 +572,17 @@ export default function AllProductsSubSection({
                         <p className="text-xs text-gray-400">-</p>
                       )}
                     </div>
-                    
+
                     {/* 변형 수 */}
                     <div className="w-20 text-center border-r border-gray-300 pr-2">
                       <p className="text-xs">{product.variants?.length || 0}개</p>
                     </div>
-                    
+
                     {/* 액션 버튼 */}
                     <div className="w-32 flex justify-center gap-1 pl-2" onClick={(e) => e.stopPropagation()}>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
+                      <Button
+                        size="sm"
+                        variant="outline"
                         className="text-xs px-2 py-1 h-6"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -495,9 +591,9 @@ export default function AllProductsSubSection({
                       >
                         편집
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
+                      <Button
+                        size="sm"
+                        variant="outline"
                         className="text-xs px-2 py-1 h-6"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -516,12 +612,12 @@ export default function AllProductsSubSection({
               ))}
             </div>
           )}
-          
+
           {/* Pagination - Always show */}
           <div className="flex justify-center mt-6 border-t pt-4">
             <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   console.log('⬅️ Prev clicked, current page:', pageNumber);
@@ -541,8 +637,8 @@ export default function AllProductsSubSection({
                 <span className="text-gray-600">/</span>
                 <span className="font-semibold text-gray-900">{totalPages}</span>
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   console.log('➡️ Next clicked, current page:', pageNumber);
@@ -571,149 +667,22 @@ export default function AllProductsSubSection({
       />
 
       {/* Product Detail Modal */}
-      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>상품 상세 정보</DialogTitle>
-          </DialogHeader>
-          
-          {selectedProduct && (
-            <div className="space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Image
-                    src={selectedProduct.thumbUrl || selectedProduct.images?.[0] || "/logo.png"}
-                    alt={selectedProduct.name}
-                    width={400}
-                    height={400}
-                    className="rounded-lg border w-full h-auto object-cover"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500">상품명</p>
-                    <p className="font-semibold text-lg">{selectedProduct.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">SKU</p>
-                    <p>{selectedProduct.sku || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">기본 가격</p>
-                    <p className="text-xl font-bold">{selectedProduct.basePrice?.toLocaleString()}원</p>
-                  </div>
-                  {selectedProduct.baseCompareAtPrice && selectedProduct.baseCompareAtPrice > 0 && (
-                    <div>
-                      <p className="text-sm text-gray-500">비교 가격</p>
-                      <p className="text-gray-400 line-through">{selectedProduct.baseCompareAtPrice.toLocaleString()}원</p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm text-gray-500">상태</p>
-                    <Badge variant={selectedProduct.isActive ? "default" : "secondary"}>
-                      {selectedProduct.isActive ? '활성' : '비활성'}
-                    </Badge>
-                  </div>
-                  {selectedProduct.quantity !== null && selectedProduct.quantity !== undefined && (
-                    <div>
-                      <p className="text-sm text-gray-500">상품 재고</p>
-                      <p>{selectedProduct.quantity === null ? '무제한' : `${selectedProduct.quantity}개`}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        brandId={brandId}
+      />
 
-              {/* Description */}
-              {selectedProduct.description && (
-                <div>
-                  <p className="text-sm text-gray-500 mb-2">상품 설명</p>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedProduct.description}</p>
-                </div>
-              )}
-
-              {/* Variants */}
-              {selectedProduct.variants && selectedProduct.variants.length > 0 && (
-                <div>
-                  <p className="text-sm text-gray-500 mb-3">변형 옵션 ({selectedProduct.variants.length}개)</p>
-                  <div className="space-y-2">
-                    {selectedProduct.variants.map((variant, index) => {
-                      let optionsDisplay = '-';
-                      try {
-                        if (variant.optionsJson) {
-                          const options = JSON.parse(variant.optionsJson);
-                          optionsDisplay = options.map((opt: Record<string, string>) => 
-                            Object.entries(opt).map(([key, value]) => `${key}: ${value}`).join(', ')
-                          ).join(' / ');
-                        }
-                      } catch (e) {
-                        console.error('Failed to parse options:', e);
-                      }
-
-                      return (
-                        <div key={variant.id || index} className="border rounded-lg p-3 bg-gray-50">
-                          <div className="grid grid-cols-4 gap-3 text-sm">
-                            <div>
-                              <p className="text-gray-500">옵션</p>
-                              <p className="font-medium">{optionsDisplay}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">가격</p>
-                              <p className="font-medium">{variant.price?.toLocaleString()}원</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">재고</p>
-                              <p className="font-medium">{variant.quantity}개</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500">상태</p>
-                              <Badge variant={variant.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                                {variant.status === 'active' ? '활성' : variant.status === 'paused' ? '일시정지' : '보관'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Images */}
-              {selectedProduct.images && selectedProduct.images.length > 0 && (
-                <div>
-                  <p className="text-sm text-gray-500 mb-3">상세 이미지 ({selectedProduct.images.length}개)</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {selectedProduct.images.map((image, index) => (
-                      <Image
-                        key={index}
-                        src={image}
-                        alt={`${selectedProduct.name} ${index + 1}`}
-                        width={150}
-                        height={150}
-                        className="rounded border w-full h-auto object-cover"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 justify-end pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowDetailModal(false)}>
-                  닫기
-                </Button>
-                <Button onClick={() => {
-                  setShowDetailModal(false);
-                  handleEditProduct(selectedProduct);
-                }}>
-                  편집하기
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Bulk Promotion Assign Modal */}
+      {showBulkPromotionModal && (
+        <BulkPromotionAssign
+          selectedProductIds={Array.from(selectedProductIds)}
+          brandId={brandId || ""}
+          onClose={() => setShowBulkPromotionModal(false)}
+          onSuccess={handleBulkPromotionSuccess}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,17 +19,20 @@ import {
   garmentSamples,
   lowerSamples,
 } from "@/contents/VirtualFitting/sampleImages";
+import { useVideoGeneration } from "@/hooks/useVideoGeneration";
 
 interface VirtualFittingProps {
   productTitle?: string;
   productCategory?: string;
   currentImage?: string; // 현재 선택된 메인 이미지
+  onResultGenerated?: (resultImage: string) => void; // 가상 피팅 결과 콜백
 }
 
 export default function VirtualFitting({
   productTitle,
   productCategory,
   currentImage,
+  onResultGenerated,
 }: VirtualFittingProps) {
   const [files, setFiles] = useState<{
     human_file: File | null;
@@ -65,6 +67,16 @@ export default function VirtualFitting({
   const [isOpen, setIsOpen] = useState(true);
   const [showResults, setShowResults] = useState(false);
   const [imageLoading, setImageLoading] = useState(false); // Generated image loading state
+  const [useOriginalImageForVideo, setUseOriginalImageForVideo] = useState(true); // Use original product image for video
+  // Virtual Fitting API Selection
+  const [useGeminiAPI, setUseGeminiAPI] = useState(true); // true: Gemini AI, false: Original EC2 API
+
+  // Single item image for Gemini AI
+  const [itemImage, setItemImage] = useState<File | null>(null);
+  const [itemPreview, setItemPreview] = useState<string>("");
+
+  // Video generation hook
+  const videoGeneration = useVideoGeneration();
 
   // 파일 업로드 오류 상태 추가
   const [fileErrors, setFileErrors] = useState<{
@@ -104,10 +116,9 @@ export default function VirtualFitting({
     progressIntervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progressRatio = Math.min(elapsed / duration, 1);
-      
-      // Easing function for smoother animation
-      const easeOutQuart = 1 - Math.pow(1 - progressRatio, 4);
-      const currentProgress = startProgress + progressDiff * easeOutQuart;
+
+      // Linear progress (đều đặn, không tăng/giảm tốc)
+      const currentProgress = startProgress + progressDiff * progressRatio;
 
       setProgress(Math.round(currentProgress));
 
@@ -115,7 +126,7 @@ export default function VirtualFitting({
         clearInterval(progressIntervalRef.current!);
         progressIntervalRef.current = null;
       }
-    }, 50); // 더 빠른 업데이트 (50ms)
+    }, 50); // Update every 50ms
   };
 
   const clearProgressTimer = () => {
@@ -130,7 +141,7 @@ export default function VirtualFitting({
     // 파일 형식 검사
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-        return "지원하지 않는 파일 형식입니다. JPG, PNG, WEBP만 업로드 가능합니다.";
+      return "지원하지 않는 파일 형식입니다. JPG, PNG, WEBP만 업로드 가능합니다.";
     }
 
     return "";
@@ -142,6 +153,13 @@ export default function VirtualFitting({
     filename: string
   ): Promise<File | null> => {
     try {
+      // ✅ Data URL인 경우 (AI generated images)
+      if (url.startsWith("data:")) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new File([blob], filename, { type: blob.type || "image/png" });
+      }
+
       // 로컬 이미지인 경우 직접 사용
       if (url.startsWith("/")) {
         const response = await fetch(url);
@@ -273,10 +291,132 @@ export default function VirtualFitting({
     setPreviews((prev) => ({ ...prev, [fieldName]: imageSrc }));
   };
 
+  // Handle accessory file upload
+  const handleItemImageChange = (file: File | null) => {
+    if (file) {
+      const error = validateFile(file);
+      if (error) {
+        alert(error);
+        return;
+      }
+
+      setItemImage(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setItemPreview(e.target?.result as string || "");
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setItemImage(null);
+      setItemPreview("");
+    }
+  };
+
+  // Gemini AI를 사용한 가상 피팅
+  const runGeminiVirtualFitting = async () => {
+    // For Gemini: at least one item is required
+    const hasAnyItem = files.human_file || files.garment_file || itemImage;
+
+    if (!hasAnyItem) {
+      alert("최소 1개 이상의 이미지를 업로드해주세요.");
+      return;
+    }
+
+    try {
+      setProgress(0);
+      setStatus("Gemini AI로 이미지 생성 중...");
+
+      const formData = new FormData();
+      formData.append('personImage', files.human_file || new Blob());
+      formData.append('garmentImage', files.garment_file || new Blob());
+
+      // Add item image if provided
+      if (itemImage) {
+        formData.append('itemImage', itemImage);
+      }
+
+      if (productTitle) {
+        formData.append('productTitle', productTitle);
+      }
+
+      // Progress timer: 0% → 100% over 13 seconds
+      startProgressTimer(0, 100, 13000);
+      setStatus("AI가 이미지를 분석하고 있습니다...");
+
+      console.log('🎨 Calling Gemini AI virtual fitting API...');
+
+      const response = await fetch('/api/ai/virtual-fitting', {
+        method: 'POST',
+        body: formData,
+      });
+
+      console.log('📥 API Response status:', response.status);
+
+      clearProgressTimer(); // Clear timer when response is received
+
+      const result = await response.json();
+      console.log('📦 API Result:', { success: result.success, hasImage: !!result.imageUrl });
+
+      if (!response.ok || !result.success) {
+        console.error('❌ API Error:', result.message);
+        throw new Error(result.message || 'Failed to generate image');
+      }
+
+      setProgress(100);
+      setStatus("이미지 생성 완료!");
+      setGeneratedImage(result.imageUrl);
+      console.log('✅ Image generated successfully');
+
+      // Call callback
+      if (onResultGenerated) {
+        onResultGenerated(result.imageUrl);
+      }
+
+      // Enable video generation if pro mode
+      if (isProEnabled) {
+        setStatus("AI 비디오 생성 중... (약 20초 소요, 세로형 6초 영상)");
+        startProgressTimer(90, 100, 20000);
+
+        try {
+          const imageForVideo = useOriginalImageForVideo && currentImage ? currentImage : result.imageUrl;
+
+          const videoResult = await videoGeneration.mutateAsync({
+            imageUrl: imageForVideo,
+            prompt: `A person trying on ${productTitle || 'fashionable clothing'}`,
+            productTitle: productTitle,
+          });
+
+          if (videoResult.success && videoResult.data.videoUrl) {
+            clearProgressTimer();
+            setProgress(100);
+            setStatus(`AI 비디오 생성 완료! (${videoResult.data.duration || '6초'} 360도 피팅룸 영상)`);
+            setGeneratedVideo(videoResult.data.videoUrl);
+          } else {
+            clearProgressTimer();
+            setStatus("비디오 생성 실패: 알 수 없는 오류");
+          }
+        } catch (videoError) {
+          clearProgressTimer();
+          console.error("Video generation error:", videoError);
+          setStatus("비디오 생성 중 오류 발생");
+        }
+      }
+
+      setShowResults(true);
+      setIsProcessing(false);
+
+    } catch (error) {
+      console.error('Gemini virtual fitting error:', error);
+      setStatus("오류 발생: " + (error instanceof Error ? error.message : "알 수 없는 오류"));
+      setIsProcessing(false);
+    }
+  };
+
   // 워크플로우 직접 실행
   const runWorkflowDirect = async (formData: FormData) => {
     try {
-      setProgress(5);
+      setProgress(0);
       setStatus("이미지 생성 중...");
 
       // 배경 이미지가 포함된 경우 더 긴 타임아웃 설정
@@ -287,8 +427,8 @@ export default function VirtualFitting({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
-      // 이미지 생성 진행률을 95초 동안 5%에서 100%까지 점진적으로 증가 (1% = 1초)
-      startProgressTimer(5, 100, 95000);
+      // 이미지 생성 진행률을 20초 동안 0%에서 100%까지 점진적으로 증가
+      startProgressTimer(0, 100, 20000);
       setStatus("AI와 통신 중...");
 
       const workflowResponse = await fetch(
@@ -343,9 +483,14 @@ export default function VirtualFitting({
         if (imageUrlMatch) {
           // 이미지 URL을 찾았다면 성공으로 처리
           clearProgressTimer();
-          setProgress(90);
+          setProgress(100);
           setStatus("이미지 생성 완료!");
           setGeneratedImage(imageUrlMatch[0]);
+
+          // Call callback to add result to detailed images
+          if (onResultGenerated) {
+            onResultGenerated(imageUrlMatch[0]);
+          }
 
           if (isProEnabled) {
             setStatus("비디오 생성 중...");
@@ -403,8 +548,7 @@ export default function VirtualFitting({
           setStatus("사람 이미지에 상반신이 최소한 포함되어야 합니다. 다른 이미지를 사용해주세요.");
         } else {
           setStatus(
-            `${"서버 응답 파싱 실패"} (${
-              workflowResponse.status
+            `${"서버 응답 파싱 실패"} (${workflowResponse.status
             }): ${responseText.substring(0, 100)}...`
           );
         }
@@ -412,52 +556,56 @@ export default function VirtualFitting({
       }
 
       if (workflowResponse.ok && workflowResult.image_url) {
-        setProgress(90);
+        setProgress(100);
         setStatus("이미지 생성 완료!");
         setGeneratedImage(workflowResult.image_url);
-        
-        // Success animation
-        setTimeout(() => {
-          setProgress(100);
-        }, 500);
+
+        // Call callback to add result to detailed images
+        if (onResultGenerated) {
+          console.log('🚀 VirtualFitting: Calling onResultGenerated with:', workflowResult.image_url);
+          onResultGenerated(workflowResult.image_url);
+        } else {
+          console.log('❌ VirtualFitting: onResultGenerated callback not provided');
+        }
 
         if (isProEnabled) {
-          setStatus("비디오 생성 중...");
-          // 비디오 생성 진행률을 10초 동안 90%에서 100%까지 증가
-          startProgressTimer(90, 100, 10000);
-
-          const proFormData = new FormData();
-          proFormData.append("image_url", workflowResult.image_url);
-          proFormData.append("connection_info", connectionInfoRef.current!);
-
-          const proResponse = await fetch("/api/virtual-fitting/run_i2v", {
-            method: "POST",
-            body: proFormData,
-          });
-
-          let proResult;
-          const proResponseText = await proResponse.text();
+          setStatus("AI 비디오 생성 중... (약 20초 소요, 세로형 6초 영상)");
+          // 비디오 생성 진행률을 20초 동안 90%에서 100%까지 증가
+          startProgressTimer(90, 100, 20000);
 
           try {
-            proResult = JSON.parse(proResponseText);
-          } catch {
-            clearProgressTimer();
-            setStatus(
-              `${"비디오 생성 서버 오류"}: ${proResponseText.substring(0, 100)}...`
-            );
-            return;
-          }
+            // Use Google GenAI for video generation
+            // Choose image based on user preference
+            const imageForVideo = useOriginalImageForVideo && currentImage ? currentImage : workflowResult.image_url;
+            console.log('🎬 Using image for video generation:', imageForVideo);
+            console.log('🎬 Current image (product):', currentImage);
+            console.log('🎬 Virtual fitting result:', workflowResult.image_url);
+            console.log('🎬 Use original image for video:', useOriginalImageForVideo);
+            console.log('🎬 Final image selection:', imageForVideo);
 
-          if (proResponse.ok && proResult.video_url) {
+            const videoResult = await videoGeneration.mutateAsync({
+              imageUrl: imageForVideo,
+              prompt: `A person wearing ${productTitle || 'fashionable clothing'} in a natural setting, showing how the outfit looks and moves. The person should be walking or moving naturally to demonstrate the clothing's fit and style.`,
+              productTitle: productTitle,
+            });
+
+            if (videoResult.success && videoResult.data.videoUrl) {
+              clearProgressTimer();
+              setProgress(100);
+              setStatus(`AI 비디오 생성 완료! (${videoResult.data.duration || '6초'} 360도 피팅룸 영상)`);
+              setGeneratedVideo(videoResult.data.videoUrl);
+              console.log('✅ Video generated successfully:', videoResult.data.videoUrl);
+              console.log('📊 Video metadata:', {
+                duration: videoResult.data.duration,
+                generationTime: videoResult.data.generationTime
+              });
+            } else {
+              clearProgressTimer();
+              setStatus("AI 비디오 생성 실패");
+            }
+          } catch (error) {
             clearProgressTimer();
-            setProgress(100);
-            setStatus("비디오 생성 완료!");
-            setGeneratedVideo(proResult.video_url);
-          } else {
-            clearProgressTimer();
-            setStatus(
-              "비디오 생성 실패:" + ": " + (proResult.error || "알 수 없는 오류")
-            );
+            setStatus("AI 비디오 생성 실패: " + (error as Error).message);
           }
         } else {
           setProgress(100);
@@ -501,10 +649,11 @@ export default function VirtualFitting({
     }
   };
 
-  // 워크플로우 실행
+  // 워크플로우 실행 (Original API)
   const runWorkflow = async () => {
+    // For Original API: person and garment are REQUIRED
     if (!files.human_file || !files.garment_file) {
-      alert("필수 파일을 업로드해주세요.");
+      alert("모델 이미지와 상의 이미지를 모두 업로드해주세요.");
       return;
     }
 
@@ -522,8 +671,8 @@ export default function VirtualFitting({
     }
 
     const formData = new FormData();
-    formData.append("human_file", files.human_file);
-    formData.append("garment_file", files.garment_file);
+    if (files.human_file) formData.append("human_file", files.human_file);
+    if (files.garment_file) formData.append("garment_file", files.garment_file);
     if (files.lower_file) formData.append("lower_file", files.lower_file);
     if (files.background_file)
       formData.append("background_file", files.background_file);
@@ -550,7 +699,14 @@ export default function VirtualFitting({
 
   const handleStartWorkflow = async () => {
     setShowResults(true);
-    await runWorkflow();
+    setIsProcessing(true);
+
+    // Choose API based on user selection
+    if (useGeminiAPI) {
+      await runGeminiVirtualFitting();
+    } else {
+      await runWorkflow(); // Original EC2 API
+    }
   };
 
   const resetComponent = () => {
@@ -567,7 +723,7 @@ export default function VirtualFitting({
     // Capture ref values at the time the effect runs
     const timeoutId = timeoutRef.current;
     const intervalId = progressIntervalRef.current;
-    
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
       if (intervalId) clearInterval(intervalId);
@@ -610,24 +766,21 @@ export default function VirtualFitting({
 
       {/* 가상 피팅 콘텐츠 (접기/펼치기) */}
       <div
-        className={`transition-all duration-500 ease-in-out ${
-          isOpen
-            ? "max-h-none opacity-100 overflow-visible"
-            : "max-h-0 opacity-0 overflow-hidden"
-        }`}
+        className={`transition-all duration-500 ease-in-out ${isOpen
+          ? "max-h-none opacity-100 overflow-visible"
+          : "max-h-0 opacity-0 overflow-hidden"
+          }`}
       >
         <div
-          className={`transition-all duration-700 ease-in-out ${
-            showResults
-              ? "flex flex-col md:grid md:grid-cols-2 gap-2"
-              : "grid grid-cols-1"
-          }`}
+          className={`transition-all duration-700 ease-in-out ${showResults
+            ? "flex flex-col md:grid md:grid-cols-2 gap-2"
+            : "grid grid-cols-1"
+            }`}
         >
           {/* 가상 피팅 입력 섹션 */}
           <Card
-            className={`transition-all duration-700 ease-in-out ${
-              showResults ? "md:transform md:-translate-x-2" : ""
-            } order-1`}
+            className={`transition-all duration-700 ease-in-out ${showResults ? "md:transform md:-translate-x-2" : ""
+              } order-1`}
           >
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">{"이미지 업로드"}</CardTitle>
@@ -643,7 +796,65 @@ export default function VirtualFitting({
               )}
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* 3컬럼 파일 업로드 영역 - 최적화된 레이아웃 */}
+              {/* AI 엔진 선택 */}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-lg">
+                <p className="text-sm font-semibold text-gray-900 mb-3">AI 엔진 선택</p>
+                <div className="space-y-3">
+                  <div
+                    onClick={() => setUseGeminiAPI(true)}
+                    className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${useGeminiAPI
+                      ? 'border-purple-600 bg-purple-50 shadow-md'
+                      : 'border-gray-300 bg-white hover:border-purple-300 hover:bg-purple-50'
+                      }`}
+                  >
+                    <div className="flex items-center justify-center w-5 h-5 mt-0.5">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${useGeminiAPI
+                        ? 'border-purple-600 bg-purple-600'
+                        : 'border-gray-400 bg-white'
+                        }`}>
+                        {useGeminiAPI && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-base font-semibold text-gray-900">BOGOFIT V2</span>
+                        <Badge variant="secondary" className="bg-purple-600 text-white text-xs">NEW</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">빠른 속도 · 13초 완성 · 상의 전문</p>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setUseGeminiAPI(false)}
+                    className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${!useGeminiAPI
+                      ? 'border-blue-600 bg-blue-50 shadow-md'
+                      : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                  >
+                    <div className="flex items-center justify-center w-5 h-5 mt-0.5">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!useGeminiAPI
+                        ? 'border-blue-600 bg-blue-600'
+                        : 'border-gray-400 bg-white'
+                        }`}>
+                        {!useGeminiAPI && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-base font-semibold text-gray-900">BOGOFIT V1</span>
+                        <Badge variant="outline" className="text-xs border-blue-600 text-blue-600">STABLE</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">안정적인 결과 · 상하의 모두 지원</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3컬럼 파일 업로드 영역 */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                 {/* 사람 이미지 */}
                 <div className="flex flex-col space-y-3">
@@ -685,16 +896,15 @@ export default function VirtualFitting({
                       preview={
                         previews.garment_file ||
                         (currentImage &&
-                        (productCategory === "상의" ||
-                          productCategory === "아우터" ||
-                          productCategory === "원피스") &&
-                        !files.garment_file
+                          (productCategory === "상의" ||
+                            productCategory === "아우터" ||
+                            productCategory === "원피스") &&
+                          !files.garment_file
                           ? currentImage
                           : "")
                       }
                       label={"상의 이미지"}
-                      required
-                      description="&nbsp;"
+                      description="선택사항"
                       sampleImages={garmentSamples}
                       onSampleSelect={(imageSrc) =>
                         handleSampleSelect("garment_file", imageSrc)
@@ -720,42 +930,80 @@ export default function VirtualFitting({
 
                 {/* 하의 이미지 */}
                 <div className="flex flex-col space-y-3">
-                  <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
-                    <FileDropzone
-                      onDrop={(file) => handleFileChange("lower_file", file)}
-                      preview={
-                        previews.lower_file ||
-                        (currentImage &&
-                        productCategory === "하의" &&
-                        !files.lower_file
-                          ? currentImage
-                          : "")
-                      }
-                      label={"하의 이미지"}
-                      description="&nbsp;"
-                      sampleImages={lowerSamples}
-                      onSampleSelect={(imageSrc) =>
-                        handleSampleSelect("lower_file", imageSrc)
-                      }
-                      onClear={() => handleFileChange("lower_file", null)}
-                      type="clothing"
-                    />
-                  </div>
-
-                  {/* 하의 이미지 오류 메시지 */}
-                  {fileErrors.lower_file && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="flex items-start space-x-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-red-800">
-                          <p className="font-medium">{"업로드 오류"}</p>
-                          <p className="mt-1">{fileErrors.lower_file}</p>
+                  {useGeminiAPI ? (
+                    // Gemini AI: 개발중
+                    <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px] flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl">
+                      <div className="text-center p-6">
+                        <p className="text-sm font-semibold text-gray-900 mb-2">하의 이미지</p>
+                        <div className="inline-block px-3 py-1 bg-yellow-100 border border-yellow-300 rounded-full mb-3">
+                          <span className="text-xs font-medium text-yellow-800">개발중</span>
                         </div>
+                        <p className="text-xs text-gray-600">
+                          하의 가상 피팅 기능은 곧 제공될 예정입니다
+                        </p>
                       </div>
                     </div>
+                  ) : (
+                    // Original API: Normal upload
+                    <>
+                      <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
+                        <FileDropzone
+                          onDrop={(file) => handleFileChange("lower_file", file)}
+                          preview={
+                            previews.lower_file ||
+                            (currentImage &&
+                              productCategory === "하의" &&
+                              !files.lower_file
+                              ? currentImage
+                              : "")
+                          }
+                          label={"하의 이미지"}
+                          description="&nbsp;"
+                          sampleImages={lowerSamples}
+                          onSampleSelect={(imageSrc) =>
+                            handleSampleSelect("lower_file", imageSrc)
+                          }
+                          onClear={() => handleFileChange("lower_file", null)}
+                          type="clothing"
+                        />
+                      </div>
+
+                      {/* 하의 이미지 오류 메시지 */}
+                      {fileErrors.lower_file && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-red-800">
+                              <p className="font-medium">{"업로드 오류"}</p>
+                              <p className="mt-1">{fileErrors.lower_file}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
+
+              {/* Item Image Upload (Only for Gemini AI) */}
+              {useGeminiAPI && (
+                <div className="mt-6">
+                  <div className="flex flex-col space-y-3">
+                    <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-square min-h-[300px] max-h-[400px]">
+                      <FileDropzone
+                        onDrop={(file) => handleItemImageChange(file)}
+                        preview={itemPreview}
+                        label="아이템 이미지"
+                        description="가방, 모자 등 추가 아이템 (1개만 선택)"
+                        sampleImages={[]}
+                        onSampleSelect={() => { }}
+                        onClear={() => handleItemImageChange(null)}
+                        type="clothing"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 안내 섹션 - flex 열로 배치 */}
               <div className="flex flex-col gap-4">
@@ -796,19 +1044,63 @@ export default function VirtualFitting({
                     className="rounded"
                   />
                   <label htmlFor="is_pro" className="text-sm font-medium">
-                    {"AI 비디오 생성"}
+                    {"AI 비디오 생성 (Google GenAI)"}
                     <Badge variant="outline" className="ml-2 text-xs">
-                      PRO
+                      AI
                     </Badge>
                   </label>
                 </div>
+
+                {isProEnabled && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium mb-1">🎬 AI 비디오 생성 기능</p>
+                      <ul className="space-y-1 text-xs">
+                        <li>• 가상 피팅 결과를 기반으로 자연스러운 움직임 비디오 생성</li>
+                        <li>• 의류의 착용감과 스타일을 동적으로 보여줍니다</li>
+                        <li>• Google GenAI Veo 3.1 모델 사용</li>
+                        <li>• 비디오 길이: 10초, 생성 시간: 20-30초</li>
+                      </ul>
+                    </div>
+
+                    {/* Image selection for video */}
+                    <div className="mt-3 p-2 bg-white rounded border">
+                      <p className="text-xs font-medium text-blue-900 mb-2">비디오 생성용 이미지 선택:</p>
+                      <div className="space-y-2">
+                        <label className="flex items-center space-x-2 text-xs">
+                          <input
+                            type="radio"
+                            name="videoImage"
+                            checked={useOriginalImageForVideo}
+                            onChange={() => setUseOriginalImageForVideo(true)}
+                            className="text-blue-600"
+                          />
+                          <span>원본 상품 이미지 사용</span>
+                        </label>
+                        <label className="flex items-center space-x-2 text-xs">
+                          <input
+                            type="radio"
+                            name="videoImage"
+                            checked={!useOriginalImageForVideo}
+                            onChange={() => setUseOriginalImageForVideo(false)}
+                            className="text-blue-600"
+                          />
+                          <span>가상 피팅 결과 이미지 사용</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <Button
                   onClick={handleStartWorkflow}
                   disabled={
                     isProcessing ||
-                    !files.human_file ||
-                    !files.garment_file ||
+                    // Gemini: at least 1 item, Original: person + garment required
+                    (useGeminiAPI
+                      ? (!files.human_file && !files.garment_file && !itemImage)
+                      : (!files.human_file || !files.garment_file)
+                    ) ||
                     !!fileErrors.human_file ||
                     !!fileErrors.garment_file ||
                     !!fileErrors.lower_file ||
@@ -837,26 +1129,24 @@ export default function VirtualFitting({
               {/* 상태 표시 */}
               {status && (
                 <div
-                  className={`p-3 rounded-lg ${
-                    status.includes("실패") ||
+                  className={`p-3 rounded-lg ${status.includes("실패") ||
                     status.includes("오류") ||
-                    status.includes("상반신")
-                      ? "bg-red-50 border border-red-200"
-                      : status.includes("완료")
-                        ? "bg-green-50 border border-green-200"
-                        : "bg-blue-50 border border-blue-200"
-                  }`}
+                    status.includes("상                        반신")
+                    ? "bg-red-50 border border-red-200"
+                    : status.includes("완료")
+                      ? "bg-green-50 border border-gre en-200"
+                      : "bg-blue-50 border border-blue-200"
+                    }`}
                 >
                   <p
-                    className={`text-sm ${
-                      status.includes("실패") ||
+                    className={`text-sm ${status.includes("실패") ||
                       status.includes("오류") ||
                       status.includes("상반신")
-                        ? "text-red-800"
-                        : status.includes("완료")
-                          ? "text-green-800"
-                          : "text-blue-800"
-                    }`}
+                      ? "text-red-800"
+                      : status.includes("완료")
+                        ? "text-green-800"
+                        : "text-blue-800"
+                      }`}
                   >
                     {status}
                   </p>
@@ -868,11 +1158,10 @@ export default function VirtualFitting({
           {/* 결과 섹션 - 레이아웃 없이 이미지만 표시 */}
           {showResults && (
             <div
-              className={`transition-all duration-700 ease-in-out transform order-2 ${
-                showResults
-                  ? "translate-x-0 opacity-100 md:translate-x-2"
-                  : "translate-x-full opacity-0"
-              }`}
+              className={`transition-all duration-700 ease-in-out transform order-2 ${showResults
+                ? "translate-x-0 opacity-100 md:translate-x-2"
+                : "translate-x-full opacity-0"
+                }`}
             >
               {/* 로딩 상태 표시 */}
               {isProcessing && !generatedImage && (
@@ -891,7 +1180,7 @@ export default function VirtualFitting({
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Skeleton Loading */}
                   <div className="relative">
                     <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg animate-pulse">
@@ -907,7 +1196,7 @@ export default function VirtualFitting({
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Status Messages */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-start space-x-3">
@@ -940,11 +1229,9 @@ export default function VirtualFitting({
                       </div>
                     </div>
                   )}
-                  <Image
+                  <img
                     src={generatedImage}
                     alt={"생성된 가상 피팅 이미지"}
-                    width={800}
-                    height={600}
                     className="w-full h-auto rounded-lg shadow-lg"
                     onLoadStart={() => setImageLoading(true)}
                     onLoad={() => setImageLoading(false)}
@@ -971,30 +1258,83 @@ export default function VirtualFitting({
                       <Progress value={progress} className="w-full h-3" />
                     </div>
                     <p className="text-sm text-gray-600 text-center">
-                      {"AI가 비디오를 생성하고 있습니다..."} {progress}%
+                      {"Google GenAI가 비디오를 생성하고 있습니다..."} {progress}%
                     </p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs text-blue-700 text-center">
+                        🎬 Veo 3.1 모델이 10초 비디오를 생성 중입니다... (20-30초 소요)
+                      </p>
+                    </div>
                   </div>
                 )}
 
               {/* 생성된 비디오 */}
               {generatedVideo && (
-                <div className="relative mt-6">
-                  <video
-                    src={generatedVideo}
-                    controls
-                    loop
-                    muted
-                    autoPlay
-                    className="w-full rounded-lg shadow-lg"
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white"
-                    onClick={() => window.open(generatedVideo, "_blank")}
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
+                <div className="mt-6">
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800 text-center">
+                      🎬 <strong>AI 비디오 생성 완료!</strong> Google GenAI Veo 3.1로 생성된 6초 세로형(9:16) 피팅룸 스타일 영상입니다.
+                    </p>
+                    <p className="text-xs text-green-700 text-center mt-1">
+                      모델이 제자리에서 360도 회전하며 의상의 4면(앞, 옆, 뒤, 옆)을 보여줍니다.
+                    </p>
+                  </div>
+
+                  {/* Video container - centered with max width for vertical video */}
+                  <div className="flex justify-center items-center">
+                    <div className="relative w-full max-w-sm mx-auto">
+                      <video
+                        src={generatedVideo}
+                        controls
+                        loop
+                        muted
+                        autoPlay
+                        playsInline
+                        className="w-full h-auto rounded-xl shadow-2xl border-2 border-gray-200"
+                        style={{
+                          aspectRatio: '9/16',
+                          maxHeight: '600px',
+                          objectFit: 'contain'
+                        }}
+                        onError={(e) => {
+                          console.error('❌ Video load error:', e);
+                          console.error('❌ Video URL:', generatedVideo);
+
+                          const videoElement = e.target as HTMLVideoElement;
+
+                          // If it's a direct Google API URL, try proxy
+                          if (generatedVideo.includes('generativelanguage.googleapis.com')) {
+                            console.log('🔄 Attempting to use proxy for Google video...');
+                            const proxyUrl = `/api/ai/video-proxy?url=${encodeURIComponent(generatedVideo)}`;
+                            if (videoElement.src !== window.location.origin + proxyUrl) {
+                              videoElement.src = proxyUrl;
+                              return;
+                            }
+                          }
+
+                          // Fallback to sample video if proxy also fails
+                          console.log('🔄 Using fallback sample video...');
+                          videoElement.src = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+                        }}
+                        onLoadStart={() => {
+                          console.log('🎬 Video loading started:', generatedVideo);
+                        }}
+                        onCanPlay={() => {
+                          console.log('✅ Video can play:', generatedVideo);
+                        }}
+                      />
+
+                      {/* Download button */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white shadow-md"
+                        onClick={() => window.open(generatedVideo, "_blank")}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

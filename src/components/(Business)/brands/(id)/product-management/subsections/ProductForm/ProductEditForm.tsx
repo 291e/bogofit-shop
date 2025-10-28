@@ -14,6 +14,7 @@ import { ImageUploader } from "@/components/ui/imageUploader";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CategoryDropdown from "@/components/ui/category-dropdown";
+import PromotionDropdown from "@/components/ui/promotion-dropdown";
 import { Switch } from "@/components/ui/switch";
 interface ProductEditFormProps {
   brandId: string;
@@ -21,25 +22,25 @@ interface ProductEditFormProps {
   className?: string;
 }
 
-export default function ProductEditForm({ 
+export default function ProductEditForm({
   brandId,
   productId,
-  className 
+  className
 }: ProductEditFormProps) {
   const router = useRouter();
-  
+
   // 🔍 Debug: Log props
   console.log('🔍 ProductEditForm mounted with props:', { brandId, productId });
-  
+
   // const { token } = useBrandContext(); // Unused - using React Query
-  
+
   // ✅ Use React Query for categories with caching
   const { data: categoriesData, isLoading: isLoadingCategories } = useCategories();
   const categories = categoriesData?.data || [];
-  
+
   // ✅ Use React Query for product with caching
   const { data: productData, isLoading: isLoadingProduct, error: productError } = useProduct(productId);
-  
+
   // 🔍 Debug: Log productData state
   console.log('🔍 useProduct result:', {
     productId,
@@ -48,7 +49,7 @@ export default function ProductEditForm({
     hasError: !!productError,
     productData
   });
-  
+
   // ✅ Use mutation hook for product update (handles toast & cache automatically)
   const updateProductMutation = useUpdateProduct(brandId, productId);
 
@@ -57,6 +58,7 @@ export default function ProductEditForm({
     basic: true,
     category: true,
     pricing: true,
+    promotion: true,
     images: true,
     variants: true,
   });
@@ -75,6 +77,7 @@ export default function ProductEditForm({
     basePrice: 0,
     baseCompareAtPrice: 0,
     quantity: null,
+    promotionId: null,  // ✅ v2.2: Promotion
     variants: [],
     hasOptions: false
   });
@@ -87,7 +90,7 @@ export default function ProductEditForm({
   useEffect(() => {
     // ✅ FIX: API returns productData.product, not productData.data
     const product = productData?.data || productData?.product;
-    
+
     if (productData?.success && product) {
       console.log('📝 Loading product data for edit:', product);
       console.log('  - Name:', product.name);
@@ -95,7 +98,7 @@ export default function ProductEditForm({
       console.log('  - Images:', product.images);
       console.log('  - BasePrice:', product.basePrice);
       console.log('  - Variants:', product.variants);
-      
+
       setFormData({
         brandId: product.brandId,
         name: product.name,
@@ -109,6 +112,7 @@ export default function ProductEditForm({
         basePrice: product.basePrice || 0,
         baseCompareAtPrice: product.baseCompareAtPrice || 0,
         quantity: product.quantity ?? null,
+        promotionId: product.promotionId ?? null,  // ✅ v2.2: Load promotion
         variants: product.variants?.map((variant: { id?: string; price?: number; compareAtPrice?: number; quantity?: number; weightGrams?: number; status?: string; optionsJson?: string }) => ({
           price: variant.price || 0,
           compareAtPrice: variant.compareAtPrice || 0,
@@ -122,10 +126,10 @@ export default function ProductEditForm({
         })) || [],
         hasOptions: (product.variants && product.variants.length > 0) || false
       });
-      
+
       // Store variant IDs
       setVariantIds(product.variants?.map((v: { id?: string }) => v.id) || []);
-      
+
       console.log('✅ Form data set successfully');
     } else if (productError) {
       console.error("❌ Failed to load product:", productError);
@@ -142,8 +146,20 @@ export default function ProductEditForm({
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
-    
+
     setFormData(prev => ({ ...prev, name, slug }));
+  };
+
+  // Validate and sanitize slug when user edits manually
+  const handleSlugChange = (slug: string) => {
+    const sanitized = slug
+      .toLowerCase()  // ✅ Force lowercase
+      .replace(/\s+/g, '-')  // ✅ Replace spaces with dash
+      .replace(/[^a-z0-9가-힣-]/g, '')  // ✅ Remove invalid chars
+      .replace(/-+/g, '-')  // ✅ Remove duplicate dashes
+      .trim();
+
+    setFormData(prev => ({ ...prev, slug: sanitized }));
   };
 
   // Handle variant changes
@@ -184,12 +200,12 @@ export default function ProductEditForm({
   const removeVariant = (index: number) => {
     if (formData.variants.length > 1) {
       const variantId = variantIds[index];
-      
+
       // If variant has ID, add to deleted list
       if (variantId) {
         setDeletedVariantIds(prev => [...prev, variantId]);
       }
-      
+
       // Remove from UI
       setFormData(prev => ({
         ...prev,
@@ -202,7 +218,7 @@ export default function ProductEditForm({
   // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     const errors: string[] = [];
     if (!formData.name.trim()) errors.push("상품명을 입력해주세요");
@@ -233,7 +249,7 @@ export default function ProductEditForm({
         errors.push('상품 수량은 0 이상이어야 합니다');
       }
     }
-    
+
     if (errors.length > 0) {
       // Show validation errors
       toast.error(errors.join(", "));
@@ -273,6 +289,22 @@ export default function ProductEditForm({
         })
         .filter(Boolean);
 
+      // Handle promotionId logic
+      let promotionIdToSend: string | undefined = undefined;
+      const originalPromotionId = productData?.data?.promotionId || productData?.product?.promotionId;
+
+      if (formData.promotionId !== originalPromotionId) {
+        // Promotion changed
+        if (formData.promotionId === null) {
+          // Remove promotion: send Guid.Empty
+          promotionIdToSend = "00000000-0000-0000-0000-000000000000";
+        } else {
+          // Assign new promotion
+          promotionIdToSend = formData.promotionId || undefined;
+        }
+      }
+      // else: promotion unchanged → don't send promotionId field
+
       const dto: UpdateProductDto = {
         name: formData.name || undefined,
         slug: formData.slug || undefined,
@@ -285,24 +317,15 @@ export default function ProductEditForm({
         basePrice: formData.basePrice,
         baseCompareAtPrice: formData.baseCompareAtPrice,
         quantity: formData.hasOptions ? undefined : (formData.quantity ?? null),
+        promotionId: promotionIdToSend,  // ✅ Always set (undefined won't be sent in JSON)
         updateVariants: updateVariants.length > 0 ? updateVariants as UpdateProductVariantDto[] : undefined,
         newVariants: newVariants.length > 0 ? newVariants as CreateProductVariantDto[] : undefined,
         deleteVariants: deletedVariantIds.length > 0 ? deletedVariantIds : undefined
       };
 
-      // 🔍 Debug: Log update payload
-      console.log('📤 Submitting product update:', {
-        hasOptions: formData.hasOptions,
-        updateVariantsCount: updateVariants.length,
-        newVariantsCount: newVariants.length,
-        deleteVariantsCount: deletedVariantIds.length,
-        deleteVariantIds: deletedVariantIds,
-        dto
-      });
-
       // ✅ Use mutation hook - handles API call, toast, and cache update
       await updateProductMutation.mutateAsync(dto);
-      
+
       // ✅ Delay 0.5s for better UX (show toast & cache already updated!)
       setTimeout(() => {
         router.push(`/business/brands/${brandId}/products`);
@@ -387,10 +410,13 @@ export default function ProductEditForm({
                 <Input
                   id="slug"
                   value={formData.slug}
-                  onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                  onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="product-slug"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  소문자, 숫자, 하이픈(-)만 사용 가능
+                </p>
               </div>
               <div>
                 <Label htmlFor="sku">SKU *</Label>
@@ -403,7 +429,7 @@ export default function ProductEditForm({
                 />
               </div>
             </div>
-            
+
             {/* 상품 설명 - full width */}
             <div>
               <Label htmlFor="description">상품 설명</Label>
@@ -451,6 +477,39 @@ export default function ProductEditForm({
                 />
               </div>
             </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Promotion Section */}
+      <Card>
+        <CardHeader className="cursor-pointer" onClick={() => toggleSection('promotion')}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
+                프로모션 설정
+                {formData.promotionId && (
+                  <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded">
+                    적용중
+                  </span>
+                )}
+              </CardTitle>
+            </div>
+            {openSections.promotion ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </div>
+        </CardHeader>
+        {openSections.promotion && (
+          <CardContent>
+            <PromotionDropdown
+              brandId={brandId}
+              selectedPromotionId={formData.promotionId}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              currentPromotion={(productData?.data?.promotion || productData?.product?.promotion) as any}
+              onPromotionSelect={(promotionId) => {
+                setFormData(prev => ({ ...prev, promotionId }));
+              }}
+              compactMode={true}
+            />
           </CardContent>
         )}
       </Card>
@@ -518,7 +577,7 @@ export default function ProductEditForm({
                       }
                       setVariantIds([]);
                     }
-                    
+
                     setFormData(prev => ({
                       ...prev,
                       hasOptions: checked,
@@ -532,7 +591,7 @@ export default function ProductEditForm({
                         options: []
                       }] : (checked ? prev.variants : [])
                     }));
-                    
+
                     if (checked && variantIds.length === 0) {
                       setVariantIds([undefined]);
                     }
@@ -554,156 +613,156 @@ export default function ProductEditForm({
                   id="quantity"
                   type="number"
                   value={formData.quantity ?? ''}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    quantity: e.target.value === '' ? null : Number(e.target.value) 
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    quantity: e.target.value === '' ? null : Number(e.target.value)
                   }))}
                   placeholder="무제한 재고는 비워두세요"
                   className="mt-2"
                 />
                 <p className="text-sm text-blue-700 mt-2">
                   ✅ <strong>v2.1:</strong> 상품 자체의 재고 수량입니다. 비워두면 무제한 재고로 설정됩니다.
-                  {formData.hasOptions 
-                    ? " (변형이 있어도 상품 레벨 재고를 함께 관리할 수 있습니다)" 
+                  {formData.hasOptions
+                    ? " (변형이 있어도 상품 레벨 재고를 함께 관리할 수 있습니다)"
                     : " (변형 없이 이 재고만 사용합니다)"}
                 </p>
               </div>
             </div>
 
             {formData.hasOptions && (
-            <div className="grid grid-cols-2 gap-4">
-              {formData.variants.map((variant, index) => (
-                <Card key={index} className="border-2">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">변형 {index + 1}</span>
-                      {formData.variants.length > 1 && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => removeVariant(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* 1. 수량 - 1 hàng 1 cột */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>수량 *</Label>
-                        <Input
-                          type="number"
-                          value={variant.quantity}
-                          onChange={(e) => handleVariantChange(index, 'quantity', Number(e.target.value))}
-                          required
-                        />
+              <div className="grid grid-cols-2 gap-4">
+                {formData.variants.map((variant, index) => (
+                  <Card key={index} className="border-2">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">변형 {index + 1}</span>
+                        {formData.variants.length > 1 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => removeVariant(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
-                    </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* 1. 수량 - 1 hàng 1 cột */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>수량 *</Label>
+                          <Input
+                            type="number"
+                            value={variant.quantity}
+                            onChange={(e) => handleVariantChange(index, 'quantity', Number(e.target.value))}
+                            required
+                          />
+                        </div>
+                      </div>
 
-                    {/* 2. 옵션 */}
-                    <div>
-                      <Label>옵션</Label>
-                      <div className="space-y-2">
-                        {variant.options.map((option, optionIndex) => (
-                          <div key={optionIndex} className="flex gap-2 items-center">
-                            <Input
-                              placeholder="옵션명 (예: 색상)"
-                              value={option.key || ''}
-                              onChange={(e) => {
-                                const newOptions = [...variant.options];
-                                newOptions[optionIndex] = { ...newOptions[optionIndex], key: e.target.value };
-                                handleVariantChange(index, 'options', newOptions);
-                              }}
-                              className="flex-1"
-                            />
-                            <Input
-                              placeholder="옵션값 (예: 빨강)"
-                              value={option.value || ''}
-                              onChange={(e) => {
-                                const newOptions = [...variant.options];
-                                newOptions[optionIndex] = { ...newOptions[optionIndex], value: e.target.value };
-                                handleVariantChange(index, 'options', newOptions);
-                              }}
-                              className="flex-1"
-                            />
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                const newOptions = variant.options.filter((_, i) => i !== optionIndex);
-                                handleVariantChange(index, 'options', newOptions);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
+                      {/* 2. 옵션 */}
+                      <div>
+                        <Label>옵션</Label>
+                        <div className="space-y-2">
+                          {variant.options.map((option, optionIndex) => (
+                            <div key={optionIndex} className="flex gap-2 items-center">
+                              <Input
+                                placeholder="옵션명 (예: 색상)"
+                                value={option.key || ''}
+                                onChange={(e) => {
+                                  const newOptions = [...variant.options];
+                                  newOptions[optionIndex] = { ...newOptions[optionIndex], key: e.target.value };
+                                  handleVariantChange(index, 'options', newOptions);
+                                }}
+                                className="flex-1"
+                              />
+                              <Input
+                                placeholder="옵션값 (예: 빨강)"
+                                value={option.value || ''}
+                                onChange={(e) => {
+                                  const newOptions = [...variant.options];
+                                  newOptions[optionIndex] = { ...newOptions[optionIndex], value: e.target.value };
+                                  handleVariantChange(index, 'options', newOptions);
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const newOptions = variant.options.filter((_, i) => i !== optionIndex);
+                                  handleVariantChange(index, 'options', newOptions);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const newOptions = [...variant.options, { key: '', value: '' }];
+                              handleVariantChange(index, 'options', newOptions);
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            옵션 추가
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* 3. 추가 정보 (Collapsible) */}
+                      <div>
+                        <div
+                          className="flex items-center gap-2 cursor-pointer"
                           onClick={() => {
-                            const newOptions = [...variant.options, { key: '', value: '' }];
-                            handleVariantChange(index, 'options', newOptions);
+                            const newVariants = [...formData.variants];
+                            const currentVariant = newVariants[index] as ProductVariantForm & { showAdditionalInfo?: boolean };
+                            newVariants[index] = { ...currentVariant, showAdditionalInfo: !currentVariant.showAdditionalInfo } as ProductVariantForm & { showAdditionalInfo?: boolean };
+                            setFormData(prev => ({ ...prev, variants: newVariants }));
                           }}
                         >
-                          <Plus className="h-4 w-4 mr-2" />
-                          옵션 추가
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* 3. 추가 정보 (Collapsible) */}
-                    <div>
-                      <div 
-                        className="flex items-center gap-2 cursor-pointer"
-                        onClick={() => {
-                          const newVariants = [...formData.variants];
-                          const currentVariant = newVariants[index] as ProductVariantForm & { showAdditionalInfo?: boolean };
-                          newVariants[index] = { ...currentVariant, showAdditionalInfo: !currentVariant.showAdditionalInfo } as ProductVariantForm & { showAdditionalInfo?: boolean };
-                          setFormData(prev => ({ ...prev, variants: newVariants }));
-                        }}
-                      >
-                        <ChevronDown className={`h-4 w-4 transition-transform ${(variant as ProductVariantForm & { showAdditionalInfo?: boolean }).showAdditionalInfo ? 'rotate-180' : ''}`} />
-                        <Label className="text-sm font-medium cursor-pointer">추가 정보</Label>
-                      </div>
-                      {(variant as ProductVariantForm & { showAdditionalInfo?: boolean }).showAdditionalInfo && (
-                        <div className="mt-3 grid grid-cols-3 gap-4">
-                          <div>
-                            <Label>가격</Label>
-                            <Input
-                              type="number"
-                              value={variant.price}
-                              onChange={(e) => handleVariantChange(index, 'price', Number(e.target.value))}
-                            />
-                          </div>
-                          <div>
-                            <Label>비교 가격</Label>
-                            <Input
-                              type="number"
-                              value={variant.compareAtPrice}
-                              onChange={(e) => handleVariantChange(index, 'compareAtPrice', Number(e.target.value))}
-                            />
-                          </div>
-                          <div>
-                            <Label>무게 (g)</Label>
-                            <Input
-                              type="number"
-                              value={variant.weightGrams}
-                              onChange={(e) => handleVariantChange(index, 'weightGrams', Number(e.target.value))}
-                            />
-                          </div>
+                          <ChevronDown className={`h-4 w-4 transition-transform ${(variant as ProductVariantForm & { showAdditionalInfo?: boolean }).showAdditionalInfo ? 'rotate-180' : ''}`} />
+                          <Label className="text-sm font-medium cursor-pointer">추가 정보</Label>
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                        {(variant as ProductVariantForm & { showAdditionalInfo?: boolean }).showAdditionalInfo && (
+                          <div className="mt-3 grid grid-cols-3 gap-4">
+                            <div>
+                              <Label>가격</Label>
+                              <Input
+                                type="number"
+                                value={variant.price}
+                                onChange={(e) => handleVariantChange(index, 'price', Number(e.target.value))}
+                              />
+                            </div>
+                            <div>
+                              <Label>비교 가격</Label>
+                              <Input
+                                type="number"
+                                value={variant.compareAtPrice}
+                                onChange={(e) => handleVariantChange(index, 'compareAtPrice', Number(e.target.value))}
+                              />
+                            </div>
+                            <div>
+                              <Label>무게 (g)</Label>
+                              <Input
+                                type="number"
+                                value={variant.weightGrams}
+                                onChange={(e) => handleVariantChange(index, 'weightGrams', Number(e.target.value))}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
 
             {formData.hasOptions && (

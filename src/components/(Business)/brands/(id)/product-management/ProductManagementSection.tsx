@@ -6,8 +6,8 @@ interface ProductManagementSectionProps {
   brandId: string;
 }
 
-export default function ProductManagementSection({ 
-  brandId 
+export default function ProductManagementSection({
+  brandId
 }: ProductManagementSectionProps) {
   const productManagementData = {
     id: "product-management",
@@ -26,22 +26,7 @@ export default function ProductManagementSection({
       {
         id: "inventory",
         label: "상품 재고관리",
-        href: `/business/brands/${brandId}/products/inventory`,
-      },
-      {
-        id: "product-categories",
-        label: "상품 카테고리",
-        href: `/business/brands/${brandId}/products/categories`
-      },
-      {
-        id: "product-inquiries",
-        label: "상품 문의관리",
-        href: `/business/brands/${brandId}/products/inquiries`,
-      },
-      {
-        id: "product-ratings",
-        label: "상품 평점관리",
-        href: `/business/brands/${brandId}/products/ratings`,
+        href: `/business/brands/${brandId}/products/inventory`
       }
     ]
   };

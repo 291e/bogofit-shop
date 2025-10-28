@@ -27,7 +27,7 @@ const Cafe24ProductCardComponent = ({ product }: ProductCardProps) => {
   };
 
   // Generate SEO-friendly URL if brandSlug and slug are available
-  const productUrl = product.brandSlug && product.slug 
+  const productUrl = product.brandSlug && product.slug
     ? `/brands/${product.brandSlug}/products/${product.slug}`
     : `/products/${product.id}`;
 
@@ -44,16 +44,16 @@ const Cafe24ProductCardComponent = ({ product }: ProductCardProps) => {
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
             loading="lazy"
           />
-          
+
           {/* 할인 배지 */}
           {product.discount && (
             <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
               {product.discount}%
             </div>
           )}
-          
+
           {/* 찜하기 버튼 */}
-          <button 
+          <button
             className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={(e) => {
               e.preventDefault();
@@ -73,7 +73,7 @@ const Cafe24ProductCardComponent = ({ product }: ProductCardProps) => {
             <p className="text-xs text-gray-500">{product.brand}</p>
           )}
         </div>
-        
+
         {/* 상품명 - chiều cao cố định */}
         <h3 className="font-medium text-sm text-gray-900 mb-2 line-clamp-2 h-10">
           {product.name}

@@ -12,15 +12,17 @@ import { ProductResponseDto } from "@/types/product";
 async function fetchBestSellers(): Promise<ProductResponseDto[]> {
   try {
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
       }/api/product?page=3&pageSize=30&isActive=true&sortBy=updatedAt&sortOrder=desc`, // Sort by recently updated (popular)
       {
-        next: { revalidate: 300 }, // 5분 캐시
+        next: { revalidate: 300 } // 5분 캐시
       }
     );
 
-    if (!response.ok) throw new Error("Failed to fetch best sellers");
+    if (!response.ok) {
+      console.warn(`⚠️ Best sellers API returned ${response.status}, using empty array`);
+      return [];
+    }
     const data = await response.json();
     return data.data?.data || data.products || [];
   } catch (error) {
@@ -32,8 +34,7 @@ async function fetchBestSellers(): Promise<ProductResponseDto[]> {
 async function fetchNewArrivals(): Promise<ProductResponseDto[]> {
   try {
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
       }/api/product?page=1&pageSize=60&isActive=true&sortBy=createdAt&sortOrder=desc`, // Sort by newest
       {
         next: { revalidate: 300 }, // 5분 캐시
@@ -54,8 +55,7 @@ async function fetchNewArrivals(): Promise<ProductResponseDto[]> {
 async function fetchSpecialOffers(): Promise<ProductResponseDto[]> {
   try {
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
       }/api/product?page=1&pageSize=30&isActive=true&sortBy=discount&sortOrder=desc`, // Sort by discount
       {
         next: { revalidate: 300 }, // 5분 캐시
@@ -65,10 +65,10 @@ async function fetchSpecialOffers(): Promise<ProductResponseDto[]> {
     if (!response.ok) throw new Error("Failed to fetch special offers");
     const data = await response.json();
     const products = data.data?.data || data.products || [];
-    
+
     // Filter products with discounts
-    return products.filter((product: ProductResponseDto) => 
-      product.baseCompareAtPrice && 
+    return products.filter((product: ProductResponseDto) =>
+      product.baseCompareAtPrice &&
       product.baseCompareAtPrice > product.basePrice
     ).slice(0, 30);
   } catch (error) {
@@ -81,8 +81,7 @@ async function fetchSpecialOffers(): Promise<ProductResponseDto[]> {
 async function fetchFeaturedProducts(): Promise<ProductResponseDto[]> {
   try {
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
       }/api/product?page=2&pageSize=30&isActive=true&sortBy=basePrice&sortOrder=desc`, // Sort by price (premium)
       {
         next: { revalidate: 300 }, // 5분 캐시

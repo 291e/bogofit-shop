@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { 
-  CreateBrandDto, 
-  CreateBrandResponse, 
-  GetBrandsResponse, 
+import { safeJsonParse } from "@/lib/api-utils";
+import {
+  CreateBrandDto,
+  CreateBrandResponse,
+  GetBrandsResponse,
   BrandResponseDto,
+  BackendBrandResponse,
+  BackendBrandsResponse,
+  BrandStatus,
+  PaymentMode,
 } from "@/types/brand";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -94,7 +99,7 @@ export async function POST(request: NextRequest) {
       PaymentMode: body.paymentMode
     };
 
-    
+
     try {
       const response = await fetch(`${API_URL}/api/Brand`, {
         method: 'POST',
@@ -105,34 +110,58 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify(backendBody),
       });
 
-      const data = await response.json();
-      
+      const result = await safeJsonParse(response);
+
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 500 });
+      }
+
+      const data = result.data as BackendBrandResponse;
+
       // Convert API response to our DTO format
       const convertedData: CreateBrandResponse = {
         success: data.success || response.ok,
         message: data.message || (response.ok ? "브랜드가 성공적으로 생성되었습니다." : "브랜드 생성에 실패했습니다."),
-        brand: data.brand ? data.brand as BrandResponseDto : undefined
+        brand: data.brand ? {
+          id: data.brand.id,
+          name: data.brand.name,
+          slug: data.brand.slug,
+          status: data.brand.status as BrandStatus,
+          description: data.brand.description,
+          logoUrl: data.brand.logoUrl,
+          coverUrl: data.brand.bannerUrl,
+          contactEmail: data.brand.contactEmail,
+          contactPhone: data.brand.contactPhone,
+          paymentMode: "platform" as PaymentMode, // Default value, should be provided by backend
+          createdAt: data.brand.createdAt,
+          updatedAt: data.brand.updatedAt,
+        } : undefined
       };
 
 
       // Handle backend validation errors
-      if (!response.ok && data.errors) {
+      if (!response.ok && data && 'errors' in data) {
         const validationErrors: { field: string; message: string }[] = [];
-        
+        const errorData = data as Record<string, unknown>;
+
         // Convert backend PascalCase errors to camelCase for frontend
-        Object.keys(data.errors).forEach(field => {
-          const camelCaseField = field.charAt(0).toLowerCase() + field.slice(1);
-          const messages = data.errors[field];
-          if (Array.isArray(messages)) {
-            messages.forEach((message: string) => {
-              validationErrors.push({ field: camelCaseField, message });
-            });
-          }
-        });
+        if (errorData.errors && typeof errorData.errors === 'object') {
+          Object.keys(errorData.errors).forEach(field => {
+            const camelCaseField = field.charAt(0).toLowerCase() + field.slice(1);
+            const messages = (errorData.errors as Record<string, unknown>)[field];
+            if (Array.isArray(messages)) {
+              messages.forEach((message: unknown) => {
+                if (typeof message === 'string') {
+                  validationErrors.push({ field: camelCaseField, message });
+                }
+              });
+            }
+          });
+        }
 
         const validationResponse: CreateBrandResponse = {
           success: false,
-          message: data.title || "입력 데이터에 오류가 있습니다.",
+          message: (typeof errorData.title === 'string' ? errorData.title : undefined) || "입력 데이터에 오류가 있습니다.",
           brand: undefined,
         };
         return NextResponse.json(validationResponse, { status: 400 });
@@ -145,7 +174,7 @@ export async function POST(request: NextRequest) {
         // If backend returns error, forward the error with proper status
         return NextResponse.json(convertedData, { status: response.status });
       }
-    } catch  {
+    } catch {
       // Fallback khi backend API không khả dụng
       return NextResponse.json(
         { success: false, message: "Backend service unavailable" },
@@ -172,13 +201,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const applicationId = searchParams.get('applicationId');
     const brandId = searchParams.get('id');
-    
+
     // Build URL with query parameters
     let apiUrl = `${API_URL}/api/Brand`;
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
-    
+
     // Case 1: Get single brand by ID (requires auth)
     if (brandId) {
       if (!token) {
@@ -203,58 +232,65 @@ export async function GET(request: NextRequest) {
     }
     // Case 3: Get all brands (public - no auth needed)
     // apiUrl stays as is
-    
+
     try {
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers,
       });
 
-      const data = await response.json();
-      
+      const result = await safeJsonParse(response);
+
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 500 });
+      }
+
+      const data = result.data as BackendBrandsResponse;
+
       // Handle single brand response
-      if (brandId && data.brand) {
+      if (brandId && data.brands && data.brands.length > 0) {
+        const brand = data.brands[0];
         const convertedData = {
           success: data.success || true,
           message: data.message || "브랜드 정보를 성공적으로 가져왔습니다.",
-          brand: data.brand as BrandResponseDto
+          brand: {
+            id: brand.id,
+            name: brand.name,
+            slug: brand.slug,
+            status: brand.status as BrandStatus,
+            description: brand.description,
+            logoUrl: brand.logoUrl,
+            coverUrl: brand.bannerUrl,
+            contactEmail: brand.contactEmail,
+            contactPhone: brand.contactPhone,
+            paymentMode: "platform" as PaymentMode,
+            createdAt: brand.createdAt,
+            updatedAt: brand.updatedAt,
+          } as BrandResponseDto
         };
         return NextResponse.json(convertedData, { status: response.status });
       }
-      
+
       // Handle brand list response
       const convertedData: GetBrandsResponse = {
         success: data.success || true,
         message: data.message || "브랜드 목록을 성공적으로 가져왔습니다.",
-        brands: data.brands ? data.brands.map((brand: {
-          id: string;
-          name: string;
-          slug: string;
-          status: string;
-          description?: string;
-          logoUrl?: string;
-          bannerUrl?: string;
-          contactEmail?: string;
-          contactPhone?: string;
-          websiteUrl?: string;
-          address?: string;
-          createdAt: string;
-          updatedAt: string;
-        }) => ({
+        brands: data.brands ? data.brands.map((brand) => ({
           id: brand.id,
           name: brand.name,
           slug: brand.slug,
-          status: brand.status,
+          status: brand.status as BrandStatus,
           description: brand.description,
           logoUrl: brand.logoUrl,
           coverUrl: brand.bannerUrl,
           contactEmail: brand.contactEmail,
           contactPhone: brand.contactPhone,
+          paymentMode: "platform" as PaymentMode,
           createdAt: brand.createdAt,
           updatedAt: brand.updatedAt,
         })) as BrandResponseDto[] : [],
         count: data.count || 0,
-      };  
+      };
       return NextResponse.json(convertedData, { status: response.status });
     } catch {
       return NextResponse.json(

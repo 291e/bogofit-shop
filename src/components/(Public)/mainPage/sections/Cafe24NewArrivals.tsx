@@ -13,7 +13,7 @@ interface Cafe24NewArrivalsProps {
 
 export function Cafe24NewArrivals({ products: initialProducts }: Cafe24NewArrivalsProps) {
   const [showAll, setShowAll] = useState(false);
-  
+
   // ✅ Only use hook if no initial products provided (standalone usage)
   const { data: hookData } = usePublicProducts({
     pageNumber: 1,
@@ -34,8 +34,8 @@ export function Cafe24NewArrivals({ products: initialProducts }: Cafe24NewArriva
     originalPrice: product.baseCompareAtPrice || undefined,
     discount: product.baseCompareAtPrice
       ? Math.round(
-          ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
-        )
+        ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
+      )
       : undefined,
     image: product.images?.[0] || "/images/placeholder-product.png",
     brand: product.brand?.name || undefined,

@@ -17,19 +17,20 @@ interface BrandContextType {
 
 const BrandContext = createContext<BrandContextType | null>(null);
 
-export const useBrandContext = () => {
+export function useBrandContext() {
   const context = useContext(BrandContext);
   if (!context) {
     throw new Error('useBrandContext must be used within BrandProvider');
   }
   return context;
-};
+}
+
 
 
 export default function BrandLayout({
-  children, 
+  children,
 }: {
-  children: React.ReactNode;  
+  children: React.ReactNode;
 }) {
   const { token } = useAuth();
   const params = useParams();
@@ -87,7 +88,7 @@ export default function BrandLayout({
       }
 
       setBrand(brandData);
-            } catch (error: unknown) {
+    } catch (error: unknown) {
       console.error('Brand access check error:', error);
       setBrandError((error as Error).message || "브랜드 정보를 확인하는 중 오류가 발생했습니다.");
     } finally {
@@ -149,54 +150,57 @@ export default function BrandLayout({
   return (
     <BrandContext.Provider value={{ brand: brand!, token: token!, brandId }}>
       <div className="min-h-screen bg-gray-50">
-        <div className="flex">
+        <div className="flex min-h-screen">
           {/* Sidebar */}
           <BusinessSidebar brandId={brandId} />
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-w-0">
             {/* Content Frame */}
             <div className="flex-1 p-4 overflow-y-auto">
               <div className="max-w-full mx-auto">
                 {/* Breadcrumb */}
                 {pathname !== `/business/brands/${brandId}` && (
-                <div className="bg-white rounded-lg shadow mb-6">
-                  <div className="border-b border-red-200">
-                    <div className="px-6 py-4">
-                      <nav className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <span className="text-gray-500">HOME</span>
-                          <span className="text-gray-400">{'>'}</span>
-                          <span className="text-gray-500">비즈니스</span>
-                          <span className="text-gray-400">{'>'}</span>
-                          <span className="text-gray-900 font-medium">
-                            {pathname.includes('/products/register') && '상품 등록'}
-                            {pathname.includes('/products/inventory') && '상품 재고관리'}
-                            {pathname.includes('/products') && !pathname.includes('/register') && !pathname.includes('/inventory') && '전체 상품관리'}
-                            {pathname.includes('/orders/completed') && '입금완료(배송요청)'}
-                            {pathname.includes('/orders') && !pathname.includes('/completed') && '주문리스트(전체)'}
-                            {pathname.includes('/settings/shipping') && '업체 배송정책'}
-                            {pathname.includes('/settings') && !pathname.includes('/shipping') && '업체 정보관리'}
-                            {pathname.includes('/returns/cancel') && '입금전 취소'}
-                            {pathname.includes('/returns/refund') && '배송전 환불'}
-                            {pathname.includes('/settlement/pending') && '정산대기목록'}
-                            {pathname.includes('/settlement') && !pathname.includes('/pending') && '주문통계분석'}
-                          </span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push("/business/brands")}
-                          className="text-gray-500 hover:text-gray-700"
-                        >
-                          <ArrowLeft className="h-4 w-4 mr-1" />
-                          브랜드 목록
-                        </Button>
-                      </nav>
+                  <div className="bg-white rounded-lg shadow mb-6">
+                    <div className="border-b border-red-200">
+                      <div className="px-6 py-4">
+                        <nav className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2 text-sm">
+                            <span className="text-gray-500">HOME</span>
+                            <span className="text-gray-400">{'>'}</span>
+                            <span className="text-gray-500">비즈니스</span>
+                            <span className="text-gray-400">{'>'}</span>
+                            <span className="text-gray-900 font-medium">
+                              {pathname.includes('/products/register') && '상품 등록'}
+                              {pathname.includes('/products/inventory') && '상품 재고관리'}
+                              {pathname.includes('/products') && !pathname.includes('/register') && !pathname.includes('/inventory') && '전체 상품관리'}
+                              {pathname.includes('/orders/completed') && '입금완료(배송요청)'}
+                              {pathname.includes('/orders') && !pathname.includes('/completed') && '주문리스트(전체)'}
+                              {pathname.includes('/settings/shipping') && '업체 배송정책'}
+                              {pathname.includes('/settings') && !pathname.includes('/shipping') && '업체 정보관리'}
+                              {pathname.includes('/returns/cancel') && '입금전 취소'}
+                              {pathname.includes('/returns/refund') && '배송전 환불'}
+                              {pathname.includes('/settlement/analysis') && '주문통계분석'}
+                              {pathname.includes('/settlement/pending') && '정산대기목록'}
+                              {pathname.includes('/settlement/completed') && '정산완료목록'}
+                              {pathname.includes('/settlement/announcements') && '공지사항'}
+                              {pathname.includes('/settlement/faq') && '질문과답변'}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.push("/business/brands")}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            <ArrowLeft className="h-4 w-4 mr-1" />
+                            브랜드 목록
+                          </Button>
+                        </nav>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
                 {/* Dynamic Content */}
                 {children}

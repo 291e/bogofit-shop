@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { safeJsonParse } from "@/lib/api-utils";
+// import { Order, OrderGroup, OrderResponse } from "@/types/order";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -11,7 +13,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 export async function GET(request: NextRequest) {
   try {
     const token = request.headers.get("authorization");
-    
+
     if (!token) {
       return NextResponse.json(
         { success: false, message: "Authorization required" },
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Forward query params (page, pageSize)
     const searchParams = request.nextUrl.searchParams;
     const queryString = searchParams.toString();
-    
+
     const response = await fetch(
       `${API_URL}/api/Order${queryString ? `?${queryString}` : ""}`,
       {
@@ -34,7 +36,13 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    const data = await response.json();
+    const result = await safeJsonParse(response);
+
+    if (!result.success) {
+      return NextResponse.json(result, { status: result.status || 500 });
+    }
+
+    const data = result.data;
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

@@ -22,7 +22,7 @@ function PaymentSuccessContent() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🔍 [PAYMENT-SUCCESS] Payment Success Page Loaded');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
+
     const paymentKey = searchParams.get("paymentKey");
     const orderId = searchParams.get("orderId");
     const amount = Number(searchParams.get("amount"));
@@ -52,7 +52,7 @@ function PaymentSuccessContent() {
       setLoading(false);
       return;
     }
-    
+
     // Validate real payment key format
     if (!isValidPaymentKey(paymentKey)) {
       console.error("❌ [PAYMENT-SUCCESS] Invalid payment key format:", paymentKey);
@@ -71,9 +71,13 @@ function PaymentSuccessContent() {
       // Step 1: Confirm payment with Toss API
       console.log("🔄 [PAYMENT-SUCCESS] Step 1: Confirming payment with Toss...");
       const result = await confirmPayment(paymentKey, orderId, amount, token);
-      setPaymentData(result as TossPaymentData);
+      console.log("📋 [PAYMENT-SUCCESS] Payment result:", result);
+
+      // Extract Toss data from result
+      const tossData = result.toss || result;
+      setPaymentData(tossData as TossPaymentData);
       console.log("✅ [PAYMENT-SUCCESS] Step 1: Payment confirmed with Toss");
-      
+
       // Step 2: Update order status in database
       console.log("🔄 [PAYMENT-SUCCESS] Step 2: Updating order status in database...");
       try {
@@ -85,11 +89,11 @@ function PaymentSuccessContent() {
           },
           body: JSON.stringify({
             paymentKey,
-            paymentStatus: 'PAID',
-            paymentMethod: result.method,
+            paymentStatus: 'confirmed',
+            paymentMethod: tossData.method,
             paymentAmount: amount,
             paymentDate: new Date().toISOString(),
-            tossPaymentData: result
+            tossPaymentData: tossData
           })
         });
 
@@ -103,21 +107,15 @@ function PaymentSuccessContent() {
         console.warn("⚠️ [PAYMENT-SUCCESS] Step 2: Order update failed:", orderUpdateError);
         // Don't fail the whole flow - payment is confirmed with Toss
       }
-      
+
       // Check if virtual account
-      if (result.method === "가상계좌" || result.virtualAccount) {
+      if (tossData.method === "가상계좌" || tossData.virtualAccount) {
         setIsVirtualAccount(true);
         console.log("🏦 [PAYMENT-SUCCESS] Virtual account detected");
-        console.log("🏦 [PAYMENT-SUCCESS] Account info:", result.virtualAccount);
+        console.log("🏦 [PAYMENT-SUCCESS] Account info:", tossData.virtualAccount);
       }
-      
-      setLoading(false);
 
-      // Redirect to orders after 5 seconds (longer for virtual account to read info)
-      const redirectDelay = result.method === "가상계좌" || result.virtualAccount ? 10000 : 3000;
-      setTimeout(() => {
-        router.push("/myPage?section=order");
-      }, redirectDelay);
+      setLoading(false);
     } catch (err: unknown) {
       const error = err as Error;
       setError(error.message || "결제 확인 실패");
@@ -146,7 +144,7 @@ function PaymentSuccessContent() {
   if (error) {
     // Check if this is a SessionId error (incomplete payment)
     const isSessionIdError = error.includes("완료되지 않았습니다") || error.includes("결제하기");
-    
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="max-w-lg w-full">
@@ -156,7 +154,7 @@ function PaymentSuccessContent() {
               <h2 className="text-2xl font-bold text-red-800 mb-2">결제 실패</h2>
               <p className="text-red-600 mb-4 whitespace-pre-line">{error}</p>
             </div>
-            
+
             {isSessionIdError && (
               <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6 mb-6">
                 <p className="text-sm font-bold text-yellow-800 mb-3">
@@ -167,8 +165,8 @@ function PaymentSuccessContent() {
                   <li>다시 결제 버튼을 클릭하면 결제 창이 열립니다</li>
                   <li>카드 정보를 입력하세요:
                     <div className="ml-6 mt-1 font-mono text-xs">
-                      • 카드번호: 4282-0000-0000-4282<br/>
-                      • 유효기간: 12/25<br/>
+                      • 카드번호: 4282-0000-0000-4282<br />
+                      • 유효기간: 12/25<br />
                       • CVC: 123
                     </div>
                   </li>
@@ -182,16 +180,16 @@ function PaymentSuccessContent() {
                 </p>
               </div>
             )}
-            
+
             <div className="space-y-3">
-              <Button 
-                onClick={() => router.back()} 
+              <Button
+                onClick={() => router.back()}
                 className="w-full bg-pink-600 hover:bg-pink-700"
               >
                 {isSessionIdError ? "결제 페이지로 돌아가기" : "돌아가기"}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => router.push("/myPage?section=order")}
                 className="w-full"
               >
@@ -207,7 +205,7 @@ function PaymentSuccessContent() {
   // Virtual Account UI
   if (isVirtualAccount && paymentData?.virtualAccount) {
     const va = paymentData.virtualAccount;
-    
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="max-w-md w-full">
@@ -227,7 +225,7 @@ function PaymentSuccessContent() {
                   <p className="text-xs text-gray-600 mb-1">은행</p>
                   <p className="text-xl font-bold">{va.bankCode}</p>
                 </div>
-                
+
                 <div>
                   <p className="text-xs text-gray-600 mb-1">계좌번호</p>
                   <p className="text-2xl font-bold font-mono mb-2">
@@ -284,11 +282,8 @@ function PaymentSuccessContent() {
               </ul>
             </div>
 
-            <p className="text-xs text-gray-500 text-center mb-4">
-              10초 후 주문 목록으로 이동합니다...
-            </p>
 
-            <Button 
+            <Button
               onClick={() => router.push("/myPage?section=order")}
               className="w-full"
             >
@@ -308,7 +303,7 @@ function PaymentSuccessContent() {
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-green-800 mb-2">결제 완료!</h2>
           <p className="text-gray-600 mb-6">결제가 성공적으로 완료되었습니다</p>
-          
+
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -321,12 +316,9 @@ function PaymentSuccessContent() {
               </div>
             </div>
           </div>
-          
-          <p className="text-sm text-gray-500 mb-4">
-            3초 후 주문 목록으로 이동합니다...
-          </p>
-          
-          <Button 
+
+
+          <Button
             onClick={() => router.push("/myPage?section=order")}
             className="w-full"
           >

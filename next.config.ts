@@ -50,6 +50,24 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "p2-kling.klingai.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "p1-kling.klingai.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "p3-kling.klingai.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "s3.amazonaws.com",
         port: "",
         pathname: "/**",

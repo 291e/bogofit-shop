@@ -116,7 +116,7 @@ export default function ProductDeleteConfirmModal({
                   try {
                     if (variant.optionsJson) {
                       const options = JSON.parse(variant.optionsJson);
-                      optionsDisplay = options.map((opt: Record<string, string>) => 
+                      optionsDisplay = options.map((opt: Record<string, string>) =>
                         Object.entries(opt).map(([key, value]) => `${key}: ${value}`).join(', ')
                       ).join(' / ');
                     }
@@ -164,7 +164,7 @@ export default function ProductDeleteConfirmModal({
           {/* Final Confirmation */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <p className="text-yellow-800 text-sm text-center font-medium">
-              정말로 "<strong>{product.name}</strong>" 상품을 삭제하시겠습니까?
+              정말로 &quot;<strong>{product.name}</strong>&quot; 상품을 삭제하시겠습니까?
             </p>
           </div>
         </div>

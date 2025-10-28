@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { safeJsonParse } from "@/lib/api-utils";
+// import { CartItem, CartResponse } from "@/types/cart";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -26,10 +28,16 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      const data = await response.json();
+      const result = await safeJsonParse(response);
+
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 500 });
+      }
+
+      const data = result.data;
 
       // Return response from backend (keep structure intact)
-      return NextResponse.json(data, { 
+      return NextResponse.json(data, {
         status: response.status,
         headers: {
           'X-Content-Type-Options': 'nosniff',

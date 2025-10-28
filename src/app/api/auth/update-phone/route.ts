@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { safeJsonParse } from "@/lib/api-utils";
+import { AuthResponse } from '@/types/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -45,32 +47,15 @@ export async function PUT(request: NextRequest) {
         })
       });
 
-      const data = await response.json();
-      
-      const convertedData = {
-        success: data.success || response.ok,
-        message: data.message || (response.ok ? '전화번호가 성공적으로 변경되었습니다.' : '전화번호 변경에 실패했습니다.'),
-        user: data.user ? {
-          id: data.user.id,
-          userId: data.user.userId,
-          name: data.user.name,
-          email: data.user.email,
-          phone: data.user.phone,
-          isAdmin: data.user.isAdmin,
-          isActive: data.user.isActive,
-          updatedAt: data.user.updatedAt
-        } : undefined
-      };
+      const result = await safeJsonParse(response);
 
-      const responseHeaders = new Headers();
-      responseHeaders.set('X-Content-Type-Options', 'nosniff');
-      responseHeaders.set('X-Frame-Options', 'DENY');
-      responseHeaders.set('X-XSS-Protection', '1; mode=block');
-      
-      return NextResponse.json(convertedData, { 
-        status: response.status,
-        headers: responseHeaders
-      });
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 500 });
+      }
+
+      const data = result.data as AuthResponse | undefined as AuthResponse;
+
+      return NextResponse.json(data, { status: response.status });
     } catch {
       return NextResponse.json(
         { success: false, message: 'Backend service unavailable' },

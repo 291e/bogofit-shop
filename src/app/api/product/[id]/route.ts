@@ -24,7 +24,7 @@ export async function GET(
 
     const responseText = await response.text();
     let data;
-    
+
     if (responseText.trim()) {
       try {
         data = JSON.parse(responseText);
@@ -75,7 +75,7 @@ export async function PATCH(
     // Validation helper
     const validateVariants = (variants: UpdateProductVariantDto[] | CreateProductVariantDto[], type: 'update' | 'new') => {
       const errors: string[] = [];
-      
+
       variants?.forEach((variant, index) => {
         if (type === 'update' && !('id' in variant)) {
           errors.push(`Update variant ${index + 1}: ID is required`);
@@ -95,7 +95,7 @@ export async function PATCH(
           errors.push(`${type} variant ${index + 1}: Quantity must be >= 0`);
         }
       });
-      
+
       return errors;
     };
 
@@ -105,10 +105,10 @@ export async function PATCH(
 
     if (updateErrors.length > 0 || newErrors.length > 0) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Validation failed', 
-          errors: [...updateErrors, ...newErrors] 
+        {
+          success: false,
+          message: 'Validation failed',
+          errors: [...updateErrors, ...newErrors]
         },
         { status: 400 }
       );
@@ -128,7 +128,9 @@ export async function PATCH(
       images: body.images ?? undefined,
       basePrice: body.basePrice ?? undefined,
       baseCompareAtPrice: body.baseCompareAtPrice ?? undefined,
-      
+      quantity: body.quantity ?? undefined,
+      promotionId: body.promotionId ?? undefined,  // ✅ Promotion field
+
       // Variant operations - camelCase
       updateVariants: body.updateVariants?.map((variant: UpdateProductVariantDto) => ({
         id: variant.id,
@@ -139,7 +141,7 @@ export async function PATCH(
         status: variant.status ?? undefined,
         optionsJson: variant.optionsJson ?? undefined  // ✅ camelCase, không phải OptionsJson
       })) ?? undefined,
-      
+
       newVariants: body.newVariants?.map((variant: CreateProductVariantDto) => ({
         price: variant.price ?? undefined,
         compareAtPrice: variant.compareAtPrice ?? undefined,
@@ -148,7 +150,7 @@ export async function PATCH(
         status: variant.status ?? undefined,
         optionsJson: variant.optionsJson ?? undefined  // ✅ camelCase
       })) ?? undefined,
-      
+
       deleteVariants: body.deleteVariants ?? undefined  // ✅ camelCase, không phải DeleteVariants
     };
 
@@ -168,7 +170,7 @@ export async function PATCH(
 
     const responseText = await response.text();
     let data;
-    
+
     if (responseText.trim()) {
       try {
         data = JSON.parse(responseText);
@@ -194,7 +196,7 @@ export async function PATCH(
         statusText: response.statusText,
         data: data
       });
-      
+
       if (data.errors) {
         return NextResponse.json(
           { success: false, message: data.message || 'Validation failed', errors: data.errors },
@@ -237,7 +239,7 @@ export async function DELETE(
 
     const responseText = await response.text();
     let data;
-    
+
     if (responseText.trim()) {
       try {
         data = JSON.parse(responseText);

@@ -3,14 +3,11 @@
 // ==================== ORDER STATUS ====================
 
 export type OrderStatus =
-  | "pending"          // Order created, awaiting payment
-  | "paid"             // Payment completed
-  | "fulfilling"       // Being processed/shipped
-  | "fulfilled"        // Delivered
-  | "completed"        // Confirmed by customer
-  | "canceled"         // Canceled
-  | "payment_failed"   // Payment failed
-  | "refunded";        // Refunded
+  | "pending"          // 1️⃣ Chờ thanh toán
+  | "confirmed"        // 2️⃣ Đã thanh toán (was 'paid')
+  | "processing"       // 3️⃣ Đang xử lý (was 'fulfilling' + 'fulfilled')
+  | "completed"        // 4️⃣ Hoàn tất
+  | "canceled";        // 5️⃣ Đã hủy (check Payment.status for details)
 
 // ==================== ORDER ADDRESS (for CreateOrderFromCartDto) ====================
 
@@ -64,7 +61,14 @@ export interface Order {
   canceledAt?: string;
   createdAt: string;
   updatedAt: string;
-  
+
+  // Shipping info (from OrderGroup - for seller API)
+  shippingName?: string;
+  shippingPhone?: string;
+  shippingAddress?: string;
+  shippingCity?: string;
+  shippingPostalCode?: string;
+
   // Nested data
   brand?: {
     id: string;
@@ -88,13 +92,13 @@ export interface OrderGroup {
   userId: string;
   groupNo: string;              // GROUP-xxx
   status: OrderStatus;
-  
+
   // Amounts (sum of all orders)
   totalAmount: number;          // Sum of items
   shippingFee: number;
   discountAmount: number;
   finalAmount: number;          // totalAmount - discount + shipping
-  
+
   // Shipping address (snapshot)
   notes?: string;
   shippingName?: string;
@@ -102,13 +106,13 @@ export interface OrderGroup {
   shippingAddress?: string;
   shippingCity?: string;
   shippingPostalCode?: string;
-  
+
   // Timestamps
   placedAt?: string;
   paidAt?: string;
   createdAt: string;
   updatedAt: string;
-  
+
   // Nested data
   orders: Order[];
   payments?: Payment[];
@@ -179,25 +183,19 @@ export interface GetOrderGroupResponse {
 // ==================== HELPERS ====================
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "결제 대기",
-  paid: "결제 완료",
-  fulfilling: "배송 준비 중",
-  fulfilled: "배송 완료",
-  completed: "구매 확정",
-  canceled: "취소됨",
-  payment_failed: "결제 실패",
-  refunded: "환불됨",
+  pending: "결제 대기",      // 1️⃣ Chờ thanh toán
+  confirmed: "결제 완료",    // 2️⃣ Đã thanh toán
+  processing: "배송 준비 중", // 3️⃣ Đang xử lý
+  completed: "배송 완료",    // 4️⃣ Hoàn tất
+  canceled: "취소됨",        // 5️⃣ Đã hủy
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  paid: "bg-green-100 text-green-800",
-  fulfilling: "bg-blue-100 text-blue-800",
-  fulfilled: "bg-purple-100 text-purple-800",
-  completed: "bg-gray-100 text-gray-800",
-  canceled: "bg-red-100 text-red-800",
-  payment_failed: "bg-red-100 text-red-800",
-  refunded: "bg-orange-100 text-orange-800",
+  pending: "bg-yellow-100 text-yellow-800",    // 1️⃣ Chờ thanh toán
+  confirmed: "bg-green-100 text-green-800",    // 2️⃣ Đã thanh toán
+  processing: "bg-blue-100 text-blue-800",     // 3️⃣ Đang xử lý
+  completed: "bg-gray-100 text-gray-800",      // 4️⃣ Hoàn tất
+  canceled: "bg-red-100 text-red-800",         // 5️⃣ Đã hủy
 };
 
 // ==================== UTILITY FUNCTIONS ====================
@@ -210,7 +208,7 @@ export const parseOrderItemOptions = (
   optionsJson?: Record<string, string>[]
 ): Record<string, string> => {
   if (!optionsJson || optionsJson.length === 0) return {};
-  
+
   try {
     if (Array.isArray(optionsJson)) {
       // Convert array of objects to single object
@@ -230,7 +228,7 @@ export const formatOrderItemOptions = (
   optionsJson?: Record<string, string>[]
 ): string => {
   const options = parseOrderItemOptions(optionsJson);
-  
+
   // Korean option name mapping
   const optionNameMap: Record<string, string> = {
     color: "색상",
@@ -241,7 +239,7 @@ export const formatOrderItemOptions = (
     type: "타입",
     model: "모델",
   };
-  
+
   return Object.entries(options)
     .map(([key, value]) => {
       const koreanKey = optionNameMap[key.toLowerCase()] || key;

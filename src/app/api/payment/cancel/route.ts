@@ -1,96 +1,173 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Read from environment variables (supports both test and live keys)
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY || "test_sk_4yKeq5bgrpWvWbKAp27AVGX0lzW6";
 const TOSS_API_URL = process.env.TOSS_API_URL || "https://api.tosspayments.com/v1";
-
-// Log which key type is being used (without exposing the key)
-const keyType = TOSS_SECRET_KEY.startsWith("live_") ? "🔴 LIVE" : "🟢 TEST";
-console.log(`[PAYMENT-CANCEL] Using ${keyType} API key`);
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 /**
  * POST /api/payment/cancel
- * Cancel/refund payment directly with Toss Payments API
+ * Cancel payment with Toss API and update database
  */
 export async function POST(request: NextRequest) {
   try {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("🔄 [PAYMENT-CANCEL] Starting payment cancellation...");
+    console.log("❌ [PAYMENT-CANCEL] Canceling payment with Toss...");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
-    const token = request.headers.get("authorization");
-    
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: "Authorization required" },
-        { status: 401 }
-      );
-    }
 
     const body = await request.json();
     const { paymentKey, cancelReason, cancelAmount } = body;
 
     console.log("📋 [PAYMENT-CANCEL] Request data:", {
-      paymentKey: paymentKey?.substring(0, 20) + "...",
+      paymentKey,
       cancelReason,
       cancelAmount,
     });
 
-    if (!paymentKey) {
+    // Validate required fields
+    if (!paymentKey || !cancelReason) {
+      console.error("❌ [PAYMENT-CANCEL] Missing required fields");
       return NextResponse.json(
-        { success: false, message: "paymentKey is required" },
+        { success: false, message: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Call Toss API to cancel payment
-    console.log("🔄 [PAYMENT-CANCEL] Calling Toss API to cancel...");
-    
+    // ============================================
+    // STEP 1: Cancel with Toss Payments API
+    // ============================================
+    console.log(`🔄 [PAYMENT-CANCEL] Calling Toss API: ${TOSS_API_URL}/payments/${paymentKey}/cancel`);
+
     const encryptedSecretKey = "Basic " + Buffer.from(TOSS_SECRET_KEY + ":").toString("base64");
-    
-    const tossResponse = await fetch(
-      `${TOSS_API_URL}/payments/${paymentKey}/cancel`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: encryptedSecretKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          cancelReason: cancelReason || "고객 요청",
-          ...(cancelAmount && { cancelAmount }), // 부분 취소인 경우
-        }),
-      }
-    );
+
+    const tossResponse = await fetch(`${TOSS_API_URL}/payments/${paymentKey}/cancel`, {
+      method: "POST",
+      headers: {
+        "Authorization": encryptedSecretKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cancelReason,
+        ...(cancelAmount && { cancelAmount }),
+      }),
+    });
 
     const tossData = await tossResponse.json();
+
+    console.log("📥 [PAYMENT-CANCEL] Toss API response:", {
+      httpStatus: tossResponse.status,
+      paymentStatus: tossData.status,
+      cancelStatus: tossData.cancels?.[0]?.cancelStatus,
+      cancelAmount: tossData.cancels?.[0]?.cancelAmount,
+    });
 
     if (!tossResponse.ok) {
       console.error("❌ [PAYMENT-CANCEL] Toss API error:", tossData);
       return NextResponse.json(
         {
           success: false,
-          message: tossData.message || "결제 취소 실패",
+          message: tossData.message || "Payment cancellation failed",
           code: tossData.code,
         },
         { status: tossResponse.status }
       );
     }
 
-    console.log("✅ [PAYMENT-CANCEL] Toss API cancelled successfully");
-    console.log("📋 [PAYMENT-CANCEL] Toss response:", {
-      status: tossData.status,
-      cancels: tossData.cancels?.length || 0,
-    });
+    console.log("✅ [PAYMENT-CANCEL] Payment canceled with Toss!");
+    console.log("🔄 [PAYMENT-CANCEL] Now updating C# backend database...");
 
-    console.log("✅ [PAYMENT-CANCEL] Payment cancellation completed!");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    // ============================================
+    // STEP 2: Update C# Backend Database
+    // ============================================
+    try {
+      const backendResponse = await fetch(`${BACKEND_URL}/api/Payment/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          paymentKey: paymentKey,
+          cancelReason: cancelReason,
+          cancelAmount: cancelAmount,
+          tossData: tossData
+        })
+      });
 
-    return NextResponse.json({
-      success: true,
-      message: "결제가 취소되었습니다",
-      data: tossData,
-    });
+      // Check if C# Backend response is JSON
+      const backendContentType = backendResponse.headers.get("content-type");
+      if (!backendContentType || !backendContentType.includes("application/json")) {
+        console.error("❌ [PAYMENT-CANCEL] C# Backend returned non-JSON response", {
+          status: backendResponse.status,
+          contentType: backendContentType,
+          url: `${BACKEND_URL}/api/Payment/cancel`
+        });
+
+        // If 404, endpoint doesn't exist - continue with cancellation success
+        if (backendResponse.status === 404) {
+          console.log("⚠️ [PAYMENT-CANCEL] C# Backend endpoint not found (404) - continuing with cancellation success");
+          return NextResponse.json({
+            success: true,
+            message: 'Payment canceled (database update not available)',
+            data: {
+              toss: tossData,
+              backend: null
+            }
+          });
+        }
+
+        return NextResponse.json({
+          success: false,
+          message: 'C# Backend returned non-JSON response',
+          tossData: tossData // Payment canceled but DB failed
+        }, { status: 500 });
+      }
+
+      if (!backendResponse.ok) {
+        // If 404, endpoint doesn't exist - continue with cancellation success
+        if (backendResponse.status === 404) {
+          console.log("⚠️ [PAYMENT-CANCEL] C# Backend endpoint not found (404) - continuing with cancellation success");
+          return NextResponse.json({
+            success: true,
+            message: 'Payment canceled (database update not available)',
+            data: {
+              toss: tossData,
+              backend: null
+            }
+          });
+        }
+
+        const error = await backendResponse.json();
+        console.error("❌ [PAYMENT-CANCEL] C# Backend error:", error);
+        return NextResponse.json({
+          success: false,
+          message: 'Database update failed',
+          tossData: tossData // Payment canceled but DB failed
+        }, { status: 500 });
+      }
+
+      const backendData = await backendResponse.json();
+      console.log("✅ [PAYMENT-CANCEL] Database updated successfully!");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      // ============================================
+      // SUCCESS! Both Toss and Database updated
+      // ============================================
+      return NextResponse.json({
+        success: true,
+        message: 'Payment canceled and database updated',
+        data: {
+          toss: tossData,
+          backend: backendData.data
+        }
+      });
+
+    } catch (backendError) {
+      console.error("❌ [PAYMENT-CANCEL] C# Backend connection failed:", backendError);
+      return NextResponse.json({
+        success: false,
+        message: 'Database connection failed',
+        tossData: tossData // Payment canceled but DB connection failed
+      }, { status: 500 });
+    }
 
   } catch (error) {
     console.error("❌ [PAYMENT-CANCEL] Error:", error);
@@ -103,4 +180,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

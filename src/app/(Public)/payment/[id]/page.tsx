@@ -35,22 +35,22 @@ export default function PaymentPage({
   const loadOrderGroup = async () => {
     try {
       const token = localStorage.getItem("token");
-      
+
       if (!token) {
         toast.error("로그인이 필요합니다");
         router.push("/login");
         return;
       }
 
-      const response = await fetch(`/api/order/group/${groupId}`, {
+      const response = await fetch(`/api/order/${groupId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setOrderGroup(data.data);
       } else {
@@ -82,7 +82,7 @@ export default function PaymentPage({
 
       const firstOrder = orderGroup.orders?.[0];
       const firstOrderNo = firstOrder?.orderNo;
-      
+
       if (!firstOrderNo) {
         toast.error("주문 번호를 찾을 수 없습니다");
         setIsPaymentProcessing(false);
@@ -91,7 +91,7 @@ export default function PaymentPage({
 
       // ✅ Convert to integer (KRW has no decimals)
       const amount = Math.round(orderGroup.finalAmount);
-      
+
       if (amount <= 0) {
         toast.error("결제 금액이 올바르지 않습니다");
         setIsPaymentProcessing(false);
@@ -132,7 +132,7 @@ export default function PaymentPage({
       const err = error as Error;
       console.error("❌ [PAYMENT] Payment request failed:", error);
       setIsPaymentProcessing(false);
-      
+
       // Show user-friendly error
       if (err.message?.includes("SDK")) {
         toast.error("결제 시스템 로딩 실패. 페이지를 새로고침해주세요.");
@@ -166,7 +166,7 @@ export default function PaymentPage({
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">결제</h1>
-      
+
       {/* Order Summary */}
       <Card className="mb-6">
         <CardContent className="p-6">
@@ -187,7 +187,7 @@ export default function PaymentPage({
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Payment Method Selection */}
       <Card className="mb-6">
         <CardContent className="p-6">
@@ -197,11 +197,10 @@ export default function PaymentPage({
               <button
                 key={method}
                 onClick={() => setSelectedMethod(method)}
-                className={`p-3 border rounded ${
-                  selectedMethod === method
-                    ? 'border-pink-500 bg-pink-50'
-                    : 'border-gray-200'
-                }`}
+                className={`p-3 border rounded ${selectedMethod === method
+                  ? 'border-pink-500 bg-pink-50'
+                  : 'border-gray-200'
+                  }`}
               >
                 {method}
               </button>
@@ -209,7 +208,7 @@ export default function PaymentPage({
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Warning Message - ENHANCED */}
       <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 mb-4">
         <p className="text-lg font-bold text-red-800 mb-3 flex items-center gap-2">
@@ -224,8 +223,8 @@ export default function PaymentPage({
             <div className="font-bold mb-1">2️⃣ {selectedMethod === '카드' ? '카드 정보 입력:' : '정보 입력:'}</div>
             {selectedMethod === '카드' && (
               <div className="text-xs font-mono">
-                • 카드번호: 4282-0000-0000-4282<br/>
-                • 유효기간: 12/25<br/>
+                • 카드번호: 4282-0000-0000-4282<br />
+                • 유효기간: 12/25<br />
                 • CVC: 123
               </div>
             )}
@@ -269,8 +268,8 @@ export default function PaymentPage({
             <div className="text-6xl mb-4 animate-bounce">💳</div>
             <h3 className="text-xl font-bold mb-2">결제 창을 확인해주세요</h3>
             <p className="text-gray-600 mb-4">
-              팝업 또는 새 탭에서 결제를 진행해주세요.<br/>
-              <strong className="text-red-600">반드시 카드 정보를 입력하고<br/>결제하기 버튼을 눌러주세요!</strong>
+              팝업 또는 새 탭에서 결제를 진행해주세요.<br />
+              <strong className="text-red-600">반드시 카드 정보를 입력하고<br />결제하기 버튼을 눌러주세요!</strong>
             </p>
             <div className="text-sm text-gray-500 space-y-1">
               <div>⚠️ 결제 창을 닫지 마세요</div>
@@ -281,7 +280,7 @@ export default function PaymentPage({
         </div>
       )}
 
-  
+
     </div>
   );
 }

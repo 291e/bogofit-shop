@@ -6,11 +6,10 @@ import { useProducts } from "@/hooks/useProducts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Package, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  Package,
+  Edit,
+  Trash2,
   Search,
   Filter
 } from "lucide-react";
@@ -28,41 +27,42 @@ interface InventorySubSectionProps {
   brandId?: string;
 }
 
-export default function InventorySubSection({ 
-  brandId 
+export default function InventorySubSection({
+  brandId
 }: InventorySubSectionProps) {
   const { brandId: contextBrandId } = useBrandContext();
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
   const [pageNumber, setPageNumber] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<ProductResponseDto | null>(null);
+  // const [selectedProduct] = useState<ProductResponseDto | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<{
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     variant: any;
     productName: string;
     productId: string;
   } | null>(null);
   const [showVariantEditModal, setShowVariantEditModal] = useState(false);
   const [isSavingVariant, setIsSavingVariant] = useState(false);
-  
+
   // Debounce search term to avoid spamming API
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  
+
   // Reset to page 1 when search term changes
   useEffect(() => {
     if (debouncedSearchTerm) {
       setPageNumber(1);
     }
   }, [debouncedSearchTerm]);
-  
+
   const { data, isLoading, error } = useProducts(brandId || contextBrandId, pageNumber, debouncedSearchTerm);
-  
-  const products: ProductResponseDto[] = Array.isArray(data?.data?.data) 
-    ? data.data.data 
-    : Array.isArray(data?.data) 
-      ? data.data 
-      : Array.isArray(data?.products) 
-        ? data.products 
+
+  const products: ProductResponseDto[] = Array.isArray(data?.data?.data)
+    ? data.data.data
+    : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.products)
+        ? data.products
         : [];
 
   // Pagination is inside data.data, NOT data.pagination
@@ -72,11 +72,12 @@ export default function InventorySubSection({
   const filteredProducts = products;
 
   // Handler to save variant updates
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSaveVariant = async (variantId: string, updates: any) => {
     if (!selectedVariant) return;
-    
+
     setIsSavingVariant(true);
-    
+
     try {
       const token = getToken();
       const response = await fetch(`/api/product/${selectedVariant.productId}`, {
@@ -94,16 +95,16 @@ export default function InventorySubSection({
           }]
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         toast.success('변형 재고가 업데이트되었습니다');
-        
+
         // Invalidate cache
         queryClient.invalidateQueries({ queryKey: [...PRODUCTS_QUERY_KEY, brandId || contextBrandId] });
         queryClient.invalidateQueries({ queryKey: [...PRODUCT_DETAIL_QUERY_KEY, selectedVariant.productId] });
-        
+
         // Close modal
         setShowVariantEditModal(false);
         setSelectedVariant(null);
@@ -189,11 +190,11 @@ export default function InventorySubSection({
               <div className="flex-1 text-center border-l border-gray-300 pl-2">비교가격</div>
               <div className="w-24 text-center border-l border-gray-300 pl-2">액션</div>
             </div>
-            
+
             {/* Product + Variant Rows - v2.0: Show product first, then variants */}
             {filteredProducts.flatMap((product) => {
               const rows = [];
-              
+
               // 1. ALWAYS show product-level row first
               rows.push(
                 <div key={`${product.id}-product`} className="border-b border-gray-200 bg-blue-50 hover:bg-blue-100 transition-colors">
@@ -202,13 +203,13 @@ export default function InventorySubSection({
                     <div className="w-20 text-center">
                       <p className="text-xs font-mono text-gray-600 truncate">{product.sku}</p>
                     </div>
-                    
+
                     {/* 이미지 */}
                     <div className="w-20 flex justify-center border-l border-gray-300 pl-2">
                       <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center border border-gray-200">
                         {product.thumbUrl ? (
-                          <Image 
-                            src={product.thumbUrl} 
+                          <Image
+                            src={product.thumbUrl}
                             alt={product.name}
                             className="w-full h-full object-cover rounded"
                             width={48}
@@ -219,42 +220,42 @@ export default function InventorySubSection({
                         )}
                       </div>
                     </div>
-                    
+
                     {/* 상품명 */}
                     <div className="w-32 text-center border-l border-gray-300 pl-2">
                       <h3 className="font-medium text-sm truncate">{product.name}</h3>
                     </div>
-                    
+
                     {/* 레벨 */}
                     <div className="w-24 text-center border-l border-gray-300 pl-2">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         상품
                       </span>
                     </div>
-                    
+
                     {/* 옵션 */}
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       <div className="text-xs text-gray-600 font-medium">
-                        {product.variants && product.variants.length > 0 
+                        {product.variants && product.variants.length > 0
                           ? `${product.variants.length}개`
                           : '0개'}
                       </div>
                     </div>
-                    
+
                     {/* 재고 */}
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       <p className="text-sm font-semibold text-blue-900">
-                        {product.variants && product.variants.length > 0 
+                        {product.variants && product.variants.length > 0
                           ? `${product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)}개`
                           : (product.quantity === null ? '무제한' : `${product.quantity}개`)}
                       </p>
                     </div>
-                    
+
                     {/* 가격 */}
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       <p className="text-sm font-medium">{product.basePrice.toLocaleString()}원</p>
                     </div>
-                    
+
                     {/* 비교가격 */}
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       {product.baseCompareAtPrice ? (
@@ -265,14 +266,14 @@ export default function InventorySubSection({
                         <p className="text-sm text-gray-400">-</p>
                       )}
                     </div>
-                    
+
                     {/* 액션 */}
                     <div className="w-24 flex justify-center gap-1 border-l border-gray-300 pl-2">
                       <Button
                         size="sm"
                         variant="outline"
                         className="text-xs px-2 py-1 h-6"
-                        onClick={() => setSelectedProduct(product)}
+                        onClick={() => {/* setSelectedProduct(product) */ }}
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -280,7 +281,7 @@ export default function InventorySubSection({
                   </div>
                 </div>
               );
-              
+
               // 2. Then show variant rows if they exist
               if (product.variants && product.variants.length > 0) {
                 product.variants.forEach((variant, variantIndex) => {
@@ -291,13 +292,13 @@ export default function InventorySubSection({
                         <div className="w-20 text-center">
                           <p className="text-xs font-mono text-gray-400 truncate">↳ {product.sku}</p>
                         </div>
-                        
+
                         {/* 이미지 */}
                         <div className="w-20 flex justify-center border-l border-gray-300 pl-2">
                           <div className="w-12 h-12 bg-white rounded flex items-center justify-center border border-gray-200">
                             {product.thumbUrl ? (
-                              <Image 
-                                src={product.thumbUrl} 
+                              <Image
+                                src={product.thumbUrl}
                                 alt={product.name}
                                 className="w-full h-full object-cover rounded opacity-60"
                                 width={48}
@@ -308,97 +309,97 @@ export default function InventorySubSection({
                             )}
                           </div>
                         </div>
-                        
+
                         {/* 상품명 */}
                         <div className="w-32 text-center border-l border-gray-300 pl-2">
                           <h3 className="font-normal text-xs text-gray-500 truncate">{product.name}</h3>
                         </div>
-                        
+
                         {/* 레벨 */}
                         <div className="w-24 text-center border-l border-gray-300 pl-2">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             변형
                           </span>
                         </div>
-                        
+
                         {/* 옵션 */}
                         <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                        <div className="text-xs text-gray-600">
-                          {variant.optionsJson ? (
-                            <div className="flex flex-wrap gap-1 justify-center">
-                              {(() => {
-                                const options = JSON.parse(variant.optionsJson);
-                                return options.map((opt: Record<string, string>, index: number) => {
-                                  // Parse option object like {"색상": "빨강"} or {"사이즈": "L"}
-                                  const entries = Object.entries(opt as Record<string, string>);
-                                  return entries.map(([key, value], entryIndex) => (
-                                    <span key={`${index}-${entryIndex}`} className="inline-flex items-center">
-                                      <span className="text-gray-500">{key}:</span>
-                                      <span className="ml-1 font-medium text-gray-700">{value as string}</span>
-                                      {index < options.length - 1 && entryIndex === entries.length - 1 && <span className="mx-1">·</span>}
-                                    </span>
-                                  ));
-                                });
-                              })()}
-                            </div>
+                          <div className="text-xs text-gray-600">
+                            {variant.optionsJson ? (
+                              <div className="flex flex-wrap gap-1 justify-center">
+                                {(() => {
+                                  const options = JSON.parse(variant.optionsJson);
+                                  return options.map((opt: Record<string, string>, index: number) => {
+                                    // Parse option object like {"색상": "빨강"} or {"사이즈": "L"}
+                                    const entries = Object.entries(opt as Record<string, string>);
+                                    return entries.map(([key, value], entryIndex) => (
+                                      <span key={`${index}-${entryIndex}`} className="inline-flex items-center">
+                                        <span className="text-gray-500">{key}:</span>
+                                        <span className="ml-1 font-medium text-gray-700">{value as string}</span>
+                                        {index < options.length - 1 && entryIndex === entries.length - 1 && <span className="mx-1">·</span>}
+                                      </span>
+                                    ));
+                                  });
+                                })()}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">기본 변형</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 재고 */}
+                        <div className="flex-1 text-center border-l border-gray-300 pl-2">
+                          <p className="text-sm font-medium">{variant.quantity || 0}개</p>
+                        </div>
+
+                        {/* 가격 */}
+                        <div className="flex-1 text-center border-l border-gray-300 pl-2">
+                          <p className="text-sm font-medium">{variant.price?.toLocaleString()}원</p>
+                        </div>
+
+                        {/* 비교가격 */}
+                        <div className="flex-1 text-center border-l border-gray-300 pl-2">
+                          {variant.compareAtPrice ? (
+                            <p className="text-sm text-gray-400 line-through">
+                              {variant.compareAtPrice.toLocaleString()}원
+                            </p>
                           ) : (
-                            <span className="text-gray-400">기본 변형</span>
+                            <p className="text-sm text-gray-400">-</p>
                           )}
                         </div>
+
+                        {/* 액션 */}
+                        <div className="w-24 flex justify-center gap-1 border-l border-gray-300 pl-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs px-2 py-1 h-6"
+                            onClick={() => {
+                              setSelectedVariant({
+                                variant,
+                                productName: product.name,
+                                productId: product.id
+                              });
+                              setShowVariantEditModal(true);
+                            }}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs px-2 py-1 h-6"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                      
-                      {/* 재고 */}
-                      <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                        <p className="text-sm font-medium">{variant.quantity || 0}개</p>
-                      </div>
-                      
-                      {/* 가격 */}
-                      <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                        <p className="text-sm font-medium">{variant.price?.toLocaleString()}원</p>
-                      </div>
-                      
-                      {/* 비교가격 */}
-                      <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                        {variant.compareAtPrice ? (
-                          <p className="text-sm text-gray-400 line-through">
-                            {variant.compareAtPrice.toLocaleString()}원
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-400">-</p>
-                        )}
-                      </div>
-                      
-                      {/* 액션 */}
-                      <div className="w-24 flex justify-center gap-1 border-l border-gray-300 pl-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs px-2 py-1 h-6"
-                          onClick={() => {
-                            setSelectedVariant({
-                              variant,
-                              productName: product.name,
-                              productId: product.id
-                            });
-                            setShowVariantEditModal(true);
-                          }}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs px-2 py-1 h-6"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
                     </div>
                   );
                 });
               }
-              
+
               return rows;
             })}
           </div>
@@ -415,14 +416,14 @@ export default function InventorySubSection({
                 {debouncedSearchTerm ? "검색 결과가 없습니다" : "상품이 없습니다"}
               </h3>
               <p className="text-gray-500">
-                {debouncedSearchTerm 
+                {debouncedSearchTerm
                   ? `"${debouncedSearchTerm}"에 대한 검색 결과가 없습니다.`
                   : "새로운 상품을 등록해보세요"}
               </p>
               {debouncedSearchTerm && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="mt-4"
                   onClick={() => setSearchTerm("")}
                 >
@@ -437,8 +438,8 @@ export default function InventorySubSection({
       {/* Pagination - Always show */}
       <div className="flex justify-center">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
             disabled={pageNumber === 1}
@@ -451,8 +452,8 @@ export default function InventorySubSection({
             <span className="text-gray-600">/</span>
             <span className="font-semibold text-gray-900">{totalPages}</span>
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => setPageNumber(prev => Math.min(totalPages, prev + 1))}
             disabled={pageNumber === totalPages}
@@ -466,7 +467,6 @@ export default function InventorySubSection({
       <VariantEditModal
         variant={selectedVariant?.variant || null}
         productName={selectedVariant?.productName || ""}
-        productId={selectedVariant?.productId || ""}
         open={showVariantEditModal}
         onOpenChange={setShowVariantEditModal}
         onSave={handleSaveVariant}

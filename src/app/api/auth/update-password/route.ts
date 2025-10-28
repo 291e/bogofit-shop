@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { safeJsonParse } from "@/lib/api-utils";
+import { AuthResponse } from '@/types/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -44,19 +46,20 @@ export async function PUT(request: NextRequest) {
         })
       });
 
-      const data = await response.json();
-      
-      const convertedData = {
-        success: data.success || response.ok,
-        message: data.message || (response.ok ? '비밀번호가 성공적으로 변경되었습니다.' : '비밀번호 변경에 실패했습니다.')
-      };
+      const result = await safeJsonParse(response);
+
+      if (!result.success) {
+        return NextResponse.json(result, { status: result.status || 500 });
+      }
+
+      const data = result.data as AuthResponse | undefined;
 
       const responseHeaders = new Headers();
       responseHeaders.set('X-Content-Type-Options', 'nosniff');
       responseHeaders.set('X-Frame-Options', 'DENY');
       responseHeaders.set('X-XSS-Protection', '1; mode=block');
-      
-      return NextResponse.json(convertedData, { 
+
+      return NextResponse.json(data, {
         status: response.status,
         headers: responseHeaders
       });
