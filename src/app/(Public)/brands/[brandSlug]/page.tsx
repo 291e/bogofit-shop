@@ -16,18 +16,35 @@ const convertToDisplayProduct = (product: ProductResponseDto) => {
   // v2.0: Use first variant instead of default variant
   const firstVariant = product.variants?.[0];
   const defaultImage = product.images?.[0] || "/logo.png";
-  
+
   return {
     id: product.id,
     name: product.name,
     slug: product.slug, // Product slug for SEO-friendly URLs
-    price: firstVariant?.price || product.basePrice,
-    originalPrice: firstVariant?.compareAtPrice || product.baseCompareAtPrice,
+    price: product.finalPrice || firstVariant?.price || product.basePrice,
+    originalPrice: product.baseCompareAtPrice || firstVariant?.compareAtPrice,
     image: defaultImage,
     brand: product.brand?.name || "BOGOFIT",
-    discount: firstVariant?.compareAtPrice && firstVariant?.price 
-      ? Math.round(((firstVariant.compareAtPrice - firstVariant.price) / firstVariant.compareAtPrice) * 100)
-      : undefined,
+    discount: (() => {
+      if (product.finalPrice && product.basePrice) {
+        const diff = product.basePrice - product.finalPrice;
+        return diff > 0 ? Math.round((diff / product.basePrice) * 100) : undefined;
+      }
+      if (product.promotion) {
+        return product.promotion.type === 'percentage'
+          ? (product.promotion.value || 0)
+          : product.promotion.type === 'fixed_amount'
+            ? Math.round(((product.promotion.value || 0) / (product.basePrice || 1)) * 100)
+            : undefined;
+      }
+      if (firstVariant?.compareAtPrice && firstVariant?.price) {
+        return Math.round(((firstVariant.compareAtPrice - firstVariant.price) / firstVariant.compareAtPrice) * 100);
+      }
+      if (product.baseCompareAtPrice && product.basePrice) {
+        return Math.round(((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100);
+      }
+      return undefined;
+    })(),
   };
 };
 
@@ -36,7 +53,7 @@ const convertToDisplayProduct = (product: ProductResponseDto) => {
 export default function BrandDetailPage() {
   const params = useParams();
   const brandSlug = params.brandSlug as string;
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
@@ -49,12 +66,12 @@ export default function BrandDetailPage() {
       const response = await fetch(`/api/brand?slug=${brandSlug}`);
       if (!response.ok) throw new Error("Failed to fetch brand");
       const data = await response.json();
-      
+
       // API returns { brands: [...] } so we need to find the matching brand
       if (data.brands && data.brands.length > 0) {
         return data.brands[0] as BrandResponseDto;
       }
-      
+
       throw new Error("Brand not found");
     },
     enabled: !!brandSlug,
@@ -78,19 +95,20 @@ export default function BrandDetailPage() {
         ...(sortBy && { sortBy }),
         ...(brandData?.id && { brandId: brandData.id.toString() }),
       });
+      searchParams.append('include', 'true');
 
       const response = await fetch(`/api/product?${searchParams}`);
       if (!response.ok) throw new Error("Failed to fetch products");
-      
+
       const data = await response.json();
       return data;
     },
     getNextPageParam: (lastPage) => {
       if (!lastPage?.pagination) return undefined;
-      
+
       const currentPage = lastPage.pagination.page;
       const totalPages = lastPage.pagination.totalPages;
-      
+
       return currentPage < totalPages ? currentPage + 1 : undefined;
     },
     enabled: !!brandData?.id,
@@ -186,7 +204,7 @@ export default function BrandDetailPage() {
               {brandData.description && (
                 <p className="text-gray-600 mb-4 max-w-2xl">{brandData.description}</p>
               )}
-              
+
               {/* Brand Contact Info */}
               <div className="flex flex-wrap gap-6 text-sm text-gray-500">
                 {brandData.contactEmail && (
@@ -271,12 +289,12 @@ export default function BrandDetailPage() {
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
           >
             {displayProducts.map((product: ReturnType<typeof convertToDisplayProduct>) => (
-              <Cafe24ProductCard 
-                key={product.id} 
+              <Cafe24ProductCard
+                key={product.id}
                 product={{
                   ...product,
                   brandSlug: brandSlug
-                }} 
+                }}
               />
             ))}
           </motion.div>

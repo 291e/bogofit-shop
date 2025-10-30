@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Package, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, Package, Loader2 } from "lucide-react";
 import { ProductResponseDto } from "@/types/product";
 import { Cafe24ProductCard } from "./Cafe24ProductCard";
 
@@ -36,16 +36,20 @@ const convertToDisplayProduct = (product: ProductResponseDto) => {
     id: product.id,
     name: product.name,
     slug: product.slug, // Product slug for SEO-friendly URLs
-    price: firstVariant?.price || product.basePrice,
-    originalPrice: firstVariant?.compareAtPrice || product.baseCompareAtPrice,
+    price: product.finalPrice || firstVariant?.price || product.basePrice,
+    originalPrice: product.baseCompareAtPrice || firstVariant?.compareAtPrice,
     image: defaultImage,
     brand: product.brand?.name || "BOGOFIT",
     brandSlug: product.brand?.slug, // Brand slug for SEO-friendly URLs
-    discount: firstVariant?.compareAtPrice && firstVariant?.price
-      ? Math.round(((firstVariant.compareAtPrice - firstVariant.price) / firstVariant.compareAtPrice) * 100)
+    discount: product.promotion
+      ? (product.promotion.type === 'percentage'
+        ? product.promotion.value || 0
+        : product.promotion.type === 'fixed_amount'
+          ? Math.round(((product.promotion.value || 0) / (product.basePrice || 1)) * 100)
+          : 0)
       : undefined,
-    rating: undefined,
-    reviews: undefined
+    rating: product.reviewStats?.averageRating,
+    reviews: product.reviewStats?.totalReviews
   };
 };
 
@@ -53,7 +57,7 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
   const [products, setProducts] = useState<ProductResponseDto[]>(initialProducts || []);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(2); // Initial page=1 loaded, start from page 2
+  const [page, setPage] = useState(2); // Initial page=1 loaded, start from page 2  
   const LOAD_SIZE = 12; // Load 12 products per scroll (2 rows x 6 columns)
   const observerRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
@@ -68,7 +72,7 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
 
       try {
         const response = await fetch(
-          `/api/product?page=${page}&pageSize=${LOAD_SIZE}&isActive=true`
+          `/api/product?page=${page}&pageSize=${LOAD_SIZE}&isActive=true&include=true&includeReviewStats=true`
         );
 
         if (!response.ok) {
@@ -154,8 +158,7 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
             <div className="flex items-center gap-3">
               <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-sky-500 to-indigo-500" />
               <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
-                <Package className="h-5 w-5 text-sky-600" /> 전체 상품
-                <Sparkles className="h-4 w-4 text-indigo-500" />
+                전체 상품
               </h2>
               <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full">
                 전체 상품을 둘러보세요

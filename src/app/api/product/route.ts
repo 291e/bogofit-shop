@@ -22,18 +22,22 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const isActive = searchParams.get('isActive');
     const search = searchParams.get('search');
-    const include = searchParams.get('include'); // Include variants
+    const include = searchParams.get('include'); // Include related data (variants, etc.)
+    const includeReviewStats = searchParams.get('includeReviewStats'); // Include review stats in bulk
 
     // Build query parameters based on backend API documentation
     const queryParams = new URLSearchParams();
 
     const promotion = searchParams.get('promotion'); // Include promotion data
+    const reviews = searchParams.get('reviews'); // Include review stats
 
     // Priority 1: Get by ID (single product)
     if (id) {
       queryParams.set('id', id);
       if (include) queryParams.set('include', include);
       if (promotion) queryParams.set('promotion', promotion);
+      if (reviews) queryParams.set('reviews', reviews);
+      if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
     }
     // Priority 2: Get by slug + brandId (single product)
     else if (slug && brandId) {
@@ -41,6 +45,8 @@ export async function GET(request: NextRequest) {
       queryParams.set('brandId', brandId);
       if (include) queryParams.set('include', include);
       if (promotion) queryParams.set('promotion', promotion);
+      if (reviews) queryParams.set('reviews', reviews);
+      if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
     }
     // Priority 2.5: Get by slug + brand slug (single product - SEO-friendly)
     else if (slug && brand) {
@@ -49,6 +55,8 @@ export async function GET(request: NextRequest) {
       queryParams.set('brand', brand);
       if (include) queryParams.set('include', include);
       if (promotion) queryParams.set('promotion', promotion);
+      if (reviews) queryParams.set('reviews', reviews);
+      if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
     }
     // Priority 3: List with filters
     else {
@@ -64,6 +72,8 @@ export async function GET(request: NextRequest) {
       if (search) queryParams.set('search', search);
       if (include) queryParams.set('include', include);
       if (promotion) queryParams.set('promotion', promotion);
+      if (reviews) queryParams.set('reviews', reviews);
+      if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
     }
 
     // Get authorization header from the incoming request

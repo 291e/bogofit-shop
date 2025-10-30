@@ -209,41 +209,7 @@ export default function PaymentPage({
         </CardContent>
       </Card>
 
-      {/* Warning Message - ENHANCED */}
-      <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 mb-4">
-        <p className="text-lg font-bold text-red-800 mb-3 flex items-center gap-2">
-          🚨 필수! 결제 완료 방법
-        </p>
-        <div className="space-y-3 text-sm text-red-900">
-          <div className="bg-white p-3 rounded border border-red-200">
-            <div className="font-bold mb-1">1️⃣ 결제 창이 팝업으로 열립니다</div>
-            <div className="text-xs">→ 팝업 차단 해제 필요!</div>
-          </div>
-          <div className="bg-white p-3 rounded border border-red-200">
-            <div className="font-bold mb-1">2️⃣ {selectedMethod === '카드' ? '카드 정보 입력:' : '정보 입력:'}</div>
-            {selectedMethod === '카드' && (
-              <div className="text-xs font-mono">
-                • 카드번호: 4282-0000-0000-4282<br />
-                • 유효기간: 12/25<br />
-                • CVC: 123
-              </div>
-            )}
-          </div>
-          <div className="bg-white p-3 rounded border border-red-200">
-            <div className="font-bold mb-1">3️⃣ 팝업 안에서 &quot;결제하기&quot; 버튼 클릭</div>
-            <div className="text-xs text-red-700">→ 이 단계를 꼭 완료해야 합니다!</div>
-          </div>
-          <div className="bg-white p-3 rounded border border-red-200">
-            <div className="font-bold mb-1">4️⃣ Toss 처리 완료까지 대기 (2-3초)</div>
-            <div className="text-xs text-red-700">→ 팝업을 절대 닫지 마세요!</div>
-          </div>
-        </div>
-        <div className="mt-3 p-2 bg-red-100 rounded text-center">
-          <p className="text-xs font-bold text-red-900">
-            ❌ 중간에 팝업을 닫으면 결제가 취소됩니다!
-          </p>
-        </div>
-      </div>
+      {/* Removed verbose instructions per request */}
 
       {/* Payment Button */}
       <Button

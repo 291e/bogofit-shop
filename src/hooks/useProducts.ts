@@ -8,6 +8,7 @@ import { toast } from "sonner";
 // Query key constants
 export const PRODUCTS_QUERY_KEY = ["products"];
 export const PRODUCT_DETAIL_QUERY_KEY = ["product"];
+export const BEST_RATED_PRODUCTS_QUERY_KEY = ["bestRatedProducts"];
 
 /**
  * Response type for products list
@@ -366,6 +367,8 @@ export interface UsePublicProductsOptions {
   isActive?: boolean;
   brandId?: string;
   categoryId?: string;
+  promotion?: boolean; // ✅ Include promotion data
+  reviews?: boolean; // ✅ Include review stats
   enabled?: boolean; // ✅ Add enabled option to disable hook
 }
 
@@ -380,11 +383,13 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
     isActive = true,
     brandId,
     categoryId,
+    promotion,
+    reviews,
     enabled = true // ✅ Default enabled
   } = options;
 
   return useQuery({
-    queryKey: ["publicProducts", pageNumber, pageSize, searchKeyword, isActive, brandId, categoryId],
+    queryKey: ["publicProducts", pageNumber, pageSize, searchKeyword, isActive, brandId, categoryId, promotion, reviews],
     enabled, // ✅ Use enabled option
     queryFn: async (): Promise<GetProductsResponse> => {
       // Build URL with all query params
@@ -404,6 +409,14 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
       if (categoryId) {
         params.append('categoryId', categoryId);
       }
+      if (promotion) {
+        params.append('promotion', 'true');
+      }
+      // Align with API: include related data and review stats in bulk
+      if (reviews) {
+        params.append('include', 'true');
+        params.append('includeReviewStats', 'true');
+      }
 
       const response = await fetch(`/api/product?${params.toString()}`, {
         headers: {
@@ -419,6 +432,67 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes cache time
+  });
+}
+
+/**
+ * Options for useBestRatedProducts hook
+ */
+export interface UseBestRatedProductsOptions {
+  pageNumber?: number;
+  pageSize?: number;
+  minRating?: number;
+  minReviews?: number;
+  category?: string;
+  brandId?: string;
+  enabled?: boolean;
+}
+
+/**
+ * Hook for fetching best rated products based on review ratings
+ */
+export function useBestRatedProducts(options: UseBestRatedProductsOptions = {}) {
+  const {
+    pageNumber = 1,
+    pageSize = 12,
+    minRating = 4.0,
+    minReviews = 5,
+    category,
+    brandId,
+    enabled = true
+  } = options;
+
+  return useQuery({
+    queryKey: [...BEST_RATED_PRODUCTS_QUERY_KEY, pageNumber, pageSize, minRating, minReviews, category, brandId],
+    enabled,
+    queryFn: async (): Promise<GetProductsResponse> => {
+      const params = new URLSearchParams();
+      params.append('page', pageNumber.toString());
+      params.append('pageSize', pageSize.toString());
+      params.append('minRating', minRating.toString());
+      params.append('minReviews', minReviews.toString());
+
+      if (category) {
+        params.append('category', category);
+      }
+      if (brandId) {
+        params.append('brandId', brandId);
+      }
+
+      const response = await fetch(`/api/products/best-rated?${params.toString()}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch best rated products: ${response.status}`);
+      }
+
+      return response.json();
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes (longer cache for best rated)
+    gcTime: 20 * 60 * 1000, // 20 minutes cache time
   });
 }
 

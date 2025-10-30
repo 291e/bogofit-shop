@@ -19,6 +19,8 @@ export function Cafe24SpecialOffers({ products: initialProducts }: Cafe24Special
     pageNumber: 1,
     pageSize: 60,
     isActive: true,
+    promotion: true,
+    reviews: true,
     enabled: !initialProducts // ✅ Disable hook if props provided
   });
 
@@ -35,18 +37,20 @@ export function Cafe24SpecialOffers({ products: initialProducts }: Cafe24Special
     id: product.id,
     name: product.name,
     slug: product.slug, // Product slug for SEO-friendly URLs
-    price: product.basePrice,
+    price: product.finalPrice || product.basePrice,
     originalPrice: product.baseCompareAtPrice || undefined,
-    discount: product.baseCompareAtPrice
-      ? Math.round(
-        ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
-      )
+    discount: product.promotion
+      ? (product.promotion.type === 'percentage'
+        ? product.promotion.value || 0
+        : product.promotion.type === 'fixed_amount'
+          ? Math.round(((product.promotion.value || 0) / (product.basePrice || 1)) * 100)
+          : 0)
       : undefined,
     image: product.images?.[0] || "/images/placeholder-product.png",
     brand: product.brand?.name || undefined,
     brandSlug: product.brand?.slug, // Brand slug for SEO-friendly URLs
-    rating: undefined,
-    reviews: undefined,
+    rating: product.reviewStats?.averageRating,
+    reviews: product.reviewStats?.totalReviews,
   }));
 
   // Show only 6 products initially, or all when expanded

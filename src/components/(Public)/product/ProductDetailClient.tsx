@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PurchaseButton } from "@/components/(Public)/product/PurchaseButton";
 import VirtualFitting from "@/components/(Public)/product/VirtualFitting";
-import ProductReview from "@/components/(Public)/product/ProductReview";
+import { ProductReviews } from "@/components/(Public)/product/ProductReviews";
 
 interface ProductVariant {
   id: string;
@@ -166,10 +166,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const finalPrice = product.price + totalPriceDiff;
 
   // 품절 확인 - disable toàn bộ khi tất cả variants hết hàng
-  const allVariantsOutOfStock = product.variants && product.variants.length > 0 
+  const allVariantsOutOfStock = product.variants && product.variants.length > 0
     ? product.variants.every((v) => v.stock === 0)
     : false;
-    
+
   const isOutOfStock = matchingVariant
     ? matchingVariant.stock === 0
     : selectedVariant
@@ -189,6 +189,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   // 썸네일 이미지 배열 분리
   const thumbnails = product.thumbnailImages || [];
   const detailImage = product.detailImage;
+
+  const safeAvgRating = product.avgRating ?? 0;
 
   // 모든 이미지 배열
   const allImages = [product.imageUrl, ...thumbnails];
@@ -265,11 +267,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-all duration-200 group"
                 >
                   <Heart
-                    className={`w-6 h-6 transition-all duration-200 ${
-                      isWishlisted
-                        ? "fill-red-500 text-red-500"
-                        : "text-gray-600 group-hover:text-red-500"
-                    }`}
+                    className={`w-6 h-6 transition-all duration-200 ${isWishlisted
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-600 group-hover:text-red-500"
+                      }`}
                   />
                 </button>
               </div>
@@ -286,11 +287,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                           <div
                             key={actualIndex}
                             onClick={() => setSelectedImageIndex(actualIndex)}
-                            className={`aspect-square rounded-lg overflow-hidden bg-white cursor-pointer hover:shadow-lg transition-all duration-200 ${
-                              selectedImageIndex === actualIndex
-                                ? "ring-2 ring-pink-200 scale-105"
-                                : ""
-                            }`}
+                            className={`aspect-square rounded-lg overflow-hidden bg-white cursor-pointer hover:shadow-lg transition-all duration-200 ${selectedImageIndex === actualIndex
+                              ? "ring-2 ring-pink-200 scale-105"
+                              : ""
+                              }`}
                           >
                             <Image
                               src={image}
@@ -352,11 +352,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         <div
                           key={index}
                           onClick={() => setVfImageIndex(index)}
-                          className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
-                            vfImageIndex === index
-                              ? "ring-2 ring-pink-500 scale-105 shadow-lg"
-                              : "ring-1 ring-gray-200 hover:ring-pink-300"
-                          }`}
+                          className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${vfImageIndex === index
+                            ? "ring-2 ring-pink-500 scale-105 shadow-lg"
+                            : "ring-1 ring-gray-200 hover:ring-pink-300"
+                            }`}
                         >
                           <Image
                             src={image}
@@ -420,23 +419,26 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 </div>
 
                 {/* 평점 */}
-                {product.avgRating && product.avgRating > 0 && (
+                {product.reviewCount !== undefined && (
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-5 h-5 ${
-                            i < Math.floor(product.avgRating!)
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="font-semibold text-gray-900">
-                      {product.avgRating}
-                    </span>
+                    {safeAvgRating > 0 && (
+                      <>
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-5 h-5 ${i < Math.floor(safeAvgRating)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-300"
+                                }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="font-semibold text-gray-900">
+                          {safeAvgRating}
+                        </span>
+                      </>
+                    )}
                     <span className="text-gray-500">({product.reviewCount}개 리뷰)</span>
                   </div>
                 )}
@@ -519,11 +521,10 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                           }}
                           disabled={allVariantsOutOfStock}
                         >
-                          <SelectTrigger className={`w-full border-2 transition-colors rounded-xl h-12 ${
-                            allVariantsOutOfStock 
-                              ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed' 
-                              : 'bg-white border-gray-200 hover:border-pink-300'
-                          }`}>
+                          <SelectTrigger className={`w-full border-2 transition-colors rounded-xl h-12 ${allVariantsOutOfStock
+                            ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
+                            : 'bg-white border-gray-200 hover:border-pink-300'
+                            }`}>
                             <SelectValue placeholder={`${optionName} 선택`} />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
@@ -610,8 +611,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   selectedOption={
                     Object.keys(selectedOptions).length > 0
                       ? Object.entries(selectedOptions)
-                          .map(([name, value]) => `${name}: ${value}`)
-                          .join(", ")
+                        .map(([name, value]) => `${name}: ${value}`)
+                        .join(", ")
                       : selectedVariant
                         ? `${selectedVariant.optionName}: ${selectedVariant.optionValue}`
                         : ""
@@ -699,7 +700,14 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
           {/* 리뷰 섹션 */}
           <div id="reviews" className="max-w-6xl mx-auto mt-16">
-            <ProductReview />
+            <ProductReviews
+              productId={product.id}
+              statsFromProduct={{
+                averageRating: product.avgRating,
+                totalReviews: product.reviewCount,
+              }}
+              fetchList={true}
+            />
           </div>
         </div>
       </div>

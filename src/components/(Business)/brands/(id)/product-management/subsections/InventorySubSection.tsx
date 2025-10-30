@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useBrandContext } from "@/app/business/brands/[id]/layout";
-import { useProducts } from "@/hooks/useProducts";
+import { usePublicProducts } from "@/hooks/useProducts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,15 +55,20 @@ export default function InventorySubSection({
     }
   }, [debouncedSearchTerm]);
 
-  const { data, isLoading, error } = useProducts(brandId || contextBrandId, pageNumber, debouncedSearchTerm);
+  const { data, isLoading, error } = usePublicProducts({
+    pageNumber,
+    pageSize: 10,
+    brandId: (brandId || contextBrandId) as string,
+    isActive: true,
+    reviews: true,
+    searchKeyword: debouncedSearchTerm || undefined,
+  });
 
   const products: ProductResponseDto[] = Array.isArray(data?.data?.data)
     ? data.data.data
-    : Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data?.products)
-        ? data.products
-        : [];
+    : Array.isArray(data?.products)
+      ? data.products
+      : [];
 
   // Pagination is inside data.data, NOT data.pagination
   const totalPages = data?.data?.totalPages || data?.pagination?.totalPages || data?.totalPages || 1;

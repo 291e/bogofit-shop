@@ -2,7 +2,7 @@
 
 import { ProductResponseDto } from "@/types/product";
 import { Cafe24ProductCard } from "./Cafe24ProductCard";
-import { Sparkle, ArrowRight, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { usePublicProducts } from "@/hooks/useProducts";
 import { useState } from "react";
@@ -19,6 +19,8 @@ export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24Feat
     pageNumber: 2, // ✅ Changed to page 2 for featured products
     pageSize: 30,
     isActive: true,
+    promotion: true,
+    reviews: true,
     enabled: !initialProducts // ✅ Disable hook if props provided
   });
 
@@ -30,18 +32,20 @@ export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24Feat
     id: product.id,
     name: product.name,
     slug: product.slug, // Product slug for SEO-friendly URLs
-    price: product.basePrice,
+    price: product.finalPrice || product.basePrice,
     originalPrice: product.baseCompareAtPrice || undefined,
-    discount: product.baseCompareAtPrice
-      ? Math.round(
-        ((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100
-      )
+    discount: product.promotion
+      ? (product.promotion.type === 'percentage'
+        ? product.promotion.value || 0
+        : product.promotion.type === 'fixed_amount'
+          ? Math.round(((product.promotion.value || 0) / (product.basePrice || 1)) * 100)
+          : 0)
       : undefined,
     image: product.images?.[0] || "/images/placeholder-product.png",
     brand: product.brand?.name || undefined,
     brandSlug: product.brand?.slug, // Brand slug for SEO-friendly URLs
-    rating: undefined,
-    reviews: undefined,
+    rating: product.reviewStats?.averageRating,
+    reviews: product.reviewStats?.totalReviews,
   }));
 
   // Show only 6 products initially, or all when expanded
@@ -66,8 +70,7 @@ export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24Feat
             <div className="flex items-center gap-3">
               <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-purple-500 to-violet-500" />
               <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
-                <Sparkle className="h-5 w-5 text-purple-600" /> 추천 상품
-                <Sparkles className="h-4 w-4 text-violet-500" />
+                추천 상품
               </h2>
               <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-purple-800 bg-purple-50 px-2.5 py-1 rounded-full">
                 MD가 추천하는 상품

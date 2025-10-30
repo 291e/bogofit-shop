@@ -7,15 +7,15 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 // Icons
-import { 
-  Menu, 
-  User, 
-  Clock, 
-  Ticket, 
-  MapPin, 
-  ShoppingBag, 
-  LogOut, 
-  Heart 
+import {
+  Menu,
+  User,
+  Clock,
+  Ticket,
+  MapPin,
+  ShoppingBag,
+  LogOut,
+  Heart
 } from "lucide-react";
 
 // Hooks
@@ -29,25 +29,25 @@ import { CartBadge } from "@/components/(Public)/cart/CartBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
 } from "@/components/ui/tooltip";
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetTrigger, 
-  SheetHeader, 
-  SheetTitle 
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle
 } from "@/components/ui/sheet";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 
@@ -71,18 +71,18 @@ export default function Header() {
       setUser(null);
       return;
     }
-    
+
     const token = getToken();
     if (!token) {
       setUser(null);
       return;
     }
-    
+
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const rawName = payload.name || payload.userId || "User";
       const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
-      
+
       setUser({
         userId: payload.userId || payload.sub || "User",
         name: formattedName
@@ -101,7 +101,7 @@ export default function Header() {
     } else {
       document.body.style.overflow = "";
     }
-    
+
     return () => {
       document.body.style.overflow = "";
     };
@@ -114,12 +114,12 @@ export default function Header() {
   }, [logout, router]);
 
   // Helper functions
-  const getNavLinkClassName = (path: string) => 
+  const getNavLinkClassName = (path: string) =>
     pathname === path
       ? "text-[#FF84CD] font-medium"
       : "text-gray-600 hover:text-[#FF84CD] transition-colors";
 
-  const getUserInitial = () => 
+  const getUserInitial = () =>
     ((user?.name || user?.userId)?.charAt(0) || "U").toUpperCase();
 
   return (
@@ -127,7 +127,7 @@ export default function Header() {
       <header className="sticky top-0 z-30 w-full backdrop-blur bg-white/95 shadow-sm border-b border-gray-100">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
-            
+
             {/* Left Section: Logo & Brand */}
             <div className="flex items-center gap-3 lg:gap-6">
               <Tooltip>
@@ -287,7 +287,7 @@ export default function Header() {
             {/* Mobile Section */}
             <div className="flex md:hidden items-center gap-2">
               {mounted && <SearchBar isMobile={true} />}
-              
+
               <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
                   <Button
@@ -314,7 +314,7 @@ export default function Header() {
                       </span>
                     </SheetTitle>
                   </SheetHeader>
-                  
+
                   <div className="flex flex-col h-full">
                     {/* Navigation Links */}
                     <div className="flex-1 px-2 py-4 space-y-2">
@@ -327,11 +327,10 @@ export default function Header() {
                         <Link
                           key={href}
                           href={href}
-                          className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${
-                            pathname === href
-                              ? "text-[#FF84CD] bg-pink-50"
-                              : "text-gray-700 hover:text-[#FF84CD] hover:bg-pink-50"
-                          }`}
+                          className={`flex items-center px-3 py-3 text-base font-medium rounded-lg transition-colors ${pathname === href
+                            ? "text-[#FF84CD] bg-pink-50"
+                            : "text-gray-700 hover:text-[#FF84CD] hover:bg-pink-50"
+                            }`}
                           onClick={() => setOpen(false)}
                         >
                           {label}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Wand2, Search, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { Sparkles, Search, SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { usePublicCategories } from "@/hooks/useCategories";
 import { ProductResponseDto } from "@/types/product";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -14,42 +14,57 @@ const convertToDisplayProduct = (product: ProductResponseDto) => {
   // v2.0: Use first variant instead of default variant
   const firstVariant = product.variants?.[0];
   const defaultImage = product.images?.[0] || "/logo.png";
-  
+
   return {
     id: product.id,
     name: product.name,
     slug: product.slug, // Product slug for SEO-friendly URLs
-    price: firstVariant?.price || product.basePrice,
-    originalPrice: firstVariant?.compareAtPrice || product.baseCompareAtPrice,
+    price: product.finalPrice || firstVariant?.price || product.basePrice,
+    originalPrice: product.baseCompareAtPrice || firstVariant?.compareAtPrice,
     image: defaultImage,
     brand: product.brand?.name || "BOGOFIT",
     brandSlug: product.brand?.slug, // Brand slug for SEO-friendly URLs
-    discount: firstVariant?.compareAtPrice && firstVariant?.price 
-      ? Math.round(((firstVariant.compareAtPrice - firstVariant.price) / firstVariant.compareAtPrice) * 100)
-      : undefined,
+    discount: (() => {
+      if (product.finalPrice && product.basePrice) {
+        const diff = product.basePrice - product.finalPrice;
+        return diff > 0 ? Math.round((diff / product.basePrice) * 100) : undefined;
+      }
+      if (product.promotion) {
+        return product.promotion.type === 'percentage'
+          ? (product.promotion.value || 0)
+          : product.promotion.type === 'fixed_amount'
+            ? Math.round(((product.promotion.value || 0) / (product.basePrice || 1)) * 100)
+            : undefined;
+      }
+      if (firstVariant?.compareAtPrice && firstVariant?.price) {
+        return Math.round(((firstVariant.compareAtPrice - firstVariant.price) / firstVariant.compareAtPrice) * 100);
+      }
+      if (product.baseCompareAtPrice && product.basePrice) {
+        return Math.round(((product.baseCompareAtPrice - product.basePrice) / product.baseCompareAtPrice) * 100);
+      }
+      return undefined;
+    })(),
   };
 };
 
 
 export default function RecommendPage() {
-  const [recommendType, setRecommendType] = useState<"ai" | "editor">("ai");
+  const [recommendType] = useState<"ai" | "editor">("ai");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [selectedCategoryPath, setSelectedCategoryPath] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
-  const [showSoldOut, setShowSoldOut] = useState(false);
-  
+  const [showSoldOut] = useState(false);
+
   // Ref for infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = usePublicCategories();
   const categories = categoriesData?.data || [];
-  
+
   // Handle category selection from dropdown
-  const handleCategorySelect = (categoryId: string, categoryPath?: string) => {
+  const handleCategorySelect = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
-    setSelectedCategoryPath(categoryPath || "");
   };
 
   // Fetch products with infinite scroll
@@ -68,22 +83,24 @@ export default function RecommendPage() {
         pageSize: "24", // Load 24 products per page
         isActive: "true",
       });
-      
+
       // Add category filter if selected
       if (selectedCategoryId) {
         params.append("categoryId", selectedCategoryId);
       }
-      
+
       // Add search if provided
       if (searchQuery) params.append("search", searchQuery);
       if (sortBy) params.append("sortBy", sortBy);
+      // Include related data; avoid filtering by promotion
+      params.append('include', 'true');
       if (showSoldOut) params.append("showSoldOut", "true");
-      
+
       const res = await fetch(`/api/product?${params.toString()}`);
       if (!res.ok) {
         throw new Error("Failed to fetch products");
       }
-      
+
       return res.json();
     },
     getNextPageParam: (lastPage) => {
@@ -99,16 +116,16 @@ export default function RecommendPage() {
 
   // Flatten all products from all pages
   // NEW API Format: products (flat) instead of data.data.data (nested)
-  const allProducts = data?.pages.flatMap((page) => 
+  const allProducts = data?.pages.flatMap((page) =>
     page?.products || []
   ) || [];
   const displayProducts = allProducts.map(convertToDisplayProduct);
-  
+
   // Get total count from first page (actual total from API)
   // NEW API Format: pagination.totalCount
   const firstPage = data?.pages[0];
   const totalCount = firstPage?.pagination?.totalCount ?? 0;
-  
+
   // Debug: Log API response structure
   useEffect(() => {
     if (firstPage) {
@@ -149,61 +166,22 @@ export default function RecommendPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-6">
-          {/* Title */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">추천</h1>
-          </div>
-          <p className="text-gray-600 mb-6">당신만을 위한 특별한 상품을 추천해드립니다</p>
-
-          {/* Recommendation Type Tabs */}
-          <div className="flex gap-6 mb-6">
-            <button
-              onClick={() => setRecommendType("ai")}
-              className={`flex items-center gap-2 pb-2 border-b-2 transition-colors ${
-                recommendType === "ai"
-                  ? "border-pink-500 text-gray-900"
-                  : "border-transparent text-gray-500"
-              }`}
-            >
-              <div className={`w-4 h-4 rounded-full ${
-                recommendType === "ai" ? "bg-pink-100" : "bg-gray-100"
-              }`} />
-              AI 추천
-            </button>
-            <button
-              onClick={() => setRecommendType("editor")}
-              className={`flex items-center gap-2 pb-2 border-b-2 transition-colors ${
-                recommendType === "editor"
-                  ? "border-pink-500 text-gray-900"
-                  : "border-transparent text-gray-500"
-              }`}
-            >
-              <Wand2 className="h-4 w-4" />
-              에디터 추천
-            </button>
-          </div>
-
           {/* Category Selection */}
           <div className="mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-3">카테고리 선택</h3>
-            
+
             {/* All Categories Button */}
             <div className="mb-4">
               <button
                 onClick={() => {
                   setSelectedCategoryId("");
-                  setSelectedCategoryPath("");
                 }}
-                className={`px-6 py-3 rounded-lg border text-sm font-medium transition-colors ${
-                  !selectedCategoryId
-                    ? "bg-pink-500 text-white border-pink-500"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`px-6 py-3 rounded-lg border text-sm font-medium transition-colors ${!selectedCategoryId
+                  ? "bg-pink-500 text-white border-pink-500"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 전체 상품 (랜덤)
               </button>
@@ -260,46 +238,6 @@ export default function RecommendPage() {
               필터
             </button>
           </div>
-
-          {/* Active Filter Tags */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            {selectedCategoryPath && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm">
-                {selectedCategoryPath}
-                <button
-                  onClick={() => {
-                    setSelectedCategoryId("");
-                    setSelectedCategoryPath("");
-                  }}
-                  className="text-pink-500 hover:text-pink-700"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-            {searchQuery && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                검색: {searchQuery}
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-            {showSoldOut && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                품절 상품 표시
-                <button
-                  onClick={() => setShowSoldOut(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -309,12 +247,6 @@ export default function RecommendPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {selectedCategoryPath 
-                  ? `${selectedCategoryPath} 상품`
-                  : '추천 상품 (랜덤)'
-                }
-              </h2>
               <p className="text-gray-600">
                 총 <span className="font-semibold">{totalCount}</span>개의 상품
                 {displayProducts.length > 0 && displayProducts.length < totalCount && (
@@ -323,9 +255,6 @@ export default function RecommendPage() {
                   </span>
                 )}
               </p>
-            </div>
-            <div className="text-sm text-gray-500">
-              {recommendType === 'ai' ? 'AI 추천' : '에디터 추천'}
             </div>
           </div>
         </div>

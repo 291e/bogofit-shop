@@ -28,6 +28,12 @@ export default function ProductManagementSection({
         label: "상품 재고관리",
         href: `/business/brands/${brandId}/products/inventory`
       }
+      ,
+      {
+        id: "reviews",
+        label: "상품 리뷰",
+        href: `/business/brands/${brandId}/products/reviews`
+      }
     ]
   };
 

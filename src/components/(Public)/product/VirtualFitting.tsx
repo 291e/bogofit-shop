@@ -69,7 +69,7 @@ export default function VirtualFitting({
   const [imageLoading, setImageLoading] = useState(false); // Generated image loading state
   const [useOriginalImageForVideo, setUseOriginalImageForVideo] = useState(true); // Use original product image for video
   // Virtual Fitting API Selection
-  const [useGeminiAPI, setUseGeminiAPI] = useState(true); // true: Gemini AI, false: Original EC2 API
+  const [useGeminiAPI, setUseGeminiAPI] = useState(true); // true: BOGOFIT V2, false: BOGOFIT V1
 
   // Single item image for Gemini AI
   const [itemImage, setItemImage] = useState<File | null>(null);
@@ -313,7 +313,7 @@ export default function VirtualFitting({
     }
   };
 
-  // Gemini AI를 사용한 가상 피팅
+  // BOGOFIT V2 (Gemini 기반)를 사용한 가상 피팅
   const runGeminiVirtualFitting = async () => {
     // For Gemini: at least one item is required
     const hasAnyItem = files.human_file || files.garment_file || itemImage;
@@ -325,7 +325,7 @@ export default function VirtualFitting({
 
     try {
       setProgress(0);
-      setStatus("Gemini AI로 이미지 생성 중...");
+      setStatus("BOGOFIT V2로 이미지 생성 중...");
 
       const formData = new FormData();
       formData.append('personImage', files.human_file || new Blob());
@@ -344,7 +344,7 @@ export default function VirtualFitting({
       startProgressTimer(0, 100, 13000);
       setStatus("AI가 이미지를 분석하고 있습니다...");
 
-      console.log('🎨 Calling Gemini AI virtual fitting API...');
+      console.log('🎨 Calling BOGOFIT V2 virtual fitting API...');
 
       const response = await fetch('/api/ai/virtual-fitting', {
         method: 'POST',
@@ -375,7 +375,7 @@ export default function VirtualFitting({
 
       // Enable video generation if pro mode
       if (isProEnabled) {
-        setStatus("AI 비디오 생성 중... (약 20초 소요, 세로형 6초 영상)");
+        setStatus(`${useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'} 비디오 생성 중... (약 20초 소요, 세로형 6초 영상)`);
         startProgressTimer(90, 100, 20000);
 
         try {
@@ -390,7 +390,7 @@ export default function VirtualFitting({
           if (videoResult.success && videoResult.data.videoUrl) {
             clearProgressTimer();
             setProgress(100);
-            setStatus(`AI 비디오 생성 완료! (${videoResult.data.duration || '6초'} 360도 피팅룸 영상)`);
+            setStatus(`${useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'} 비디오 생성 완료! (${videoResult.data.duration || '6초'} 360도 피팅룸 영상)`);
             setGeneratedVideo(videoResult.data.videoUrl);
           } else {
             clearProgressTimer();
@@ -493,7 +493,7 @@ export default function VirtualFitting({
           }
 
           if (isProEnabled) {
-            setStatus("비디오 생성 중...");
+            setStatus(`${useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'} 비디오 생성 중...`);
             startProgressTimer(90, 100, 10000);
 
             const proFormData = new FormData();
@@ -521,7 +521,7 @@ export default function VirtualFitting({
             if (proResponse.ok && proResult.video_url) {
               clearProgressTimer();
               setProgress(100);
-              setStatus("비디오 생성 완료!");
+              setStatus(`${useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'} 비디오 생성 완료!`);
               setGeneratedVideo(proResult.video_url);
             } else {
               clearProgressTimer();
@@ -752,7 +752,7 @@ export default function VirtualFitting({
               </div>
               {"가상 피팅"}
               <Badge variant="secondary" className="ml-2">
-                AI
+                {useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'}
               </Badge>
             </div>
             {isOpen ? (
@@ -1044,7 +1044,7 @@ export default function VirtualFitting({
                     className="rounded"
                   />
                   <label htmlFor="is_pro" className="text-sm font-medium">
-                    {"AI 비디오 생성 (Google GenAI)"}
+                    {`AI 비디오 생성 (${useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'})`}
                     <Badge variant="outline" className="ml-2 text-xs">
                       AI
                     </Badge>
@@ -1058,7 +1058,7 @@ export default function VirtualFitting({
                       <ul className="space-y-1 text-xs">
                         <li>• 가상 피팅 결과를 기반으로 자연스러운 움직임 비디오 생성</li>
                         <li>• 의류의 착용감과 스타일을 동적으로 보여줍니다</li>
-                        <li>• Google GenAI Veo 3.1 모델 사용</li>
+                        <li>• {useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'} 엔진 사용</li>
                         <li>• 비디오 길이: 10초, 생성 시간: 20-30초</li>
                       </ul>
                     </div>
@@ -1258,11 +1258,11 @@ export default function VirtualFitting({
                       <Progress value={progress} className="w-full h-3" />
                     </div>
                     <p className="text-sm text-gray-600 text-center">
-                      {"Google GenAI가 비디오를 생성하고 있습니다..."} {progress}%
+                      {`${useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'}가 비디오를 생성하고 있습니다...`} {progress}%
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <p className="text-xs text-blue-700 text-center">
-                        🎬 Veo 3.1 모델이 10초 비디오를 생성 중입니다... (20-30초 소요)
+                        🎬 비디오를 생성 중입니다... 잠시만 기다려주세요
                       </p>
                     </div>
                   </div>
@@ -1273,7 +1273,7 @@ export default function VirtualFitting({
                 <div className="mt-6">
                   <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800 text-center">
-                      🎬 <strong>AI 비디오 생성 완료!</strong> Google GenAI Veo 3.1로 생성된 6초 세로형(9:16) 피팅룸 스타일 영상입니다.
+                      🎬 <strong>AI 비디오 생성 완료!</strong> {useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'}로 생성된 6초 세로형(9:16) 피팅룸 스타일 영상입니다.
                     </p>
                     <p className="text-xs text-green-700 text-center mt-1">
                       모델이 제자리에서 360도 회전하며 의상의 4면(앞, 옆, 뒤, 옆)을 보여줍니다.

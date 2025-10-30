@@ -121,6 +121,11 @@ export interface ProductResponseDto {
   updatedAt: string;
   brand: BrandInfoDto;
   variants?: ProductVariantResponseDto[];
+  reviewStats?: {
+    averageRating: number;
+    totalReviews: number;
+    ratingDistribution: Record<number, number>;
+  };
 }
 
 // ✅ Brand Info DTO

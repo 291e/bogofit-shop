@@ -38,18 +38,18 @@ interface Product {
 // Helper function to get parent category name for Virtual Fitting
 async function getParentCategoryName(categoryId?: string): Promise<string> {
   if (!categoryId) return "상품";
-  
+
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const response = await fetch(`${baseUrl}/api/category`, {
       cache: 'no-store',
     });
-    
+
     if (!response.ok) return "상품";
-    
+
     const data = await response.json();
     const categories = data.data || data.categories || [];
-    
+
     // Find category by ID and get parent name
     interface Category {
       id: string;
@@ -57,7 +57,7 @@ async function getParentCategoryName(categoryId?: string): Promise<string> {
       parentId?: string;
       children?: Category[];
     }
-    
+
     const findCategoryById = (cats: Category[], targetId: string): Category | null => {
       for (const cat of cats) {
         if (cat.id === targetId) return cat;
@@ -68,31 +68,31 @@ async function getParentCategoryName(categoryId?: string): Promise<string> {
       }
       return null;
     };
-    
+
     const category = findCategoryById(categories, categoryId);
     if (category) {
       // Find the level 2 category (상의, 하의, 원피스)
       const findLevel2Category = (cat: Category): string | null => {
         if (!cat.parentId) return null; // Level 1 (root)
-        
+
         const parent = findCategoryById(categories, cat.parentId);
         if (!parent || !parent.parentId) {
           // This is level 2 (parent is level 1, no grandparent)
           return cat.name;
         }
-        
+
         // This is level 3+, recursively find level 2
         return findLevel2Category(parent);
       };
-      
+
       const level2Category = findLevel2Category(category);
       if (level2Category) {
         return level2Category;
       }
-      
+
       return category.name || "상품";
     }
-    
+
     return "상품";
   } catch {
     return "상품";
@@ -103,21 +103,21 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const response = await fetch(
-      `${baseUrl}/api/product?slug=${productSlug}&brand=${brandSlug}&include=true`,
+      `${baseUrl}/api/product?slug=${productSlug}&brand=${brandSlug}&include=true&includeReviewStats=true&promotion=true`,
       {
         cache: 'no-store', // Real-time data, no caching
       }
     );
-    
+
     if (!response.ok) return null;
-    
+
     const data = await response.json();
-    
+
     if (!data.success) return null;
-    
+
     const product = (data.product || data.products?.[0]) as ProductResponseDto;
     if (!product) return null;
-    
+
     // Get category name first
     const categoryName = await getParentCategoryName(product.categoryId);
 
@@ -128,11 +128,25 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
     console.log('  - Final imageUrl:', product.thumbUrl || product.images?.[0] || "/logo.png");
 
     // Convert to expected format
+    // Compute promotion-aware pricing
+    const basePrice = product.basePrice;
+    const promotion = product.promotion;
+    const percentage = promotion?.type === 'percentage' ? (promotion.value || 0) : undefined;
+    const fixed = promotion?.type === 'fixed_amount' ? (promotion.value || 0) : undefined;
+
+    const applyDiscount = (price: number): number => {
+      if (percentage !== undefined) return Math.max(0, Math.round(price * (1 - percentage / 100)));
+      if (fixed !== undefined) return Math.max(0, price - fixed);
+      return price;
+    };
+
+    const finalBasePrice = applyDiscount(basePrice);
+
     return {
       id: product.id,
       title: product.name,
-      price: product.basePrice,
-      originalPrice: product.baseCompareAtPrice,
+      price: finalBasePrice,
+      originalPrice: product.baseCompareAtPrice ?? undefined,
       imageUrl: product.thumbUrl || product.images?.[0] || "/logo.png",
       thumbnailImages: product.images || [],
       description: product.description,
@@ -143,30 +157,30 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
         name: product.brand.name,
         slug: product.brand.slug
       } : undefined,
-      badge: "NEW",
-      avgRating: 4.5,
-      reviewCount: 128,
+      badge: product.promotion ? (product.promotion.name || 'SALE') : "NEW",
+      avgRating: product.reviewStats?.averageRating ?? 0,
+      reviewCount: product.reviewStats?.totalReviews ?? 0,
       variants: product.variants?.map(variant => {
         // Parse optionsJson to get option name and value
         // Format: [{"color": "08 다크그레이"}, {"size": "XXL"}]
         let optionName = "옵션";
         let optionValue = "기본";
-        
+
         // Option name mapping (English -> Korean)
         const optionNameMap: Record<string, string> = {
           "color": "색상",
-          "size": "사이즈", 
+          "size": "사이즈",
           "colour": "색상",
           "style": "스타일",
           "material": "소재",
           "type": "타입",
           "model": "모델"
         };
-        
+
         try {
           if (variant.optionsJson) {
             const options = JSON.parse(variant.optionsJson) as Record<string, string>[];
-            
+
             if (Array.isArray(options) && options.length > 0) {
               // Get first option as the main option name/value
               const firstOpt = options[0];
@@ -177,10 +191,10 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
                 optionName = optionNameMap[originalKey.toLowerCase()] || originalKey;
                 optionValue = value;
               }
-              
+
               // If multiple options, combine them into value
               if (options.length > 1) {
-                optionValue = options.map(opt => 
+                optionValue = options.map(opt =>
                   Object.entries(opt).map(([key, val]) => {
                     const koreanKey = optionNameMap[key.toLowerCase()] || key;
                     return `${koreanKey}: ${val}`;
@@ -192,12 +206,16 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
         } catch {
           // Failed to parse optionsJson
         }
-        
+
+        // Compute promotion-aware price diff
+        const variantBase = variant.price || basePrice;
+        const finalVariant = applyDiscount(variantBase);
+        const finalDiff = finalVariant - finalBasePrice;
         return {
           id: variant.id,
           optionName,
           optionValue,
-          priceDiff: (variant.price || product.basePrice) - product.basePrice,
+          priceDiff: finalDiff,
           stock: variant.quantity || 0
         };
       }),

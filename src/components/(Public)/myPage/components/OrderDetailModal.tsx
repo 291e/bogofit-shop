@@ -10,6 +10,7 @@ import { Loader2, Package, MapPin, CreditCard, Calendar, User } from "lucide-rea
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatOrderItemOptions, OrderStatus, OrderItem, Order, OrderGroup } from "@/types/order";
+import { OrderItemReviewButton } from './OrderItemReviewButton';
 
 interface OrderDetailModalProps {
     isOpen: boolean;
@@ -28,6 +29,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
         if (isOpen && orderId) {
             loadOrderDetail();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, orderId]);
 
     const loadOrderDetail = async () => {
@@ -51,6 +53,17 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
             const data = await response.json();
 
             if (data.success) {
+                console.log('🔍 OrderDetailModal - Order API Response:', data.data);
+                // Debug individual items to check for productSlug
+                if (data.data.items) {
+                    data.data.items.forEach((item: OrderItem, index: number) => {
+                        console.log(`🔍 Item ${index}:`, {
+                            productId: item.productId,
+                            productSlug: item.productSlug,
+                            productTitle: item.productTitle
+                        });
+                    });
+                }
                 setOrderData(data.data);
             } else {
                 setError(data.message || "주문 정보를 불러올 수 없습니다");
@@ -285,31 +298,57 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-2">
+                                                <div className="space-y-4">
                                                     {order.items.map((item) => (
-                                                        <div key={item.id} className="flex items-center gap-3 bg-gray-50 p-3 rounded">
-                                                            {item.imageUrl && (
-                                                                <div className="relative w-12 h-12 bg-gray-100 rounded flex-shrink-0">
-                                                                    <Image
-                                                                        src={item.imageUrl}
-                                                                        alt={item.productTitle}
-                                                                        fill
-                                                                        className="object-cover rounded"
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-medium truncate">{item.productTitle}</p>
-                                                                {item.optionsJson && item.optionsJson.length > 0 && (
-                                                                    <p className="text-xs text-gray-500">
-                                                                        {formatOrderItemOptions(item.optionsJson)}
-                                                                    </p>
+                                                        <div key={item.id} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 shadow-sm">
+                                                            <div className="flex items-start gap-4 mb-4">
+                                                                {item.imageUrl && (
+                                                                    <div className="relative w-16 h-16 bg-white rounded-lg flex-shrink-0 shadow-sm border">
+                                                                        <Image
+                                                                            src={item.imageUrl}
+                                                                            alt={item.productTitle}
+                                                                            fill
+                                                                            className="object-cover rounded-lg"
+                                                                        />
+                                                                    </div>
                                                                 )}
-                                                                <p className="text-xs text-gray-600">
-                                                                    {item.quantity}개 × ₩{item.unitPrice.toLocaleString()}
-                                                                </p>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <h4 className="font-medium text-gray-900 mb-1 line-clamp-2">{item.productTitle}</h4>
+                                                                    {item.optionsJson && item.optionsJson.length > 0 && (
+                                                                        <p className="text-sm text-gray-600 mb-2">
+                                                                            옵션: {formatOrderItemOptions(item.optionsJson)}
+                                                                        </p>
+                                                                    )}
+                                                                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                                                                        <span>수량: {item.quantity}개</span>
+                                                                        <span>단가: ₩{item.unitPrice.toLocaleString()}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-lg font-semibold text-gray-900">₩{item.rowTotal.toLocaleString()}</p>
+                                                                </div>
                                                             </div>
-                                                            <p className="text-sm font-semibold">₩{item.rowTotal.toLocaleString()}</p>
+
+                                                            {/* Review Button */}
+                                                            <div className="flex justify-end pt-3 border-t border-gray-200">
+                                                                <OrderItemReviewButton
+                                                                    orderItem={{
+                                                                        id: item.id,
+                                                                        productId: item.productId || '',
+                                                                        productName: item.productTitle,
+                                                                        productImage: item.imageUrl,
+                                                                        quantity: item.quantity,
+                                                                        price: item.unitPrice,
+                                                                        options: item.optionsJson ? formatOrderItemOptions(item.optionsJson) : undefined,
+                                                                        review: item.review // Pass review information from Order API
+                                                                    }}
+                                                                    orderStatus={order.status}
+                                                                    orderDate={order.createdAt}
+                                                                    orderId={order.id}
+                                                                    brandSlug={order.brand?.slug}
+                                                                    productSlug={item.productSlug}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -318,31 +357,59 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                     </div>
                                 ) : (
                                     // Single order
-                                    <div className="space-y-2">
+                                    <div className="space-y-4">
                                         {(orderData as Order).items?.map((item) => (
-                                            <div key={item.id} className="flex items-center gap-3 bg-gray-50 p-3 rounded">
-                                                {item.imageUrl && (
-                                                    <div className="relative w-12 h-12 bg-gray-100 rounded flex-shrink-0">
-                                                        <Image
-                                                            src={item.imageUrl}
-                                                            alt={item.productTitle}
-                                                            fill
-                                                            className="object-cover rounded"
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium truncate">{item.productTitle}</p>
-                                                    {item.optionsJson && item.optionsJson.length > 0 && (
-                                                        <p className="text-xs text-gray-500">
-                                                            {formatOrderItemOptions(item.optionsJson)}
-                                                        </p>
+                                            <div key={item.id} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 shadow-sm">
+                                                <div className="flex items-start gap-4 mb-4">
+                                                    {item.imageUrl && (
+                                                        <div className="relative w-16 h-16 bg-white rounded-lg flex-shrink-0 shadow-sm border">
+                                                            <Image
+                                                                src={item.imageUrl}
+                                                                alt={item.productTitle}
+                                                                fill
+                                                                className="object-cover rounded-lg"
+                                                            />
+                                                        </div>
                                                     )}
-                                                    <p className="text-xs text-gray-600">
-                                                        {item.quantity}개 × ₩{item.unitPrice.toLocaleString()}
-                                                    </p>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-medium text-gray-900 mb-1 line-clamp-2">{item.productTitle}</h4>
+                                                        {item.optionsJson && item.optionsJson.length > 0 && (
+                                                            <p className="text-sm text-gray-600 mb-2">
+                                                                옵션: {formatOrderItemOptions(item.optionsJson)}
+                                                            </p>
+                                                        )}
+                                                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                                                            <span>수량: {item.quantity}개</span>
+                                                            <span>단가: ₩{item.unitPrice.toLocaleString()}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-lg font-semibold text-gray-900">₩{item.rowTotal.toLocaleString()}</p>
+                                                    </div>
                                                 </div>
-                                                <p className="text-sm font-semibold">₩{item.rowTotal.toLocaleString()}</p>
+
+                                                {/* Review Button */}
+                                                <div className="flex justify-end pt-3 border-t border-gray-200">
+                                                    {/* Debug log for single order item data */}
+
+                                                    <OrderItemReviewButton
+                                                        orderItem={{
+                                                            id: item.id,
+                                                            productId: item.productId || '',
+                                                            productName: item.productTitle,
+                                                            productImage: item.imageUrl,
+                                                            quantity: item.quantity,
+                                                            price: item.unitPrice,
+                                                            options: item.optionsJson ? formatOrderItemOptions(item.optionsJson) : undefined,
+                                                            review: item.review // Pass review information from Order API
+                                                        }}
+                                                        orderStatus={(orderData as Order).status}
+                                                        orderDate={(orderData as Order).createdAt}
+                                                        orderId={(orderData as Order).id}
+                                                        brandSlug={(orderData as Order).brand?.slug}
+                                                        productSlug={item.productSlug}
+                                                    />
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

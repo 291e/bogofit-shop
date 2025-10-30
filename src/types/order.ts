@@ -45,6 +45,21 @@ export interface OrderItem {
   rowTotal: number;
   createdAt: string;
   updatedAt: string;
+  brandSlug?: string; // Brand slug for URL navigation
+  productSlug?: string; // Product slug for URL navigation
+  review?: {
+    id: string;
+    rating: number;
+    title?: string;
+    content?: string;
+    images: string[];
+    createdAt: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  } | null; // Review information from Order API
 }
 
 // ==================== ORDER ====================

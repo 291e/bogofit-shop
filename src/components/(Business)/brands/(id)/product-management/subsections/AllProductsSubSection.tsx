@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ProductResponseDto } from "@/types/product";
 // import { useBrandContext } from "@/app/business/brands/[id]/layout"; // Unused
-import { useProducts } from "@/hooks/useProducts";
+import { usePublicProducts } from "@/hooks/useProducts";
 import { useQueryClient } from "@tanstack/react-query";
 import { PRODUCTS_QUERY_KEY, PRODUCT_DETAIL_QUERY_KEY } from "@/hooks/useProducts";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -52,8 +52,15 @@ export default function AllProductsSubSection({
     }
   }, [debouncedSearchTerm]);
 
-  // ✅ Use React Query for products with backend search
-  const { data, isLoading, error } = useProducts(brandId, pageNumber, debouncedSearchTerm);
+  // ✅ Use public products API for consistent pagination/total
+  const { data, isLoading, error } = usePublicProducts({
+    pageNumber,
+    pageSize: 10,
+    brandId: brandId as string,
+    isActive: true,
+    reviews: true,
+    searchKeyword: debouncedSearchTerm || undefined,
+  });
 
   // ✅ Use query client for cache invalidation
   const queryClient = useQueryClient();

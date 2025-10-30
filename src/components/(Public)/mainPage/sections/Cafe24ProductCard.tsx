@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { memo } from "react";
+import React, { memo, useEffect } from "react";
 
 interface ProductCardProps {
   product: {
@@ -22,6 +22,16 @@ interface ProductCardProps {
 }
 
 const Cafe24ProductCardComponent = ({ product }: ProductCardProps) => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.debug('[Cafe24ProductCard] rating/reviews:', {
+        id: product.id,
+        rating: product.rating,
+        reviews: product.reviews,
+      });
+    }
+  }, [product.id, product.rating, product.reviews]);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ko-KR').format(price);
   };
@@ -91,17 +101,17 @@ const Cafe24ProductCardComponent = ({ product }: ProductCardProps) => {
           )}
         </div>
 
-        {/* 평점 - chiều cao cố định */}
+        {/* 평점/리뷰 - chiều cao cố định */}
         <div className="h-5">
-          {product.rating && (
-            <div className="flex items-center gap-1 text-xs text-gray-600">
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <span className="inline-flex items-center gap-1">
               <span className="text-yellow-500">★</span>
-              <span>{product.rating}</span>
-              {product.reviews && (
-                <span>({product.reviews})</span>
-              )}
-            </div>
-          )}
+              <span>{(product.rating ?? 0)}</span>
+            </span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+              리뷰 {product.reviews ?? 0}
+            </span>
+          </div>
         </div>
       </Link>
     </div>

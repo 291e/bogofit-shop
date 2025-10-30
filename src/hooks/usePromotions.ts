@@ -131,6 +131,7 @@ export function usePromotion(id: string) {
         if (id) {
             fetchPromotion();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     return {
