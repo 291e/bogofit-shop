@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, MessageSquare, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, MessageSquare, Star } from 'lucide-react';
 import Image from 'next/image';
 
 interface ProductReviewsProps {
@@ -32,6 +32,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
         sortBy: 'createdAt',
         sortOrder: 'desc'
     });
+    const [isSectionOpen, setIsSectionOpen] = useState(true); // Collapsible section state
 
     // Always call hooks to satisfy React Hooks rules; conditionally use results
     const { data: statsData, isLoading: statsLoading } = useProductReviewStats(productId);
@@ -111,65 +112,79 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
 
     return (
         <div className="space-y-6">
-            {/* Review Stats Section */}
+            {/* Review Stats Section - Collapsible */}
             {stats && (
                 <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-gray-800">
+                        <button
+                            onClick={() => setIsSectionOpen(!isSectionOpen)}
+                            className="flex items-center gap-2 text-gray-800 hover:text-pink-600 transition-colors w-full text-left"
+                        >
                             <MessageSquare className="w-5 h-5 text-pink-600" />
-                            고객 리뷰
-                        </CardTitle>
+                            <CardTitle className="text-xl font-bold">
+                                고객 리뷰
+                            </CardTitle>
+                            {pagination && pagination.totalCount > 0 && (
+                                <span className="text-sm text-gray-500 font-normal">
+                                    ({pagination.totalCount})
+                                </span>
+                            )}
+                            {isSectionOpen ? (
+                                <ChevronUp className="w-5 h-5 ml-2" />
+                            ) : (
+                                <ChevronDown className="w-5 h-5 ml-2" />
+                            )}
+                        </button>
                     </CardHeader>
-                    <CardContent>
-                        <div className="grid md:grid-cols-2 gap-8">
-                            {/* Overall Rating */}
-                            <div className="text-center">
-                                <div className="text-4xl font-bold text-gray-900 mb-2">
-                                    {stats.averageRating.toFixed(1)}
+                    {isSectionOpen && (
+                        <CardContent>
+                            <div className="grid md:grid-cols-2 gap-8">
+                                {/* Overall Rating */}
+                                <div className="text-center">
+                                    <div className="text-4xl font-bold text-gray-900 mb-2">
+                                        {stats.averageRating.toFixed(1)}
+                                    </div>
+                                    <StarRating rating={stats.averageRating} size="large" />
+                                    <div className="text-sm text-gray-600 mt-2">
+                                        {stats.totalReviews}개 리뷰
+                                    </div>
                                 </div>
-                                <StarRating rating={stats.averageRating} size="large" />
-                                <div className="text-sm text-gray-600 mt-2">
-                                    {stats.totalReviews}개 리뷰
+
+                                {/* Rating Distribution */}
+                                <div className="space-y-2">
+                                    {[5, 4, 3, 2, 1].map(rating => {
+                                        const count = stats.ratingDistribution[rating] || 0;
+                                        const percentage = getPercentage(rating, stats);
+
+                                        return (
+                                            <div key={rating} className="flex items-center gap-3">
+                                                <div className="flex items-center gap-1 w-12">
+                                                    <span className="text-sm font-medium">{rating}</span>
+                                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                                </div>
+                                                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                                    <div
+                                                        className="bg-gradient-to-r from-pink-400 to-purple-400 h-2 rounded-full transition-all duration-300"
+                                                        style={{ width: `${percentage}%` }}
+                                                    />
+                                                </div>
+                                                <div className="text-sm text-gray-600 w-8 text-right">
+                                                    {count}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
-
-                            {/* Rating Distribution */}
-                            <div className="space-y-2">
-                                {[5, 4, 3, 2, 1].map(rating => {
-                                    const count = stats.ratingDistribution[rating] || 0;
-                                    const percentage = getPercentage(rating, stats);
-
-                                    return (
-                                        <div key={rating} className="flex items-center gap-3">
-                                            <div className="flex items-center gap-1 w-12">
-                                                <span className="text-sm font-medium">{rating}</span>
-                                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                            </div>
-                                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                                <div
-                                                    className="bg-gradient-to-r from-pink-400 to-purple-400 h-2 rounded-full transition-all duration-300"
-                                                    style={{ width: `${percentage}%` }}
-                                                />
-                                            </div>
-                                            <div className="text-sm text-gray-600 w-8 text-right">
-                                                {count}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </CardContent>
+                        </CardContent>
+                    )}
                 </Card>
             )}
 
-            {/* Reviews List Section (optional) */}
-            {fetchList && (
+            {/* Reviews List Section - Only show when section is open */}
+            {fetchList && isSectionOpen && (
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="text-gray-800">리뷰 목록</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                         {/* Filters */}
                         <div className="flex flex-wrap gap-4 items-center mb-6">
                             <div className="flex items-center gap-2">
@@ -295,20 +310,49 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                 </Button>
 
                                 <div className="flex items-center gap-1">
-                                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                                        const page = i + 1;
-                                        return (
+                                    {(() => {
+                                        const totalPages = pagination.totalPages;
+                                        const currentPage = queryParams.page || 1;
+                                        const pages: number[] = [];
+
+                                        // Show up to 5 pages around current page
+                                        if (totalPages <= 5) {
+                                            // Show all pages if total <= 5
+                                            for (let i = 1; i <= totalPages; i++) {
+                                                pages.push(i);
+                                            }
+                                        } else {
+                                            // Show pages around current page
+                                            if (currentPage <= 3) {
+                                                // Near the beginning
+                                                for (let i = 1; i <= 5; i++) {
+                                                    pages.push(i);
+                                                }
+                                            } else if (currentPage >= totalPages - 2) {
+                                                // Near the end
+                                                for (let i = totalPages - 4; i <= totalPages; i++) {
+                                                    pages.push(i);
+                                                }
+                                            } else {
+                                                // In the middle
+                                                for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+                                                    pages.push(i);
+                                                }
+                                            }
+                                        }
+
+                                        return pages.map((page) => (
                                             <Button
                                                 key={page}
-                                                variant={queryParams.page === page ? "default" : "outline"}
+                                                variant={currentPage === page ? "default" : "outline"}
                                                 size="sm"
                                                 onClick={() => handlePageChange(page)}
                                                 className="w-8 h-8 p-0"
                                             >
                                                 {page}
                                             </Button>
-                                        );
-                                    })}
+                                        ));
+                                    })()}
                                 </div>
 
                                 <Button

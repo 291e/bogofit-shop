@@ -8,12 +8,14 @@ import { Cafe24SpecialOffers } from "./sections/Cafe24SpecialOffers";
 import { Cafe24AllProducts } from "./sections/Cafe24AllProducts";
 import { ProductResponseDto } from "@/types/product";
 
+// Fetch products directly from backend API (not through Next.js API route)
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 // Fetch products for best sellers (sorted by popularity/views)
 async function fetchBestSellers(): Promise<ProductResponseDto[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/product?page=3&pageSize=30&isActive=true&sortBy=updatedAt&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by recently updated (popular) with reviews
+      `${API_URL}/api/Product?page=3&pageSize=30&isActive=true&sortBy=updatedAt&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by recently updated (popular) with reviews
       {
         next: { revalidate: 300 } // 5분 캐시
       }
@@ -34,8 +36,7 @@ async function fetchBestSellers(): Promise<ProductResponseDto[]> {
 async function fetchNewArrivals(): Promise<ProductResponseDto[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/product?page=1&pageSize=60&isActive=true&sortBy=createdAt&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by newest with reviews
+      `${API_URL}/api/Product?page=1&pageSize=60&isActive=true&sortBy=createdAt&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by newest with reviews
       {
         next: { revalidate: 300 }, // 5분 캐시
       }
@@ -55,8 +56,7 @@ async function fetchNewArrivals(): Promise<ProductResponseDto[]> {
 async function fetchSpecialOffers(): Promise<ProductResponseDto[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/product?page=1&pageSize=30&isActive=true&sortBy=discount&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by discount with reviews
+      `${API_URL}/api/Product?page=1&pageSize=30&isActive=true&sortBy=discount&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by discount with reviews
       {
         next: { revalidate: 300 }, // 5분 캐시
       }
@@ -81,8 +81,7 @@ async function fetchSpecialOffers(): Promise<ProductResponseDto[]> {
 async function fetchFeaturedProducts(): Promise<ProductResponseDto[]> {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-      }/api/product?page=2&pageSize=30&isActive=true&sortBy=basePrice&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by price (premium) with reviews
+      `${API_URL}/api/Product?page=2&pageSize=30&isActive=true&sortBy=basePrice&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by price (premium) with reviews
       {
         next: { revalidate: 300 }, // 5분 캐시
       }
@@ -99,9 +98,8 @@ async function fetchFeaturedProducts(): Promise<ProductResponseDto[]> {
 
 async function fetchAllProducts(): Promise<ProductResponseDto[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
     const response = await fetch(
-      `${baseUrl}/api/product?page=1&pageSize=12&isActive=true&include=true&includeReviewStats=true`, // 초기 12개 (2행) with reviews
+      `${API_URL}/api/Product?page=1&pageSize=12&isActive=true&include=true&includeReviewStats=true`, // 초기 12개 (2행) with reviews
       {
         next: { revalidate: 300 }, // 5분 캐시
       }

@@ -126,6 +126,12 @@ export interface ProductResponseDto {
     totalReviews: number;
     ratingDistribution: Record<number, number>;
   };
+  inquiryStats?: {
+    totalInquiries: number;
+    pendingInquiries: number;
+    answeredInquiries: number;
+    hiddenInquiries: number;
+  };
 }
 
 // ✅ Brand Info DTO

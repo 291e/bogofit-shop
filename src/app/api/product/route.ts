@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const include = searchParams.get('include'); // Include related data (variants, etc.)
     const includeReviewStats = searchParams.get('includeReviewStats'); // Include review stats in bulk
+    const includeInquiryStats = searchParams.get('includeInquiryStats'); // Include inquiry stats in bulk
 
     // Build query parameters based on backend API documentation
     const queryParams = new URLSearchParams();
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
       if (promotion) queryParams.set('promotion', promotion);
       if (reviews) queryParams.set('reviews', reviews);
       if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
+      if (includeInquiryStats) queryParams.set('includeInquiryStats', includeInquiryStats);
     }
     // Priority 2: Get by slug + brandId (single product)
     else if (slug && brandId) {
@@ -47,6 +49,7 @@ export async function GET(request: NextRequest) {
       if (promotion) queryParams.set('promotion', promotion);
       if (reviews) queryParams.set('reviews', reviews);
       if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
+      if (includeInquiryStats) queryParams.set('includeInquiryStats', includeInquiryStats);
     }
     // Priority 2.5: Get by slug + brand slug (single product - SEO-friendly)
     else if (slug && brand) {
@@ -57,6 +60,7 @@ export async function GET(request: NextRequest) {
       if (promotion) queryParams.set('promotion', promotion);
       if (reviews) queryParams.set('reviews', reviews);
       if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
+      if (includeInquiryStats) queryParams.set('includeInquiryStats', includeInquiryStats);
     }
     // Priority 3: List with filters
     else {
@@ -74,6 +78,7 @@ export async function GET(request: NextRequest) {
       if (promotion) queryParams.set('promotion', promotion);
       if (reviews) queryParams.set('reviews', reviews);
       if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
+      if (includeInquiryStats) queryParams.set('includeInquiryStats', includeInquiryStats);
     }
 
     // Get authorization header from the incoming request

@@ -33,6 +33,11 @@ export default function ProductManagementSection({
         id: "reviews",
         label: "상품 리뷰",
         href: `/business/brands/${brandId}/products/reviews`
+      },
+      {
+        id: "inquiries",
+        label: "상품 문의",
+        href: `/business/brands/${brandId}/products/inquiries`
       }
     ]
   };

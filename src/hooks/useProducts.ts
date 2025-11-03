@@ -369,6 +369,7 @@ export interface UsePublicProductsOptions {
   categoryId?: string;
   promotion?: boolean; // ✅ Include promotion data
   reviews?: boolean; // ✅ Include review stats
+  inquiries?: boolean; // ✅ Include inquiry stats
   enabled?: boolean; // ✅ Add enabled option to disable hook
 }
 
@@ -385,11 +386,12 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
     categoryId,
     promotion,
     reviews,
+    inquiries,
     enabled = true // ✅ Default enabled
   } = options;
 
   return useQuery({
-    queryKey: ["publicProducts", pageNumber, pageSize, searchKeyword, isActive, brandId, categoryId, promotion, reviews],
+    queryKey: ["publicProducts", pageNumber, pageSize, searchKeyword, isActive, brandId, categoryId, promotion, reviews, inquiries],
     enabled, // ✅ Use enabled option
     queryFn: async (): Promise<GetProductsResponse> => {
       // Build URL with all query params
@@ -416,6 +418,10 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
       if (reviews) {
         params.append('include', 'true');
         params.append('includeReviewStats', 'true');
+      }
+      // Include inquiry stats
+      if (inquiries) {
+        params.append('includeInquiryStats', 'true');
       }
 
       const response = await fetch(`/api/product?${params.toString()}`, {

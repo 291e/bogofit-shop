@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { PurchaseButton } from "@/components/(Public)/product/PurchaseButton";
 import VirtualFitting from "@/components/(Public)/product/VirtualFitting";
 import { ProductReviews } from "@/components/(Public)/product/ProductReviews";
+import { ProductInquiries } from "@/components/(Public)/product/ProductInquiries";
 
 interface ProductVariant {
   id: string;
@@ -697,6 +698,14 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               )}
             </div>
           )}
+
+          {/* 상품 문의 섹션 */}
+          <div id="inquiries" className="max-w-6xl mx-auto mt-16">
+            <ProductInquiries
+              productId={product.id}
+              fetchList={true}
+            />
+          </div>
 
           {/* 리뷰 섹션 */}
           <div id="reviews" className="max-w-6xl mx-auto mt-16">
