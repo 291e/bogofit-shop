@@ -42,6 +42,37 @@ export const humanSamples: SampleImage[] = [
     src: "/images/human/image8.jpg",
     alt: "모델 이미지 7",
   },
+  {
+    id: "human-9",
+    src: "/images/human/image9.jpg",
+    alt: "모델 이미지 8",
+  },
+  {
+    id: "human-10",
+    src: "/images/human/image10.jpg",
+    alt: "모델 이미지 9",
+  },
+  {
+    id: "human-11",
+    src: "/images/human/image11.jpg",
+    alt: "모델 이미지 10",
+  },
+  {
+    id: "human-12",
+    src: "/images/human/image12.jpg",
+    alt: "모델 이미지 11",
+  },
+  {
+    id: "human-13",
+    src: "/images/human/image13.jpg",
+    alt: "모델 이미지 12",
+  },
+  {
+    id: "human-14",
+    src: "/images/human/image14.jpg",
+    alt: "모델 이미지 13",
+  },
+
 ];
 
 // 상의 이미지 샘플 (실제 제품 이미지 예시)
@@ -76,6 +107,37 @@ export const garmentSamples: SampleImage[] = [
     alt: "원피스 샘플 1",
     category: "원피스",
   },
+  {
+    id: "garment-6",
+    src: "/images/top/shirt06.jpg",
+    alt: "원피스 샘플 1",
+    category: "원피스",
+  },
+  {
+    id: "garment-7",
+    src: "/images/top/shirt07.jpg",
+    alt: "원피스 샘플 1",
+    category: "원피스",
+  },
+  {
+    id: "garment-8",
+    src: "/images/top/shirt08.jpg",
+    alt: "원피스 샘플 1",
+    category: "원피스",
+  },
+  {
+    id: "garment-9",
+    src: "/images/top/shirt09.jpg",
+    alt: "원피스 샘플 1",
+    category: "원피스",
+  },
+  {
+    id: "garment-10",
+    src: "/images/top/shirt10.jpg",
+    alt: "원피스 샘플 1",
+    category: "원피스",
+  },
+
 ];
 
 // 하의 이미지 샘플
@@ -110,6 +172,24 @@ export const lowerSamples: SampleImage[] = [
     alt: "하의 샘플 5",
     category: "하의",
   },
+  {
+    id: "lower-6",
+    src: "/images/bottom/bottom006.png",
+    alt: "하의 샘플 6",
+    category: "하의",
+  },
+  {
+    id: "lower-7",
+    src: "/images/bottom/bottom007.png",
+    alt: "하의 샘플 7",
+    category: "하의",
+  },
+  {
+    id: "lower-8",
+    src: "/images/bottom/bottom008.png",
+    alt: "하의 샘플 8",
+    category: "하의",
+  },
 ];
 
 // 배경 이미지 샘플 (bg/bg1~6.jpg)
@@ -139,4 +219,34 @@ export const backgroundSamples: SampleImage[] = [
     src: "/images/bg/background_005.png",
     alt: "배경 이미지 5",
   },
+];
+
+// 아이템 이미지 샘플 (item/image1~3.jpg) - V2 전용
+export const itemSamples: SampleImage[] = [
+  {
+    id: "item-1",
+    src: "/item/image1.jpg",
+    alt: "아이템 샘플 1",
+  },
+  {
+    id: "item-2",
+    src: "/item/image2.jpg",
+    alt: "아이템 샘플 2",
+  },
+  {
+    id: "item-3",
+    src: "/item/image3.jpg",
+    alt: "아이템 샘플 3",
+  },
+  {
+    id: "item-4",
+    src: "/item/image4.jpg",
+    alt: "아이템 샘플 4",
+  },
+  {
+    id: "item-5",
+    src: "/item/image5.jpg",
+    alt: "아이템 샘플 5",
+  },
+
 ];

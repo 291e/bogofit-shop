@@ -12,34 +12,34 @@ import { toast } from 'sonner';
 interface ImageUploaderProps {
   /** 이미 업로드된 이미지 URL들 */
   value?: string | string[];
-  
+
   /** 이미지가 업로드/삭제될 때 호출되는 콜백 */
   onChange?: (urls: string | string[] | null) => void;
-  
+
   /** 단일 이미지만 업로드 (기본: true) */
   single?: boolean;
-  
+
   /** 최대 업로드 가능한 이미지 수 (multiple일 때) */
   maxFiles?: number;
-  
+
   /** S3 폴더 경로 */
   folder?: ImageFolderType;
-  
+
   /** 비활성화 여부 */
   disabled?: boolean;
-  
+
   /** 추가 CSS 클래스 */
   className?: string;
-  
+
   /** 업로드 영역 높이 */
   height?: string;
-  
+
   /** 미리보기 이미지 크기 */
   previewSize?: 'sm' | 'md' | 'lg';
-  
+
   /** 드래그 앤 드롭 활성화 */
   enableDragDrop?: boolean;
-  
+
   /** 에러 콜백 */
   onError?: (error: string) => void;
 }
@@ -62,8 +62,8 @@ export const ImageUploader = ({
   const { uploadImage, deleteImage, isUploading, error } = useImageUpload();
 
   // Normalize value to array
-  const currentUrls = useMemo(() => 
-    Array.isArray(value) ? value : value ? [value] : [], 
+  const currentUrls = useMemo(() =>
+    Array.isArray(value) ? value : value ? [value] : [],
     [value]
   );
 
@@ -127,33 +127,55 @@ export const ImageUploader = ({
   const handleDelete = async (urlToDelete: string) => {
     try {
       console.log('🗑️ Deleting image:', urlToDelete);
-      
-      // Extract S3 key from URL
-      const urlParts = urlToDelete.split('.amazonaws.com/');
-      if (urlParts.length < 2) {
-        console.log('❌ Invalid S3 URL format');
-        onError?.('잘못된 이미지 URL입니다.');
-        return;
-      }
-      const s3Key = urlParts[1];
-      console.log('🔑 S3 Key:', s3Key);
 
-      const success = await deleteImage(s3Key);
-      console.log('✅ Delete result:', success);
-      
-      if (success) {
+      // Check if it's an S3 URL
+      const isS3Url = urlToDelete.includes('.amazonaws.com/');
+
+      if (isS3Url) {
+        // Extract S3 key from URL
+        const urlParts = urlToDelete.split('.amazonaws.com/');
+        if (urlParts.length < 2) {
+          console.log('❌ Invalid S3 URL format');
+          onError?.('잘못된 이미지 URL입니다.');
+          return;
+        }
+        const s3Key = urlParts[1];
+        console.log('🔑 S3 Key:', s3Key);
+
+        // Try to delete from S3, but continue even if it fails
+        try {
+          const success = await deleteImage(s3Key);
+          console.log('✅ Delete result:', success);
+        } catch (deleteErr) {
+          console.warn('⚠️ S3 delete failed, but continuing to remove from form:', deleteErr);
+        }
+      } else {
+        console.log('📝 Not an S3 URL, skipping S3 delete (data URL or external URL)');
+      }
+
+      // Always remove from form data, regardless of S3 deletion result
+      if (single) {
+        onChange?.(null);
+      } else {
+        const newUrls = currentUrls.filter(url => url !== urlToDelete);
+        onChange?.(newUrls.length > 0 ? newUrls : null);
+      }
+      console.log('✅ Image removed from form');
+      toast.success('이미지가 삭제되었습니다');
+    } catch (err) {
+      console.error('❌ Delete error:', err);
+      // Even if there's an error, try to remove from form
+      try {
         if (single) {
           onChange?.(null);
         } else {
           const newUrls = currentUrls.filter(url => url !== urlToDelete);
           onChange?.(newUrls.length > 0 ? newUrls : null);
         }
-        console.log('✅ Image removed from form and S3');
         toast.success('이미지가 삭제되었습니다');
+      } catch (removeErr) {
+        onError?.(removeErr instanceof Error ? removeErr.message : '이미지 삭제에 실패했습니다.');
       }
-    } catch (err) {
-      console.error('❌ Delete error:', err);
-      onError?.(err instanceof Error ? err.message : '이미지 삭제에 실패했습니다.');
     }
   };
 

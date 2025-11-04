@@ -5,7 +5,6 @@ import { ProductForm, ProductVariantForm, VariantOption, convertProductFormToDto
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateProduct } from "@/hooks/useProducts";
 import { useAIImageGeneration } from "@/hooks/useAIImageGeneration";
-import { useImageUpload } from "@/hooks/useImageUpload";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -68,13 +67,10 @@ export default function ProductRegisterSubSection({
   // ✅ AI Image Generation hook
   const { generateImage, isGenerating: isAIGenerating } = useAIImageGeneration();
 
-  // ✅ Image Upload hook (for uploading AI-generated images to S3)
-  const { uploadImage } = useImageUpload();
-
   // ✅ AI Generated image preview state
   const [aiGeneratedImage, setAiGeneratedImage] = useState<string | null>(null);
   const [showAiPreview, setShowAiPreview] = useState(false);
-  const [isUploadingToS3, setIsUploadingToS3] = useState(false);
+  const [isUploadingToS3] = useState(false);
 
   // ✅ Virtual Fitting state (inline in AI modal)
   const [showVirtualFitting, setShowVirtualFitting] = useState(false);
@@ -252,49 +248,6 @@ export default function ProductRegisterSubSection({
     }
   };
 
-  // ✅ Accept AI generated image - Upload to S3 first
-  const handleAcceptAiImage = async () => {
-    if (!aiGeneratedImage) return;
-
-    try {
-      setIsUploadingToS3(true);
-      toast.info("AI 이미지를 S3에 업로드 중...");
-      console.log('📤 Starting S3 upload for AI image...');
-
-      // Convert data URL to Blob
-      const response = await fetch(aiGeneratedImage);
-      const blob = await response.blob();
-      console.log('📦 Blob created:', blob.size, 'bytes');
-
-      // Create File object
-      const file = new File([blob], `ai-generated-${Date.now()}.png`, { type: 'image/png' });
-      console.log('📄 File created:', file.name, file.size, 'bytes');
-
-      // Upload to S3 using existing hook
-      const s3Url = await uploadImage(file, 'products');
-      console.log('📥 Upload result:', s3Url);
-
-      if (s3Url) {
-        console.log('✅ AI image uploaded to S3:', s3Url);
-
-        setFormData(prev => ({
-          ...prev,
-          images: [...(prev.images || []), s3Url]
-        }));
-        toast.success("AI 이미지가 S3에 업로드되고 추가되었습니다!");
-        setShowAiPreview(false);
-        setAiGeneratedImage(null);
-      } else {
-        console.error('❌ Upload failed: No URL returned');
-        toast.error("S3 업로드 실패");
-      }
-    } catch (error) {
-      console.error('❌ S3 upload error:', error);
-      toast.error("AI 이미지 업로드 중 오류가 발생했습니다");
-    } finally {
-      setIsUploadingToS3(false);
-    }
-  };
 
   // ✅ Reject AI generated image
   const handleRejectAiImage = () => {
@@ -881,12 +834,6 @@ export default function ProductRegisterSubSection({
                   </div>
                 )}
 
-                {/* Debug Info */}
-                <div className="mt-2 p-2 bg-yellow-50 rounded text-xs">
-                  <p>Debug: formData.images.length = {formData.images?.length || 0}</p>
-                  <p>Images: {JSON.stringify(formData.images?.map((img, i) => ({ index: i, url: img.substring(0, 50) + '...' })) || [])}</p>
-                </div>
-
                 {/* Virtual Fitting Result Display */}
                 {formData.images && formData.images.length > 1 && (
                   <div className="mt-4">
@@ -927,79 +874,35 @@ export default function ProductRegisterSubSection({
                   </div>
                 )}
 
-                <div className="mb-4 p-3 bg-purple-50 rounded-lg">
-                  <p className="text-sm text-purple-700 mb-2">
-                    <strong>팁:</strong> 이미지를 추가하면 S3에 업로드됩니다.
-                  </p>
-                  <p className="text-sm text-purple-600">
-                    또는 입어보기로 가상 피팅을 먼저 테스트해보세요
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  {!showVirtualFitting ? (
-                    <Button
-                      type="button"
-                      onClick={handleTryOnAiImage}
-                      disabled={isUploadingToS3 || isAnalyzingImage}
-                      className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
-                    >
-                      {isAnalyzingImage ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          AI 분석 중...
-                        </>
-                      ) : (
-                        "입어보기"
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowVirtualFitting(false);
-                        setAiImageCategory(null);
-                      }}
-                      className="w-full"
-                    >
-                      가상 피팅 닫기
-                    </Button>
-                  )}
-
-                  <div className="flex gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        handleRejectAiImage();
-                        setShowVirtualFitting(false);
-                        setAiImageCategory(null);
-                      }}
-                      disabled={isUploadingToS3}
-                      className="flex-1"
-                    >
-                      거부
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleAcceptAiImage}
-                      disabled={isUploadingToS3}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                    >
-                      {isUploadingToS3 ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          업로드 중...
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4 mr-2" />
-                          상세 이미지에 추가
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      handleRejectAiImage();
+                      setShowVirtualFitting(false);
+                      setAiImageCategory(null);
+                    }}
+                    disabled={isUploadingToS3 || isAnalyzingImage}
+                    className="flex-1"
+                  >
+                    거부
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleTryOnAiImage}
+                    disabled={isUploadingToS3 || isAnalyzingImage}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                  >
+                    {isAnalyzingImage ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        AI 분석 중...
+                      </>
+                    ) : (
+                      "입어보기"
+                    )}
+                  </Button>
                 </div>
               </div>
 

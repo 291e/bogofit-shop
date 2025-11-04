@@ -189,8 +189,10 @@ export default function AllPromotionsSubSection({ brandId }: AllPromotionsSubSec
                                         <div className="flex items-center gap-3 mb-2">
                                             <h3 className="text-lg font-semibold">{promotion.name}</h3>
                                             {getStatusBadge(promotion.status)}
-                                            {promotion.isActive && (
+                                            {promotion.isActive ? (
                                                 <Badge className="bg-blue-100 text-blue-800">활성</Badge>
+                                            ) : (
+                                                <Badge className="bg-gray-100 text-gray-800">비활성</Badge>
                                             )}
                                         </div>
 

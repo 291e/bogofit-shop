@@ -151,7 +151,7 @@ export default function Header() {
                 <div className="flex-col md:flex-row flex items-start md:items-center gap-0 md:gap-3 text-base line-seed-kr select-none">
                   <span className="font-bold text-gray-900">BOGOFIT</span>
                   <Badge variant="outline" className="pt-1 bg-[#ff84cd] text-white">
-                    피트니스 브랜드
+                    AI 가상 쇼핑물
                   </Badge>
                 </div>
                 <div className="hidden md:flex items-center gap-6 mt-1 text-sm line-seed-kr">

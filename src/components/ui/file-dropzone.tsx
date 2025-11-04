@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
@@ -30,6 +30,7 @@ interface FileDropzoneProps {
   onSampleSelect: (imageSrc: string) => void;
   onClear?: () => void;
   type?: "model" | "clothing"; // 모델 이미지인지 상의/하의인지 구분
+  selectedSampleSrc?: string; // Source URL of currently selected sample image
 }
 
 export function FileDropzone({
@@ -42,7 +43,10 @@ export function FileDropzone({
   onSampleSelect,
   onClear,
   type = "clothing", // 기본값은 상의/하의
+  selectedSampleSrc,
 }: FileDropzoneProps) {
+  const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -55,7 +59,26 @@ export function FileDropzone({
     multiple: false,
   });
 
-  const handleSampleSelect = async (imageSrc: string) => {
+  const handleSampleClick = (sampleId: string) => {
+    setSelectedSampleId(sampleId);
+  };
+
+  const handleDialogClose = () => {
+    setSelectedSampleId(null);
+    setIsDialogOpen(false);
+  };
+
+  const handleConfirmSelection = async () => {
+    if (!selectedSampleId) return;
+
+    const selectedSample = sampleImages.find(s => s.id === selectedSampleId);
+    if (!selectedSample) return;
+
+    const imageSrc = selectedSample.src;
+
+    // Call onSampleSelect with the source URL so parent can track it
+    onSampleSelect(imageSrc);
+
     try {
       // 로컬 이미지인 경우 직접 사용
       if (imageSrc.startsWith("/")) {
@@ -71,6 +94,7 @@ export function FileDropzone({
         });
         onDrop(file);
         onSampleSelect(imageSrc);
+        handleDialogClose();
         return;
       }
 
@@ -88,10 +112,53 @@ export function FileDropzone({
       });
       onDrop(file);
       onSampleSelect(imageSrc);
+      handleDialogClose();
     } catch (error) {
       console.error("샘플 이미지 로드 실패:", error);
       // 직접 이미지 URL 사용
       onSampleSelect(imageSrc);
+      handleDialogClose();
+    }
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (open) {
+      // When dialog opens, find and highlight the currently selected image
+      // Priority: selectedSampleSrc > preview matching
+      if (selectedSampleSrc && sampleImages.length > 0) {
+        const matchingSample = sampleImages.find(sample => sample.src === selectedSampleSrc);
+        if (matchingSample) {
+          setSelectedSampleId(matchingSample.id);
+          return;
+        }
+      }
+
+      // Fallback: try to match preview with sample images
+      if (preview && sampleImages.length > 0) {
+        const matchingSample = sampleImages.find(sample => {
+          // For data URLs or blob URLs, we can't match directly
+          if (preview.startsWith('data:') || preview.startsWith('blob:')) {
+            return false;
+          }
+
+          // Extract path from preview URL for comparison
+          const previewPath = preview.split('?')[0]; // Remove query params
+          const samplePath = sample.src.split('?')[0]; // Remove query params
+
+          // Check exact match or if preview contains sample path or vice versa
+          return preview === sample.src ||
+            previewPath === samplePath ||
+            previewPath.includes(samplePath) ||
+            samplePath.includes(previewPath);
+        });
+        if (matchingSample) {
+          setSelectedSampleId(matchingSample.id);
+        }
+      }
+    } else {
+      // Reset selection when dialog closes
+      setSelectedSampleId(null);
     }
   };
 
@@ -114,17 +181,15 @@ export function FileDropzone({
       <div className="flex-1 flex flex-col min-h-0">
         <div
           {...getRootProps()}
-          className={`flex-1 rounded-xl transition-all duration-200 cursor-pointer relative overflow-hidden ${
-            preview
-              ? "border-0" // 이미지가 있을 때는 테두리 없음
-              : `border-2 border-dashed ${
-                  isDragActive
-                    ? "border-pink-500 bg-pink-50 shadow-lg"
-                    : required
-                      ? "border-gray-300 hover:border-pink-400 hover:shadow-md"
-                      : "border-gray-200 hover:border-gray-300"
-                }`
-          }`}
+          className={`flex-1 rounded-xl transition-all duration-200 cursor-pointer relative overflow-hidden ${preview
+            ? "border-0" // 이미지가 있을 때는 테두리 없음
+            : `border-2 border-dashed ${isDragActive
+              ? "border-pink-500 bg-pink-50 shadow-lg"
+              : required
+                ? "border-gray-300 hover:border-pink-400 hover:shadow-md"
+                : "border-gray-200 hover:border-gray-300"
+            }`
+            }`}
         >
           <input {...getInputProps()} />
           {preview ? (
@@ -189,7 +254,7 @@ export function FileDropzone({
       {/* 샘플 이미지 선택 버튼 */}
       {sampleImages.length > 0 && (
         <div className="mt-3 ">
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Button
                 variant="outline"
@@ -212,9 +277,12 @@ export function FileDropzone({
                     <div
                       key={sample.id}
                       className="cursor-pointer group"
-                      onClick={() => handleSampleSelect(sample.src)}
+                      onClick={() => handleSampleClick(sample.id)}
                     >
-                      <div className="relative aspect-square overflow-hidden rounded-xl border-2 border-gray-200 group-hover:border-pink-400 transition-all duration-200 shadow-sm group-hover:shadow-md">
+                      <div className={`relative aspect-square overflow-hidden rounded-xl border-2 transition-all duration-200 shadow-sm group-hover:shadow-md ${selectedSampleId === sample.id
+                        ? "border-pink-500 ring-2 ring-pink-300"
+                        : "border-gray-200 group-hover:border-pink-400"
+                        }`}>
                         <Image
                           src={sample.src}
                           alt={sample.alt}
@@ -222,8 +290,20 @@ export function FileDropzone({
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                           sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                         />
+                        {selectedSampleId === sample.id && (
+                          <div className="absolute inset-0 bg-pink-500/20 flex items-center justify-center">
+                            <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
+                              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-xs text-center mt-2 text-gray-600 group-hover:text-gray-900 transition-colors truncate">
+                      <p className={`text-xs text-center mt-2 transition-colors truncate ${selectedSampleId === sample.id
+                        ? "text-pink-600 font-semibold"
+                        : "text-gray-600 group-hover:text-gray-900"
+                        }`}>
                         {sample.alt}
                       </p>
                     </div>
@@ -231,11 +311,17 @@ export function FileDropzone({
                 </div>
               </div>
               <div className="flex-shrink-0 pt-4 border-t border-gray-200">
-                <DialogClose asChild>
-                  <Button variant="outline" className="w-full">
-                    선택 완료
-                  </Button>
-                </DialogClose>
+                <Button
+                  variant={selectedSampleId ? "default" : "outline"}
+                  className={`w-full ${selectedSampleId
+                    ? "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+                    : ""
+                    }`}
+                  onClick={handleConfirmSelection}
+                  disabled={!selectedSampleId}
+                >
+                  선택 완료
+                </Button>
               </div>
             </DialogContent>
           </Dialog>

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     try {
         console.log('🎬 AI Generate Video API called');
 
-        const { imageUrl, prompt, productTitle } = await request.json();
+        const { imageUrl, prompt, productTitle, negativePrompt } = await request.json();
 
         console.log('📝 Request data:', {
             hasImageUrl: !!imageUrl,
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
                 success: true,
                 data: {
                     videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                    prompt: prompt || `A fashion model wearing ${productTitle || 'fashionable clothing'} rotating left then right to show outfit`,
+                    prompt: prompt || `Fashionshow turning: A model wearing ${productTitle || 'fashionable clothing'} turning and rotating on a runway. Fashion show presentation with smooth turning motion.`,
                     operationName: "mock-operation",
                     duration: "6초",
                     generationTime: "15-20초",
@@ -97,7 +97,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Step 2: Generate video from the REAL image
-        const videoPrompt = prompt || `A person trying on and showing off ${productTitle || 'fashionable clothing'}. Standing in place and slowly rotating 360 degrees to show front, left side, back, and right side of the outfit. Fashion fitting room style. Vertical 9:16 format. Stay in the same spot, only turn body smoothly. Clean background.`;
+        const videoPrompt = prompt || `Fashionshow turning: A model wearing ${productTitle || 'fashionable clothing'} turning and rotating 360 degrees on a runway. Fashion show presentation, professional model pose, smooth turning motion, showing front, side, back views. Vertical 9:16 format. Fashion runway style.`;
+
+        // Negative prompt to avoid unwanted elements
+        const videoNegativePrompt = negativePrompt || "blurry, distorted, low quality, artifacts, bad proportions, deformed, ugly, multiple people, crowd, background people, text overlay, watermark";
 
         console.log('🎬 Starting video generation with Veo 3.1 using REAL image');
         console.log('🎬 Video settings: 6 seconds, vertical 9:16 (720p), 360° rotation showcase');
@@ -108,18 +111,21 @@ export async function POST(request: NextRequest) {
             operation = await ai.models.generateVideos({
                 model: "veo-3.1-generate-preview",
                 prompt: videoPrompt,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                negativePrompt: videoNegativePrompt as any, // Tham số mới để tránh những thứ không mong muốn (SDK có thể chưa update type)
                 image: {
                     imageBytes: imageBase64,
                     mimeType: mimeType,
                 },
                 config: {
-                    durationSeconds: 6, // 6 giây (gần 5s nhất theo spec: 4, 6, 8)
-                    aspectRatio: "9:16", // Video dọc (vertical/portrait) 
-                    resolution: "720p", // 720p resolution
-                    personGeneration: "allow_adult" // Cho phép generate người lớn (image-to-video)
+                    durationSeconds: 6, // 6 giây (theo spec Veo 3.1: 4, 6, 8)
+                    aspectRatio: "9:16", // Video dọc (vertical/portrait) - hỗ trợ 720p và 1080p
+                    resolution: "720p", // 720p (mặc định). 1080p chỉ hỗ trợ thời lượng 8 giây
+                    personGeneration: "allow_adult" // Cho phép generate người lớn (image-to-video) - chỉ hỗ trợ "allow_adult" cho image-to-video
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any // Type cast vì SDK có thể chưa update với latest API
-            });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any); // Type cast toàn bộ object để hỗ trợ negativePrompt
             console.log('🎬 Google GenAI API call successful');
         } catch (apiError: unknown) {
             console.error('❌ Google GenAI API error:', apiError);

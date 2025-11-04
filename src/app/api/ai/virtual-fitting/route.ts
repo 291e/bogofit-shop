@@ -12,24 +12,14 @@ const ai = new GoogleGenAI({
  */
 export async function POST(request: NextRequest) {
     try {
-        console.log('👗 AI Virtual Fitting API called');
-
         const formData = await request.formData();
         const personImage = formData.get('personImage') as File;
         const garmentImage = formData.get('garmentImage') as File;
         const itemImage = formData.get('itemImage') as File | null;
         const productTitle = formData.get('productTitle') as string;
 
-        console.log('📝 Request data:', {
-            hasPersonImage: !!personImage,
-            hasGarmentImage: !!garmentImage,
-            hasItemImage: !!itemImage,
-            productTitle
-        });
-
         // Validation - At least one image is required
         if (!personImage && !garmentImage && !itemImage) {
-            console.log('❌ No images provided');
             return NextResponse.json(
                 { success: false, message: 'At least one image is required' },
                 { status: 400 }
@@ -37,14 +27,11 @@ export async function POST(request: NextRequest) {
         }
 
         if (!process.env.GEMINI_API_KEY) {
-            console.log('❌ GEMINI_API_KEY not configured');
             return NextResponse.json(
                 { success: false, message: 'AI service not configured' },
                 { status: 500 }
             );
         }
-
-        console.log('✅ API key found, processing images...');
 
         // Convert images to base64 (conditionally)
         let personBase64 = '';
@@ -56,17 +43,13 @@ export async function POST(request: NextRequest) {
             const personBuffer = await personImage.arrayBuffer();
             personBase64 = Buffer.from(personBuffer).toString('base64');
             personMimeType = personImage.type || 'image/jpeg';
-            console.log('📊 Person image size:', personBuffer.byteLength, 'bytes');
         }
 
         if (garmentImage) {
             const garmentBuffer = await garmentImage.arrayBuffer();
             garmentBase64 = Buffer.from(garmentBuffer).toString('base64');
             garmentMimeType = garmentImage.type || 'image/jpeg';
-            console.log('📊 Garment image size:', garmentBuffer.byteLength, 'bytes');
         }
-
-        console.log('📥 Images converted to base64');
 
         // Convert item image to base64 if provided
         let itemBase64 = '';
@@ -76,7 +59,6 @@ export async function POST(request: NextRequest) {
             const itemBuffer = await itemImage.arrayBuffer();
             itemBase64 = Buffer.from(itemBuffer).toString('base64');
             itemMimeType = itemImage.type || 'image/jpeg';
-            console.log('📊 Item image size:', itemBuffer.byteLength, 'bytes');
         }
 
         // Build dynamic prompt based on available images
@@ -146,15 +128,6 @@ RESULT: A perfect virtual try-on where ONLY the clothing has changed. The person
 
 OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (same face, same hair, same pose, same background), but wearing the clothing from image 2${itemImage ? ' with the accessory item' : ''}. The result should look like a professional product photo where only the outfit has been changed.`;
 
-
-        console.log('🎨 Generating virtual fitting with Gemini...');
-        console.log('📝 Has item:', !!itemImage);
-        console.log('📝 Images:', {
-            hasPerson: !!personImage,
-            hasGarment: !!garmentImage,
-            hasItem: !!itemImage
-        });
-
         // Build content parts dynamically
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const contentParts: any[] = [{ text: prompt }];
@@ -189,8 +162,6 @@ OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (s
         }
 
         // Generate image with Gemini (using image generation model)
-        console.log('🎨 Generation settings: temperature=0.3, preserving full body composition');
-
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-image",
             contents: [
@@ -209,8 +180,6 @@ OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (s
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
 
-        console.log('✅ Gemini response received');
-
         // Extract generated image
         if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
             const parts = response.candidates[0].content.parts;
@@ -219,8 +188,6 @@ OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (s
                 if (part.inlineData && part.inlineData.data) {
                     const imageData = part.inlineData.data;
                     const dataUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${imageData}`;
-
-                    console.log('✅ Virtual fitting image generated successfully');
 
                     return NextResponse.json({
                         success: true,
@@ -232,14 +199,12 @@ OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (s
             }
         }
 
-        console.log('❌ No image in response');
         return NextResponse.json(
             { success: false, message: 'No image generated from AI' },
             { status: 500 }
         );
 
     } catch (error) {
-        console.error('❌ Virtual Fitting API Error:', error);
         return NextResponse.json(
             {
                 success: false,
