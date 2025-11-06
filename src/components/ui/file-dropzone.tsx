@@ -31,6 +31,7 @@ interface FileDropzoneProps {
   onClear?: () => void;
   type?: "model" | "clothing"; // 모델 이미지인지 상의/하의인지 구분
   selectedSampleSrc?: string; // Source URL of currently selected sample image
+  version?: "v1" | "v2"; // BOGOFIT V1 or V2
 }
 
 export function FileDropzone({
@@ -44,6 +45,7 @@ export function FileDropzone({
   onClear,
   type = "clothing", // 기본값은 상의/하의
   selectedSampleSrc,
+  version,
 }: FileDropzoneProps) {
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -237,7 +239,11 @@ export function FileDropzone({
                     ? "여기에 파일을 놓으세요"
                     : type === "model"
                       ? "모델 이미지를 업로드하세요"
-                      : "의류 이미지를 업로드하세요"}
+                      : version === "v2" && type === "clothing" && label.includes("아이템")
+                        ? "아이템 이미지를 업로드하세요"
+                        : version === "v1" && type === "clothing" && label.includes("하의")
+                          ? "하의 이미지를 업로드하세요"
+                          : "의류 이미지를 업로드하세요"}
                 </p>
                 <p className="text-sm text-gray-500">
                   파일을 드래그하거나 클릭하여 선택하세요

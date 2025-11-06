@@ -6,6 +6,9 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY || "",
 });
 
+// Fixed aspect ratio: 9:16 (768x1344)
+const FIXED_ASPECT_RATIO = "9:16";
+
 /**
  * POST /api/ai/virtual-fitting
  * Generate virtual try-on image using Gemini AI with accessories
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Convert images to base64 (conditionally)
+        // Convert images to base64
         let personBase64 = '';
         let personMimeType = '';
         let garmentBase64 = '';
@@ -78,7 +81,6 @@ This is the BASE image. You must preserve EVERYTHING from this image:
 • Person's hair - IDENTICAL (same hairstyle, color, length, style)
 • Background - IDENTICAL (same environment, lighting, colors, shadows)
 • Image framing - IDENTICAL (same camera angle, distance, composition)
-• Image dimensions - Maintain 720×1080 pixels (9:16 vertical portrait)
 
 GARMENT - IMAGE ${imageIndex + 1} (THE CLOTHING):
 Extract ONLY the ${productTitle || 'clothing item'}:
@@ -87,7 +89,8 @@ Extract ONLY the ${productTitle || 'clothing item'}:
 • Adapt: Wrinkles, shadows, and draping to match body shape and pose
 
 OUTPUT SPECIFICATIONS:
-Format: 720×1080 pixels (9:16 portrait - vertical orientation for mobile)
+Format: 768×1344 pixels (9:16 portrait - vertical orientation for mobile)
+Aspect Ratio: EXACTLY 9:16 (portrait/vertical format)
 Quality: Photorealistic, high-resolution, professional fashion photography
 Content: The EXACT SAME person from IMAGE ${imageIndex}, wearing the clothing from IMAGE ${imageIndex + 1}
 
@@ -97,7 +100,8 @@ CRITICAL RULES - MUST FOLLOW:
 ✓ DO: Keep pose and position 100% identical
 ✓ DO: Show full body from head to feet
 ✓ DO: Apply clothing naturally with realistic fit
-✓ DO: Maintain 720×1080 vertical format
+✓ DO: Output image MUST be 768×1344 pixels (9:16 aspect ratio, portrait format)
+✓ DO: Use vertical portrait orientation, NOT square or horizontal
 
 ✗ DON'T: Change or modify the person's face
 ✗ DON'T: Change or modify the person's body shape
@@ -105,6 +109,8 @@ CRITICAL RULES - MUST FOLLOW:
 ✗ DON'T: Crop or cut off body parts
 ✗ DON'T: Change camera angle or distance
 ✗ DON'T: Use horizontal format
+✗ DON'T: Output square format (1024×1024) - MUST be 768×1344 portrait
+✗ DON'T: Output any other dimensions - ONLY 768×1344 pixels
 
 RESULT: A perfect virtual try-on where ONLY the clothing has changed. The person should look exactly as they do in IMAGE ${imageIndex}, just wearing different clothes.`;
             imageIndex = 3;
@@ -170,13 +176,14 @@ OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (s
                 },
             ],
             generationConfig: {
-                temperature: 0.3, // Lower temperature for more consistent results
-                topP: 0.8,
-                topK: 20,
                 candidateCount: 1,
-                // Hint for maintaining aspect ratio and full body
                 responseMimeType: "image/png",
-            }
+            },
+            config: {
+                imageConfig: {
+                    aspectRatio: FIXED_ASPECT_RATIO,
+                },
+            },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
 

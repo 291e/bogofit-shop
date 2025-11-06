@@ -91,6 +91,25 @@ export default function VirtualFitting({
   // Video generation hook
   const videoGeneration = useVideoGeneration();
 
+  // Download helper function
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Fallback to opening in new tab if download fails
+      window.open(url, "_blank");
+    }
+  };
+
   // 파일 업로드 오류 상태 추가
   const [fileErrors, setFileErrors] = useState<{
     human_file: string;
@@ -381,8 +400,9 @@ export default function VirtualFitting({
         onResultGenerated(result.imageUrl);
       }
 
-      // Enable video generation if pro mode
-      if (isProEnabled) {
+      // Enable video generation if pro mode (only for V2)
+      // V1: Video generation is disabled (동영상 서비스준비중)
+      if (isProEnabled && useGeminiAPI) {
         setStatus(`${useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'} 비디오 생성 중... (약 20초 소요, 세로형 6초 영상)`);
         startProgressTimer(90, 100, 20000);
 
@@ -569,7 +589,9 @@ export default function VirtualFitting({
           onResultGenerated(workflowResult.image_url);
         }
 
-        if (isProEnabled) {
+        // V1: Video generation is disabled (동영상 서비스준비중)
+        // Only V2 can generate videos
+        if (isProEnabled && useGeminiAPI) {
           setStatus("AI 비디오 생성 중... (약 20초 소요, 세로형 6초 영상)");
           // 비디오 생성 진행률을 20초 동안 90%에서 100%까지 증가
           startProgressTimer(90, 100, 20000);
@@ -812,9 +834,9 @@ export default function VirtualFitting({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-base font-semibold text-gray-900">BOGOFIT V1</span>
-                        <Badge variant="outline" className="text-xs border-blue-600 text-white-600">STABLE</Badge>
+                        <Badge variant="outline" className="text-xs bg-blue-600 border-blue-600 text-white">STABLE</Badge>
                       </div>
-                      <p className="text-sm text-gray-600">안정적인 결과 (약 20초 완성) · 상하의 모두 지원</p>
+                      <p className="text-sm text-gray-600">안정적인 피팅 결과 (약 20초 완성) · 상하의 모두 지원</p>
                     </div>
                   </div>
 
@@ -838,9 +860,9 @@ export default function VirtualFitting({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-base font-semibold text-gray-900">BOGOFIT V2</span>
-                        <Badge variant="secondary" className="bg-purple-600 text-white text-xs">NEW</Badge>
+                        <Badge variant="secondary" className="text-white bg-purple-600 border-purple-600 text-xs">NEW</Badge>
                       </div>
-                      <p className="text-sm text-gray-600">빠른 속도 피팅 (약 15초 완성) 상의 및 아이템 전용</p>
+                      <p className="text-sm text-gray-600">빠른 피팅 결과 (약 15초 완성) · 상의 및 아이템 전용</p>
 
                     </div>
                   </div>
@@ -899,7 +921,7 @@ export default function VirtualFitting({
                       }
                       label={"상의 이미지"}
                       required
-                      description="&nbsp;"
+                      description="필수 사항"
                       sampleImages={garmentSamples}
                       onSampleSelect={(imageSrc) =>
                         handleSampleSelect("garment_file", imageSrc)
@@ -907,6 +929,7 @@ export default function VirtualFitting({
                       onClear={() => handleFileChange("garment_file", null)}
                       type="clothing"
                       selectedSampleSrc={selectedSampleSrcs.garment_file}
+                      version={useGeminiAPI ? "v2" : "v1"}
                     />
                   </div>
 
@@ -933,7 +956,7 @@ export default function VirtualFitting({
                         onDrop={(file) => handleItemImageChange(file)}
                         preview={itemPreview}
                         label="아이템 이미지"
-                        description="&nbsp;"
+                        description="선택사항"
                         sampleImages={itemSamples}
                         onSampleSelect={async (imageSrc) => {
                           // Convert imageSrc to File for itemImage
@@ -946,6 +969,7 @@ export default function VirtualFitting({
                         onClear={() => handleItemImageChange(null)}
                         type="clothing"
                         selectedSampleSrc={selectedSampleSrcs.lower_file}
+                        version="v2"
                       />
                     </div>
                   </div>
@@ -964,7 +988,7 @@ export default function VirtualFitting({
                             : "")
                         }
                         label="하의 이미지"
-                        description="&nbsp;"
+                        description="선택사항"
                         sampleImages={lowerSamples}
                         onSampleSelect={(imageSrc) =>
                           handleSampleSelect("lower_file", imageSrc)
@@ -972,6 +996,7 @@ export default function VirtualFitting({
                         onClear={() => handleFileChange("lower_file", null)}
                         type="clothing"
                         selectedSampleSrc={selectedSampleSrcs.lower_file}
+                        version="v1"
                       />
                     </div>
 
@@ -1015,6 +1040,7 @@ export default function VirtualFitting({
                     id="is_pro"
                     checked={isProEnabled}
                     onChange={(e) => setIsProEnabled(e.target.checked)}
+                    disabled={!useGeminiAPI}
                     className="rounded"
                   />
                   <label htmlFor="is_pro" className="text-sm font-medium">
@@ -1022,6 +1048,9 @@ export default function VirtualFitting({
                     <Badge variant="outline" className="ml-2 text-xs">
                       AI
                     </Badge>
+                    <span className="ml-2 text-xs text-gray-500">
+                      {useGeminiAPI ? '(동영상 가능)' : '(동영상 서비스준비중)'}
+                    </span>
                   </label>
                 </div>
 
@@ -1172,7 +1201,10 @@ export default function VirtualFitting({
                     size="sm"
                     variant="outline"
                     className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white"
-                    onClick={() => window.open(generatedImage, "_blank")}
+                    onClick={() => {
+                      const filename = `virtual-fitting-${Date.now()}.png`;
+                      downloadFile(generatedImage, filename);
+                    }}
                   >
                     <Download className="w-4 h-4" />
                   </Button>
@@ -1181,6 +1213,7 @@ export default function VirtualFitting({
 
               {/* 비디오 생성 로딩 상태 */}
               {isProEnabled &&
+                useGeminiAPI &&
                 generatedImage &&
                 isProcessing &&
                 !generatedVideo && (
@@ -1244,7 +1277,10 @@ export default function VirtualFitting({
                         size="sm"
                         variant="outline"
                         className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white shadow-md"
-                        onClick={() => window.open(generatedVideo, "_blank")}
+                        onClick={() => {
+                          const filename = `virtual-fitting-video-${Date.now()}.mp4`;
+                          downloadFile(generatedVideo, filename);
+                        }}
                       >
                         <Download className="w-4 h-4" />
                       </Button>

@@ -6,6 +6,7 @@ interface GenerateImageRequest {
   prompt?: string;
   productName?: string;
   generateVariations?: boolean;
+  aspectRatio?: string; // Optional aspect ratio for image generation
 }
 
 interface GenerateImageResponse {

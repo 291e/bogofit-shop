@@ -77,6 +77,9 @@ export default function ProductRegisterSubSection({
   const [aiImageCategory, setAiImageCategory] = useState<"상의" | "하의" | null>(null);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
 
+  // ✅ AI Auto Fill state
+  const [isAnalyzingProduct, setIsAnalyzingProduct] = useState(false);
+
   // Early return if no brandId
   if (!brandId) {
     return (
@@ -308,6 +311,129 @@ export default function ProductRegisterSubSection({
     toast.success(`${category} 이미지로 인식되었습니다! 가상 피팅을 시작하세요.`);
   };
 
+  // ✅ AI Auto Fill - Analyze product image and auto-fill form
+  const handleAIAutoFill = async () => {
+    if (!formData.thumbUrl) {
+      toast.error("대표 이미지를 먼저 업로드해주세요.");
+      return;
+    }
+
+    try {
+      setIsAnalyzingProduct(true);
+      toast.info("AI가 이미지를 분석하고 있습니다...");
+
+      // Convert image URL to base64
+      const response = await fetch(formData.thumbUrl);
+      const blob = await response.blob();
+      const reader = new FileReader();
+
+      reader.onloadend = async () => {
+        try {
+          const base64Image = (reader.result as string).split(',')[1];
+
+          const analysisResponse = await fetch('/api/ai/analyze-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Image })
+          });
+
+          const analysisData = await analysisResponse.json();
+
+          if (analysisData.success && analysisData.data) {
+            const { name, description, category, categoryHint } = analysisData.data;
+
+            // Auto-fill form
+            setFormData(prev => {
+              const updates: Partial<ProductForm> = {};
+
+              // Only update if field is empty
+              if (!prev.name && name) {
+                updates.name = name;
+                // Auto-generate slug from name
+                const slug = name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9가-힣\s-]/g, '')
+                  .replace(/\s+/g, '-')
+                  .replace(/-+/g, '-')
+                  .trim();
+                updates.slug = slug;
+              }
+
+              if (!prev.description && description) {
+                updates.description = description;
+              }
+
+              return { ...prev, ...updates };
+            });
+
+            // Try to match category - recursive search in nested categories
+            if (category && categories.length > 0) {
+              const findCategoryRecursive = (cats: typeof categories, searchTerm: string, categoryHint?: string): typeof categories[0] | null => {
+                for (const cat of cats) {
+                  const catName = cat.name.toLowerCase();
+
+                  // Try to match with category hint first (more specific)
+                  if (categoryHint) {
+                    const hintLower = categoryHint.toLowerCase();
+                    if (catName.includes(hintLower) || hintLower.includes(catName)) {
+                      return cat;
+                    }
+                  }
+
+                  // Match with main category type
+                  const matchesMainType =
+                    (searchTerm === "상의" && (catName.includes("상의") || catName.includes("top"))) ||
+                    (searchTerm === "하의" && (catName.includes("하의") || catName.includes("bottom"))) ||
+                    (searchTerm === "원피스" && (catName.includes("원피스") || catName.includes("dress") || catName.includes("onepiece"))) ||
+                    (searchTerm === "아우터" && (catName.includes("아우터") || catName.includes("outer") || catName.includes("jacket")));
+
+                  if (matchesMainType) {
+                    return cat;
+                  }
+
+                  // Search in children recursively
+                  if (cat.children && cat.children.length > 0) {
+                    const found = findCategoryRecursive(cat.children, searchTerm, categoryHint);
+                    if (found) return found;
+                  }
+                }
+                return null;
+              };
+
+              // Try to find category using categoryHint first, then category
+              let categoryMatch = null;
+              if (categoryHint) {
+                categoryMatch = findCategoryRecursive(categories, category, categoryHint);
+              }
+
+              // If not found with hint, try without hint
+              if (!categoryMatch) {
+                categoryMatch = findCategoryRecursive(categories, category);
+              }
+
+              if (categoryMatch && !formData.categoryId) {
+                setFormData(prev => ({ ...prev, categoryId: categoryMatch!.id }));
+              }
+            }
+
+            toast.success("AI가 정보를 자동으로 입력했습니다!");
+          } else {
+            toast.error("이미지 분석에 실패했습니다.");
+          }
+        } catch {
+          toast.error("AI 분석 중 오류가 발생했습니다.");
+        } finally {
+          setIsAnalyzingProduct(false);
+        }
+      };
+
+      reader.readAsDataURL(blob);
+    } catch {
+      toast.error("이미지 로드 중 오류가 발생했습니다.");
+      setIsAnalyzingProduct(false);
+    }
+  };
+
   // ✅ Get category name for Virtual Fitting
   const getCategoryName = (): string => {
     if (!formData.categoryId || !categories.length) return "상품";
@@ -482,7 +608,31 @@ export default function ProductRegisterSubSection({
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col items-center">
-                    <Label className="self-start mb-2">대표 이미지 *</Label>
+                    <div className="w-full flex items-center justify-between mb-2">
+                      <Label>대표 이미지 *</Label>
+                      {formData.thumbUrl && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAIAutoFill}
+                          disabled={isAnalyzingProduct}
+                          className="text-xs"
+                        >
+                          {isAnalyzingProduct ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                              분석 중...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              AI 자동 입력
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                     <div className="w-full max-w-md flex justify-center">
                       <ImageUploader
                         value={formData.thumbUrl}

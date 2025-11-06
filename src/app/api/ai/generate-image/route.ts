@@ -4,9 +4,9 @@ import { generateProductImage, generateProductImageVariations } from '@/lib/ai/g
 export async function POST(request: NextRequest) {
   try {
     console.log('🤖 AI Generate Image API called');
-    
+
     const body = await request.json();
-    const { baseImage, prompt, productName, generateVariations = false } = body;
+    const { baseImage, prompt, productName, generateVariations = false, aspectRatio } = body;
 
     console.log('📝 Request data:', {
       hasBaseImage: !!baseImage,
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         baseImage,
         productName
       });
-      
+
       result = {
         success: true,
         images: variations.filter(r => r.success).map(r => r.imageUrl),
@@ -52,9 +52,10 @@ export async function POST(request: NextRequest) {
       const singleResult = await generateProductImage({
         baseImage,
         prompt: prompt || "Create a professional product photo with clean background",
-        productName
+        productName,
+        aspectRatio
       });
-      
+
       result = {
         success: singleResult.success,
         imageUrl: singleResult.imageUrl,
@@ -67,8 +68,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('AI Generation Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to generate image',
         error: error instanceof Error ? error.message : 'Unknown error'
       },
