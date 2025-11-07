@@ -817,12 +817,12 @@ export default function VirtualFitting({
                   <div
                     onClick={() => setUseGeminiAPI(false)}
                     className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${!useGeminiAPI
-                      ? 'border-blue-600 bg-blue-50 shadow-md'
-                      : 'border-gray-300 bg-white hover:border-blue-300 hover:bg-blue-50'
+                      ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-200'
+                      : 'border-gray-300 bg-gray-50 opacity-60 hover:opacity-80 hover:border-gray-400'
                       }`}
                   >
                     <div className="flex items-center justify-center w-5 h-5 mt-0.5">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${!useGeminiAPI
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${!useGeminiAPI
                         ? 'border-blue-600 bg-blue-600'
                         : 'border-gray-400 bg-white'
                         }`}>
@@ -833,22 +833,25 @@ export default function VirtualFitting({
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-base font-semibold text-gray-900">BOGOFIT V1</span>
-                        <Badge variant="outline" className="text-xs bg-blue-600 border-blue-600 text-white">STABLE</Badge>
+                        <span className={`text-base font-semibold ${!useGeminiAPI ? 'text-gray-900' : 'text-gray-500'}`}>BOGOFIT V1</span>
+                        <Badge variant="outline" className={`text-xs ${!useGeminiAPI ? 'bg-blue-600 border-blue-600 text-white' : 'bg-gray-400 border-gray-400 text-white'}`}>STABLE</Badge>
+                        {useGeminiAPI && (
+                          <span className="text-xs text-gray-400 ml-auto">선택 안됨</span>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-600">안정적인 피팅 결과 (약 20초 완성) · 상하의 모두 지원</p>
+                      <p className={`text-sm ${!useGeminiAPI ? 'text-gray-600' : 'text-gray-400'}`}>안정적인 피팅 결과 (약 20초 완성) · 상하의 모두 지원</p>
                     </div>
                   </div>
 
                   <div
                     onClick={() => setUseGeminiAPI(true)}
                     className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${useGeminiAPI
-                      ? 'border-purple-600 bg-purple-50 shadow-md'
-                      : 'border-gray-300 bg-white hover:border-purple-300 hover:bg-purple-50'
+                      ? 'border-purple-600 bg-purple-50 shadow-md ring-2 ring-purple-200'
+                      : 'border-gray-300 bg-gray-50 opacity-60 hover:opacity-80 hover:border-gray-400'
                       }`}
                   >
                     <div className="flex items-center justify-center w-5 h-5 mt-0.5">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${useGeminiAPI
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${useGeminiAPI
                         ? 'border-purple-600 bg-purple-600'
                         : 'border-gray-400 bg-white'
                         }`}>
@@ -859,11 +862,13 @@ export default function VirtualFitting({
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-base font-semibold text-gray-900">BOGOFIT V2</span>
-                        <Badge variant="secondary" className="text-white bg-purple-600 border-purple-600 text-xs">NEW</Badge>
+                        <span className={`text-base font-semibold ${useGeminiAPI ? 'text-gray-900' : 'text-gray-500'}`}>BOGOFIT V2</span>
+                        <Badge variant="secondary" className={`text-xs ${useGeminiAPI ? 'text-white bg-purple-600 border-purple-600' : 'bg-gray-400 border-gray-400 text-white'}`}>NEW</Badge>
+                        {!useGeminiAPI && (
+                          <span className="text-xs text-gray-400 ml-auto">선택 안됨</span>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-600">빠른 피팅 결과 (약 15초 완성) · 상의 및 아이템 전용</p>
-
+                      <p className={`text-sm ${useGeminiAPI ? 'text-gray-600' : 'text-gray-400'}`}>빠른 피팅 결과 (약 15초 완성) · 상의 및 아이템 전용</p>
                     </div>
                   </div>
                 </div>

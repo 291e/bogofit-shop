@@ -54,7 +54,7 @@ export default function BrandCard({ brand, onViewBrand }: BrandCardProps) {
   };
 
   return (
-    <Card className="border-2 border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <Card className="border-2 border-gray-200 shadow-lg transition-shadow duration-300">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -115,12 +115,18 @@ export default function BrandCard({ brand, onViewBrand }: BrandCardProps) {
 
         {/* Action Button */}
         <Button 
-          className="w-full mt-4" 
-          variant="outline"
+          className={`w-full mt-4 group transition-all duration-300 ${
+            brand.status === "approved"
+              ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] border-0 font-semibold"
+              : "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300"
+          }`}
+          variant={brand.status === "approved" ? "default" : "outline"}
           disabled={brand.status !== "approved"}
           onClick={() => onViewBrand?.(brand)}
         >
-          <ExternalLink className="h-4 w-4 mr-2" />
+          <ExternalLink className={`h-4 w-4 mr-2 transition-transform duration-300 ${
+            brand.status === "approved" ? "group-hover:translate-x-1" : ""
+          }`} />
           {brand.status === "approved" ? "브랜드 보기" : "승인 대기중"}
         </Button>
       </CardContent>

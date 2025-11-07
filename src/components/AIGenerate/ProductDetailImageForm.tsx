@@ -6,20 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAIImageGeneration } from "@/hooks/useAIImageGeneration";
-import { Upload, Download, Loader2, Image as ImageIcon, Plus, X } from "lucide-react";
+import { Upload, Download, Loader2, Image as ImageIcon, Plus, X, Trash2, FileText } from "lucide-react";
 import Image from "next/image";
 
 export function ProductDetailImageForm() {
     const [baseImage, setBaseImage] = useState<File | null>(null);
     const [preview, setPreview] = useState<string>("");
     const [productName, setProductName] = useState("");
-    const [description, setDescription] = useState("");
-    const [price, setPrice] = useState("");
     const [sizes, setSizes] = useState<string[]>([""]);
     const [sizeCharts, setSizeCharts] = useState<string[]>([""]);
-    const [marketplace, setMarketplace] = useState("");
-    const [features, setFeatures] = useState("");
-    const [customPrompt, setCustomPrompt] = useState("");
     const [generatedImage, setGeneratedImage] = useState<string>("");
 
     const { generateImage, isGenerating, error } = useAIImageGeneration();
@@ -43,69 +38,65 @@ export function ProductDetailImageForm() {
         }
 
         try {
-            let detailPrompt = "";
+            const detailPrompt = `Create a professional long vertical product detail image (상세 이미지) for Korean fashion e-commerce.
 
-            if (customPrompt && customPrompt.trim()) {
-                detailPrompt = customPrompt;
-            } else {
-                detailPrompt = `Create a professional, long vertical product detail image (상세 이미지) for a fashion/clothing shop.
+CRITICAL - PRODUCT PRESERVATION:
+- You MUST use the EXACT product from the uploaded image - same design, same colors, same style, same details
+- DO NOT create a different product, modify the product design, or change the product appearance
+- The product in the output must look IDENTICAL to the product in the uploaded image
+- Only add text information around the product, but the product itself must remain completely unchanged
 
-CRITICAL REQUIREMENT - YOU MUST FOLLOW THESE EXACTLY:
-- YOU MUST USE THE EXACT PRODUCT FROM THE UPLOADED IMAGE - DO NOT CREATE A NEW OR DIFFERENT PRODUCT
-- The product in the uploaded image MUST appear EXACTLY as it is - same design, same colors, same style, same details
-- DO NOT change, modify, or replace the product from the original image
-- DO NOT create a different product - use the SAME product from the uploaded image
-- You can resize or reposition the product image, but the product itself must remain IDENTICAL
-- Format: Vertical long banner (portrait orientation)
-- Dimensions: Width MUST be approximately 1000 pixels, Height MUST be 2000-5000+ pixels (AT LEAST 3-5 times the width)
-- The image MUST be a VERY vertical image - ABSOLUTELY NOT a square (1024x1024 is FORBIDDEN)
-- The height MUST be at least 3-5 times LONGER than the width - This is a LONG VERTICAL detail image (상세 이미지), NOT a square product image
-- Style: Clean, modern, minimalist commerce design like Korean fashion shops
-- Layout: Professional product shop with information arranged vertically in sections
-- LANGUAGE: ALL TEXT IN THE IMAGE MUST BE IN KOREAN (한국어) - NO ENGLISH TEXT ALLOWED. All labels, headers, and descriptions must be in Korean.
+FORMAT:
+- Vertical long banner: width 1000px, height minimum 2000px (at least 3-5x width)
+- NOT square (1024x1024 is forbidden)
+- All text must be in Korean (한국어) - no English text allowed
 
-CONTENT SECTION INCLUDE (arrange vertically from top to bottom, ALL TEXT MUST BE IN KOREAN):
-${productName ? `1. 제품명: "${productName}" (prominent, stylish typography at top, text must be in Korean)` : ""}
-${description ? `2. 제품 설명: "${description}" (detailed description, readable text, all in Korean)` : ""}
-${price ? `3. 가격: "${price}" (displayed, attractive formatting, prominent, Korean text format)` : ""}
-${sizes.filter(s => s.trim()).length > 0 ? `4. 사이즈 정보: \n${sizes.filter(s => s.trim()).map((s, i) => `   ${i + 1}. ${s}`).join('\n')} (available size options, label in Korean)` : ""}
-${sizeCharts.filter(sc => sc.trim()).length > 0 ? `5. 사이즈 차트:\n${sizeCharts.filter(sc => sc.trim()).map((sc, i) => `   ${i + 1}. ${sc}`).join('\n')} (detailed size chart with measurements, label in Korean)` : ""}
-${features ? `6. 특징: \n${features.split('\n').map(f => `   • ${f}`).filter(f => f !== '• ').join('\n')} (label must be in Korean)` : ""}
-${marketplace ? `7. 판매 지역/시장 정보: "${marketplace}" (where product is sold, market information, label in Korean)` : ""}
+LAYOUT STRUCTURE (arrange vertically from top to bottom):
 
-DESIGN ELEMENTS:
-- Use the EXACT product from the uploaded image - DO NOT create a different product or modify the product design
-- The product must appear EXACTLY as shown in the uploaded image - same colors, same design, same style
-- You can use the same product image multiple times throughout the vertical layout if needed
-- Arrange the product image(s) and information in a seamless, continuous vertical layout
-- Each section should be clearly separated with subtle dividers or spacing
-- Use soft, clean backgrounds (white, light gray, or subtle tints) around the product
-- Professional typography with clear hierarchy - larger text for headings, smaller for details
-- Add subtle decorative elements if needed (minimal lines, icons, or patterns) - ensure all text is readable - contrasted
-- Create a clean, elegant design that flows vertically from top to bottom
-- Style should match premium Korean fashion e-commerce 상세 이미지 (detail images)
-- Include size chart measurements, and detailed information organized in a clear manner - price should be prominently displayed
-- Marketplace information should be clear and visible - do not clutter or busy - keep it clean and sophisticated
-- Each information section should have clear visual separation
-- ALL TEXT, LABELS, AND HEADINGS MUST BE IN KOREAN - NO ENGLISH WORDS IN THE IMAGE
-- IMPORTANT: The product from the uploaded image must be preserved completely - same appearance, same details, same everything
+1. TOP SECTION - Product Image:
+   - Display the EXACT product from uploaded image prominently at the top
+   - Use clean white or light gray background
+   - Product should be clearly visible and unchanged from original
+   - Maintain professional product photography style
 
-CRITICAL - ABSOLUTE REQUIREMENTS:
-1. YOU MUST USE THE EXACT PRODUCT FROM THE UPLOADED IMAGE - The product must look IDENTICAL to the uploaded image
-2. DO NOT create a different product or modify the product design, colors, or style from the original
-3. The product appearance must remain EXACTLY the same - only add text information around it
-4. The output image MUST be a vertical long banner
-5. Width: 1000 pixels (FIXED)
-6. Height: 2000 pixels MINIMUM (the longer the better - Height MUST be at least 3-5 times LONGER than width)
-7. DO NOT create a square image - 1024x1024 is ABSOLUTELY FORBIDDEN
-8. DO NOT create any aspect ratio that results in height less than 2000 pixels
-9. This is a LONG VERTICAL detail image (상세 이미지) for Korean fashion e-commerce
-10. The image should be a continuous vertical layout with all information arranged vertically from top to bottom
-11. ALL TEXT IN THE IMAGE MUST BE IN KOREAN (한국어) - Use Korean labels like "제품명", "제품 설명", "가격", "사이즈 정보", "사이즈 차트", "특징", "판매 지역" etc. NO ENGLISH TEXT ALLOWED.
-12. REMEMBER: The product from the uploaded image is the REAL product - use it EXACTLY as shown, do not create a new or different product
+2. PRODUCT NAME SECTION:
+${productName ? `   - Show section header "제품명" in bold Korean text
+   - Display product name: "${productName}" in prominent, stylish Korean typography
+   - Use clear spacing and readable font size` : ""}
 
-The image should look like a professional product detail image (상세 이미지) that you would see on Korean fashion e-commerce websites, with fixed width and long vertical height containing product information in a beautiful vertical layout. The product from the uploaded image must appear EXACTLY as it is - same design, colors, and style. Only add Korean text information around the product. All text must be in Korean language.`;
-            }
+3. SIZE INFORMATION SECTION:
+${sizes.filter(s => s.trim()).length > 0 ? `   - Show section header "사이즈 정보" in bold Korean text
+   - Display available sizes: ${sizes.filter(s => s.trim()).join(', ')}
+   - Format as: "사이즈 정보: S, M, L, XL" (or similar based on input)
+   - Use clear, readable text` : ""}
+
+4. SIZE CHART SECTION:
+${sizeCharts.filter(sc => sc.trim()).length > 0 ? `   - Show section header "사이즈 차트" in bold Korean text
+   - Display size chart information in clear list format:
+${sizeCharts.filter(sc => sc.trim()).map(sc => `     • ${sc}`).join('\n')}
+   - Each size measurement should be on a separate line
+   - Use bullet points or clear formatting for readability` : ""}
+
+DESIGN GUIDELINES:
+- Clean, minimalist Korean e-commerce style (like Uniqlo, Zara, H&M Korean sites)
+- Use white or light gray backgrounds throughout
+- Professional typography with clear hierarchy:
+  * Section headers: Bold, larger font
+  * Product name: Prominent, stylish font
+  * Size information: Clear, readable font
+  * Size chart: Organized list format
+- Add subtle section dividers or spacing between sections
+- Ensure all text is readable with good contrast
+- Maintain consistent spacing and alignment
+- Style should match premium Korean fashion shop detail images
+- Each section should be clearly separated visually
+
+IMPORTANT REMINDERS:
+- The product from the uploaded image is the REAL product - preserve it completely
+- Only add Korean text labels and information around the product
+- Do not alter, modify, or recreate the product
+- Keep the layout clean, professional, and easy to read
+- All measurements and information should be clearly visible`;
 
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -115,7 +106,7 @@ The image should look like a professional product detail image (상세 이미지
                     baseImage: base64,
                     prompt: detailPrompt,
                     productName: productName || undefined,
-                    aspectRatio: "9:16", // Vertical long banner aspect ratio (768x1344)
+                    aspectRatio: "9:16",
                 });
 
                 if (result.success && result.imageUrl) {
@@ -145,10 +136,55 @@ The image should look like a professional product detail image (상세 이미지
         }
     };
 
+    const handleClearForm = () => {
+        setBaseImage(null);
+        setPreview("");
+        setProductName("");
+        setSizes([""]);
+        setSizeCharts([""]);
+        setGeneratedImage("");
+    };
+
+    const handleLoadSampleData = () => {
+        setProductName("립드 탱크탑");
+        setSizes(["S", "M", "L", "XL"]);
+        setSizeCharts([
+            "S: 가슴 88cm, 어깨 42cm, 총장 60cm",
+            "M: 가슴 92cm, 어깨 44cm, 총장 62cm",
+            "L: 가슴 96cm, 어깨 46cm, 총장 64cm"
+        ]);
+    };
+
     return (
         <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">상세 이미지 생성</h2>
+                <div className="flex gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLoadSampleData}
+                        className="text-blue-600 hover:text-blue-700"
+                    >
+                        <FileText className="w-4 h-4 mr-2" />
+                        샘플 데이터 로드
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearForm}
+                        className="text-gray-600"
+                    >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        초기화
+                    </Button>
+                </div>
+            </div>
+
             <div className="space-y-2">
-                <Label htmlFor="baseImage">제품 이미지</Label>
+                <Label htmlFor="baseImage">제품 이미지 <span className="text-red-500">*</span></Label>
                 <div className="relative">
                     <Input
                         id="baseImage"
@@ -178,34 +214,12 @@ The image should look like a professional product detail image (상세 이미지
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="productName">제품명</Label>
+                <Label htmlFor="productName">제품명 <span className="text-red-500">*</span></Label>
                 <Input
                     id="productName"
                     value={productName}
                     onChange={(e) => setProductName(e.target.value)}
-                    placeholder="제품명을 입력하세요"
-                />
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="description">제품 설명</Label>
-                <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="제품에 대한 설명을 입력하세요"
-                    rows={3}
-                />
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="price">가격 (선택사항)</Label>
-                <Input
-                    id="price"
-                    type="text"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="예: 29,000원"
+                    placeholder="예: 립드 탱크탑"
                 />
             </div>
 
@@ -296,45 +310,38 @@ The image should look like a professional product detail image (상세 이미지
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <Label htmlFor="marketplace">판매 지역/시장 정보 (선택사항)</Label>
-                <Input
-                    id="marketplace"
-                    type="text"
-                    value={marketplace}
-                    onChange={(e) => setMarketplace(e.target.value)}
-                    placeholder="예: 한국 전국 배송, 서울/부산/인천 판매 가능"
-                />
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="features">특징 (선택사항)</Label>
-                <Textarea
-                    id="features"
-                    value={features}
-                    onChange={(e) => setFeatures(e.target.value)}
-                    placeholder="제품의 주요 특징을 한 줄씩 입력하세요&#10;예:&#10;- 고급 소재 사용&#10;- 편안한 착용감&#10;- 세탁 가능"
-                    rows={5}
-                />
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="customPrompt">프롬프트 (선택사항)</Label>
-                <Textarea
-                    id="customPrompt"
-                    value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder="사용자 정의 프롬프트를 입력하세요. 비워두면 기본 프롬프트가 사용됩니다."
-                    rows={4}
-                />
-                <p className="text-xs text-gray-500">
-                    프롬프트를 입력하지 않으면 자동으로 제품 정보를 포함한 세로형 상세 이미지가 생성됩니다.
-                </p>
-            </div>
+            {/* Preview Section */}
+            {(productName || sizes.filter(s => s.trim()).length > 0 || sizeCharts.filter(sc => sc.trim()).length > 0) && (
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">입력 정보 미리보기</h3>
+                    <div className="space-y-2 text-sm text-gray-600">
+                        {productName && (
+                            <div>
+                                <span className="font-medium">제품명:</span> {productName}
+                            </div>
+                        )}
+                        {sizes.filter(s => s.trim()).length > 0 && (
+                            <div>
+                                <span className="font-medium">사이즈 정보:</span> {sizes.filter(s => s.trim()).join(', ')}
+                            </div>
+                        )}
+                        {sizeCharts.filter(sc => sc.trim()).length > 0 && (
+                            <div>
+                                <span className="font-medium">사이즈 차트:</span>
+                                <ul className="list-disc list-inside mt-1 ml-2">
+                                    {sizeCharts.filter(sc => sc.trim()).map((sc, i) => (
+                                        <li key={i}>{sc}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <Button
                 onClick={handleGenerate}
-                disabled={!baseImage || isGenerating}
+                disabled={!baseImage || !productName || isGenerating}
                 className="w-full"
                 size="lg"
             >
