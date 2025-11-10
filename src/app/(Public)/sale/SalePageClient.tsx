@@ -8,16 +8,40 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/providers/languageProvider";
 
 export function SalePageClient() {
+    const { t } = useLanguage();
     const [searchTerm, setSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("discount-desc");
 
+    // Map frontend sortBy to backend sortBy and sortOrder
+    const getBackendSortParams = (frontendSortBy: string): { sortBy?: string; sortOrder?: 'asc' | 'desc' } => {
+        switch (frontendSortBy) {
+            case "price-desc":
+                return { sortBy: "price", sortOrder: "desc" as const };
+            case "price-asc":
+                return { sortBy: "finalPrice", sortOrder: "asc" as const };
+            case "name":
+                return { sortBy: "name", sortOrder: "asc" as const };
+            case "discount-desc":
+            case "discount-asc":
+                // Discount sorting is done client-side as backend may not support it
+                return { sortBy: undefined, sortOrder: undefined };
+            default:
+                return { sortBy: undefined, sortOrder: undefined };
+        }
+    };
+
+    // Check if sorting should be done client-side
+    const needsClientSideSorting = sortBy === "discount-desc" || sortBy === "discount-asc";
 
     const { data, isLoading, error } = usePublicProducts({
         isActive: true,
         promotion: true,
         pageSize: 60,
+        sortBy: getBackendSortParams(sortBy).sortBy,
+        sortOrder: getBackendSortParams(sortBy).sortOrder,
     });
 
     const allProducts = data?.data?.data || data?.products || [];
@@ -45,7 +69,7 @@ export function SalePageClient() {
         return product.basePrice;
     };
 
-    // Filter and sort products
+    // Filter products (backend already sorted for price and name)
     const filteredProducts = allProducts
         .filter(product => !!product.promotion) // Only products with active promotion
         .filter(product => {
@@ -53,7 +77,12 @@ export function SalePageClient() {
                 product.brand?.name?.toLowerCase().includes(searchTerm.toLowerCase());
             return matchesSearch;
         })
+        // Only sort client-side if needed (for discount sorting)
         .sort((a, b) => {
+            if (!needsClientSideSorting) {
+                // Backend already sorted, no need to sort again
+                return 0;
+            }
             switch (sortBy) {
                 case "discount-desc":
                     const discountA = a.promotion ? calculateDiscountPercent(a.basePrice, a.promotion) : 0;
@@ -63,12 +92,6 @@ export function SalePageClient() {
                     const discountA2 = a.promotion ? calculateDiscountPercent(a.basePrice, a.promotion) : 0;
                     const discountB2 = b.promotion ? calculateDiscountPercent(b.basePrice, b.promotion) : 0;
                     return discountA2 - discountB2;
-                case "price-desc":
-                    return b.basePrice - a.basePrice;
-                case "price-asc":
-                    return a.basePrice - b.basePrice;
-                case "name":
-                    return a.name.localeCompare(b.name);
                 default:
                     return 0;
             }
@@ -93,7 +116,7 @@ export function SalePageClient() {
         return (
             <div className="container mx-auto px-4 py-8">
                 <div className="text-center text-red-600">
-                    <p>상품을 불러오는 중 오류가 발생했습니다: {error instanceof Error ? error.message : String(error)}</p>
+                    <p>{t("sale.error").replace("{message}", error instanceof Error ? error.message : String(error))}</p>
                 </div>
             </div>
         );
@@ -106,7 +129,7 @@ export function SalePageClient() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Filter className="h-5 w-5" />
-                        필터
+                        {t("sale.filter")}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -115,7 +138,7 @@ export function SalePageClient() {
                         <div className="relative flex-1 min-w-[220px]">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <Input
-                                placeholder="상품명 또는 브랜드 검색..."
+                                placeholder={t("sale.searchPlaceholder")}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-10"
@@ -124,17 +147,17 @@ export function SalePageClient() {
 
                         {/* Sort */}
                         <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium">정렬:</label>
+                            <label className="text-sm font-medium">{t("sale.sort")}</label>
                             <Select value={sortBy} onValueChange={setSortBy}>
                                 <SelectTrigger className="w-48">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="discount-desc">할인율 높은 순</SelectItem>
-                                    <SelectItem value="discount-asc">할인율 낮은 순</SelectItem>
-                                    <SelectItem value="price-desc">가격 높은 순</SelectItem>
-                                    <SelectItem value="price-asc">가격 낮은 순</SelectItem>
-                                    <SelectItem value="name">상품명 A-Z</SelectItem>
+                                    <SelectItem value="discount-desc">{t("sale.sortOptions.discountDesc")}</SelectItem>
+                                    <SelectItem value="discount-asc">{t("sale.sortOptions.discountAsc")}</SelectItem>
+                                    <SelectItem value="price-desc">{t("sale.sortOptions.priceDesc")}</SelectItem>
+                                    <SelectItem value="price-asc">{t("sale.sortOptions.priceAsc")}</SelectItem>
+                                    <SelectItem value="name">{t("sale.sortOptions.name")}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -145,7 +168,7 @@ export function SalePageClient() {
             {/* Products Grid */}
             {filteredProducts.length === 0 ? (
                 <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">상품을 찾을 수 없습니다</p>
+                    <p className="text-gray-500 text-lg">{t("sale.noProducts")}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

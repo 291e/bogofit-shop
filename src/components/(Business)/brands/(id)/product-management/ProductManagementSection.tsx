@@ -1,6 +1,7 @@
 "use client";
 
 import SideBarSection from "@/components/ui/sidebar-section";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface ProductManagementSectionProps {
   brandId: string;
@@ -9,34 +10,35 @@ interface ProductManagementSectionProps {
 export default function ProductManagementSection({
   brandId
 }: ProductManagementSectionProps) {
+  const { t } = useLanguage();
   const productManagementData = {
     id: "product-management",
-    label: "상품관리",
+    label: t("header.business.brandDetail.sidebar.productManagement"),
     subSections: [
       {
         id: "all-products",
-        label: "전체 상품관리",
+        label: t("header.business.brandDetail.sidebar.allProducts"),
         href: `/business/brands/${brandId}/products`
       },
       {
         id: "product-register",
-        label: "상품 등록",
+        label: t("header.business.brandDetail.sidebar.productRegister"),
         href: `/business/brands/${brandId}/products/register`
       },
       {
         id: "inventory",
-        label: "상품 재고관리",
+        label: t("header.business.brandDetail.sidebar.inventory"),
         href: `/business/brands/${brandId}/products/inventory`
       }
       ,
       {
         id: "reviews",
-        label: "상품 리뷰",
+        label: t("header.business.brandDetail.sidebar.reviews"),
         href: `/business/brands/${brandId}/products/reviews`
       },
       {
         id: "inquiries",
-        label: "상품 문의",
+        label: t("header.business.brandDetail.sidebar.inquiries"),
         href: `/business/brands/${brandId}/products/inquiries`
       }
     ]

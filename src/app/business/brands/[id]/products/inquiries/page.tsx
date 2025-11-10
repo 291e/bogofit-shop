@@ -11,8 +11,10 @@ import { useProductInquiries, useAnswerProductInquiry } from "@/hooks/useProduct
 import { ProductInquiry } from "@/types/productInquiry";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function BrandProductInquiriesPage() {
+    const { t } = useLanguage();
     const params = useParams();
     const brandId = Array.isArray((params as any)?.id) ? (params as any)?.id[0] : (params as any)?.id;
 
@@ -41,38 +43,38 @@ export default function BrandProductInquiriesPage() {
     return (
         <div className="p-6">
             <div className="mb-6 flex items-center justify-between">
-                <h1 className="text-xl font-bold text-gray-900">상품 문의</h1>
+                <h1 className="text-xl font-bold text-gray-900">{t("header.business.brandDetail.products.inquiries.title")}</h1>
                 <div className="flex gap-2">
                     <Input
-                        placeholder="상품명 검색"
+                        placeholder={t("header.business.brandDetail.products.inquiries.searchPlaceholder")}
                         value={search}
                         onChange={(e) => { setPage(1); setSearch(e.target.value); }}
                         className="w-56"
                     />
-                    <Button variant="outline" onClick={() => { setSearch(""); setPage(1); }}>초기화</Button>
+                    <Button variant="outline" onClick={() => { setSearch(""); setPage(1); }}>{t("header.business.brandDetail.products.inquiries.reset")}</Button>
                 </div>
             </div>
 
             {error && (
-                <div className="text-red-600">불러오기에 실패했습니다.</div>
+                <div className="text-red-600">{t("header.business.brandDetail.products.inquiries.loadFailed")}</div>
             )}
 
             <div className="overflow-x-auto border rounded-lg">
                 <table className="min-w-full text-sm">
                     <thead className="bg-gray-50 text-gray-700">
                         <tr>
-                            <th className="p-3 text-left">상품</th>
-                            <th className="p-3 text-right">문의수</th>
-                            <th className="p-3 text-right">미답변</th>
-                            <th className="p-3 text-right">답변</th>
-                            <th className="p-3 text-right">작업</th>
+                            <th className="p-3 text-left">{t("header.business.brandDetail.products.inquiries.product")}</th>
+                            <th className="p-3 text-right">{t("header.business.brandDetail.products.inquiries.inquiryCount")}</th>
+                            <th className="p-3 text-right">{t("header.business.brandDetail.products.inquiries.unanswered")}</th>
+                            <th className="p-3 text-right">{t("header.business.brandDetail.products.inquiries.answered")}</th>
+                            <th className="p-3 text-right">{t("header.business.brandDetail.products.inquiries.actions")}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
-                            <tr><td className="p-4" colSpan={5}>불러오는 중...</td></tr>
+                            <tr><td className="p-4" colSpan={5}>{t("header.business.brandDetail.products.inquiries.loading")}</td></tr>
                         ) : filtered.length === 0 ? (
-                            <tr><td className="p-6 text-center text-gray-500" colSpan={5}>상품 데이터가 없습니다</td></tr>
+                            <tr><td className="p-6 text-center text-gray-500" colSpan={5}>{t("header.business.brandDetail.products.inquiries.noProductData")}</td></tr>
                         ) : (
                             filtered.map((p: any) => (
                                 <ProductInquiryRow
@@ -87,9 +89,9 @@ export default function BrandProductInquiriesPage() {
             </div>
 
             <div className="mt-4 flex justify-center gap-2">
-                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((x) => x - 1)}>이전</Button>
+                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((x) => x - 1)}>{t("header.business.brandDetail.products.inquiries.previous")}</Button>
                 <div className="text-sm text-gray-600 px-2 py-1">{page} / {totalPages}</div>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((x) => x + 1)}>다음</Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((x) => x + 1)}>{t("header.business.brandDetail.products.inquiries.next")}</Button>
             </div>
 
             {/* Quick view modal for product inquiries */}
@@ -123,6 +125,7 @@ function ProductInquiryRow({
     product: any,
     onViewInquiries: () => void
 }) {
+    const { t } = useLanguage();
     // Get inquiry stats from product response (when includeInquiryStats=true)
     const inquiryStats = product.inquiryStats || {
         totalInquiries: 0,
@@ -160,7 +163,7 @@ function ProductInquiryRow({
                 )}
             </td>
             <td className="p-3 text-right">
-                <Button variant="outline" size="sm" onClick={onViewInquiries}>문의 보기</Button>
+                <Button variant="outline" size="sm" onClick={onViewInquiries}>{t("header.business.brandDetail.products.inquiries.viewInquiries")}</Button>
             </td>
         </tr>
     );
@@ -175,6 +178,7 @@ function ProductInquiriesQuickModal({
     onClose: () => void,
     onAnswerInquiry: (inquiry: ProductInquiry) => void
 }) {
+    const { t } = useLanguage();
     const open = !!product;
     const productId = product?.id;
     const queryClient = useQueryClient();
@@ -224,13 +228,13 @@ function ProductInquiriesQuickModal({
         <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>상품 문의 - {product?.name}</DialogTitle>
+                    <DialogTitle>{t("header.business.brandDetail.products.inquiries.modalTitle", { productName: product?.name })}</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto space-y-4">
                     {isLoading ? (
-                        <div className="p-4 text-center text-gray-500">불러오는 중...</div>
+                        <div className="p-4 text-center text-gray-500">{t("header.business.brandDetail.products.inquiries.loading")}</div>
                     ) : inquiries.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">문의가 없습니다</div>
+                        <div className="p-4 text-center text-gray-500">{t("header.business.brandDetail.products.inquiries.noInquiries")}</div>
                     ) : (
                         <div className="space-y-4">
                             {inquiries.map((inquiry: ProductInquiry) => (
@@ -240,13 +244,13 @@ function ProductInquiriesQuickModal({
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="font-medium text-gray-900">{inquiry.user.name}</span>
                                                 {inquiry.isSecret && (
-                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">비공개</span>
+                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{t("header.business.brandDetail.products.inquiries.private")}</span>
                                                 )}
                                                 {inquiry.status === 'pending' && (
-                                                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">미답변</span>
+                                                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">{t("header.business.brandDetail.products.inquiries.unanswered")}</span>
                                                 )}
                                                 {inquiry.status === 'answered' && (
-                                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">답변완료</span>
+                                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">{t("header.business.brandDetail.products.inquiries.answered")}</span>
                                                 )}
                                             </div>
                                             <div className="text-xs text-gray-500">
@@ -255,7 +259,7 @@ function ProductInquiriesQuickModal({
                                         </div>
                                         {inquiry.status === 'pending' && (
                                             <Button size="sm" onClick={() => onAnswerInquiry(inquiry)}>
-                                                답변하기
+                                                {t("header.business.brandDetail.products.inquiries.answer")}
                                             </Button>
                                         )}
                                     </div>
@@ -270,11 +274,11 @@ function ProductInquiriesQuickModal({
                                             {(inquiry.answeredByUser || inquiry.answeredAt) && (
                                                 <div className="text-xs text-gray-500 mt-2">
                                                     {inquiry.answeredByUser && (
-                                                        <span>판매자: {inquiry.answeredByUser.name}</span>
+                                                        <span>{t("header.business.brandDetail.products.inquiries.seller")} {inquiry.answeredByUser.name}</span>
                                                     )}
                                                     {inquiry.answeredByUser && inquiry.answeredAt && <span> • </span>}
                                                     {inquiry.answeredAt && (
-                                                        <span>답변일: {new Date(inquiry.answeredAt).toLocaleString('ko-KR')}</span>
+                                                        <span>{t("header.business.brandDetail.products.inquiries.answerDate")} {new Date(inquiry.answeredAt).toLocaleString('ko-KR')}</span>
                                                     )}
                                                 </div>
                                             )}
@@ -283,7 +287,7 @@ function ProductInquiriesQuickModal({
                                         inquiry.status === 'pending' && (
                                             <div className="mt-3 pt-3 border-t">
                                                 <p className="text-sm text-gray-500 italic">
-                                                    답변 대기 중입니다...
+                                                    {t("header.business.brandDetail.products.inquiries.waitingForAnswer")}
                                                 </p>
                                             </div>
                                         )
@@ -297,9 +301,9 @@ function ProductInquiriesQuickModal({
                 {/* Pagination */}
                 {pagination && pagination.totalPages > 1 && (
                     <div className="flex justify-center gap-2 pt-4 border-t">
-                        <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((x) => x - 1)}>이전</Button>
+                        <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((x) => x - 1)}>{t("header.business.brandDetail.products.inquiries.previous")}</Button>
                         <div className="text-sm text-gray-600 px-2 py-1">{page} / {pagination.totalPages}</div>
-                        <Button variant="outline" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((x) => x + 1)}>다음</Button>
+                        <Button variant="outline" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((x) => x + 1)}>{t("header.business.brandDetail.products.inquiries.next")}</Button>
                     </div>
                 )}
             </DialogContent>
@@ -308,6 +312,7 @@ function ProductInquiriesQuickModal({
 }
 
 function AnswerInquiryModal({ inquiry, onClose }: { inquiry: ProductInquiry, onClose: () => void }) {
+    const { t } = useLanguage();
     const [answer, setAnswer] = React.useState("");
     const answerMutation = useAnswerProductInquiry();
     const queryClient = useQueryClient();
@@ -315,7 +320,7 @@ function AnswerInquiryModal({ inquiry, onClose }: { inquiry: ProductInquiry, onC
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (answer.length < 10 || answer.length > 2000) {
-            alert('답변은 10자 이상 2000자 이하여야 합니다');
+            alert(t("header.business.brandDetail.products.inquiries.validationError"));
             return;
         }
 
@@ -338,33 +343,33 @@ function AnswerInquiryModal({ inquiry, onClose }: { inquiry: ProductInquiry, onC
         <Dialog open={!!inquiry} onOpenChange={(v) => { if (!v) onClose(); }}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>문의 답변</DialogTitle>
+                    <DialogTitle>{t("header.business.brandDetail.products.inquiries.answerModalTitle")}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <div className="text-sm font-medium text-gray-700 mb-2">질문:</div>
+                        <div className="text-sm font-medium text-gray-700 mb-2">{t("header.business.brandDetail.products.inquiries.question")}</div>
                         <div className="p-3 bg-gray-50 rounded border text-sm text-gray-700 whitespace-pre-wrap">
                             {inquiry.question}
                         </div>
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">답변:</label>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">{t("header.business.brandDetail.products.inquiries.answerLabel")}</label>
                         <Textarea
                             value={answer}
                             onChange={(e) => setAnswer(e.target.value)}
-                            placeholder="답변을 입력하세요 (최소 10자 이상)"
+                            placeholder={t("header.business.brandDetail.products.inquiries.answerPlaceholder")}
                             rows={6}
                             required
                             minLength={10}
                             maxLength={2000}
                             className="resize-none"
                         />
-                        <div className="text-xs text-gray-500 mt-1">{answer.length} / 2000자</div>
+                        <div className="text-xs text-gray-500 mt-1">{t("header.business.brandDetail.products.inquiries.characters", { count: answer.length })}</div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                        <Button type="button" variant="outline" onClick={onClose}>취소</Button>
+                        <Button type="button" variant="outline" onClick={onClose}>{t("header.business.brandDetail.products.inquiries.cancel")}</Button>
                         <Button type="submit" disabled={answerMutation.isPending || answer.length < 10}>
-                            {answerMutation.isPending ? '등록 중...' : '답변 등록'}
+                            {answerMutation.isPending ? t("header.business.brandDetail.products.inquiries.registering") : t("header.business.brandDetail.products.inquiries.registerAnswer")}
                         </Button>
                     </div>
                 </form>

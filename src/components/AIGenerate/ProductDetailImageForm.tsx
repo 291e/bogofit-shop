@@ -38,65 +38,80 @@ export function ProductDetailImageForm() {
         }
 
         try {
-            const detailPrompt = `Create a professional long vertical product detail image (상세 이미지) for Korean fashion e-commerce.
+            // Build text content sections
+            const textSections: string[] = [];
 
-CRITICAL - PRODUCT PRESERVATION:
-- You MUST use the EXACT product from the uploaded image - same design, same colors, same style, same details
-- DO NOT create a different product, modify the product design, or change the product appearance
-- The product in the output must look IDENTICAL to the product in the uploaded image
-- Only add text information around the product, but the product itself must remain completely unchanged
+            if (productName) {
+                textSections.push(`Product Name: ${productName}`);
+            }
+
+            if (sizes.filter(s => s.trim()).length > 0) {
+                textSections.push(`Size Information: ${sizes.filter(s => s.trim()).join(', ')}`);
+            }
+
+            if (sizeCharts.filter(sc => sc.trim()).length > 0) {
+                textSections.push(`Size Chart:\n${sizeCharts.filter(sc => sc.trim()).map(sc => `• ${sc}`).join('\n')}`);
+            }
+
+            const detailPrompt = `TASK: Create a professional product detail image based on the uploaded base image.
+
+CRITICAL - USE THE BASE IMAGE AS FOUNDATION:
+- You MUST use the uploaded base image as the foundation to create the detail image
+- The product in the base image MUST appear EXACTLY the same in the output detail image
+- Same design, same colors, same style, same details, same shape, same proportions
+- DO NOT modify, recreate, or change the product from the base image
+- The product image should be IDENTICAL to the base image
+- Only add text information BELOW or AROUND the product, never modify the product itself
 
 FORMAT:
-- Vertical long banner: width 1000px, height minimum 2000px (at least 3-5x width)
-- NOT square (1024x1024 is forbidden)
-- All text must be in Korean (한국어) - no English text allowed
+- Vertical long banner: width 1000px, height minimum 2000px
 
-LAYOUT STRUCTURE (arrange vertically from top to bottom):
+CRITICAL - TEXT LANGUAGE REQUIREMENT:
+- ALL text in the image MUST be in English ONLY
+- NO Korean text (한국어) allowed
+- NO other languages allowed
+- All section headers, labels, and information must be written in English
+- Use English text for everything displayed in the image
 
-1. TOP SECTION - Product Image:
-   - Display the EXACT product from uploaded image prominently at the top
-   - Use clean white or light gray background
-   - Product should be clearly visible and unchanged from original
-   - Maintain professional product photography style
+LAYOUT STRUCTURE (arrange vertically from top to bottom with proper spacing):
 
-2. PRODUCT NAME SECTION:
-${productName ? `   - Show section header "제품명" in bold Korean text
-   - Display product name: "${productName}" in prominent, stylish Korean typography
-   - Use clear spacing and readable font size` : ""}
+1. TOP SECTION - Product Image from Base Image (40-50% of total height):
+   - Display the EXACT product from the uploaded base image at the top
+   - Use the product image from the base image unchanged and identical
+   - Clean white or light gray background
+   - Product should be clearly visible, centered, and unchanged from the base image
+   - Generous padding around the product image
+   - Professional product photography style
 
-3. SIZE INFORMATION SECTION:
-${sizes.filter(s => s.trim()).length > 0 ? `   - Show section header "사이즈 정보" in bold Korean text
-   - Display available sizes: ${sizes.filter(s => s.trim()).join(', ')}
-   - Format as: "사이즈 정보: S, M, L, XL" (or similar based on input)
-   - Use clear, readable text` : ""}
+2. TEXT INFORMATION SECTION (50-60% of total height, ALL IN ENGLISH):
+${textSections.length > 0 ? `   - Below the product image, create a well-organized text section with proper spacing
+   - Add generous padding and spacing between sections
+   - Use clear visual hierarchy with section headers and content
+   - Display the following information in clean English text ONLY:
+${textSections.map(section => `   ${section}`).join('\n\n')}
+   - Each text section should have proper spacing and visual separation
+   - Use professional typography with clear hierarchy` : '   - (No additional text information provided)'}
 
-4. SIZE CHART SECTION:
-${sizeCharts.filter(sc => sc.trim()).length > 0 ? `   - Show section header "사이즈 차트" in bold Korean text
-   - Display size chart information in clear list format:
-${sizeCharts.filter(sc => sc.trim()).map(sc => `     • ${sc}`).join('\n')}
-   - Each size measurement should be on a separate line
-   - Use bullet points or clear formatting for readability` : ""}
-
-DESIGN GUIDELINES:
-- Clean, minimalist Korean e-commerce style (like Uniqlo, Zara, H&M Korean sites)
-- Use white or light gray backgrounds throughout
-- Professional typography with clear hierarchy:
-  * Section headers: Bold, larger font
-  * Product name: Prominent, stylish font
-  * Size information: Clear, readable font
-  * Size chart: Organized list format
-- Add subtle section dividers or spacing between sections
-- Ensure all text is readable with good contrast
-- Maintain consistent spacing and alignment
-- Style should match premium Korean fashion shop detail images
-- Each section should be clearly separated visually
-
-IMPORTANT REMINDERS:
-- The product from the uploaded image is the REAL product - preserve it completely
-- Only add Korean text labels and information around the product
-- Do not alter, modify, or recreate the product
-- Keep the layout clean, professional, and easy to read
-- All measurements and information should be clearly visible`;
+DESIGN GUIDELINES (for beautiful layout):
+- Clean white or light gray background throughout
+- Professional e-commerce style (like Uniqlo, Zara, H&M)
+- Generous padding and margins throughout (at least 60-80px on sides, 40-60px between sections)
+- Clear visual hierarchy:
+  * Section headers: Bold, larger font size (24-32px)
+  * Content text: Clear, readable font size (16-18px)
+  * Proper line spacing and letter spacing
+- Balanced composition: Product image takes 40-50% of height, text section takes 50-60%
+- Center-aligned or left-aligned text with proper margins
+- Subtle section dividers or spacing between different text sections
+- Professional typography with good contrast
+- Clean, minimal, and elegant design
+- ALL text must be in English - clear, readable English text only
+no
+REMEMBER: 
+- Use the base image as the foundation - the product must be IDENTICAL to the base image
+- Only add text below the product image, never modify the product itself
+- ALL text in the image must be in English ONLY - no Korean or other languages
+- Create a professional product detail image based on the base image`;
 
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -105,7 +120,7 @@ IMPORTANT REMINDERS:
                 const result = await generateImage({
                     baseImage: base64,
                     prompt: detailPrompt,
-                    productName: productName || undefined,
+                    // Don't pass productName to avoid AI recreating the product
                     aspectRatio: "9:16",
                 });
 

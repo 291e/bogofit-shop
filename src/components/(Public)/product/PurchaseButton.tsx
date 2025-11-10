@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAddToCart } from "@/hooks/useCart";
 import { useAuth } from "@/providers/authProvider";
+import { useLanguage } from "@/providers/languageProvider";
 import { toast } from "sonner";
 
 interface PurchaseButtonProps {
@@ -28,6 +29,7 @@ export function PurchaseButton({
   isOutOfStock = false,
   variantId,
 }: PurchaseButtonProps) {
+  const { t } = useLanguage();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const addToCart = useAddToCart();
@@ -36,13 +38,13 @@ export function PurchaseButton({
     // 옵션이 있는 상품인 경우에만 옵션 체크
     if (hasOptions) {
       if (typeof selectedOption === "string" && selectedOption.trim() === "") {
-        alert("옵션을 선택해주세요.");
+        alert(t("productDetail.purchaseButton.selectOption"));
         return;
       }
     }
 
     if (isOutOfStock) {
-      alert("품절된 상품입니다.");
+      alert(t("productDetail.purchaseButton.outOfStock"));
       return;
     }
 
@@ -61,19 +63,19 @@ export function PurchaseButton({
   const handleAddToCart = async () => {
     // Check authentication
     if (!isAuthenticated) {
-      toast.error("로그인이 필요합니다");
+      toast.error(t("productDetail.purchaseButton.loginRequired"));
       router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 
     // 옵션이 있는 상품인 경우 variantId 체크
     if (hasOptions && !variantId) {
-      toast.error("옵션을 선택해주세요");
+      toast.error(t("productDetail.purchaseButton.selectOption"));
       return;
     }
 
     if (isOutOfStock) {
-      toast.error("품절된 상품입니다");
+      toast.error(t("productDetail.purchaseButton.outOfStock"));
       return;
     }
 
@@ -104,14 +106,14 @@ export function PurchaseButton({
           {addToCart.isPending ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-pink-600 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">추가 중...</span>
+              <span className="hidden sm:inline">{t("productDetail.purchaseButton.adding")}</span>
               <span className="sm:hidden">...</span>
             </>
           ) : (
             <>
               <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">장바구니 담기</span>
-              <span className="sm:hidden">담기</span>
+              <span className="hidden sm:inline">{t("productDetail.purchaseButton.addToCart")}</span>
+              <span className="sm:hidden">{t("productDetail.purchaseButton.add")}</span>
             </>
           )}
         </Button>
@@ -124,10 +126,10 @@ export function PurchaseButton({
         >
           <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
           <span className="hidden sm:inline">
-            {isOutOfStock ? "품절" : "바로 구매"}
+            {isOutOfStock ? t("productDetail.purchaseButton.soldOut") : t("productDetail.purchaseButton.buyNow")}
           </span>
           <span className="sm:hidden">
-            {isOutOfStock ? "품절" : "구매"}
+            {isOutOfStock ? t("productDetail.purchaseButton.soldOut") : t("productDetail.purchaseButton.purchase")}
           </span>
         </Button>
       </div>
@@ -135,11 +137,11 @@ export function PurchaseButton({
       {/* 부가 정보 */}
       <div className="text-center text-xs text-gray-500 space-y-1">
         <div className="hidden sm:block space-y-1">
-          <p>• 안전한 결제</p>
-          <p>• 빠른 배송</p>
+          <p>• {t("productDetail.purchaseButton.safePayment")}</p>
+          <p>• {t("productDetail.purchaseButton.fastShipping")}</p>
         </div>
         <div className="sm:hidden">
-          <p>안전한 결제 • 빠른 배송</p>
+          <p>{t("productDetail.purchaseButton.safePayment")} • {t("productDetail.purchaseButton.fastShipping")}</p>
         </div>
       </div>
     </div>

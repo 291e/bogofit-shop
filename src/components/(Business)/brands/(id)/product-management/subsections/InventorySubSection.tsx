@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/providers/authProvider";
 import { useQueryClient } from "@tanstack/react-query";
 import { PRODUCTS_QUERY_KEY, PRODUCT_DETAIL_QUERY_KEY } from "@/hooks/useProducts";
+import { useLanguage } from "@/providers/languageProvider";
 
 
 interface InventorySubSectionProps {
@@ -30,6 +31,7 @@ interface InventorySubSectionProps {
 export default function InventorySubSection({
   brandId
 }: InventorySubSectionProps) {
+  const { t } = useLanguage();
   const { brandId: contextBrandId } = useBrandContext();
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
@@ -104,7 +106,7 @@ export default function InventorySubSection({
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success('변형 재고가 업데이트되었습니다');
+        toast.success(t("header.business.brandDetail.products.inventory.updateSuccess"));
 
         // Invalidate cache
         queryClient.invalidateQueries({ queryKey: [...PRODUCTS_QUERY_KEY, brandId || contextBrandId] });
@@ -114,11 +116,11 @@ export default function InventorySubSection({
         setShowVariantEditModal(false);
         setSelectedVariant(null);
       } else {
-        toast.error(data.message || '변형 업데이트에 실패했습니다');
+        toast.error(data.message || t("header.business.brandDetail.products.inventory.updateFailed"));
       }
     } catch (error) {
       console.error('❌ Variant update error:', error);
-      toast.error('변형 업데이트 중 오류가 발생했습니다');
+      toast.error(t("header.business.brandDetail.products.inventory.updateError"));
     } finally {
       setIsSavingVariant(false);
     }
@@ -143,7 +145,7 @@ export default function InventorySubSection({
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="text-red-500 text-6xl mb-4">❌</div>
-              <h3 className="text-xl font-medium text-gray-900 mb-2">오류 발생</h3>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">{t("header.business.brandDetail.products.inventory.errorOccurred")}</h3>
               <p className="text-gray-500">{error.message}</p>
             </div>
           </div>
@@ -157,16 +159,16 @@ export default function InventorySubSection({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">상품 재고관리</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("header.business.brandDetail.products.inventory.title")}</h1>
           <p className="text-gray-600 mt-1">
-            상품별 변형의 재고를 관리하세요
+            {t("header.business.brandDetail.products.inventory.description")}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="상품명으로 검색..."
+              placeholder={t("header.business.brandDetail.products.inventory.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 w-64"
@@ -174,7 +176,7 @@ export default function InventorySubSection({
           </div>
           <Button variant="outline">
             <Filter className="h-4 w-4 mr-2" />
-            필터
+            {t("header.business.brandDetail.products.inventory.filter")}
           </Button>
         </div>
       </div>
@@ -186,14 +188,14 @@ export default function InventorySubSection({
             {/* Header */}
             <div className="flex items-center py-3 px-4 bg-gray-50 rounded-t-lg font-medium text-xs text-gray-600 border-b border-gray-200">
               <div className="w-20 text-center">SKU</div>
-              <div className="w-20 text-center border-l border-gray-300 pl-2">이미지</div>
-              <div className="w-32 text-center border-l border-gray-300 pl-2">상품명</div>
-              <div className="w-24 text-center border-l border-gray-300 pl-2">레벨</div>
-              <div className="flex-1 text-center border-l border-gray-300 pl-2">옵션</div>
-              <div className="flex-1 text-center border-l border-gray-300 pl-2">재고</div>
-              <div className="flex-1 text-center border-l border-gray-300 pl-2">가격</div>
-              <div className="flex-1 text-center border-l border-gray-300 pl-2">비교가격</div>
-              <div className="w-24 text-center border-l border-gray-300 pl-2">액션</div>
+              <div className="w-20 text-center border-l border-gray-300 pl-2">{t("header.business.brandDetail.products.inventory.image")}</div>
+              <div className="w-32 text-center border-l border-gray-300 pl-2">{t("header.business.brandDetail.products.inventory.productName")}</div>
+              <div className="w-24 text-center border-l border-gray-300 pl-2">{t("header.business.brandDetail.products.inventory.level")}</div>
+              <div className="flex-1 text-center border-l border-gray-300 pl-2">{t("header.business.brandDetail.products.inventory.options")}</div>
+              <div className="flex-1 text-center border-l border-gray-300 pl-2">{t("header.business.brandDetail.products.inventory.stock")}</div>
+              <div className="flex-1 text-center border-l border-gray-300 pl-2">{t("header.business.brandDetail.products.inventory.price")}</div>
+              <div className="flex-1 text-center border-l border-gray-300 pl-2">{t("header.business.brandDetail.products.inventory.comparePrice")}</div>
+              <div className="w-24 text-center border-l border-gray-300 pl-2">{t("header.business.brandDetail.products.inventory.actions")}</div>
             </div>
 
             {/* Product + Variant Rows - v2.0: Show product first, then variants */}
@@ -234,7 +236,7 @@ export default function InventorySubSection({
                     {/* 레벨 */}
                     <div className="w-24 text-center border-l border-gray-300 pl-2">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        상품
+                        {t("header.business.brandDetail.products.inventory.product")}
                       </span>
                     </div>
 
@@ -242,8 +244,8 @@ export default function InventorySubSection({
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       <div className="text-xs text-gray-600 font-medium">
                         {product.variants && product.variants.length > 0
-                          ? `${product.variants.length}개`
-                          : '0개'}
+                          ? t("header.business.brandDetail.products.inventory.variantsCount", { count: product.variants.length })
+                          : t("header.business.brandDetail.products.inventory.variantsCount", { count: 0 })}
                       </div>
                     </div>
 
@@ -251,21 +253,21 @@ export default function InventorySubSection({
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       <p className="text-sm font-semibold text-blue-900">
                         {product.variants && product.variants.length > 0
-                          ? `${product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)}개`
-                          : (product.quantity === null ? '무제한' : `${product.quantity}개`)}
+                          ? `${product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)} ${t("header.business.brandDetail.products.inventory.stockUnit")}`
+                          : (product.quantity === null ? t("header.business.brandDetail.products.inventory.unlimited") : `${product.quantity} ${t("header.business.brandDetail.products.inventory.stockUnit")}`)}
                       </p>
                     </div>
 
                     {/* 가격 */}
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                      <p className="text-sm font-medium">{product.basePrice.toLocaleString()}원</p>
+                      <p className="text-sm font-medium">{product.basePrice.toLocaleString()}{t("header.business.brandDetail.products.allProducts.currency")}</p>
                     </div>
 
                     {/* 비교가격 */}
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       {product.baseCompareAtPrice ? (
                         <p className="text-sm text-gray-400 line-through">
-                          {product.baseCompareAtPrice.toLocaleString()}원
+                          {product.baseCompareAtPrice.toLocaleString()}{t("header.business.brandDetail.products.allProducts.currency")}
                         </p>
                       ) : (
                         <p className="text-sm text-gray-400">-</p>
@@ -323,7 +325,7 @@ export default function InventorySubSection({
                         {/* 레벨 */}
                         <div className="w-24 text-center border-l border-gray-300 pl-2">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            변형
+                            {t("header.business.brandDetail.products.inventory.variant")}
                           </span>
                         </div>
 
@@ -348,26 +350,26 @@ export default function InventorySubSection({
                                 })()}
                               </div>
                             ) : (
-                              <span className="text-gray-400">기본 변형</span>
+                              <span className="text-gray-400">{t("header.business.brandDetail.products.inventory.defaultVariant")}</span>
                             )}
                           </div>
                         </div>
 
                         {/* 재고 */}
                         <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                          <p className="text-sm font-medium">{variant.quantity || 0}개</p>
+                          <p className="text-sm font-medium">{variant.quantity || 0} {t("header.business.brandDetail.products.inventory.stockUnit")}</p>
                         </div>
 
                         {/* 가격 */}
                         <div className="flex-1 text-center border-l border-gray-300 pl-2">
-                          <p className="text-sm font-medium">{variant.price?.toLocaleString()}원</p>
+                          <p className="text-sm font-medium">{variant.price?.toLocaleString()}{t("header.business.brandDetail.products.allProducts.currency")}</p>
                         </div>
 
                         {/* 비교가격 */}
                         <div className="flex-1 text-center border-l border-gray-300 pl-2">
                           {variant.compareAtPrice ? (
                             <p className="text-sm text-gray-400 line-through">
-                              {variant.compareAtPrice.toLocaleString()}원
+                              {variant.compareAtPrice.toLocaleString()}{t("header.business.brandDetail.products.allProducts.currency")}
                             </p>
                           ) : (
                             <p className="text-sm text-gray-400">-</p>
@@ -418,12 +420,12 @@ export default function InventorySubSection({
             <div className="text-center">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {debouncedSearchTerm ? "검색 결과가 없습니다" : "상품이 없습니다"}
+                {debouncedSearchTerm ? t("header.business.brandDetail.products.inventory.noSearchResults") : t("header.business.brandDetail.products.inventory.noProducts")}
               </h3>
               <p className="text-gray-500">
                 {debouncedSearchTerm
-                  ? `"${debouncedSearchTerm}"에 대한 검색 결과가 없습니다.`
-                  : "새로운 상품을 등록해보세요"}
+                  ? t("header.business.brandDetail.products.inventory.noSearchResultsDescription", { searchTerm: debouncedSearchTerm })
+                  : t("header.business.brandDetail.products.inventory.noProductsDescription")}
               </p>
               {debouncedSearchTerm && (
                 <Button
@@ -432,7 +434,7 @@ export default function InventorySubSection({
                   className="mt-4"
                   onClick={() => setSearchTerm("")}
                 >
-                  검색 초기화
+                  {t("header.business.brandDetail.products.inventory.resetSearch")}
                 </Button>
               )}
             </div>
@@ -449,10 +451,10 @@ export default function InventorySubSection({
             onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
             disabled={pageNumber === 1}
           >
-            이전
+            {t("header.business.brandDetail.products.inventory.previous")}
           </Button>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">페이지</span>
+            <span className="text-gray-600">{t("header.business.brandDetail.products.inventory.page")}</span>
             <span className="font-semibold text-gray-900">{pageNumber}</span>
             <span className="text-gray-600">/</span>
             <span className="font-semibold text-gray-900">{totalPages}</span>
@@ -463,7 +465,7 @@ export default function InventorySubSection({
             onClick={() => setPageNumber(prev => Math.min(totalPages, prev + 1))}
             disabled={pageNumber === totalPages}
           >
-            다음
+            {t("header.business.brandDetail.products.inventory.next")}
           </Button>
         </div>
       </div>

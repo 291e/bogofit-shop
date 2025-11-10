@@ -8,8 +8,10 @@ import { RegisterDto } from "@/types/auth";
 
 import { Building2, User, Lock, Mail, Phone } from "lucide-react";
 import { useAuth } from "@/providers/authProvider";
+import { useLanguage } from "@/providers/languageProvider";
 
 function BusinessRegisterForm() {
+  const { t } = useLanguage();
   const { register } = useAuth();
   const [formData, setFormData] = useState<RegisterDto>({
     userId: "",
@@ -27,7 +29,7 @@ function BusinessRegisterForm() {
     setLoading(true);
 
     if (!formData.name || !formData.userId || !formData.email || !formData.phone || !formData.password) {
-      setError("모든 필드를 입력해주세요");
+      setError(t("header.business.registerError"));
       setLoading(false);
       return;
     }
@@ -55,7 +57,7 @@ function BusinessRegisterForm() {
       window.location.href = "/business/brands";
     } catch (err) {
       // Error toast already handled by AuthProvider
-      setError(err instanceof Error ? err.message : "회원가입에 실패했습니다");
+      setError(err instanceof Error ? err.message : t("header.business.registerFailed"));
     } finally {
       setLoading(false);
     }
@@ -73,13 +75,13 @@ function BusinessRegisterForm() {
                   <Building2 className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-blue-600">비즈니스 회원가입</h3>
-              <p className="text-sm font-medium text-gray-600 mt-1">새 비즈니스 계정을 만드세요</p>
+              <h3 className="text-xl font-bold text-blue-600">{t("header.business.registerTitle")}</h3>
+              <p className="text-sm font-medium text-gray-600 mt-1">{t("header.business.registerSubtitle")}</p>
             </div>
 
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="registerName" className="text-sm font-bold text-gray-700">이름</label>
+                <label htmlFor="registerName" className="text-sm font-bold text-gray-700">{t("header.business.name")}</label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -87,7 +89,7 @@ function BusinessRegisterForm() {
                     name="registerName"
                     type="text"
                     required
-                    placeholder="이름을 입력하세요"
+                    placeholder={t("header.business.namePlaceholder")}
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     className="h-11 pl-10"
@@ -95,7 +97,7 @@ function BusinessRegisterForm() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="registerUserId" className="text-sm font-bold text-gray-700">비즈니스 ID</label>
+                <label htmlFor="registerUserId" className="text-sm font-bold text-gray-700">{t("header.business.businessId")}</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -103,7 +105,7 @@ function BusinessRegisterForm() {
                     name="registerUserId"
                     type="text"
                     required
-                    placeholder="비즈니스 ID를 입력하세요"
+                    placeholder={t("header.business.businessIdPlaceholder")}
                     value={formData.userId}
                     onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
                     className="h-11 pl-10"
@@ -111,7 +113,7 @@ function BusinessRegisterForm() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="registerEmail" className="text-sm font-bold text-gray-700">이메일</label>
+                <label htmlFor="registerEmail" className="text-sm font-bold text-gray-700">{t("header.business.email")}</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -119,7 +121,7 @@ function BusinessRegisterForm() {
                     name="registerEmail"
                     type="email"
                     required
-                    placeholder="이메일을 입력하세요"
+                    placeholder={t("header.business.emailPlaceholder")}
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     className="h-11 pl-10"
@@ -127,7 +129,7 @@ function BusinessRegisterForm() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="registerPhone" className="text-sm font-bold text-gray-700">전화번호</label>
+                <label htmlFor="registerPhone" className="text-sm font-bold text-gray-700">{t("header.business.phone")}</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -135,7 +137,7 @@ function BusinessRegisterForm() {
                     name="registerPhone"
                     type="tel"
                     required
-                    placeholder="전화번호를 입력하세요"
+                    placeholder={t("header.business.phonePlaceholder")}
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     className="h-11 pl-10"
@@ -143,7 +145,7 @@ function BusinessRegisterForm() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="registerPassword" className="text-sm font-bold text-gray-700">비밀번호</label>
+                <label htmlFor="registerPassword" className="text-sm font-bold text-gray-700">{t("header.business.password")}</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
@@ -151,7 +153,7 @@ function BusinessRegisterForm() {
                     name="registerPassword"
                     type="password"
                     required
-                    placeholder="비밀번호를 입력하세요"
+                    placeholder={t("header.business.passwordPlaceholder")}
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     className="h-11 pl-10"
@@ -167,17 +169,17 @@ function BusinessRegisterForm() {
 
               <div className="space-y-4">
                 <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg" disabled={loading}>
-                  {loading ? "회원가입 중..." : "비즈니스 회원가입"}
+                  {loading ? t("header.business.registering") : t("header.business.registerButton")}
                 </Button>
 
                 <div className="text-center">
                   <p className="text-sm text-gray-600">
-                    일반 사용자이신가요?{" "}
+                    {t("header.business.regularUser")}{" "}
                     <a
                       href="/login"
                       className="text-blue-500 hover:text-blue-400 hover:underline"
                     >
-                      일반 회원가입
+                      {t("header.business.regularRegister")}
                     </a>
                   </p>
                 </div>
@@ -191,13 +193,14 @@ function BusinessRegisterForm() {
 }
 
 function BusinessRegisterFormWrapper() {
+  const { t } = useLanguage();
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">비즈니스 회원가입 페이지 로딩 중...</p>
+            <p className="mt-4 text-gray-600">{t("header.business.registerPageLoading")}</p>
           </div>
         </div>
       }

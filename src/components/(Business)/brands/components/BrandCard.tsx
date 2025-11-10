@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, Mail, Phone, ExternalLink } from "lucide-react";
 import { BrandResponseDto } from "@/types/brand";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface BrandCardProps {
   brand: BrandResponseDto;
@@ -12,6 +13,7 @@ interface BrandCardProps {
 }
 
 export default function BrandCard({ brand, onViewBrand }: BrandCardProps) {
+  const { t } = useLanguage();
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
@@ -30,24 +32,24 @@ export default function BrandCard({ brand, onViewBrand }: BrandCardProps) {
   const getStatusText = (status: string) => {
     switch (status) {
       case "approved":
-        return "승인됨";
+        return t("header.business.brandCard.statusApproved");
       case "pending":
-        return "대기중";
+        return t("header.business.brandCard.statusPending");
       case "rejected":
-        return "거부됨";
+        return t("header.business.brandCard.statusRejected");
       case "banned":
-        return "차단됨";
+        return t("header.business.brandCard.statusBanned");
       default:
-        return "알 수 없음";
+        return t("header.business.brandCard.statusUnknown");
     }
   };
 
   const getPaymentModeText = (paymentMode: string) => {
     switch (paymentMode) {
       case "platform":
-        return "플랫폼";
+        return t("header.business.brandCard.paymentPlatform");
       case "business":
-        return "비즈니스";
+        return t("header.business.brandCard.paymentBusiness");
       default:
         return paymentMode;
     }
@@ -102,7 +104,7 @@ export default function BrandCard({ brand, onViewBrand }: BrandCardProps) {
 
         {/* Payment Mode */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500">결제 모드:</span>
+          <span className="text-sm text-gray-500">{t("header.business.brandCard.paymentMode")}</span>
           <Badge variant="outline" className="text-xs">
             {getPaymentModeText(brand.paymentMode)}
           </Badge>
@@ -110,7 +112,7 @@ export default function BrandCard({ brand, onViewBrand }: BrandCardProps) {
 
         {/* Created Date */}
         <div className="text-xs text-gray-400">
-          등록일: {new Date(brand.createdAt).toLocaleDateString('ko-KR')}
+          {t("header.business.brandCard.registeredDate")} {new Date(brand.createdAt).toLocaleDateString('ko-KR')}
         </div>
 
         {/* Action Button */}
@@ -127,7 +129,7 @@ export default function BrandCard({ brand, onViewBrand }: BrandCardProps) {
           <ExternalLink className={`h-4 w-4 mr-2 transition-transform duration-300 ${
             brand.status === "approved" ? "group-hover:translate-x-1" : ""
           }`} />
-          {brand.status === "approved" ? "브랜드 보기" : "승인 대기중"}
+          {brand.status === "approved" ? t("header.business.brandCard.viewBrand") : t("header.business.brandCard.pendingApproval")}
         </Button>
       </CardContent>
     </Card>

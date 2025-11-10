@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useLanguage } from "@/providers/languageProvider";
 
 export interface AddressFormData {
   label?: string;
@@ -53,6 +54,7 @@ export default function AddressFormDialog({
   isLoading = false,
   mode = 'create',
 }: AddressFormDialogProps) {
+  const { t } = useLanguage();
   const [step, setStep] = useState<'search' | 'detail'>(
     mode === 'edit' ? 'detail' : 'search'
   );
@@ -148,14 +150,14 @@ export default function AddressFormDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            배송지 {mode === 'edit' ? '수정' : step === 'search' ? '검색' : '정보 입력'}
+            {t("ui.address.title").replace("{mode}", mode === 'edit' ? t("ui.address.edit") : step === 'search' ? t("ui.address.search") : t("ui.address.enterInfo"))}
           </DialogTitle>
           <DialogDescription>
             {mode === 'edit' 
-              ? '배송지 정보를 수정하세요'
+              ? t("ui.address.editDescription")
               : step === 'search' 
-                ? '주소를 검색하여 배송지를 추가하세요'
-                : '받는 분 정보와 상세 주소를 입력하세요'}
+                ? t("ui.address.searchDescription")
+                : t("ui.address.enterDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -168,7 +170,7 @@ export default function AddressFormDialog({
             />
             <div className="flex justify-center mt-4">
               <Button onClick={openPostcode} className="w-full">
-                주소 검색 시작
+                {t("ui.address.startSearch")}
               </Button>
             </div>
             {mode === 'edit' && formData.zipCode && (
@@ -178,7 +180,7 @@ export default function AddressFormDialog({
                   variant="outline" 
                   onClick={() => setStep('detail')}
                 >
-                  취소하고 돌아가기
+                  {t("ui.address.cancelAndBack")}
                 </Button>
               </div>
             )}
@@ -188,15 +190,15 @@ export default function AddressFormDialog({
             {/* 선택된 주소 표시 */}
             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">우편번호:</span>
+                <span className="text-sm font-medium text-gray-700">{t("ui.address.zipCode")}</span>
                 <span className="text-sm">{formData.zipCode || '-'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">도로명:</span>
+                <span className="text-sm font-medium text-gray-700">{t("ui.address.roadAddress")}</span>
                 <span className="text-sm">{formData.roadAddress || '-'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">지번:</span>
+                <span className="text-sm font-medium text-gray-700">{t("ui.address.jibunAddress")}</span>
                 <span className="text-sm">{formData.jibunAddress || '-'}</span>
               </div>
               <Button 
@@ -213,52 +215,52 @@ export default function AddressFormDialog({
                 }}
                 className="mt-2"
               >
-                주소 재검색
+                {t("ui.address.reSearch")}
               </Button>
             </div>
 
             {/* 라벨 (선택사항) */}
             <div className="space-y-2">
-              <Label htmlFor="label">주소 라벨 (예: 집, 회사)</Label>
+              <Label htmlFor="label">{t("ui.address.label")}</Label>
               <Input
                 id="label"
                 value={formData.label || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
-                placeholder="주소에 이름을 붙여보세요 (선택)"
+                placeholder={t("ui.address.labelPlaceholder")}
               />
             </div>
 
             {/* 받는 분 정보 */}
             <div className="space-y-2">
-              <Label htmlFor="recipient">받는 분 <span className="text-red-500">*</span></Label>
+              <Label htmlFor="recipient">{t("ui.address.recipient")} <span className="text-red-500">*</span></Label>
               <Input
                 id="recipient"
                 value={formData.recipient}
                 onChange={(e) => setFormData(prev => ({ ...prev, recipient: e.target.value }))}
-                placeholder="이름을 입력하세요"
+                placeholder={t("ui.address.recipientPlaceholder")}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">연락처 <span className="text-red-500">*</span></Label>
+              <Label htmlFor="phone">{t("ui.address.phone")} <span className="text-red-500">*</span></Label>
               <Input
                 id="phone"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="010-0000-0000"
+                placeholder={t("ui.address.phonePlaceholder")}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="detail">상세 주소 <span className="text-red-500">*</span></Label>
+              <Label htmlFor="detail">{t("ui.address.detailAddress")} <span className="text-red-500">*</span></Label>
               <Input
                 id="detail"
                 value={formData.detail}
                 onChange={(e) => setFormData(prev => ({ ...prev, detail: e.target.value }))}
-                placeholder="동/호수 등 상세 주소를 입력하세요"
+                placeholder={t("ui.address.detailAddressPlaceholder")}
                 required
               />
             </div>
@@ -276,7 +278,7 @@ export default function AddressFormDialog({
                 htmlFor="isDefault" 
                 className="text-sm font-normal cursor-pointer"
               >
-                기본 배송지로 설정
+                {t("ui.address.setAsDefault")}
               </Label>
             </div>
 
@@ -289,14 +291,14 @@ export default function AddressFormDialog({
                 className="flex-1"
                 disabled={isLoading}
               >
-                취소
+                {t("ui.address.cancel")}
               </Button>
               <Button 
                 type="submit" 
                 disabled={isLoading}
                 className="flex-1"
               >
-                {isLoading ? '저장 중...' : '저장'}
+                {isLoading ? t("ui.address.saving") : t("ui.address.save")}
               </Button>
             </div>
           </form>

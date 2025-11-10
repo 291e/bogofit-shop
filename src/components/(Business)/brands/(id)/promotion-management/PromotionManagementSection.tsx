@@ -1,6 +1,7 @@
 "use client";
 
 import SideBarSection from "@/components/ui/sidebar-section";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface PromotionManagementSectionProps {
     brandId: string;
@@ -9,23 +10,24 @@ interface PromotionManagementSectionProps {
 export default function PromotionManagementSection({
     brandId
 }: PromotionManagementSectionProps) {
+    const { t } = useLanguage();
     const promotionManagementData = {
         id: "promotion-management",
-        label: "프로모션 관리",
+        label: t("header.business.brandDetail.sidebar.promotionManagement"),
         subSections: [
             {
                 id: "all-promotions",
-                label: "전체 프로모션",
+                label: t("header.business.brandDetail.sidebar.allPromotions"),
                 href: `/business/brands/${brandId}/promotions`
             },
             {
                 id: "create-promotion",
-                label: "프로모션 생성",
+                label: t("header.business.brandDetail.sidebar.createPromotion"),
                 href: `/business/brands/${brandId}/promotions/create`
             },
             {
                 id: "active-promotions",
-                label: "활성 프로모션",
+                label: t("header.business.brandDetail.sidebar.activePromotions"),
                 href: `/business/brands/${brandId}/promotions/active`
             }
         ]

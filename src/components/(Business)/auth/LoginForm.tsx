@@ -12,8 +12,10 @@ interface LoginFormData {
   password: string;
 }
 import { Building2, User, Lock } from "lucide-react";
+import { useLanguage } from "@/providers/languageProvider";
 
 function BusinessLoginForm() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { login } = useAuth();
@@ -31,7 +33,7 @@ function BusinessLoginForm() {
     setLoading(true);
 
     if (!formData.userId || !formData.password) {
-      setError("비즈니스 ID와 비밀번호를 입력해주세요");
+      setError(t("header.business.loginError"));
       setLoading(false);
       return;
     }
@@ -50,7 +52,7 @@ function BusinessLoginForm() {
       }, 100);
     } catch (err: unknown) {
       // Error toast already handled by AuthProvider
-      setError((err as Error).message || "로그인 실패");
+      setError((err as Error).message || t("header.business.loginFailed"));
     } finally {
       setLoading(false);
     }
@@ -68,13 +70,13 @@ function BusinessLoginForm() {
                   <Building2 className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-blue-600">비즈니스 로그인</h3>
-              <p className="text-sm font-medium text-gray-600 mt-1">비즈니스 계정에 로그인하세요</p>
+              <h3 className="text-xl font-bold text-blue-600">{t("header.business.loginTitle")}</h3>
+              <p className="text-sm font-medium text-gray-600 mt-1">{t("header.business.loginSubtitle")}</p>
             </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="userId" className="text-sm font-bold text-gray-700">비즈니스 ID</label>
+                  <label htmlFor="userId" className="text-sm font-bold text-gray-700">{t("header.business.businessId")}</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -82,7 +84,7 @@ function BusinessLoginForm() {
                       name="userId"
                       type="text"
                       required
-                      placeholder="비즈니스 ID를 입력하세요"
+                      placeholder={t("header.business.businessIdPlaceholder")}
                       value={formData.userId}
                       onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
                       autoComplete="username"
@@ -91,7 +93,7 @@ function BusinessLoginForm() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-bold text-gray-700">비밀번호</label>
+                  <label htmlFor="password" className="text-sm font-bold text-gray-700">{t("header.business.password")}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -99,7 +101,7 @@ function BusinessLoginForm() {
                       name="password"
                       type="password"
                       required
-                      placeholder="비밀번호를 입력하세요"
+                      placeholder={t("header.business.passwordPlaceholder")}
                       value={formData.password}
                       onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                       autoComplete="current-password"
@@ -116,7 +118,7 @@ function BusinessLoginForm() {
 
                 <div className="space-y-4">
                   <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg" disabled={loading}>
-                    {loading ? "로그인 중..." : "비즈니스 로그인"}
+                    {loading ? t("header.business.loggingIn") : t("header.business.loginButton")}
                   </Button>
 
                   <div className="flex items-center justify-center">
@@ -124,18 +126,18 @@ function BusinessLoginForm() {
                       href="/forgot-password" 
                       className="text-sm text-blue-500 hover:text-blue-400 hover:underline"
                     >
-                      비밀번호를 잊으셨나요?
+                      {t("header.business.forgotPassword")}
                     </a>
                   </div>
 
                   <div className="text-center">
                     <p className="text-sm text-gray-600">
-                      일반 사용자이신가요?{" "}
+                      {t("header.business.regularUser")}{" "}
                       <a
                         href="/login"
                         className="text-blue-500 hover:text-blue-400 hover:underline"
                       >
-                        일반 로그인
+                        {t("header.business.regularLogin")}
                       </a>
                     </p>
                   </div>
@@ -149,13 +151,14 @@ function BusinessLoginForm() {
 }
 
 function BusinessLoginFormWrapper() {
+  const { t } = useLanguage();
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">비즈니스 로그인 페이지 로딩 중...</p>
+            <p className="mt-4 text-gray-600">{t("header.business.loginPageLoading")}</p>
           </div>
         </div>
       }

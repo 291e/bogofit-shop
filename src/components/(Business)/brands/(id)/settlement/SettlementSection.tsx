@@ -1,39 +1,41 @@
 "use client";
 
 import SideBarSection from "@/components/ui/sidebar-section";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface SettlementSectionProps {
     brandId: string;
 }
 
 export default function SettlementSection({ brandId }: SettlementSectionProps) {
+    const { t } = useLanguage();
     const settlementData = {
         id: "settlement",
-        label: "기타/정산관리",
+        label: t("header.business.brandDetail.sidebar.settlement"),
         subSections: [
             {
                 id: "order-analysis",
-                label: "주문통계분석",
+                label: t("header.business.brandDetail.sidebar.orderAnalysis"),
                 href: `/business/brands/${brandId}/settlement/analysis`
             },
             {
                 id: "settlement-pending",
-                label: "정산대기목록",
+                label: t("header.business.brandDetail.sidebar.settlementPending"),
                 href: `/business/brands/${brandId}/settlement/pending`
             },
             {
                 id: "settlement-completed",
-                label: "정산완료목록",
+                label: t("header.business.brandDetail.sidebar.settlementCompleted"),
                 href: `/business/brands/${brandId}/settlement/completed`
             },
             {
                 id: "announcements",
-                label: "공지사항",
+                label: t("header.business.brandDetail.sidebar.announcements"),
                 href: `/business/brands/${brandId}/settlement/announcements`
             },
             {
                 id: "faq",
-                label: "질문과답변",
+                label: t("header.business.brandDetail.sidebar.faq"),
                 href: `/business/brands/${brandId}/settlement/faq`
             }
         ]

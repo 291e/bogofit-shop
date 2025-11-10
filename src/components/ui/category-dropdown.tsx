@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategoryTreeDto } from "@/types/category";
+import { useLanguage } from "@/providers/languageProvider";
 
 export interface CategoryNode {
   id: string;
   name: string;
+  slug?: string;
   children?: CategoryNode[];
   level: number;
 }
@@ -30,9 +32,24 @@ const convertToCategoryNode = (dto: CategoryTreeDto, level: number = 0): Categor
   return {
     id: dto.id,
     name: dto.name,
+    slug: dto.slug,
     level,
     children: dto.children?.map(child => convertToCategoryNode(child, level + 1))
   };
+};
+
+// Translate category name based on slug
+const getCategoryName = (category: CategoryNode, t: (key: string) => string): string => {
+  if (category.slug) {
+    const translationKey = `ui.category.names.${category.slug}`;
+    const translated = t(translationKey);
+    // If translation exists and is different from the key, use it
+    if (translated && translated !== translationKey) {
+      return translated;
+    }
+  }
+  // Fallback to original name if no translation found
+  return category.name;
 };
 
 export default function CategoryDropdown({
@@ -46,6 +63,7 @@ export default function CategoryDropdown({
   onRetry,
   compactMode = false
 }: CategoryDropdownProps) {
+  const { t } = useLanguage();
   const [internalIsLoading, setInternalIsLoading] = useState(false);
   const [internalError, setInternalError] = useState<string | null>(null);
 
@@ -211,7 +229,7 @@ export default function CategoryDropdown({
 
     // If no children, select this category
     if (level2Options.length === 0) {
-      const categoryPath = selectedCategory.name;
+      const categoryPath = getCategoryName(selectedCategory, t);
       onCategorySelect(selectedCategory.id, categoryPath);
     }
   };
@@ -233,8 +251,9 @@ export default function CategoryDropdown({
 
     // If no children, select this category
     if (level3Options.length === 0) {
-      const level1Name = availableOptions.level1.find(cat => cat.id === selectedLevels.level1)?.name || '';
-      const categoryPath = `${level1Name} > ${selectedCategory.name}`;
+      const level1Category = availableOptions.level1.find(cat => cat.id === selectedLevels.level1);
+      const level1Name = level1Category ? getCategoryName(level1Category, t) : '';
+      const categoryPath = `${level1Name} > ${getCategoryName(selectedCategory, t)}`;
       onCategorySelect(selectedCategory.id, categoryPath);
     }
   };
@@ -248,29 +267,34 @@ export default function CategoryDropdown({
     setSelectedLevels(newSelectedLevels);
 
     // Select this category (level 3 is the final level)
-    const level1Name = availableOptions.level1.find(cat => cat.id === selectedLevels.level1)?.name || '';
-    const level2Name = availableOptions.level2.find(cat => cat.id === selectedLevels.level2)?.name || '';
-    const categoryPath = `${level1Name} > ${level2Name} > ${selectedCategory.name}`;
+    const level1Category = availableOptions.level1.find(cat => cat.id === selectedLevels.level1);
+    const level2Category = availableOptions.level2.find(cat => cat.id === selectedLevels.level2);
+    const level1Name = level1Category ? getCategoryName(level1Category, t) : '';
+    const level2Name = level2Category ? getCategoryName(level2Category, t) : '';
+    const categoryPath = `${level1Name} > ${level2Name} > ${getCategoryName(selectedCategory, t)}`;
     onCategorySelect(selectedCategory.id, categoryPath);
   };
 
   // Get selected category path for display
   const getSelectedPath = () => {
     if (!selectedLevels.level1) return '';
-    
-    const level1Name = availableOptions.level1.find(cat => cat.id === selectedLevels.level1)?.name || '';
+
+    const level1Category = availableOptions.level1.find(cat => cat.id === selectedLevels.level1);
+    const level1Name = level1Category ? getCategoryName(level1Category, t) : '';
     let path = level1Name;
-    
+
     if (selectedLevels.level2) {
-      const level2Name = availableOptions.level2.find(cat => cat.id === selectedLevels.level2)?.name || '';
+      const level2Category = availableOptions.level2.find(cat => cat.id === selectedLevels.level2);
+      const level2Name = level2Category ? getCategoryName(level2Category, t) : '';
       path += ` > ${level2Name}`;
     }
-    
+
     if (selectedLevels.level3) {
-      const level3Name = availableOptions.level3.find(cat => cat.id === selectedLevels.level3)?.name || '';
+      const level3Category = availableOptions.level3.find(cat => cat.id === selectedLevels.level3);
+      const level3Name = level3Category ? getCategoryName(level3Category, t) : '';
       path += ` > ${level3Name}`;
     }
-    
+
     return path;
   };
 
@@ -279,7 +303,7 @@ export default function CategoryDropdown({
       <div className={`border rounded-lg bg-white p-4 ${className}`}>
         <div className="text-center py-8 text-gray-500">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p>카테고리를 불러오는 중...</p>
+          <p>{t("ui.category.loading")}</p>
         </div>
       </div>
     );
@@ -296,7 +320,7 @@ export default function CategoryDropdown({
             onClick={onRetry || loadCategories}
             className="mt-2"
           >
-            다시 시도
+            {t("ui.category.retry")}
           </Button>
         </div>
       </div>
@@ -310,12 +334,12 @@ export default function CategoryDropdown({
         {/* Level 1 Dropdown */}
         <Select value={selectedLevels.level1 || ""} onValueChange={handleLevel1Change}>
           <SelectTrigger className="min-w-[150px]">
-            <SelectValue placeholder={selectedCategoryId ? "카테고리 선택됨" : "대분류"} />
+            <SelectValue placeholder={selectedCategoryId ? t("ui.category.categorySelected") : t("ui.category.mainCategory")} />
           </SelectTrigger>
           <SelectContent>
             {availableOptions.level1.map((category) => (
               <SelectItem key={category.id} value={category.id}>
-                {category.name}
+                {getCategoryName(category, t)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -328,12 +352,12 @@ export default function CategoryDropdown({
             {/* Level 2 Dropdown */}
             <Select value={selectedLevels.level2 || ""} onValueChange={handleLevel2Change}>
               <SelectTrigger className="min-w-[150px]">
-                <SelectValue placeholder="중분류" />
+                <SelectValue placeholder={t("ui.category.subCategory")} />
               </SelectTrigger>
               <SelectContent>
                 {availableOptions.level2.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
-                    {category.name}
+                    {getCategoryName(category, t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -348,12 +372,12 @@ export default function CategoryDropdown({
             {/* Level 3 Dropdown */}
             <Select value={selectedLevels.level3 || ""} onValueChange={handleLevel3Change}>
               <SelectTrigger className="min-w-[150px]">
-                <SelectValue placeholder="소분류" />
+                <SelectValue placeholder={t("ui.category.subSubCategory")} />
               </SelectTrigger>
               <SelectContent>
                 {availableOptions.level3.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
-                    {category.name}
+                    {getCategoryName(category, t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -368,14 +392,14 @@ export default function CategoryDropdown({
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="border rounded-lg bg-white p-4">
-        <h3 className="font-medium text-gray-900 mb-4">카테고리 선택</h3>
-        <p className="text-sm text-gray-500 mb-4">상품이 속할 카테고리를 선택하세요</p>
+        <h3 className="font-medium text-gray-900 mb-4">{t("ui.category.selectCategory")}</h3>
+        <p className="text-sm text-gray-500 mb-4">{t("ui.category.selectCategoryDescription")}</p>
         
         {/* Selected Path Display */}
         {getSelectedPath() && (
           <div className="mb-4">
             <Badge variant="outline" className="text-sm">
-              선택된 카테고리: {getSelectedPath()}
+              {t("ui.category.selectedCategory").replace("{path}", getSelectedPath())}
             </Badge>
           </div>
         )}
@@ -384,15 +408,15 @@ export default function CategoryDropdown({
         <div className="flex flex-wrap gap-4 items-end">
           {/* Level 1 Dropdown */}
           <div className="flex-1 min-w-[200px]">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">대분류 *</label>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">{t("ui.category.mainCategory")} *</label>
             <Select value={selectedLevels.level1 || ""} onValueChange={handleLevel1Change}>
               <SelectTrigger>
-                <SelectValue placeholder="대분류를 선택하세요" />
+                <SelectValue placeholder={t("ui.category.mainCategoryPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {availableOptions.level1.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
-                    {category.name}
+                    {getCategoryName(category, t)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -402,10 +426,10 @@ export default function CategoryDropdown({
           {/* Level 2 Dropdown */}
           {selectedLevels.level1 && availableOptions.level2.length > 0 && (
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium text-gray-700 mb-2 block">중분류</label>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t("ui.category.subCategory")}</label>
               <Select value={selectedLevels.level2 || ""} onValueChange={handleLevel2Change}>
                 <SelectTrigger>
-                  <SelectValue placeholder="중분류를 선택하세요" />
+                  <SelectValue placeholder={t("ui.category.subCategoryPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableOptions.level2.map((category) => (
@@ -421,10 +445,10 @@ export default function CategoryDropdown({
           {/* Level 3 Dropdown */}
           {selectedLevels.level2 && availableOptions.level3.length > 0 && (
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium text-gray-700 mb-2 block">소분류</label>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t("ui.category.subSubCategory")}</label>
               <Select value={selectedLevels.level3 || ""} onValueChange={handleLevel3Change}>
                 <SelectTrigger>
-                  <SelectValue placeholder="소분류를 선택하세요" />
+                  <SelectValue placeholder={t("ui.category.subSubCategoryPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableOptions.level3.map((category) => (

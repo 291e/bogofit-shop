@@ -371,6 +371,8 @@ export interface UsePublicProductsOptions {
   reviews?: boolean; // ✅ Include review stats
   inquiries?: boolean; // ✅ Include inquiry stats
   enabled?: boolean; // ✅ Add enabled option to disable hook
+  sortBy?: string; // ✅ Sort field (finalPrice, price, etc.)
+  sortOrder?: 'asc' | 'desc'; // ✅ Sort order
 }
 
 /**
@@ -387,11 +389,13 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
     promotion,
     reviews,
     inquiries,
-    enabled = true // ✅ Default enabled
+    enabled = true, // ✅ Default enabled
+    sortBy,
+    sortOrder
   } = options;
 
   return useQuery({
-    queryKey: ["publicProducts", pageNumber, pageSize, searchKeyword, isActive, brandId, categoryId, promotion, reviews, inquiries],
+    queryKey: ["publicProducts", pageNumber, pageSize, searchKeyword, isActive, brandId, categoryId, promotion, reviews, inquiries, sortBy, sortOrder],
     enabled, // ✅ Use enabled option
     queryFn: async (): Promise<GetProductsResponse> => {
       // Build URL with all query params
@@ -422,6 +426,13 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
       // Include inquiry stats
       if (inquiries) {
         params.append('includeInquiryStats', 'true');
+      }
+      // Add sorting parameters
+      if (sortBy) {
+        params.append('sortBy', sortBy);
+      }
+      if (sortOrder) {
+        params.append('sortOrder', sortOrder);
       }
 
       const response = await fetch(`/api/product?${params.toString()}`, {

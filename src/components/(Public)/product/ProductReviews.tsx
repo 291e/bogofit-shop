@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, MessageSquare, Star } from 'lucide-react';
 import Image from 'next/image';
+import { useLanguage } from '@/providers/languageProvider';
 
 interface ProductReviewsProps {
     productId: string;
@@ -26,6 +27,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
     statsFromProduct,
     fetchList = false,
 }) => {
+    const { t } = useLanguage();
     const [queryParams, setQueryParams] = useState<ReviewQueryParams>({
         page: 1,
         pageSize: 10,
@@ -81,7 +83,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                 <CardContent className="p-8">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto mb-4"></div>
-                        <p className="text-gray-600">리뷰 정보를 불러오는 중...</p>
+                        <p className="text-gray-600">{t("productDetail.productReviews.loading")}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -93,7 +95,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
             <Card>
                 <CardContent className="p-8">
                     <div className="text-center">
-                        <p className="text-red-600">리뷰를 불러오는데 실패했습니다.</p>
+                        <p className="text-red-600">{t("productDetail.productReviews.error")}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -122,7 +124,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                         >
                             <MessageSquare className="w-5 h-5 text-pink-600" />
                             <CardTitle className="text-xl font-bold">
-                                고객 리뷰
+                                {t("productDetail.productReviews.customerReviews")}
                             </CardTitle>
                             {pagination && pagination.totalCount > 0 && (
                                 <span className="text-sm text-gray-500 font-normal">
@@ -146,7 +148,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                     </div>
                                     <StarRating rating={stats.averageRating} size="large" />
                                     <div className="text-sm text-gray-600 mt-2">
-                                        {stats.totalReviews}개 리뷰
+                                        {t("productDetail.productReviews.reviews").replace("{count}", stats.totalReviews.toString())}
                                     </div>
                                 </div>
 
@@ -188,33 +190,33 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                         {/* Filters */}
                         <div className="flex flex-wrap gap-4 items-center mb-6">
                             <div className="flex items-center gap-2">
-                                <label className="text-sm font-medium text-gray-700">정렬:</label>
+                                <label className="text-sm font-medium text-gray-700">{t("productDetail.productReviews.sort")}</label>
                                 <Select value={`${queryParams.sortBy}-${queryParams.sortOrder}`} onValueChange={handleSortChange}>
                                     <SelectTrigger className="w-40">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="createdAt-desc">최신순</SelectItem>
-                                        <SelectItem value="createdAt-asc">오래된순</SelectItem>
-                                        <SelectItem value="rating-desc">평점 높은순</SelectItem>
-                                        <SelectItem value="rating-asc">평점 낮은순</SelectItem>
+                                        <SelectItem value="createdAt-desc">{t("productDetail.productReviews.sortOptions.newest")}</SelectItem>
+                                        <SelectItem value="createdAt-asc">{t("productDetail.productReviews.sortOptions.oldest")}</SelectItem>
+                                        <SelectItem value="rating-desc">{t("productDetail.productReviews.sortOptions.ratingHigh")}</SelectItem>
+                                        <SelectItem value="rating-asc">{t("productDetail.productReviews.sortOptions.ratingLow")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <label className="text-sm font-medium text-gray-700">평점:</label>
+                                <label className="text-sm font-medium text-gray-700">{t("productDetail.productReviews.rating")}</label>
                                 <Select value={queryParams.rating?.toString() || 'all'} onValueChange={handleRatingFilter}>
                                     <SelectTrigger className="w-32">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">전체</SelectItem>
-                                        <SelectItem value="5">5점</SelectItem>
-                                        <SelectItem value="4">4점</SelectItem>
-                                        <SelectItem value="3">3점</SelectItem>
-                                        <SelectItem value="2">2점</SelectItem>
-                                        <SelectItem value="1">1점</SelectItem>
+                                        <SelectItem value="all">{t("productDetail.productReviews.all")}</SelectItem>
+                                        <SelectItem value="5">{t("productDetail.productReviews.stars").replace("{rating}", "5")}</SelectItem>
+                                        <SelectItem value="4">{t("productDetail.productReviews.stars").replace("{rating}", "4")}</SelectItem>
+                                        <SelectItem value="3">{t("productDetail.productReviews.stars").replace("{rating}", "3")}</SelectItem>
+                                        <SelectItem value="2">{t("productDetail.productReviews.stars").replace("{rating}", "2")}</SelectItem>
+                                        <SelectItem value="1">{t("productDetail.productReviews.stars").replace("{rating}", "1")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -225,10 +227,10 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                             <div className="text-center py-12">
                                 <div className="text-6xl mb-4">📝</div>
                                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                    첫 번째 리뷰를 작성해보세요!
+                                    {t("productDetail.productReviews.noReviewsDescription")}
                                 </h3>
                                 <p className="text-gray-600">
-                                    다른 고객들에게 도움이 되는 후기를 남겨주세요.
+                                    {t("productDetail.productReviews.noReviewsHelp")}
                                 </p>
                             </div>
                         ) : (
@@ -249,7 +251,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                                             {review.user.name}
                                                         </span>
                                                         <Badge variant="secondary" className="text-xs">
-                                                            구매확정
+                                                            {t("productDetail.productReviews.purchaseConfirmed")}
                                                         </Badge>
                                                     </div>
                                                     <div className="flex items-center gap-3">
@@ -281,7 +283,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                                         <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
                                                             <Image
                                                                 src={image}
-                                                                alt={`리뷰 이미지 ${index + 1}`}
+                                                                alt={t("productDetail.productReviews.reviewImage").replace("{index}", (index + 1).toString())}
                                                                 fill
                                                                 className="object-cover hover:scale-105 transition-transform cursor-pointer"
                                                                 sizes="(max-width: 640px) 50vw, 33vw"
@@ -306,7 +308,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                     disabled={queryParams.page === 1}
                                 >
                                     <ChevronLeft className="w-4 h-4" />
-                                    이전
+                                    {t("productDetail.productReviews.previous")}
                                 </Button>
 
                                 <div className="flex items-center gap-1">
@@ -361,7 +363,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                     onClick={() => handlePageChange(queryParams.page! + 1)}
                                     disabled={queryParams.page === pagination.totalPages}
                                 >
-                                    다음
+                                    {t("productDetail.productReviews.next")}
                                     <ChevronRight className="w-4 h-4" />
                                 </Button>
                             </div>

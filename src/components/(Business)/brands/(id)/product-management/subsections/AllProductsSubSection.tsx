@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/authProvider";
+import { useLanguage } from "@/providers/languageProvider";
 import ProductDeleteConfirmModal from "./ProductForm/ProductDeleteConfirmModal";
 import ProductDetailModal from "./ProductDetailModal";
 import BulkPromotionAssign from "../components/BulkPromotionAssign";
@@ -27,6 +28,7 @@ interface AllProductsSubSectionProps {
 export default function AllProductsSubSection({
   brandId
 }: AllProductsSubSectionProps) {
+  const { t } = useLanguage();
   const router = useRouter();
   const { getToken } = useAuth();
   const [pageNumber, setPageNumber] = useState(1);
@@ -152,7 +154,7 @@ export default function AllProductsSubSection({
     try {
       const token = getToken();
       if (!token) {
-        toast.error('로그인이 필요합니다.');
+        toast.error(t("header.business.brandDetail.products.allProducts.loginRequired"));
         return;
       }
 
@@ -243,7 +245,9 @@ export default function AllProductsSubSection({
       }
 
       // ✅ Show success toast
-      toast.success(`상품이 ${isActive ? '활성화' : '비활성화'}되었습니다.`);
+      toast.success(isActive 
+        ? t("header.business.brandDetail.products.allProducts.productActivated")
+        : t("header.business.brandDetail.products.allProducts.productDeactivated"));
 
     } catch (error) {
       console.error('Error toggling product active status:', error);
@@ -255,7 +259,7 @@ export default function AllProductsSubSection({
         if (error.message.includes('Authentication') || error.message.includes('token')) {
           toast.error('Invalid token - Please login again');
         } else if (error.message.includes('Access denied') || error.message.includes('권한')) {
-          toast.error('Access denied - Contact administrator');
+          toast.error(t("header.business.brandDetail.products.allProducts.loginRequired"));
         } else {
           toast.error(`Product status update failed: ${error.message}`);
         }
@@ -297,7 +301,7 @@ export default function AllProductsSubSection({
       const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success('상품이 삭제되었습니다');
+        toast.success(t("header.business.brandDetail.products.allProducts.productDeleted"));
 
         // ✅ Invalidate products list and product detail caches
         queryClient.invalidateQueries({ queryKey: [...PRODUCTS_QUERY_KEY, brandId] });
@@ -307,11 +311,11 @@ export default function AllProductsSubSection({
         setShowDeleteModal(false);
         setProductToDelete(null);
       } else {
-        toast.error(data.message || '상품 삭제에 실패했습니다');
+        toast.error(data.message || t("header.business.brandDetail.products.allProducts.deleteFailed"));
       }
     } catch (error) {
       console.error('❌ Delete product error:', error);
-      toast.error('상품 삭제 중 오류가 발생했습니다');
+      toast.error(t("header.business.brandDetail.products.allProducts.deleteFailed"));
     } finally {
       // Remove from deleting set
       setDeletingProducts(prev => {
@@ -329,7 +333,7 @@ export default function AllProductsSubSection({
           <div className="flex items-center justify-center h-32">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-              <p className="text-gray-600">상품 목록을 불러오는 중...</p>
+              <p className="text-gray-600">{t("header.business.brandDetail.products.allProducts.loading")}</p>
             </div>
           </div>
         </div>
@@ -343,7 +347,7 @@ export default function AllProductsSubSection({
         <div className="p-6">
           <div className="flex items-center justify-center h-32">
             <div className="text-center">
-              <div className="text-red-500 mb-2">오류가 발생했습니다</div>
+              <div className="text-red-500 mb-2">{t("header.business.brandDetail.products.allProducts.error")}</div>
               <p className="text-gray-600 text-sm">{error.message}</p>
             </div>
           </div>
@@ -362,17 +366,17 @@ export default function AllProductsSubSection({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="상품명, SKU, 슬러그로 검색..."
+                  placeholder={t("header.business.brandDetail.products.allProducts.searchPlaceholder")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-64"
                 />
               </div>
               <div className="text-sm text-gray-600">
-                총 <span className="font-semibold text-gray-900">{totalProducts}</span>개 상품
+                {t("header.business.brandDetail.products.allProducts.totalProducts", { count: totalProducts })}
                 {selectedProductIds.size > 0 && (
                   <span className="ml-2 text-purple-600 font-semibold">
-                    ({selectedProductIds.size}개 선택됨)
+                    ({selectedProductIds.size} {t("header.business.brandDetail.products.allProducts.selected")})
                   </span>
                 )}
               </div>
@@ -383,10 +387,10 @@ export default function AllProductsSubSection({
                   onClick={() => setShowBulkPromotionModal(true)}
                   className="bg-purple-600 hover:bg-purple-700"
                 >
-                  프로모션 적용 ({selectedProductIds.size})
+                  {t("header.business.brandDetail.products.allProducts.bulkPromotion")} ({selectedProductIds.size})
                 </Button>
               )}
-              <Button onClick={handleRegisterClick}>상품 등록</Button>
+              <Button onClick={handleRegisterClick}>{t("header.business.brandDetail.products.allProducts.register")}</Button>
             </div>
           </div>
 
@@ -394,8 +398,8 @@ export default function AllProductsSubSection({
             <div className="border rounded-lg p-8 text-center">
               <p className="text-gray-500">
                 {debouncedSearchTerm
-                  ? `"${debouncedSearchTerm}"에 대한 검색 결과가 없습니다.`
-                  : "등록된 상품이 없습니다."}
+                  ? t("header.business.brandDetail.products.allProducts.noSearchResults", { searchTerm: debouncedSearchTerm })
+                  : t("header.business.brandDetail.products.allProducts.noProducts")}
               </p>
               {debouncedSearchTerm && (
                 <Button
@@ -404,7 +408,7 @@ export default function AllProductsSubSection({
                   className="mt-4"
                   onClick={() => setSearchTerm("")}
                 >
-                  검색 초기화
+                  {t("header.business.brandDetail.products.allProducts.resetSearch")}
                 </Button>
               )}
             </div>
@@ -421,16 +425,16 @@ export default function AllProductsSubSection({
                     className="cursor-pointer"
                   />
                 </div>
-                <div className="flex-1 text-center border-r border-gray-300 pr-2">상품 SKU</div>
-                <div className="w-16 text-center border-r border-gray-300 pr-2">이미지</div>
-                <div className="flex-[2] text-center border-r border-gray-300 pr-2">상품명</div>
-                <div className="w-24 text-center border-r border-gray-300 pr-2">상태</div>
-                <div className="w-20 text-center border-r border-gray-300 pr-2">활성</div>
-                <div className="w-32 text-center border-r border-gray-300 pr-2">프로모션</div>
-                <div className="w-28 text-center border-r border-gray-300 pr-2">기본 가격</div>
-                <div className="w-28 text-center border-r border-gray-300 pr-2">비교 가격</div>
-                <div className="w-20 text-center border-r border-gray-300 pr-2">변형 수</div>
-                <div className="w-32 text-center pl-2">액션</div>
+                <div className="flex-1 text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.sku")}</div>
+                <div className="w-16 text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.image")}</div>
+                <div className="flex-[2] text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.productName")}</div>
+                <div className="w-24 text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.status")}</div>
+                <div className="w-20 text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.active")}</div>
+                <div className="w-32 text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.promotion")}</div>
+                <div className="w-28 text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.basePrice")}</div>
+                <div className="w-28 text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.comparePrice")}</div>
+                <div className="w-20 text-center border-r border-gray-300 pr-2">{t("header.business.brandDetail.products.allProducts.variants")}</div>
+                <div className="w-32 text-center pl-2">{t("header.business.brandDetail.products.allProducts.actions")}</div>
               </div>
 
               {filteredProducts?.map((product, index) => (
@@ -483,28 +487,28 @@ export default function AllProductsSubSection({
                         if (status === 'approved') {
                           return (
                             <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-                              승인완료
+                              {t("header.business.brandDetail.products.allProducts.statusApproved")}
                             </Badge>
                           );
                         }
                         if (status === 'pending') {
                           return (
                             <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
-                              대기중
+                              {t("header.business.brandDetail.products.allProducts.statusPending")}
                             </Badge>
                           );
                         }
                         if (status === 'rejected') {
                           return (
                             <Badge variant="destructive" className="text-xs">
-                              거부됨
+                              {t("header.business.brandDetail.products.allProducts.statusRejected")}
                             </Badge>
                           );
                         }
                         if (status === 'banned') {
                           return (
                             <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300 text-xs">
-                              차단됨
+                              {t("header.business.brandDetail.products.allProducts.statusBanned")}
                             </Badge>
                           );
                         }
@@ -547,13 +551,13 @@ export default function AllProductsSubSection({
                             {product.promotion.type === 'percentage'
                               ? `-${product.promotion.value}%`
                               : product.promotion.type === 'fixed_amount'
-                                ? `-${product.promotion.value?.toLocaleString()}원`
-                                : '무료배송'
+                                ? `-${product.promotion.value?.toLocaleString()}${t("header.business.brandDetail.products.allProducts.currency")}`
+                                : t("header.business.brandDetail.products.allProducts.freeShipping")
                             }
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">없음</span>
+                        <span className="text-xs text-gray-400">{t("header.business.brandDetail.products.allProducts.none")}</span>
                       )}
                     </div>
 
@@ -561,11 +565,11 @@ export default function AllProductsSubSection({
                     <div className="w-28 text-center border-r border-gray-300 pr-2">
                       {product.finalPrice && product.finalPrice < product.basePrice ? (
                         <div className="flex flex-col">
-                          <p className="text-xs font-bold text-purple-600">{product.finalPrice.toLocaleString()}원</p>
-                          <p className="text-[10px] text-gray-400 line-through">{product.basePrice.toLocaleString()}원</p>
+                          <p className="text-xs font-bold text-purple-600">{product.finalPrice.toLocaleString()}{t("header.business.brandDetail.products.allProducts.currency")}</p>
+                          <p className="text-[10px] text-gray-400 line-through">{product.basePrice.toLocaleString()}{t("header.business.brandDetail.products.allProducts.currency")}</p>
                         </div>
                       ) : (
-                        <p className="text-xs font-medium">{product.basePrice.toLocaleString()}원</p>
+                        <p className="text-xs font-medium">{product.basePrice.toLocaleString()}{t("header.business.brandDetail.products.allProducts.currency")}</p>
                       )}
                     </div>
 
@@ -573,7 +577,7 @@ export default function AllProductsSubSection({
                     <div className="w-28 text-center border-r border-gray-300 pr-2">
                       {product.baseCompareAtPrice ? (
                         <p className="text-xs text-gray-400 line-through">
-                          {product.baseCompareAtPrice.toLocaleString()}원
+                          {product.baseCompareAtPrice.toLocaleString()}{t("header.business.brandDetail.products.allProducts.currency")}
                         </p>
                       ) : (
                         <p className="text-xs text-gray-400">-</p>
@@ -582,7 +586,7 @@ export default function AllProductsSubSection({
 
                     {/* 변형 수 */}
                     <div className="w-20 text-center border-r border-gray-300 pr-2">
-                      <p className="text-xs">{product.variants?.length || 0}개</p>
+                      <p className="text-xs">{product.variants?.length || 0} {t("header.business.brandDetail.products.allProducts.items")}</p>
                     </div>
 
                     {/* 액션 버튼 */}
@@ -596,7 +600,7 @@ export default function AllProductsSubSection({
                           handleEditProduct(product);
                         }}
                       >
-                        편집
+                        {t("header.business.brandDetail.products.allProducts.edit")}
                       </Button>
                       <Button
                         size="sm"
@@ -608,10 +612,10 @@ export default function AllProductsSubSection({
                         }}
                         disabled={deletingProducts.has(product.id)}
                       >
-                        {deletingProducts.has(product.id) ? '삭제 중...' : '삭제'}
+                        {deletingProducts.has(product.id) ? t("header.business.brandDetail.products.allProducts.deleting") : t("header.business.brandDetail.products.allProducts.delete")}
                       </Button>
                       <Button size="sm" variant="outline" className="text-xs px-2 py-1 h-6">
-                        복사
+                        {t("header.business.brandDetail.products.allProducts.copy")}
                       </Button>
                     </div>
                   </div>
@@ -636,10 +640,10 @@ export default function AllProductsSubSection({
                 }}
                 disabled={pageNumber === 1}
               >
-                이전
+                {t("header.business.brandDetail.products.allProducts.previous")}
               </Button>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-600">페이지</span>
+                <span className="text-gray-600">{t("header.business.brandDetail.products.allProducts.page")}</span>
                 <span className="font-semibold text-gray-900">{pageNumber}</span>
                 <span className="text-gray-600">/</span>
                 <span className="font-semibold text-gray-900">{totalPages}</span>
@@ -657,7 +661,7 @@ export default function AllProductsSubSection({
                 }}
                 disabled={pageNumber === totalPages}
               >
-                다음
+                {t("header.business.brandDetail.products.allProducts.next")}
               </Button>
             </div>
           </div>

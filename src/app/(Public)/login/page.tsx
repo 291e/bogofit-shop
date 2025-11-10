@@ -6,11 +6,13 @@ import LoginFormWrapper from "@/components/(Public)/auth/LoginForm";
 import RegisterFormWrapper from "@/components/(Public)/auth/RegisterForm";
 import { User, Building2 } from "lucide-react";
 import { useAuth } from "@/providers/authProvider";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("login");
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -25,7 +27,7 @@ export default function LoginPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">확인 중...</p>
+          <p className="mt-4 text-gray-600">{t("auth.checking")}</p>
         </div>
       </div>
     );
@@ -37,7 +39,7 @@ export default function LoginPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">리다이렉트 중...</p>
+          <p className="mt-4 text-gray-600">{t("auth.redirecting")}</p>
         </div>
       </div>
     );
@@ -58,7 +60,7 @@ export default function LoginPage() {
               }`}
             >
             <User className="h-4 w-4" />
-            <span className="font-bold">로그인</span>
+            <span className="font-bold">{t("auth.login")}</span>
             </button>
             <button
               onClick={() => setActiveTab("register")}
@@ -69,7 +71,7 @@ export default function LoginPage() {
               }`}
             >
             <Building2 className="h-4 w-4" />
-            <span className="font-bold">회원가입</span>
+            <span className="font-bold">{t("auth.signUp")}</span>
             </button>
           </div>
         </div>

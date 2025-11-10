@@ -11,9 +11,11 @@ import ApplicationView from "@/components/(Business)/brands/components/Applicati
 import BrandRegister from "@/components/(Business)/brands/components/BrandRegister";
 import DashboardSection from "@/components/(Business)/brands/components/DashboardSection";
 import BrandListSection from "@/components/(Business)/brands/components/BrandListSection";
+import { useLanguage } from "@/providers/languageProvider";
 
 
 export default function BrandsPage() {
+  const { t } = useLanguage();
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [showApplicationView, setShowApplicationView] = useState(false);
   const [showBrandModal, setShowBrandModal] = useState(false);
@@ -104,7 +106,7 @@ export default function BrandsPage() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">
-              {!isHydrated ? "로딩 중..." : "인증 확인 중..."}
+              {!isHydrated ? t("header.business.loading") : t("header.business.checkingAuth")}
             </p>
           </div>
         </div>
@@ -119,7 +121,7 @@ export default function BrandsPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">리다이렉트 중...</p>
+            <p className="mt-4 text-gray-600">{t("header.business.redirecting")}</p>
           </div>
         </div>
       </div>
@@ -132,7 +134,7 @@ export default function BrandsPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">애플리케이션 상태 확인 중...</p>
+            <p className="mt-4 text-gray-600">{t("header.business.checkingApplication")}</p>
           </div>
         </div>
       </div>
@@ -153,10 +155,10 @@ export default function BrandsPage() {
         <div className="mt-12">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              브랜드 목록
+              {t("header.business.brandList")}
             </h2>
             <p className="text-lg text-gray-600">
-              등록된 브랜드들을 확인하세요
+              {t("header.business.brandListDescription")}
             </p>
           </div>
           
@@ -164,20 +166,20 @@ export default function BrandsPage() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">브랜드 목록을 불러오는 중...</p>
+                <p className="mt-4 text-gray-600">{t("header.business.loadingBrands")}</p>
               </div>
             </div>
           ) : brandsError ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="text-red-500 text-xl mb-4">❌</div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">오류가 발생했습니다</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">{t("header.business.errorOccurred")}</h2>
                 <p className="text-gray-600 mb-4">{brandsError.message}</p>
                 <button 
                   onClick={() => refetchBrands()}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  다시 시도
+                  {t("header.business.retry")}
                 </button>
               </div>
             </div>

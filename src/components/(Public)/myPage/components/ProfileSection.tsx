@@ -10,8 +10,10 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/providers/authProvider";
 import { toast } from "sonner";
 import { Camera, Mail, Phone, User as UserIcon, Lock } from "lucide-react";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function ProfileSection() {
+  const { t } = useLanguage();
   const { user, updateName, updateEmail, updatePhone, updatePassword } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -50,15 +52,15 @@ export default function ProfileSection() {
 
   const handleUpdatePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error("모든 필드를 입력해주세요");
+      toast.error(t("myPage.profile.allFieldsRequired"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("새 비밀번호가 일치하지 않습니다");
+      toast.error(t("myPage.profile.passwordMismatch"));
       return;
     }
     if (newPassword.length < 8) {
-      toast.error("비밀번호는 8자 이상이어야 합니다");
+      toast.error(t("myPage.profile.passwordMinLength"));
       return;
     }
     try {
@@ -75,8 +77,8 @@ export default function ProfileSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>회원 정보</CardTitle>
-        <CardDescription>프로필 정보를 관리하세요</CardDescription>
+        <CardTitle>{t("myPage.profile.title")}</CardTitle>
+        <CardDescription>{t("myPage.profile.description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* 프로필 이미지 */}
@@ -108,48 +110,48 @@ export default function ProfileSection() {
                 <div className="space-y-2">
                   <Label htmlFor="name" className="flex items-center gap-2">
                     <UserIcon className="w-4 h-4" />
-                    이름
+                    {t("myPage.profile.name")}
                   </Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="이름을 입력하세요"
+                    placeholder={t("myPage.profile.namePlaceholder")}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="email" className="flex items-center gap-2">
                     <Mail className="w-4 h-4" />
-                    이메일
+                    {t("myPage.profile.email")}
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="이메일을 입력하세요"
+                    placeholder={t("myPage.profile.emailPlaceholder")}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="flex items-center gap-2">
                     <Phone className="w-4 h-4" />
-                    전화번호
+                    {t("myPage.profile.phone")}
                   </Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="전화번호를 입력하세요"
+                    placeholder={t("myPage.profile.phonePlaceholder")}
                   />
                 </div>
               </div>
 
               <div className="flex gap-2 pt-2">
-                <Button onClick={handleSaveBasicInfo}>저장</Button>
-                <Button variant="outline" onClick={handleCancelEdit}>취소</Button>
+                <Button onClick={handleSaveBasicInfo}>{t("myPage.profile.save")}</Button>
+                <Button variant="outline" onClick={handleCancelEdit}>{t("myPage.profile.cancel")}</Button>
               </div>
             </>
           ) : (
@@ -158,7 +160,7 @@ export default function ProfileSection() {
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <UserIcon className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-500 w-20">이름</span>
+                    <span className="text-sm text-gray-500 w-20">{t("myPage.profile.name")}</span>
                     <span className="font-medium">{user?.name}</span>
                   </div>
                 </div>
@@ -166,23 +168,23 @@ export default function ProfileSection() {
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <Mail className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-500 w-20">이메일</span>
-                    <span className="font-medium">{user?.email || "이메일을 등록해주세요"}</span>
+                    <span className="text-sm text-gray-500 w-20">{t("myPage.profile.email")}</span>
+                    <span className="font-medium">{user?.email || t("myPage.profile.emailNotRegistered")}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-3">
                     <Phone className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-500 w-20">전화번호</span>
-                    <span className="font-medium">{user?.phone || "전화번호를 등록해주세요"}</span>
+                    <span className="text-sm text-gray-500 w-20">{t("myPage.profile.phone")}</span>
+                    <span className="font-medium">{user?.phone || t("myPage.profile.phoneNotRegistered")}</span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-2">
                 <Button variant="outline" onClick={() => setIsEditing(true)} className="w-full sm:w-auto">
-                  정보 수정
+                  {t("myPage.profile.edit")}
                 </Button>
               </div>
             </>
@@ -195,53 +197,53 @@ export default function ProfileSection() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4" />
-            <h3 className="font-semibold">비밀번호</h3>
+            <h3 className="font-semibold">{t("myPage.profile.password")}</h3>
           </div>
 
           {isEditingPassword ? (
             <>
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">현재 비밀번호</Label>
+                  <Label htmlFor="currentPassword">{t("myPage.profile.currentPassword")}</Label>
                   <Input
                     id="currentPassword"
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="현재 비밀번호"
+                    placeholder={t("myPage.profile.currentPasswordPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">새 비밀번호</Label>
+                  <Label htmlFor="newPassword">{t("myPage.profile.newPassword")}</Label>
                   <Input
                     id="newPassword"
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="새 비밀번호 (8자 이상)"
+                    placeholder={t("myPage.profile.newPasswordPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
+                  <Label htmlFor="confirmPassword">{t("myPage.profile.confirmPassword")}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="새 비밀번호 확인"
+                    placeholder={t("myPage.profile.confirmPasswordPlaceholder")}
                   />
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={handleUpdatePassword}>비밀번호 변경</Button>
+                <Button onClick={handleUpdatePassword}>{t("myPage.profile.changePassword")}</Button>
                 <Button variant="outline" onClick={() => {
                   setCurrentPassword("");
                   setNewPassword("");
                   setConfirmPassword("");
                   setIsEditingPassword(false);
                 }}>
-                  취소
+                  {t("myPage.profile.cancel")}
                 </Button>
               </div>
             </>
@@ -249,7 +251,7 @@ export default function ProfileSection() {
             <div className="flex items-center justify-between py-2">
               <span className="font-medium">••••••••</span>
               <Button variant="outline" size="sm" onClick={() => setIsEditingPassword(true)}>
-                변경
+                {t("myPage.profile.change")}
               </Button>
             </div>
           )}

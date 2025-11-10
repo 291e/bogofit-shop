@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, X, Heart } from "lucide-react";
 import Image from "next/image";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface RecentProduct {
   id: string;
@@ -17,6 +18,7 @@ interface RecentProduct {
 }
 
 export default function RecentProductsSection() {
+  const { t } = useLanguage();
   const [recentProducts] = useState<RecentProduct[]>([
     // 임시 데이터
   ]);
@@ -26,9 +28,9 @@ export default function RecentProductsSection() {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16">
           <ShoppingBag className="w-16 h-16 text-gray-300 mb-4" />
-          <h3 className="text-xl font-medium text-gray-900 mb-2">최근 본 상품이 없습니다</h3>
-          <p className="text-gray-500 mb-6">상품을 둘러보고 쇼핑을 시작해보세요</p>
-          <Button>쇼핑 시작하기</Button>
+          <h3 className="text-xl font-medium text-gray-900 mb-2">{t("myPage.recent.noProducts")}</h3>
+          <p className="text-gray-500 mb-6">{t("myPage.recent.noProductsDescription")}</p>
+          <Button>{t("myPage.recent.startShopping")}</Button>
         </CardContent>
       </Card>
     );
@@ -37,8 +39,8 @@ export default function RecentProductsSection() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">최근 본 상품</h2>
-        <Button variant="outline" size="sm">전체 삭제</Button>
+        <h2 className="text-2xl font-bold">{t("myPage.recent.title")}</h2>
+        <Button variant="outline" size="sm">{t("myPage.recent.deleteAll")}</Button>
       </div>
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -84,10 +86,10 @@ export default function RecentProductsSection() {
               <div className="flex gap-2 mt-3">
                 <Button size="sm" className="flex-1" variant="outline">
                   <Heart className="w-4 h-4 mr-1" />
-                  찜
+                  {t("myPage.recent.wishlist")}
                 </Button>
                 <Button size="sm" className="flex-1">
-                  장바구니
+                  {t("myPage.recent.cart")}
                 </Button>
               </div>
             </CardContent>

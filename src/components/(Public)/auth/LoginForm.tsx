@@ -12,6 +12,7 @@ interface LoginFormData {
 
 // Utils
 import { useAuth } from "@/providers/authProvider";
+import { useLanguage } from "@/providers/languageProvider";
 import { toast } from "sonner";
 
 // UI Components
@@ -21,6 +22,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Social Login Component
 function SocialLoginSection() {
+  const { t } = useLanguage();
   const socialButtons = [
     {
       name: "Google",
@@ -36,7 +38,7 @@ function SocialLoginSection() {
       textClassName: "text-gray-700 font-medium text-sm"
     },
     {
-      name: "카카오톡",
+      name: t("auth.kakaoTalk"),
       className: "flex-1 flex items-center justify-center gap-2 px-3 py-3 bg-yellow-400 hover:bg-yellow-500 rounded-lg transition-colors",
       icon: (
         <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -56,7 +58,7 @@ function SocialLoginSection() {
           <span className="w-full border-t border-gray-300" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500">또는</span>
+          <span className="bg-white px-2 text-gray-500">{t("auth.or")}</span>
         </div>
       </div>
 
@@ -67,14 +69,14 @@ function SocialLoginSection() {
             type="button"
             className={`${button.className} opacity-60 cursor-not-allowed`}
             disabled
-            title="현재 개발 중입니다"
+            title={t("auth.underDevelopment")}
           >
             {button.icon}
             <span className={button.textClassName}>{button.name}</span>
           </button>
         ))}
       </div>
-      <p className="text-center text-xs text-gray-500">소셜 로그인은 현재 개발 중입니다.</p>
+      <p className="text-center text-xs text-gray-500">{t("auth.socialLoginUnderDevelopment")}</p>
     </div>
   );
 }
@@ -84,6 +86,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   // State
   const [formData, setFormData] = useState<LoginFormData>({
     userId: "",
@@ -100,7 +103,7 @@ function LoginForm() {
 
   const validateForm = () => {
     if (!formData.userId || !formData.password) {
-      const errorMessage = "사용자 ID와 비밀번호를 입력해주세요";
+      const errorMessage = t("auth.pleaseEnterUserIdAndPassword");
       setError(errorMessage);
       toast.warning(errorMessage);
       return false;
@@ -130,7 +133,7 @@ function LoginForm() {
       }, 500);
     } catch (err) {
       // Error toast already handled by AuthProvider
-      setError(err instanceof Error ? err.message : "로그인에 실패했습니다");
+      setError(err instanceof Error ? err.message : t("auth.loginFailed"));
     } finally {
       setLoading(false);
     }
@@ -142,16 +145,16 @@ function LoginForm() {
       id: "userId",
       name: "userId" as keyof LoginFormData,
       type: "text",
-      label: "사용자 ID",
-      placeholder: "사용자 ID를 입력하세요",
+      label: t("auth.userId"),
+      placeholder: t("auth.userIdPlaceholder"),
       autoComplete: "username"
     },
     {
       id: "password",
       name: "password" as keyof LoginFormData,
       type: "password",
-      label: "비밀번호",
-      placeholder: "비밀번호를 입력하세요",
+      label: t("auth.password"),
+      placeholder: t("auth.passwordPlaceholder"),
       autoComplete: "current-password"
     }
   ];
@@ -164,8 +167,8 @@ function LoginForm() {
             <div className="space-y-6">
               {/* Header */}
               <div className="text-center">
-                <h3 className="text-xl font-bold text-[#FF84CD]">로그인</h3>
-                <p className="text-sm font-medium text-gray-600 mt-1">계정에 로그인하세요</p>
+                <h3 className="text-xl font-bold text-[#FF84CD]">{t("auth.login")}</h3>
+                <p className="text-sm font-medium text-gray-600 mt-1">{t("auth.signInToAccount")}</p>
               </div>
 
               {/* Form */}
@@ -204,7 +207,7 @@ function LoginForm() {
                     className="w-full h-11 bg-gradient-to-r from-[#FF84CD] to-[#D74FDF] hover:from-[#FF6BB3] hover:to-[#B83DCF] text-white shadow-lg"
                     disabled={loading}
                   >
-                    {loading ? "로그인 중..." : "로그인"}
+                    {loading ? t("auth.loggingIn") : t("auth.login")}
                   </Button>
 
                   {/* Forgot Password Link */}
@@ -213,7 +216,7 @@ function LoginForm() {
                       href="/forgot-password"
                       className="text-sm text-[#FF84CD] hover:text-[#D74FDF] hover:underline"
                     >
-                      비밀번호를 잊으셨나요?
+                      {t("auth.forgotPassword")}
                     </a>
                   </div>
 
@@ -230,13 +233,14 @@ function LoginForm() {
 }
 
 function LoginFormWrapper() {
+  const { t } = useLanguage();
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">로그인 페이지 로딩 중...</p>
+            <p className="mt-4 text-gray-600">{t("auth.loadingLoginPage")}</p>
           </div>
         </div>
       }

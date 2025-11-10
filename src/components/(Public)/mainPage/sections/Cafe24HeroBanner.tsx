@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/providers/languageProvider";
 
 // Hero Banner Slide Interface
 interface HeroBannerSlide {
@@ -71,6 +72,7 @@ const heroBannerSlides: HeroBannerSlide[] = [
 
 export function Cafe24HeroBanner() {
   const [currentCenterImage, setCurrentCenterImage] = useState(0);
+  const { t } = useLanguage();
 
   // 15 ảnh cho center rotation
   const centerImages = [
@@ -143,10 +145,10 @@ export function Cafe24HeroBanner() {
                     </Badge>
                   )}
                   <h3 className="text-xl md:text-3xl lg:text-4xl font-bold mb-2 leading-tight drop-shadow-lg">
-                    {heroBannerSlides[0].title}
+                    {t("mainPage.hero.newLaunch")}
                   </h3>
                   <h4 className="text-sm md:text-xl lg:text-2xl font-medium leading-snug drop-shadow-md">
-                    {heroBannerSlides[0].subtitle}
+                    {t("mainPage.hero.seasonCollection")}
                   </h4>
                 </div>
               </div>
@@ -170,10 +172,10 @@ export function Cafe24HeroBanner() {
               <div className="absolute inset-0 flex items-end justify-center p-6 md:p-8">
                 <div className="text-center text-white">
                   <h3 className="text-xl md:text-3xl lg:text-4xl font-bold mb-2 leading-tight drop-shadow-lg">
-                    이제는 입어보고 쇼핑하세요
+                    {t("mainPage.hero.tryAndShop")}
                   </h3>
                   <h4 className="text-sm md:text-xl lg:text-2xl font-medium leading-snug drop-shadow-md">
-                    입어보고 쇼핑하는 쇼핑물
+                    {t("mainPage.hero.tryAndShopSubtitle")}
                   </h4>
                 </div>
               </div>
@@ -197,10 +199,10 @@ export function Cafe24HeroBanner() {
               <div className="absolute inset-0 flex items-end justify-center p-6 md:p-8">
                 <div className="text-center text-white">
                   <h3 className="text-xl md:text-3xl lg:text-4xl font-bold mb-2 leading-tight drop-shadow-lg">
-                    {heroBannerSlides[2].title}
+                    {t("mainPage.hero.membership")}
                   </h3>
                   <h4 className="text-sm md:text-xl lg:text-2xl font-medium leading-snug drop-shadow-md">
-                    {heroBannerSlides[2].subtitle}
+                    {t("mainPage.hero.freeShipping")}
                   </h4>
                 </div>
               </div>

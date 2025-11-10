@@ -37,7 +37,7 @@ interface Product {
 
 // Helper function to get parent category name for Virtual Fitting
 async function getParentCategoryName(categoryId?: string): Promise<string> {
-  if (!categoryId) return "상품";
+  if (!categoryId) return "Product";
 
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -45,7 +45,7 @@ async function getParentCategoryName(categoryId?: string): Promise<string> {
       cache: 'no-store',
     });
 
-    if (!response.ok) return "상품";
+    if (!response.ok) return "Product";
 
     const data = await response.json();
     const categories = data.data || data.categories || [];
@@ -90,12 +90,12 @@ async function getParentCategoryName(categoryId?: string): Promise<string> {
         return level2Category;
       }
 
-      return category.name || "상품";
+      return category.name || "Product";
     }
 
-    return "상품";
+    return "Product";
   } catch {
-    return "상품";
+    return "Product";
   }
 }
 
@@ -163,19 +163,9 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
       variants: product.variants?.map(variant => {
         // Parse optionsJson to get option name and value
         // Format: [{"color": "08 다크그레이"}, {"size": "XXL"}]
-        let optionName = "옵션";
-        let optionValue = "기본";
-
-        // Option name mapping (English -> Korean)
-        const optionNameMap: Record<string, string> = {
-          "color": "색상",
-          "size": "사이즈",
-          "colour": "색상",
-          "style": "스타일",
-          "material": "소재",
-          "type": "타입",
-          "model": "모델"
-        };
+        // Keep English option names - will be translated in client component
+        let optionName = "option";
+        let optionValue = "default";
 
         try {
           if (variant.optionsJson) {
@@ -187,8 +177,8 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
               const firstEntry = Object.entries(firstOpt)[0];
               if (firstEntry) {
                 const [originalKey, value] = firstEntry;
-                // Convert to Korean if mapping exists
-                optionName = optionNameMap[originalKey.toLowerCase()] || originalKey;
+                // Keep English key - will be translated in client component
+                optionName = originalKey.toLowerCase();
                 optionValue = value;
               }
 
@@ -196,8 +186,7 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
               if (options.length > 1) {
                 optionValue = options.map(opt =>
                   Object.entries(opt).map(([key, val]) => {
-                    const koreanKey = optionNameMap[key.toLowerCase()] || key;
-                    return `${koreanKey}: ${val}`;
+                    return `${key}: ${val}`;
                   }).join(', ')
                 ).join(', ');
               }

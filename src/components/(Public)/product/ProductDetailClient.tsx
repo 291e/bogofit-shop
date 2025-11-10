@@ -23,6 +23,7 @@ import { PurchaseButton } from "@/components/(Public)/product/PurchaseButton";
 import VirtualFitting from "@/components/(Public)/product/VirtualFitting";
 import { ProductReviews } from "@/components/(Public)/product/ProductReviews";
 import { ProductInquiries } from "@/components/(Public)/product/ProductInquiries";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface ProductVariant {
   id: string;
@@ -69,6 +70,7 @@ interface ProductDetailClientProps {
 }
 
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
+  const { t } = useLanguage();
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
@@ -76,6 +78,18 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0);
   const [vfImageIndex, setVfImageIndex] = useState(0); // Virtual Fitting용 이미지 인덱스
+
+  // Translate option name
+  const translateOptionName = (optionName: string): string => {
+    const translationKey = `productDetail.optionNames.${optionName.toLowerCase()}`;
+    const translated = t(translationKey);
+    // If translation exists and is different from the key, use it
+    if (translated && translated !== translationKey) {
+      return translated;
+    }
+    // Fallback to original name with first letter capitalized
+    return optionName.charAt(0).toUpperCase() + optionName.slice(1);
+  };
 
   // 옵션별로 그룹화
   const groupedVariants =
@@ -228,7 +242,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         switch (badge.toUpperCase()) {
                           case "SOLDOUT":
                             badgeStyle = "bg-red-500";
-                            badgeText = "품절";
+                            badgeText = t("productDetail.soldOut");
                             break;
                           case "NEW":
                             badgeStyle = "bg-gradient-to-r from-green-500 to-emerald-500";
@@ -295,7 +309,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                           >
                             <Image
                               src={image}
-                              alt={`${product.title} 이미지 ${actualIndex + 1}`}
+                              alt={t("productDetail.image").replace("{index}", (actualIndex + 1).toString())}
                               width={100}
                               height={100}
                               className="w-full h-full object-cover"
@@ -346,7 +360,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 {allImages.length > 1 && (
                   <div className="mb-4 p-4 bg-white rounded-xl border-2 border-pink-100">
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                      가상 피팅에 사용할 이미지를 선택하세요
+                      {t("productDetail.selectImageForVirtualFitting")}
                     </h3>
                     <div className="grid grid-cols-4 gap-2">
                       {allImages.map((image, index) => (
@@ -360,7 +374,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         >
                           <Image
                             src={image}
-                            alt={`이미지 ${index + 1}`}
+                            alt={t("productDetail.image").replace("{index}", (index + 1).toString())}
                             width={80}
                             height={80}
                             className="w-full h-full object-cover"
@@ -440,7 +454,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                         </span>
                       </>
                     )}
-                    <span className="text-gray-500">({product.reviewCount}개 리뷰)</span>
+                    <span className="text-gray-500">({t("productDetail.reviews").replace("{count}", product.reviewCount?.toString() || "0")})</span>
                   </div>
                 )}
               </div>
@@ -454,11 +468,11 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       product.originalPrice > product.price && (
                         <div className="flex items-center gap-2">
                           <span className="text-lg text-gray-500 line-through">
-                            {product.originalPrice.toLocaleString('ko-KR')}원
+                            {t("productDetail.won").replace("{amount}", product.originalPrice.toLocaleString('ko-KR'))}
                           </span>
                           {product.discountRate && (
                             <Badge className="bg-red-500 text-white text-xs">
-                              {product.discountRate}% 할인
+                              {t("productDetail.discount").replace("{percent}", product.discountRate.toString())}
                             </Badge>
                           )}
                         </div>
@@ -466,17 +480,17 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
                     {/* 최종 판매가 */}
                     <span className="text-2xl font-bold text-pink-600">
-                      {finalPrice.toLocaleString('ko-KR')}원
+                      {t("productDetail.won").replace("{amount}", finalPrice.toLocaleString('ko-KR'))}
                     </span>
 
                     {totalPriceDiff !== 0 && (
                       <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded-full">
-                        기본가 {product.price.toLocaleString('ko-KR')}원
+                        {t("productDetail.basePrice").replace("{amount}", product.price.toLocaleString('ko-KR'))}
                         {totalPriceDiff > 0 ? " +" : " "}
-                        {totalPriceDiff.toLocaleString('ko-KR')}원
+                        {t("productDetail.won").replace("{amount}", totalPriceDiff.toLocaleString('ko-KR'))}
                         {Object.keys(selectedOptions).length > 1 && (
                           <span className="text-xs text-gray-400 ml-1">
-                            (옵션 총합)
+                            {t("productDetail.optionTotal")}
                           </span>
                         )}
                       </span>
@@ -485,7 +499,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
                   {quantity > 1 && (
                     <p className="text-lg font-semibold text-gray-700">
-                      총 {totalPrice.toLocaleString('ko-KR')}원 (수량: {quantity})
+                      {t("productDetail.total").replace("{amount}", totalPrice.toLocaleString('ko-KR')).replace("{quantity}", quantity.toString())}
                     </p>
                   )}
                 </div>
@@ -497,7 +511,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   {allVariantsOutOfStock && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                       <p className="text-red-700 text-sm font-medium">
-                        ⚠️ 모든 옵션이 품절되었습니다
+                        {t("productDetail.allOptionsSoldOut")}
                       </p>
                     </div>
                   )}
@@ -505,7 +519,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     ([optionName, variants]) => (
                       <div key={optionName} className="space-y-2">
                         <label className={`text-sm font-semibold ${allVariantsOutOfStock ? 'text-gray-400' : 'text-gray-700'}`}>
-                          {optionName}
+                          {translateOptionName(optionName)}
                         </label>
                         <Select
                           value={selectedOptions[optionName] || ""}
@@ -526,7 +540,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                             ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
                             : 'bg-white border-gray-200 hover:border-pink-300'
                             }`}>
-                            <SelectValue placeholder={`${optionName} 선택`} />
+                            <SelectValue placeholder={t("productDetail.selectOption").replace("{optionName}", translateOptionName(optionName))} />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
                             {variants.map((variant) => {
@@ -541,13 +555,13 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                                   <div className="flex justify-between items-center w-full">
                                     <span className={`font-medium ${isOutOfStock ? 'text-gray-400' : ''}`}>
                                       {variant.optionValue}
-                                      {isOutOfStock && ' (품절)'}
+                                      {isOutOfStock && ` ${t("productDetail.soldOut")}`}
                                     </span>
                                     <div className="flex items-center gap-2 ml-4">
                                       {!isOutOfStock && variant.priceDiff !== 0 && (
                                         <span className="text-sm text-pink-600 font-semibold">
                                           {variant.priceDiff > 0 ? "+" : ""}
-                                          {variant.priceDiff.toLocaleString('ko-KR')}원
+                                          {t("productDetail.won").replace("{amount}", variant.priceDiff.toLocaleString('ko-KR'))}
                                         </span>
                                       )}
                                       {isOutOfStock ? (
@@ -555,14 +569,14 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                                           variant="destructive"
                                           className="text-xs"
                                         >
-                                          품절
+                                          {t("productDetail.outOfStock")}
                                         </Badge>
                                       ) : variant.stock <= 5 ? (
                                         <Badge
                                           variant="secondary"
                                           className="text-xs bg-yellow-100 text-yellow-800"
                                         >
-                                          재고 {variant.stock}개
+                                          {t("productDetail.stock").replace("{count}", variant.stock.toString())}
                                         </Badge>
                                       ) : null}
                                     </div>
@@ -580,7 +594,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
               {/* 수량 선택 */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700">수량</label>
+                <label className="text-sm font-semibold text-gray-700">{t("productDetail.quantity")}</label>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -632,8 +646,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       <Truck className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">무료배송</p>
-                      <p className="text-xs text-gray-500">모든 주문</p>
+                      <p className="font-semibold text-sm">{t("productDetail.freeShipping")}</p>
+                      <p className="text-xs text-gray-500">{t("productDetail.allOrders")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -641,8 +655,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       <Shield className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">품질보증</p>
-                      <p className="text-xs text-gray-500">정품보장</p>
+                      <p className="font-semibold text-sm">{t("productDetail.qualityGuarantee")}</p>
+                      <p className="text-xs text-gray-500">{t("productDetail.authenticGuarantee")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -650,8 +664,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       <RefreshCw className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">교환/반품</p>
-                      <p className="text-xs text-gray-500">7일 이내</p>
+                      <p className="font-semibold text-sm">{t("productDetail.exchangeReturn")}</p>
+                      <p className="text-xs text-gray-500">{t("productDetail.within7Days")}</p>
                     </div>
                   </div>
                 </div>
@@ -672,7 +686,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           {(product.description || detailImage) && (
             <div id="product-detail" className="max-w-3xl mx-auto mt-16">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 text-center">상품 상세</h2>
+                <h2 className="text-2xl font-bold text-gray-900 text-center">{t("productDetail.productDetail")}</h2>
                 <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
               </div>
 
@@ -688,7 +702,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               {!product.description && detailImage && (
                 <Image
                   src={detailImage}
-                  alt="상품 상세 이미지"
+                  alt={t("productDetail.productDetailImage")}
                   width={1200}
                   height={1600}
                   className="w-full h-auto"

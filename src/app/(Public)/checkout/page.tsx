@@ -12,8 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingBag, Truck, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function CheckoutPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { data: cart, isLoading: isLoadingCart } = useCart();
   const createOrder = useCreateOrderFromCart();
@@ -36,23 +38,23 @@ export default function CheckoutPage() {
 
   const validateForm = () => {
     if (!shippingAddress.recipientName) {
-      alert("받는 사람을 입력해주세요");
+      alert(t("checkout.validation.recipientNameRequired"));
       return false;
     }
     if (!shippingAddress.phone) {
-      alert("전화번호를 입력해주세요");
+      alert(t("checkout.validation.phoneRequired"));
       return false;
     }
     if (!shippingAddress.line1) {
-      alert("주소를 입력해주세요");
+      alert(t("checkout.validation.addressRequired"));
       return false;
     }
     if (!shippingAddress.city) {
-      alert("도시를 입력해주세요");
+      alert(t("checkout.validation.cityRequired"));
       return false;
     }
     if (!shippingAddress.postalCode) {
-      alert("우편번호를 입력해주세요");
+      alert(t("checkout.validation.postalCodeRequired"));
       return false;
     }
     return true;
@@ -63,7 +65,7 @@ export default function CheckoutPage() {
     
     if (!cart || cart.items.length === 0) {
       console.error("❌ [CHECKOUT] Cart is empty");
-      alert("장바구니가 비어있습니다");
+      alert(t("checkout.validation.cartEmpty"));
       return;
     }
     console.log("✅ [CHECKOUT] Cart has items:", cart.items.length);
@@ -120,7 +122,7 @@ export default function CheckoutPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">장바구니 확인 중...</p>
+          <p className="text-gray-600">{t("checkout.checkingCart")}</p>
         </div>
       </div>
     );
@@ -131,9 +133,9 @@ export default function CheckoutPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <ShoppingBag className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">장바구니가 비어있습니다</h2>
-          <p className="text-gray-600 mb-6">상품을 담아주세요</p>
-          <Button onClick={() => router.push("/")}>쇼핑 계속하기</Button>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">{t("checkout.emptyCart")}</h2>
+          <p className="text-gray-600 mb-6">{t("checkout.emptyCartDescription")}</p>
+          <Button onClick={() => router.push("/")}>{t("checkout.continueShopping")}</Button>
         </div>
       </div>
     );
@@ -150,9 +152,9 @@ export default function CheckoutPage() {
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            뒤로 가기
+            {t("checkout.back")}
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">주문/결제</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t("checkout.title")}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -163,14 +165,14 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Truck className="h-5 w-5 text-pink-600" />
-                  배송지 정보
+                  {t("checkout.shippingInfo")}
                 </CardTitle>
               </CardHeader>
                <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="recipientName">받는 사람 *</Label>
+                      <Label htmlFor="recipientName">{t("checkout.recipientName")} *</Label>
                       <Input
                         id="recipientName"
                         required
@@ -181,12 +183,12 @@ export default function CheckoutPage() {
                             recipientName: e.target.value,
                           })
                         }
-                        placeholder="홍길동"
+                        placeholder={t("checkout.recipientNamePlaceholder")}
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="phone">전화번호 *</Label>
+                      <Label htmlFor="phone">{t("checkout.phone")} *</Label>
                       <Input
                         id="phone"
                         type="tel"
@@ -198,13 +200,13 @@ export default function CheckoutPage() {
                             phone: e.target.value,
                           })
                         }
-                        placeholder="010-1234-5678"
+                        placeholder={t("checkout.phonePlaceholder")}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="line1">주소 *</Label>
+                    <Label htmlFor="line1">{t("checkout.address")} *</Label>
                     <Input
                       id="line1"
                       required
@@ -215,12 +217,12 @@ export default function CheckoutPage() {
                           line1: e.target.value,
                         })
                       }
-                      placeholder="서울시 강남구 테헤란로 123"
+                      placeholder={t("checkout.addressPlaceholder")}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="line2">상세 주소</Label>
+                    <Label htmlFor="line2">{t("checkout.addressDetail")}</Label>
                     <Input
                       id="line2"
                       value={shippingAddress.line2}
@@ -230,13 +232,13 @@ export default function CheckoutPage() {
                           line2: e.target.value,
                         })
                       }
-                      placeholder="101동 1001호"
+                      placeholder={t("checkout.addressDetailPlaceholder")}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="city">도시 *</Label>
+                      <Label htmlFor="city">{t("checkout.city")} *</Label>
                       <Input
                         id="city"
                         required
@@ -247,12 +249,12 @@ export default function CheckoutPage() {
                             city: e.target.value,
                           })
                         }
-                        placeholder="서울특별시"
+                        placeholder={t("checkout.cityPlaceholder")}
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="postalCode">우편번호 *</Label>
+                      <Label htmlFor="postalCode">{t("checkout.postalCode")} *</Label>
                       <Input
                         id="postalCode"
                         required
@@ -263,13 +265,13 @@ export default function CheckoutPage() {
                             postalCode: e.target.value,
                           })
                         }
-                        placeholder="12345"
+                        placeholder={t("checkout.postalCodePlaceholder")}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="memo">배송 메모</Label>
+                    <Label htmlFor="memo">{t("checkout.deliveryMemo")}</Label>
                     <Textarea
                       id="memo"
                       value={shippingAddress.memo}
@@ -279,7 +281,7 @@ export default function CheckoutPage() {
                           memo: e.target.value,
                         })
                       }
-                      placeholder="문 앞에 놓아주세요"
+                      placeholder={t("checkout.deliveryMemoPlaceholder")}
                       rows={3}
                     />
                   </div>
@@ -292,7 +294,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
-                <CardTitle>주문 요약</CardTitle>
+                <CardTitle>{t("checkout.orderSummary")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Items */}
@@ -320,7 +322,7 @@ export default function CheckoutPage() {
                         )}
                         <div className="flex items-center justify-between mt-1">
                           <span className="text-xs text-gray-600">
-                            수량: {item.quantity}
+                            {t("checkout.quantity").replace("{count}", item.quantity.toString())}
                           </span>
                           <span className="text-sm font-semibold">
                             ₩{item.totalPrice.toLocaleString()}
@@ -333,14 +335,14 @@ export default function CheckoutPage() {
 
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">상품 금액</span>
+                    <span className="text-gray-600">{t("checkout.productAmount")}</span>
                     <span>₩{itemsSubtotal.toLocaleString()}</span>
                   </div>
                 </div>
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">총 결제금액</span>
+                    <span className="text-lg font-semibold">{t("checkout.totalPayment")}</span>
                     <span className="text-2xl font-bold text-pink-600">
                       ₩{grandTotal.toLocaleString()}
                     </span>
@@ -355,17 +357,17 @@ export default function CheckoutPage() {
                   {createOrder.isPending ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
-                      주문 처리 중...
+                      {t("checkout.processing")}
                     </>
                   ) : (
                     <>
-                      {grandTotal.toLocaleString()}원 결제하기
+                      {t("checkout.payAmount").replace("{amount}", grandTotal.toLocaleString())}
                     </>
                   )}
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center">
-                  주문 확인 시 개인정보 처리방침 및 결제 서비스 약관에 동의하게 됩니다
+                  {t("checkout.termsAgreement")}
                 </p>
               </CardContent>
             </Card>

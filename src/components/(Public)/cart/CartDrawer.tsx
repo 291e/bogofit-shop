@@ -11,6 +11,7 @@ import {
   useRemoveFromCart,
   useClearCart
 } from "@/hooks/useCart";
+import { useLanguage } from "@/providers/languageProvider";
 
 // Types
 import { formatVariantOptions, isLowStock, exceedsStock } from "@/types/cart";
@@ -37,6 +38,7 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProps) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   // Hooks - Only mutation hooks, data comes from props
@@ -55,7 +57,7 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
   };
 
   const handleClearCart = async () => {
-    if (!confirm("Clear all items from cart?")) return;
+    if (!confirm(t("cart.clearAllConfirm"))) return;
     await clearCart.mutateAsync();
   };
 
@@ -76,7 +78,7 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
         <SheetHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-2xl font-bold">
-              장바구니
+              {t("cart.title")}
             </SheetTitle>
             {items.length > 0 && (
               <Button
@@ -86,14 +88,14 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                모두 비우기
+                {t("cart.clearAll")}
               </Button>
             )}
           </div>
 
           {totalItems > 0 && (
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>총 {totalItems}개</span>
+              <span>{t("cart.totalItems").replace("{count}", totalItems.toString())}</span>
               <span className="text-lg font-semibold text-foreground">
                 {formatCurrency(totalPrice)}
               </span>
@@ -108,7 +110,7 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-2">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-              <p className="text-sm text-muted-foreground">장바구니 불러오는 중...</p>
+              <p className="text-sm text-muted-foreground">{t("cart.loading")}</p>
             </div>
           </div>
         )}
@@ -119,13 +121,13 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
             <div className="text-center space-y-4 py-12">
               <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground/50" />
               <div className="space-y-2">
-                <h3 className="font-semibold text-lg">장바구니가 비어 있습니다</h3>
+                <h3 className="font-semibold text-lg">{t("cart.empty")}</h3>
                 <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                  마음에 드는 상품을 담아보세요
+                  {t("cart.emptyDescription")}
                 </p>
               </div>
               <Button asChild onClick={() => setOpen(false)}>
-                <Link href="/products">쇼핑 계속하기</Link>
+                <Link href="/products">{t("cart.continueShopping")}</Link>
               </Button>
             </div>
           </div>
@@ -227,12 +229,12 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
                         {/* Stock Warning */}
                         {hasExceededStock && (
                           <Badge variant="destructive" className="text-xs">
-                            재고 {item.variantQuantity}개만 남음
+                            {t("cart.onlyStockLeft").replace("{count}", item.variantQuantity?.toString() || "0")}
                           </Badge>
                         )}
                         {!hasExceededStock && hasLowStock && (
                           <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
-                            재고 부족 ({item.variantQuantity}개)
+                            {t("cart.lowStock").replace("{count}", item.variantQuantity?.toString() || "0")}
                           </Badge>
                         )}
                       </div>
@@ -248,7 +250,7 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
             <SheetFooter className="flex-col space-y-4">
               {/* Total */}
               <div className="flex items-center justify-between text-lg font-bold">
-                <span>합계</span>
+                <span>{t("cart.total")}</span>
                 <span>{formatCurrency(totalPrice)}</span>
               </div>
 
@@ -256,7 +258,7 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
               <div className="grid gap-2">
                 <Button size="lg" className="w-full" asChild>
                   <Link href="/checkout" onClick={() => setOpen(false)}>
-                    결제하기
+                    {t("cart.checkout")}
                   </Link>
                 </Button>
                 <Button
@@ -266,7 +268,7 @@ export function CartDrawer({ children, cart, isLoading = false }: CartDrawerProp
                   asChild
                 >
                   <Link href="/products" onClick={() => setOpen(false)}>
-                    쇼핑 계속하기
+                    {t("cart.continueShopping")}
                   </Link>
                 </Button>
               </div>

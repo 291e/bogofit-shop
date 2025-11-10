@@ -17,6 +17,7 @@ import { ChevronDown, ChevronUp, Plus, Trash2, Sparkles, Wand2 } from "lucide-re
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import VirtualFitting from "@/components/(Public)/product/VirtualFitting";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface ProductRegisterFormProps {
   brandId?: string;
@@ -28,6 +29,7 @@ export default function ProductRegisterSubSection({
   className
 }: ProductRegisterFormProps) {
   // ✅ All hooks must be called before any early returns
+  const { t } = useLanguage();
   const router = useRouter();
 
   // ✅ Use React Query for categories with caching
@@ -153,31 +155,31 @@ export default function ProductRegisterSubSection({
 
     // Validation
     const errors: string[] = [];
-    if (!formData.name.trim()) errors.push("상품명을 입력해주세요");
-    if (!formData.slug.trim()) errors.push("슬러그를 입력해주세요");
-    if (!formData.sku?.trim()) errors.push("SKU를 입력해주세요");
-    if (!formData.categoryId) errors.push("카테고리를 선택해주세요");
-    if (formData.basePrice <= 0) errors.push("기본 가격을 입력해주세요");
-    if (!formData.thumbUrl) errors.push("대표 이미지를 업로드해주세요");
+    if (!formData.name.trim()) errors.push(t("header.business.brandDetail.products.register.validationErrors.productNameRequired"));
+    if (!formData.slug.trim()) errors.push(t("header.business.brandDetail.products.register.validationErrors.slugRequired"));
+    if (!formData.sku?.trim()) errors.push(t("header.business.brandDetail.products.register.validationErrors.skuRequired"));
+    if (!formData.categoryId) errors.push(t("header.business.brandDetail.products.register.validationErrors.categoryRequired"));
+    if (formData.basePrice <= 0) errors.push(t("header.business.brandDetail.products.register.validationErrors.basePriceRequired"));
+    if (!formData.thumbUrl) errors.push(t("header.business.brandDetail.products.register.validationErrors.mainImageRequired"));
 
     // Validate inventory based on hasOptions
     if (formData.hasOptions) {
       // Has variants - validate each variant
       if (formData.variants.length === 0) {
-        errors.push("변형 사용이 켜져 있습니다. 최소 1개의 변형을 추가해주세요");
+        errors.push(t("header.business.brandDetail.products.register.validationErrors.variantRequired"));
       }
 
       formData.variants.forEach((variant, index) => {
         // Validate quantity
         if (variant.quantity === undefined || variant.quantity === null || variant.quantity < 0) {
-          errors.push(`변형 ${index + 1}: 수량을 입력해주세요`);
+          errors.push(t("header.business.brandDetail.products.register.validationErrors.variantQuantityRequired", { index: index + 1 }));
         }
 
         // Options are now optional - only validate if provided
         if (variant.options && variant.options.length > 0) {
           variant.options.forEach((option, optionIndex) => {
             if (!option.key?.trim() || !option.value?.trim()) {
-              errors.push(`변형 ${index + 1} 옵션 ${optionIndex + 1}: 옵션명과 옵션값을 입력해주세요`);
+              errors.push(t("header.business.brandDetail.products.register.validationErrors.variantOptionRequired", { index: index + 1, optionIndex: optionIndex + 1 }));
             }
           });
         }
@@ -185,7 +187,7 @@ export default function ProductRegisterSubSection({
     } else {
       // No variants - product-level inventory validation
       if (formData.quantity !== null && formData.quantity !== undefined && formData.quantity < 0) {
-        errors.push("상품 수량은 0 이상이어야 합니다");
+        errors.push(t("header.business.brandDetail.products.register.validationErrors.quantityInvalid"));
       }
     }
 
@@ -217,7 +219,7 @@ export default function ProductRegisterSubSection({
   // ✅ AI Image Generation handler
   const handleAIGenerate = async () => {
     if (!formData.thumbUrl) {
-      toast.error("먼저 대표 이미지를 업로드해주세요");
+      toast.error(t("header.business.brandDetail.products.register.toastMessages.mainImageRequired"));
       return;
     }
 
@@ -241,13 +243,13 @@ export default function ProductRegisterSubSection({
         // Show preview instead of directly adding
         setAiGeneratedImage(result.imageUrl);
         setShowAiPreview(true);
-        toast.success("AI 이미지가 생성되었습니다! 미리보기를 확인하세요.");
+        toast.success(t("header.business.brandDetail.products.register.toastMessages.aiImageGenerated"));
       } else {
-        toast.error(result.error || "AI 이미지 생성에 실패했습니다");
+        toast.error(result.error || t("header.business.brandDetail.products.register.toastMessages.aiImageFailed"));
       }
     } catch (error) {
       console.error('AI Generation Error:', error);
-      toast.error("AI 이미지 생성 중 오류가 발생했습니다");
+      toast.error(t("header.business.brandDetail.products.register.toastMessages.aiImageError"));
     }
   };
 
@@ -256,7 +258,7 @@ export default function ProductRegisterSubSection({
   const handleRejectAiImage = () => {
     setShowAiPreview(false);
     setAiGeneratedImage(null);
-    toast.info("AI 이미지가 거부되었습니다.");
+    toast.info(t("header.business.brandDetail.products.register.toastMessages.aiImageRejected"));
   };
 
   // ✅ Analyze AI image to determine if it's 상의 or 하의
@@ -308,19 +310,19 @@ export default function ProductRegisterSubSection({
     // Show Virtual Fitting section inline
     setShowVirtualFitting(true);
 
-    toast.success(`${category} 이미지로 인식되었습니다! 가상 피팅을 시작하세요.`);
+    toast.success(t("header.business.brandDetail.products.register.toastMessages.categoryRecognized", { category }));
   };
 
   // ✅ AI Auto Fill - Analyze product image and auto-fill form
   const handleAIAutoFill = async () => {
     if (!formData.thumbUrl) {
-      toast.error("대표 이미지를 먼저 업로드해주세요.");
+      toast.error(t("header.business.brandDetail.products.register.toastMessages.mainImageRequiredForFitting"));
       return;
     }
 
     try {
       setIsAnalyzingProduct(true);
-      toast.info("AI가 이미지를 분석하고 있습니다...");
+      toast.info(t("header.business.brandDetail.products.register.toastMessages.aiAnalyzing"));
 
       // Convert image URL to base64
       const response = await fetch(formData.thumbUrl);
@@ -416,12 +418,12 @@ export default function ProductRegisterSubSection({
               }
             }
 
-            toast.success("AI가 정보를 자동으로 입력했습니다!");
+            toast.success(t("header.business.brandDetail.products.register.toastMessages.aiAutoFilled"));
           } else {
-            toast.error("이미지 분석에 실패했습니다.");
+            toast.error(t("header.business.brandDetail.products.register.toastMessages.imageAnalysisFailed"));
           }
         } catch {
-          toast.error("AI 분석 중 오류가 발생했습니다.");
+          toast.error(t("header.business.brandDetail.products.register.toastMessages.aiAnalysisError"));
         } finally {
           setIsAnalyzingProduct(false);
         }
@@ -429,14 +431,14 @@ export default function ProductRegisterSubSection({
 
       reader.readAsDataURL(blob);
     } catch {
-      toast.error("이미지 로드 중 오류가 발생했습니다.");
+      toast.error(t("header.business.brandDetail.products.register.toastMessages.imageLoadError"));
       setIsAnalyzingProduct(false);
     }
   };
 
   // ✅ Get category name for Virtual Fitting
   const getCategoryName = (): string => {
-    if (!formData.categoryId || !categories.length) return "상품";
+    if (!formData.categoryId || !categories.length) return t("header.business.brandDetail.products.register.defaultCategory");
 
     // Find category by ID
     const findCategory = (cats: typeof categories, id: string): typeof categories[0] | null => {
@@ -451,7 +453,7 @@ export default function ProductRegisterSubSection({
     };
 
     const category = findCategory(categories, formData.categoryId);
-    if (!category) return "상품";
+    if (!category) return t("header.business.brandDetail.products.register.defaultCategory");
 
     // Try to find level 2 category (상의, 하의, 원피스, etc.)
     const findLevel2Category = (cat: typeof category): string | null => {
@@ -468,13 +470,13 @@ export default function ProductRegisterSubSection({
     };
 
     const level2Category = findLevel2Category(category);
-    return level2Category || category.name || "상품";
+    return level2Category || category.name || t("header.business.brandDetail.products.register.defaultCategory");
   };
 
   return (
     <div className={`bg-white rounded-lg shadow ${className}`}>
       <div className="p-6">
-        <h2 className="text-2xl font-bold mb-6">상품 등록</h2>
+        <h2 className="text-2xl font-bold mb-6">{t("header.business.brandDetail.products.register.title")}</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
 
 
@@ -482,7 +484,7 @@ export default function ProductRegisterSubSection({
           <Card>
             <CardHeader className="cursor-pointer" onClick={() => toggleSection('category')}>
               <CardTitle className="flex items-center justify-between">
-                <span>카테고리 *</span>
+                <span>{t("header.business.brandDetail.products.register.category")}</span>
                 {openSections.category ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </CardTitle>
             </CardHeader>
@@ -503,7 +505,7 @@ export default function ProductRegisterSubSection({
           <Card>
             <CardHeader className="cursor-pointer" onClick={() => toggleSection('basic')}>
               <CardTitle className="flex items-center justify-between">
-                <span>기본 정보</span>
+                <span>{t("header.business.brandDetail.products.register.basicInfo")}</span>
                 {openSections.basic ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </CardTitle>
             </CardHeader>
@@ -512,17 +514,17 @@ export default function ProductRegisterSubSection({
                 {/* 상품명, 슬러그, SKU - 3 cột */}
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="name">상품명 *</Label>
+                    <Label htmlFor="name">{t("header.business.brandDetail.products.register.productName")}</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => handleNameChange(e.target.value)}
-                      placeholder="상품명을 입력하세요"
+                      placeholder={t("header.business.brandDetail.products.register.productNamePlaceholder")}
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="slug">슬러그 *</Label>
+                    <Label htmlFor="slug">{t("header.business.brandDetail.products.register.slug")}</Label>
                     <Input
                       id="slug"
                       value={formData.slug}
@@ -545,12 +547,12 @@ export default function ProductRegisterSubSection({
 
                 {/* 상품 설명 - full width */}
                 <div>
-                  <Label htmlFor="description">상품 설명</Label>
+                  <Label htmlFor="description">{t("header.business.brandDetail.products.register.description")}</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="상품에 대한 상세 설명"
+                    placeholder={t("header.business.brandDetail.products.register.descriptionPlaceholder")}
                     rows={4}
                   />
                 </div>
@@ -564,7 +566,7 @@ export default function ProductRegisterSubSection({
           <Card>
             <CardHeader className="cursor-pointer" onClick={() => toggleSection('pricing')}>
               <CardTitle className="flex items-center justify-between">
-                <span>가격 정보 *</span>
+                <span>{t("header.business.brandDetail.products.register.priceInfo")}</span>
                 {openSections.pricing ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </CardTitle>
             </CardHeader>
@@ -572,7 +574,7 @@ export default function ProductRegisterSubSection({
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="basePrice">기본 가격 *</Label>
+                    <Label htmlFor="basePrice">{t("header.business.brandDetail.products.register.basePrice")}</Label>
                     <Input
                       id="basePrice"
                       type="number"
@@ -582,7 +584,7 @@ export default function ProductRegisterSubSection({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="baseCompareAtPrice">비교 가격</Label>
+                    <Label htmlFor="baseCompareAtPrice">{t("header.business.brandDetail.products.register.comparePrice")}</Label>
                     <Input
                       id="baseCompareAtPrice"
                       type="number"
@@ -600,7 +602,7 @@ export default function ProductRegisterSubSection({
           <Card>
             <CardHeader className="cursor-pointer" onClick={() => toggleSection('images')}>
               <CardTitle className="flex items-center justify-between">
-                <span>이미지 *</span>
+                <span>{t("header.business.brandDetail.products.register.images")}</span>
                 {openSections.images ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </CardTitle>
             </CardHeader>
@@ -609,7 +611,7 @@ export default function ProductRegisterSubSection({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col items-center">
                     <div className="w-full flex items-center justify-between mb-2">
-                      <Label>대표 이미지 *</Label>
+                      <Label>{t("header.business.brandDetail.products.register.mainImage")}</Label>
                       {formData.thumbUrl && (
                         <Button
                           type="button"
@@ -622,12 +624,12 @@ export default function ProductRegisterSubSection({
                           {isAnalyzingProduct ? (
                             <>
                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
-                              분석 중...
+                              {t("header.business.brandDetail.products.register.analyzingForFitting")}
                             </>
                           ) : (
                             <>
                               <Sparkles className="h-3 w-3 mr-1" />
-                              AI 자동 입력
+                              {t("header.business.brandDetail.products.register.aiAutoFill")}
                             </>
                           )}
                         </Button>
@@ -642,9 +644,9 @@ export default function ProductRegisterSubSection({
                     </div>
                   </div>
                   <div>
-                    <Label>상세 이미지</Label>
+                    <Label>{t("header.business.brandDetail.products.register.detailImages")}</Label>
                     <p className="text-sm text-gray-600 mb-2">
-                      AI 생성 이미지도 여기에 추가됩니다. 각 이미지를 클릭하여 삭제할 수 있습니다.
+                      {t("header.business.brandDetail.products.register.aiGeneratedImages")}
                     </p>
                     <ImageUploader
                       value={formData.images}
@@ -658,10 +660,10 @@ export default function ProductRegisterSubSection({
                       <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
                         <div className="flex items-center gap-2 mb-3">
                           <Sparkles className="h-5 w-5 text-purple-600" />
-                          <span className="font-medium text-purple-900">AI 이미지 생성</span>
+                          <span className="font-medium text-purple-900">{t("header.business.brandDetail.products.register.aiImageGeneration")}</span>
                         </div>
                         <p className="text-sm text-purple-700 mb-3">
-                          대표 이미지를 기반으로 AI가 전문적인 상품 사진을 생성합니다 (512x512, 원본 구성 유지)
+                          {t("header.business.brandDetail.products.register.aiImageGenerationDescription")}
                         </p>
                         <Button
                           type="button"
@@ -672,12 +674,12 @@ export default function ProductRegisterSubSection({
                           {isAIGenerating ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              AI 생성 중...
+                              {t("header.business.brandDetail.products.register.generating")}
                             </>
                           ) : (
                             <>
                               <Wand2 className="h-4 w-4 mr-2" />
-                              AI 이미지 생성
+                              {t("header.business.brandDetail.products.register.generateAiImage")}
                             </>
                           )}
                         </Button>
@@ -693,7 +695,7 @@ export default function ProductRegisterSubSection({
           <Card>
             <CardHeader className="cursor-pointer" onClick={() => toggleSection('variants')}>
               <CardTitle className="flex items-center justify-between">
-                <span>재고 관리 *</span>
+                <span>{t("header.business.brandDetail.products.register.inventoryManagement")}</span>
                 {openSections.variants ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </CardTitle>
             </CardHeader>
@@ -703,10 +705,10 @@ export default function ProductRegisterSubSection({
                 <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <Label className="text-base font-semibold text-blue-900">상품 재고 (Product Level)</Label>
+                    <Label className="text-base font-semibold text-blue-900">{t("header.business.brandDetail.products.register.productLevelStock")}</Label>
                   </div>
                   <div>
-                    <Label htmlFor="quantity">상품 수량</Label>
+                    <Label htmlFor="quantity">{t("header.business.brandDetail.products.register.productQuantity")}</Label>
                     <Input
                       id="quantity"
                       type="number"
@@ -715,11 +717,11 @@ export default function ProductRegisterSubSection({
                         ...prev,
                         quantity: e.target.value === '' ? null : Number(e.target.value)
                       }))}
-                      placeholder="무제한 재고는 비워두세요"
+                      placeholder={t("header.business.brandDetail.products.register.productQuantityPlaceholder")}
                       className="mt-2"
                     />
                     <p className="text-sm text-gray-600 mt-2">
-                      상품 자체의 재고 수량입니다. 비워두면 무제한 재고로 설정됩니다.
+                      {t("header.business.brandDetail.products.register.productQuantityDescription")}
                     </p>
                   </div>
                 </div>
@@ -728,11 +730,11 @@ export default function ProductRegisterSubSection({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
-                      <Label className="text-base font-medium">변형 사용</Label>
+                      <Label className="text-base font-medium">{t("header.business.brandDetail.products.register.useVariants")}</Label>
                       <p className="text-sm text-gray-600">
                         {formData.hasOptions
-                          ? "변형별로 재고를 관리합니다 (색상, 사이즈 등)"
-                          : "변형 없이 상품 재고만 사용합니다"
+                          ? t("header.business.brandDetail.products.register.useVariantsDescription")
+                          : t("header.business.brandDetail.products.register.noVariantsDescription")
                         }
                       </p>
                     </div>
@@ -760,14 +762,14 @@ export default function ProductRegisterSubSection({
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <Label className="text-base font-semibold text-green-900">변형 재고 (Variant Level)</Label>
+                        <Label className="text-base font-semibold text-green-900">{t("header.business.brandDetail.products.register.variantLevelStock")}</Label>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         {formData.variants.map((variant, index) => (
                           <Card key={index} className="border-2 border-green-200">
                             <CardHeader className="pb-3 bg-green-50">
                               <div className="flex items-center justify-between">
-                                <span className="font-medium text-green-900">변형 {index + 1}</span>
+                                <span className="font-medium text-green-900">{t("header.business.brandDetail.products.register.variant", { index: index + 1 })}</span>
                                 {formData.variants.length > 1 && (
                                   <Button
                                     type="button"
@@ -784,7 +786,7 @@ export default function ProductRegisterSubSection({
                               {/* 1. 수량 */}
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                  <Label>수량 *</Label>
+                                  <Label>{t("header.business.brandDetail.products.register.quantity")}</Label>
                                   <Input
                                     type="number"
                                     value={variant.quantity}
@@ -796,15 +798,15 @@ export default function ProductRegisterSubSection({
 
                               {/* 2. 옵션 (v2.0: Optional) */}
                               <div>
-                                <Label>옵션 (선택사항)</Label>
+                                <Label>{t("header.business.brandDetail.products.register.options")}</Label>
                                 <p className="text-sm text-gray-500 mb-2">
-                                  변형의 특성을 나타내는 옵션입니다. 예: 색상, 사이즈 등
+                                  {t("header.business.brandDetail.products.register.optionsDescription")}
                                 </p>
                                 <div className="space-y-2">
                                   {variant.options.map((option, optionIndex) => (
                                     <div key={optionIndex} className="flex gap-2 items-center">
                                       <Input
-                                        placeholder="옵션명 (예: 색상)"
+                                        placeholder={t("header.business.brandDetail.products.register.optionNamePlaceholder")}
                                         value={option.key || ''}
                                         onChange={(e) => {
                                           const newOptions = [...variant.options];
@@ -814,7 +816,7 @@ export default function ProductRegisterSubSection({
                                         className="flex-1"
                                       />
                                       <Input
-                                        placeholder="옵션값 (예: 빨강)"
+                                        placeholder={t("header.business.brandDetail.products.register.optionValuePlaceholder")}
                                         value={option.value || ''}
                                         onChange={(e) => {
                                           const newOptions = [...variant.options];
@@ -846,7 +848,7 @@ export default function ProductRegisterSubSection({
                                     }}
                                   >
                                     <Plus className="h-4 w-4 mr-2" />
-                                    옵션 추가
+                                    {t("header.business.brandDetail.products.register.addOption")}
                                   </Button>
                                 </div>
                               </div>
@@ -863,12 +865,12 @@ export default function ProductRegisterSubSection({
                                   }}
                                 >
                                   <ChevronDown className={`h-4 w-4 transition-transform ${(variant as ProductVariantForm & { showAdditionalInfo?: boolean }).showAdditionalInfo ? 'rotate-180' : ''}`} />
-                                  <Label className="text-sm font-medium cursor-pointer">추가 정보</Label>
+                                  <Label className="text-sm font-medium cursor-pointer">{t("header.business.brandDetail.products.register.additionalInfo")}</Label>
                                 </div>
                                 {(variant as ProductVariantForm & { showAdditionalInfo?: boolean }).showAdditionalInfo && (
                                   <div className="mt-3 grid grid-cols-3 gap-4">
                                     <div>
-                                      <Label>가격</Label>
+                                      <Label>{t("header.business.brandDetail.products.register.price")}</Label>
                                       <Input
                                         type="number"
                                         value={variant.price}
@@ -876,7 +878,7 @@ export default function ProductRegisterSubSection({
                                       />
                                     </div>
                                     <div>
-                                      <Label>비교 가격</Label>
+                                      <Label>{t("header.business.brandDetail.products.register.variantComparePrice")}</Label>
                                       <Input
                                         type="number"
                                         value={variant.compareAtPrice}
@@ -884,7 +886,7 @@ export default function ProductRegisterSubSection({
                                       />
                                     </div>
                                     <div>
-                                      <Label>무게 (g)</Label>
+                                      <Label>{t("header.business.brandDetail.products.register.weight")}</Label>
                                       <Input
                                         type="number"
                                         value={variant.weightGrams}
@@ -906,7 +908,7 @@ export default function ProductRegisterSubSection({
                         className="w-full"
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        변형 추가
+                        {t("header.business.brandDetail.products.register.addVariant")}
                       </Button>
                     </div>
                   )}
@@ -922,10 +924,10 @@ export default function ProductRegisterSubSection({
               variant="outline"
               onClick={() => router.push(`/business/brands/${brandId}/products`)}
             >
-              취소
+              {t("header.business.brandDetail.products.register.cancel")}
             </Button>
             <Button type="submit" disabled={createProduct.isPending}>
-              {createProduct.isPending ? "등록 중..." : "상품 등록"}
+              {createProduct.isPending ? t("header.business.brandDetail.products.register.registering") : t("header.business.brandDetail.products.register.register")}
             </Button>
           </div>
         </form>
@@ -941,7 +943,7 @@ export default function ProductRegisterSubSection({
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold flex items-center gap-2">
                 <Sparkles className="h-6 w-6 text-purple-600" />
-                AI 생성 이미지 미리보기 & 가상 피팅
+                {t("header.business.brandDetail.products.register.aiPreview")}
               </h3>
               <button
                 onClick={() => {
@@ -961,7 +963,7 @@ export default function ProductRegisterSubSection({
               }`}>
               {/* Left: AI Generated Image - 2/5 width */}
               <div className={showVirtualFitting ? 'lg:col-span-2' : 'w-full'}>
-                <h4 className="font-semibold mb-3 text-gray-700">생성된 이미지 (512x512)</h4>
+                <h4 className="font-semibold mb-3 text-gray-700">{t("header.business.brandDetail.products.register.generatedImages")}</h4>
                 <div className="mb-4 flex justify-center bg-gray-50 rounded-lg p-4">
                   <div className="relative w-80 h-80">
                     <img
@@ -979,7 +981,7 @@ export default function ProductRegisterSubSection({
                 {aiImageCategory && (
                   <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-sm text-blue-800 font-semibold">
-                      AI 분석 결과: <span className="text-blue-600">{aiImageCategory}</span>
+                      {t("header.business.brandDetail.products.register.aiAnalysisResult")} <span className="text-blue-600">{aiImageCategory}</span>
                     </p>
                   </div>
                 )}
@@ -988,7 +990,7 @@ export default function ProductRegisterSubSection({
                 {formData.images && formData.images.length > 1 && (
                   <div className="mt-4">
                     <h5 className="text-sm font-semibold mb-2 text-gray-700">
-                      가상 피팅 결과 ({formData.images.length - 1}개)
+                      {t("header.business.brandDetail.products.register.virtualFittingResult", { count: formData.images.length - 1 })}
                     </h5>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {formData.images.slice(1).map((image, idx) => (
@@ -1019,7 +1021,7 @@ export default function ProductRegisterSubSection({
                       ))}
                     </div>
                     <p className="text-xs text-gray-500 mt-2 text-center">
-                      가상 피팅 결과가 상세 이미지에 자동으로 추가됩니다
+                      {t("header.business.brandDetail.products.register.virtualFittingDescription")}
                     </p>
                   </div>
                 )}
@@ -1036,7 +1038,7 @@ export default function ProductRegisterSubSection({
                     disabled={isUploadingToS3 || isAnalyzingImage}
                     className="flex-1"
                   >
-                    거부
+                    {t("header.business.brandDetail.products.register.reject")}
                   </Button>
                   <Button
                     type="button"
@@ -1047,10 +1049,10 @@ export default function ProductRegisterSubSection({
                     {isAnalyzingImage ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        AI 분석 중...
+                        {t("header.business.brandDetail.products.register.analyzingForFitting")}
                       </>
                     ) : (
-                      "입어보기"
+                      t("header.business.brandDetail.products.register.tryOn")
                     )}
                   </Button>
                 </div>
@@ -1060,10 +1062,10 @@ export default function ProductRegisterSubSection({
               {showVirtualFitting && aiImageCategory && (
                 <div className="lg:col-span-3 border-l pl-6">
                   <h4 className="font-semibold mb-3 text-gray-700">
-                    가상 피팅
+                    {t("header.business.brandDetail.products.register.virtualFitting")}
                   </h4>
                   <VirtualFitting
-                    productTitle={formData.name || "AI 생성 상품"}
+                    productTitle={formData.name || t("header.business.brandDetail.products.register.aiProduct")}
                     productCategory={aiImageCategory}
                     currentImage={aiGeneratedImage}
                     onResultGenerated={(resultImage) => {

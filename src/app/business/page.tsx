@@ -6,8 +6,10 @@ import BusinessLoginForm from "@/components/(Business)/auth/LoginForm";
 import BusinessRegisterForm from "@/components/(Business)/auth/RegisterForm";
 import { Building2, User } from "lucide-react";
 import { useAuth } from "@/providers/authProvider";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function BusinessPage() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("login");
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -25,7 +27,7 @@ export default function BusinessPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">인증 확인 중...</p>
+          <p className="mt-4 text-gray-600">{t("header.business.checkingAuth")}</p>
         </div>
       </div>
     );
@@ -37,7 +39,7 @@ export default function BusinessPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">페이지 이동 중...</p>
+          <p className="mt-4 text-gray-600">{t("header.business.redirecting")}</p>
         </div>
       </div>
     );
@@ -59,7 +61,7 @@ export default function BusinessPage() {
               }`}
             >
               <Building2 className="h-4 w-4" />
-              <span className="font-bold">비즈니스 로그인</span>
+              <span className="font-bold">{t("header.business.businessLogin")}</span>
             </button>
             <button
               onClick={() => setActiveTab("register")}
@@ -70,7 +72,7 @@ export default function BusinessPage() {
               }`}
             >
               <User className="h-4 w-4" />
-              <span className="font-bold">비즈니스 회원가입</span>
+              <span className="font-bold">{t("header.business.businessRegister")}</span>
             </button>
           </div>
         </div>

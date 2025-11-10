@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Package, Loader2 } from "lucide-react";
 import { ProductResponseDto } from "@/types/product";
 import { Cafe24ProductCard } from "./Cafe24ProductCard";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface Cafe24AllProductsProps {
   initialProducts?: ProductResponseDto[];
@@ -61,6 +62,7 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
   const LOAD_SIZE = 12; // Load 12 products per scroll (2 rows x 6 columns)
   const observerRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
+  const { t } = useLanguage();
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -134,7 +136,7 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
       <div className="container mx-auto px-4">
         <div className="text-center py-12">
           <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-gray-500 text-lg">상품이 없습니다</p>
+          <p className="text-gray-500 text-lg">{t("mainPage.sections.noProducts")}</p>
         </div>
       </div>
     );
@@ -158,18 +160,18 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
             <div className="flex items-center gap-3">
               <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-sky-500 to-indigo-500" />
               <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
-                전체 상품
+                {t("mainPage.sections.allProducts")}
               </h2>
               <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full">
-                전체 상품을 둘러보세요
+                {t("mainPage.sections.allProductsSubtitle")}
               </span>
             </div>
             <Link
               href="/products"
               className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-white/70 hover:border-gray-400 transition-colors shadow-sm backdrop-blur"
-              aria-label="전체 상품 전체보기"
+              aria-label={t("mainPage.sections.viewAll")}
             >
-              전체보기
+              {t("mainPage.sections.viewAll")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -193,11 +195,11 @@ export function Cafe24AllProducts({ initialProducts }: Cafe24AllProductsProps) {
           {loading ? (
             <div className="flex items-center gap-2 text-gray-500">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-sm">상품을 불러오는 중...</span>
+              <span className="text-sm">{t("mainPage.sections.loadingProducts")}</span>
             </div>
           ) : !hasMore ? (
             <div className="text-center text-gray-500">
-              <p className="text-sm">모든 상품을 불러왔습니다</p>
+              <p className="text-sm">{t("mainPage.sections.allProductsLoaded")}</p>
             </div>
           ) : (
             <div className="h-8" />

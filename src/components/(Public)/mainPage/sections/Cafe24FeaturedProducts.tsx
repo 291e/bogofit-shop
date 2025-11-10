@@ -6,6 +6,7 @@ import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { usePublicProducts } from "@/hooks/useProducts";
 import { useState } from "react";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface Cafe24FeaturedProductsProps {
   products?: ProductResponseDto[]; // Optional - sẽ dùng hook nếu không có
@@ -13,6 +14,7 @@ interface Cafe24FeaturedProductsProps {
 
 export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24FeaturedProductsProps) {
   const [showAll, setShowAll] = useState(false);
+  const { t } = useLanguage();
 
   // ✅ Only use hook if no initial products provided (standalone usage)
   const { data: hookData } = usePublicProducts({
@@ -70,17 +72,17 @@ export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24Feat
             <div className="flex items-center gap-3">
               <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-purple-500 to-violet-500" />
               <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
-                추천 상품
+                {t("mainPage.sections.featuredProducts")}
               </h2>
               <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-purple-800 bg-purple-50 px-2.5 py-1 rounded-full">
-                MD가 추천하는 상품
+                {t("mainPage.sections.featuredProductsSubtitle")}
               </span>
             </div>
             <Link
               href="/recommend"
               className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-white/70 hover:border-gray-400 transition-colors shadow-sm backdrop-blur"
             >
-              전체보기
+              {t("mainPage.sections.viewAll")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -108,12 +110,12 @@ export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24Feat
             >
               {showAll ? (
                 <>
-                  닫기
+                  {t("mainPage.sections.close")}
                   <ChevronUp className="h-4 w-4" />
                 </>
               ) : (
                 <>
-                  더보기
+                  {t("mainPage.sections.showMore")}
                   <ChevronDown className="h-4 w-4" />
                 </>
               )}

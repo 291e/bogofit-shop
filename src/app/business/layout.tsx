@@ -13,9 +13,11 @@ export default function BusinessLayout({
   // Only show sidebar on business/brands/[id] pages
   const shouldShowSidebar = pathname.startsWith("/business/brands/") && pathname !== "/business/brands";
 
+  // Show header for all business pages
   if (!shouldShowSidebar) {
     return (
       <div className="min-h-screen bg-gray-50">
+        <BusinessHeader />
         {children}
       </div>
     );

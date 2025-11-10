@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Search, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { Sparkles, Search, X, Loader2 } from "lucide-react";
 import { usePublicCategories } from "@/hooks/useCategories";
 import { ProductResponseDto } from "@/types/product";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import CategoryDropdown from "@/components/ui/category-dropdown";
 import { Cafe24ProductCard } from "@/components/(Public)/mainPage/sections/Cafe24ProductCard";
+import { useLanguage } from "@/providers/languageProvider";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Convert ProductResponseDto to display format
 const convertToDisplayProduct = (product: ProductResponseDto) => {
@@ -49,6 +52,7 @@ const convertToDisplayProduct = (product: ProductResponseDto) => {
 
 
 export default function RecommendPage() {
+  const { t } = useLanguage();
   const [recommendType] = useState<"ai" | "editor">("ai");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,6 +61,24 @@ export default function RecommendPage() {
 
   // Ref for infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Map frontend sortBy to backend sortBy and sortOrder
+  const getBackendSortParams = (frontendSortBy: string) => {
+    switch (frontendSortBy) {
+      case "priceAsc":
+        return { sortBy: "finalPrice", sortOrder: "asc" };
+      case "priceDesc":
+        return { sortBy: "price", sortOrder: "desc" };
+      case "newest":
+        // For newest, we can use createdAt or just rely on default backend sorting
+        return { sortBy: undefined, sortOrder: undefined };
+      case "popular":
+        // For popular, backend might have a different field
+        return { sortBy: undefined, sortOrder: undefined };
+      default:
+        return { sortBy: undefined, sortOrder: undefined };
+    }
+  };
 
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = usePublicCategories();
@@ -91,7 +113,16 @@ export default function RecommendPage() {
 
       // Add search if provided
       if (searchQuery) params.append("search", searchQuery);
-      if (sortBy) params.append("sortBy", sortBy);
+      
+      // Add backend sorting parameters
+      const backendSort = getBackendSortParams(sortBy);
+      if (backendSort.sortBy) {
+        params.append("sortBy", backendSort.sortBy);
+      }
+      if (backendSort.sortOrder) {
+        params.append("sortOrder", backendSort.sortOrder);
+      }
+      
       // Include related data; avoid filtering by promotion
       params.append('include', 'true');
       if (showSoldOut) params.append("showSoldOut", "true");
@@ -142,8 +173,8 @@ export default function RecommendPage() {
 
   // Set page title
   useEffect(() => {
-    document.title = "추천 상품 - BOGOFIT";
-  }, []);
+    document.title = `${t("recommend.title")} - BOGOFIT`;
+  }, [t]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -164,13 +195,13 @@ export default function RecommendPage() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-6">
           {/* Category Selection */}
           <div className="mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-3">카테고리 선택</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-3">{t("recommend.categorySelection")}</h3>
 
             {/* All Categories Button */}
             <div className="mb-4">
@@ -183,7 +214,7 @@ export default function RecommendPage() {
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
               >
-                전체 상품 (랜덤)
+                {t("recommend.allProducts")}
               </button>
             </div>
 
@@ -197,23 +228,28 @@ export default function RecommendPage() {
               compactMode={true}
             />
           </div>
+        </div>
+      </div>
 
-          {/* Search and Filters */}
+      {/* Products Section */}
+      <div className="container mx-auto px-4 py-8">
+        {/* Search and Filter Bar */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
+              <Input
                 type="text"
-                placeholder="상품명, 브랜드명으로 검색..."
+                placeholder={t("recommend.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="w-full pl-10 pr-10"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -221,42 +257,30 @@ export default function RecommendPage() {
             </div>
 
             {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            >
-              <option value="newest">최신순</option>
-              <option value="price_asc">낮은 가격순</option>
-              <option value="price_desc">높은 가격순</option>
-              <option value="popular">인기순</option>
-            </select>
-
-            {/* Filter Button */}
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <SlidersHorizontal className="h-4 w-4" />
-              필터
-            </button>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">{t("recommend.sortOptions.newest")}</SelectItem>
+                <SelectItem value="priceAsc">{t("recommend.sortOptions.priceAsc")}</SelectItem>
+                <SelectItem value="priceDesc">{t("recommend.sortOptions.priceDesc")}</SelectItem>
+                <SelectItem value="popular">{t("recommend.sortOptions.popular")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      </div>
 
-      {/* Products Grid */}
-      <div className="container mx-auto px-4 py-8">
-        {/* Products Info */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600">
-                총 <span className="font-semibold">{totalCount}</span>개의 상품
-                {displayProducts.length > 0 && displayProducts.length < totalCount && (
-                  <span className="text-sm text-gray-500 ml-2">
-                    (현재 {displayProducts.length}개 로드됨)
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
+        {/* Results Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {t("recommend.totalProducts").replace("{count}", totalCount.toLocaleString())}
+            {displayProducts.length > 0 && displayProducts.length < totalCount && (
+              <span className="text-sm font-normal text-gray-500 ml-2">
+                ({t("recommend.currentlyLoaded").replace("{count}", displayProducts.length.toString())})
+              </span>
+            )}
+          </h2>
         </div>
 
         {error ? (
@@ -264,25 +288,25 @@ export default function RecommendPage() {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <X className="h-8 w-8 text-red-500" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">상품을 불러올 수 없습니다</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("recommend.error")}</h3>
             <p className="text-gray-600 mb-4">{error.message}</p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
             >
-              다시 시도
+              {t("recommend.retry")}
             </button>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
-            <span className="ml-2 text-gray-600">상품을 불러오는 중...</span>
+            <span className="ml-2 text-gray-600">{t("recommend.loading")}</span>
           </div>
         ) : displayProducts.length === 0 ? (
           <div className="text-center py-20">
             <Sparkles className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">추천 상품이 없습니다</h3>
-            <p className="text-gray-600">다른 카테고리나 검색어를 시도해보세요.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("recommend.noProducts")}</h3>
+            <p className="text-gray-600">{t("recommend.noProductsDescription")}</p>
           </div>
         ) : (
           <>
@@ -302,11 +326,11 @@ export default function RecommendPage() {
               {isFetchingNextPage && (
                 <div className="flex items-center gap-2 text-pink-600">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="text-sm">더 많은 상품을 불러오는 중...</span>
+                  <span className="text-sm">{t("recommend.loadingMore")}</span>
                 </div>
               )}
               {!hasNextPage && displayProducts.length > 0 && (
-                <p className="text-sm text-gray-500">모든 상품을 불러왔습니다</p>
+                <p className="text-sm text-gray-500">{t("recommend.allLoaded")}</p>
               )}
             </div>
           </>

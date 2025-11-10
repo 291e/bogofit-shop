@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface SampleImage {
   id: string;
@@ -47,6 +48,7 @@ export function FileDropzone({
   selectedSampleSrc,
   version,
 }: FileDropzoneProps) {
+  const { t } = useLanguage();
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -224,7 +226,7 @@ export function FileDropzone({
                     onClear();
                   }}
                   className="absolute top-3 right-3 w-6 h-6 bg-[#FF84CD] text-white rounded-full flex items-center justify-center hover:bg-[#F9CFB7] transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                  title="이미지 제거"
+                  title={t("ui.fileDropzone.removeImage")}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -236,21 +238,21 @@ export function FileDropzone({
                 <Upload className="w-16 h-16 mx-auto text-gray-400 mb-3" />
                 <p className="text-base font-medium text-gray-700 mb-1">
                   {isDragActive
-                    ? "여기에 파일을 놓으세요"
+                    ? t("ui.fileDropzone.dropFile")
                     : type === "model"
-                      ? "모델 이미지를 업로드하세요"
+                      ? t("ui.fileDropzone.uploadModelImage")
                       : version === "v2" && type === "clothing" && label.includes("아이템")
-                        ? "아이템 이미지를 업로드하세요"
+                        ? t("ui.fileDropzone.uploadItemImage")
                         : version === "v1" && type === "clothing" && label.includes("하의")
-                          ? "하의 이미지를 업로드하세요"
-                          : "의류 이미지를 업로드하세요"}
+                          ? t("ui.fileDropzone.uploadBottomImage")
+                          : t("ui.fileDropzone.uploadClothingImage")}
                 </p>
                 <p className="text-sm text-gray-500">
-                  파일을 드래그하거나 클릭하여 선택하세요
+                  {t("ui.fileDropzone.dragOrClick")}
                 </p>
               </div>
               <div className="text-xs text-gray-400 border-t border-gray-200 pt-3 w-full">
-                지원 형식: JPG, PNG, WEBP
+                {t("ui.fileDropzone.supportedFormats")}
               </div>
             </div>
           )}
@@ -268,13 +270,13 @@ export function FileDropzone({
                 className="w-full text-sm font-medium hover:bg-pink-50 hover:border-pink-300 transition-all duration-200"
               >
                 <ImageIcon className="w-4 h-4 mr-2" />
-                샘플 이미지 선택
+                {t("ui.fileDropzone.selectSampleImage")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
               <DialogHeader className="pb-4 flex-shrink-0">
                 <DialogTitle className="text-xl font-semibold text-gray-900">
-                  {label} 샘플 이미지 선택
+                  {t("ui.fileDropzone.selectSampleImageLabel").replace("{label}", label)}
                 </DialogTitle>
               </DialogHeader>
               <div className="flex-1 overflow-y-auto px-1 min-h-0">
@@ -326,7 +328,7 @@ export function FileDropzone({
                   onClick={handleConfirmSelection}
                   disabled={!selectedSampleId}
                 >
-                  선택 완료
+                  {t("ui.fileDropzone.selectionComplete")}
                 </Button>
               </div>
             </DialogContent>

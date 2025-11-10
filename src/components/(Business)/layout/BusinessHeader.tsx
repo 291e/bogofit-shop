@@ -14,8 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
+import { LanguageSelector } from "@/components/(Public)/layout/LanguageSelector";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function BusinessHeader() {
+  const { t } = useLanguage();
   const { user, isLoading, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
 
@@ -40,6 +43,9 @@ export default function BusinessHeader() {
 
           {/* User Menu */}
           <div className="flex items-center gap-3">
+            {/* Language Selector */}
+            <LanguageSelector />
+
             {!mounted || isLoading ? (
               // ✅ Show loading while checking auth state
               <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
@@ -75,7 +81,7 @@ export default function BusinessHeader() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
                       <UserIcon className="mr-2 h-4 w-4" />
-                      <span>프로필</span>
+                      <span>{t("header.business.profile")}</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -83,17 +89,12 @@ export default function BusinessHeader() {
                       onClick={logout}
                     >
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>로그아웃</span>
+                      <span>{t("header.business.logout")}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
-            ) : (
-              // ✅ Only show login button when confirmed no user
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/business">로그인</Link>
-              </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

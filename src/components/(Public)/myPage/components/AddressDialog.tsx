@@ -4,6 +4,7 @@ import AddressFormDialog, { AddressFormData } from "@/components/ui/address-form
 import { useCreateAddress, useUpdateAddress } from "@/hooks/useAddresses";
 import { Address } from "@/types/address";
 import { toast } from "sonner";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface AddressDialogProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface AddressDialogProps {
 }
 
 export default function AddressDialog({ open, onOpenChange, editingAddress }: AddressDialogProps) {
+  const { t } = useLanguage();
   const createMutation = useCreateAddress(); // User addresses (brandId = null)
   const updateMutation = useUpdateAddress();
   const isEditMode = !!editingAddress;
@@ -19,19 +21,19 @@ export default function AddressDialog({ open, onOpenChange, editingAddress }: Ad
   const handleSubmit = async (data: AddressFormData) => {
     // Validation
     if (!data.recipient.trim()) {
-      toast.error('받는 분 이름을 입력해주세요');
+      toast.error(t("myPage.address.recipientNameRequired"));
       return;
     }
     if (!data.phone.trim()) {
-      toast.error('연락처를 입력해주세요');
+      toast.error(t("myPage.address.phoneRequired"));
       return;
     }
     if (!data.zipCode || !data.roadAddress) {
-      toast.error('주소를 검색해주세요');
+      toast.error(t("myPage.address.addressRequired"));
       return;
     }
     if (!data.detail.trim()) {
-      toast.error('상세 주소를 입력해주세요');
+      toast.error(t("myPage.address.detailRequired"));
       return;
     }
 
@@ -55,7 +57,7 @@ export default function AddressDialog({ open, onOpenChange, editingAddress }: Ad
 
         await updateMutation.mutateAsync(updateData as Partial<Address> & { id: string });
 
-        toast.success('주소가 수정되었습니다');
+        toast.success(t("myPage.address.addressUpdated"));
       } else {
         // Create new address
         const createData = {
@@ -74,13 +76,13 @@ export default function AddressDialog({ open, onOpenChange, editingAddress }: Ad
         
         await createMutation.mutateAsync(createData as Partial<Address>);
 
-        toast.success('주소가 추가되었습니다');
+        toast.success(t("myPage.address.addressAdded"));
       }
       
       onOpenChange(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 
-        isEditMode ? '주소 수정에 실패했습니다' : '주소 추가에 실패했습니다');
+        isEditMode ? t("myPage.address.updateFailed") : t("myPage.address.addFailed"));
     }
   };
 

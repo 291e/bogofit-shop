@@ -45,10 +45,9 @@ export async function generateProductImage({
     let enhancedPrompt = "";
     if (aspectRatio) {
       // If aspectRatio is provided, use the prompt as-is (should already contain format requirements)
-      // But ensure we emphasize using the exact product from the uploaded image
-      enhancedPrompt = productName
-        ? `IMPORTANT: Use the EXACT product from the uploaded image - DO NOT create a different product. The product must appear IDENTICAL to the uploaded image (same design, colors, style, details). Based on this product image, create a professional product detail image for "${productName}". ${prompt}`
-        : `IMPORTANT: Use the EXACT product from the uploaded image - DO NOT create a different product. The product must appear IDENTICAL to the uploaded image (same design, colors, style, details). ${prompt}`;
+      // For detail images, the prompt already has all instructions, so don't modify it
+      // This prevents AI from recreating the product when productName is provided
+      enhancedPrompt = prompt;
     } else {
       // Default behavior: square format for regular product images
       enhancedPrompt = productName

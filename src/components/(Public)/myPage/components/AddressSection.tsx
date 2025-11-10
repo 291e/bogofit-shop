@@ -9,8 +9,10 @@ import { Address } from "@/types/address";
 import { useAddresses, useSetDefaultAddress, useDeleteAddress } from "@/hooks/useAddresses";
 import { toast } from "sonner";
 import AddressDialog from "./AddressDialog";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function AddressSection() {
+  const { t } = useLanguage();
   // ✅ Fetch addresses directly in this component
   const { data: addresses = [], isLoading } = useAddresses({ 
     addressType: 'shipping' 
@@ -23,20 +25,20 @@ export default function AddressSection() {
   const handleSetDefault = async (id: string) => {
     try {
       await setDefaultMutation.mutateAsync(id);
-      toast.success('기본 배송지로 설정되었습니다');
+      toast.success(t("myPage.address.setDefaultSuccess"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : '기본 배송지 설정에 실패했습니다');
+      toast.error(error instanceof Error ? error.message : t("myPage.address.setDefaultFailed"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
+    if (!confirm(t("myPage.address.deleteConfirm"))) return;
     
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('주소가 삭제되었습니다');
+      toast.success(t("myPage.address.deleteSuccess"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : '주소 삭제에 실패했습니다');
+      toast.error(error instanceof Error ? error.message : t("myPage.address.deleteFailed"));
     }
   };
 
@@ -46,7 +48,7 @@ export default function AddressSection() {
         <CardContent className="flex items-center justify-center py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">주소를 불러오는 중...</p>
+            <p className="text-gray-600">{t("myPage.address.loading")}</p>
           </div>
         </CardContent>
       </Card>
@@ -59,11 +61,11 @@ export default function AddressSection() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <MapPin className="w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">등록된 주소가 없습니다</h3>
-            <p className="text-gray-500 mb-6">새로운 배송지를 등록해보세요</p>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">{t("myPage.address.noAddresses")}</h3>
+            <p className="text-gray-500 mb-6">{t("myPage.address.noAddressesDescription")}</p>
             <Button onClick={() => setIsDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              새 주소 추가
+              {t("myPage.address.addNew")}
             </Button>
           </CardContent>
         </Card>
@@ -76,10 +78,10 @@ export default function AddressSection() {
     <>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">배송지 관리</h2>
+          <h2 className="text-2xl font-bold">{t("myPage.address.management")}</h2>
           <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            새 주소 추가
+            {t("myPage.address.addNew")}
           </Button>
         </div>
 
@@ -97,14 +99,14 @@ export default function AddressSection() {
                     {address.isDefault && (
                       <Badge className="bg-pink-500 text-white hover:bg-pink-600 flex items-center gap-1 flex-shrink-0">
                         <Star className="w-3 h-3" />
-                        기본
+                        {t("myPage.address.default")}
                       </Badge>
                     )}
                     <Badge variant="secondary" className="text-xs flex-shrink-0">
-                      {address.addressType === 'shipping' ? '배송지' :
-                       address.addressType === 'return' ? '반품지' :
-                       address.addressType === 'warehouse' ? '창고' :
-                       address.addressType === 'billing' ? '청구지' : address.addressType}
+                      {address.addressType === 'shipping' ? t("myPage.address.shipping") :
+                       address.addressType === 'return' ? t("myPage.address.return") :
+                       address.addressType === 'warehouse' ? t("myPage.address.warehouse") :
+                       address.addressType === 'billing' ? t("myPage.address.billing") : address.addressType}
                     </Badge>
                   </div>
                 </div>
@@ -148,7 +150,7 @@ export default function AddressSection() {
                       disabled={setDefaultMutation.isPending}
                     >
                       <Star className="w-3.5 h-3.5 mr-1.5" />
-                      기본 배송지
+                      {t("myPage.address.setDefault")}
                     </Button>
                   )}
                   <Button 

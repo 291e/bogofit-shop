@@ -10,8 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CategoryDropdown from '@/components/ui/category-dropdown';
 import { ProductResponseDto } from '@/types/product';
+import { useLanguage } from '@/providers/languageProvider';
 
 export function RankingPageClient() {
+    const { t } = useLanguage();
     const [currentPage, setCurrentPage] = useState(1);
     // Rating dropdown options (thresholds): 'none' | '1' | '2' | '3' | '4' | '5'
     const [ratingFilter, setRatingFilter] = useState<string>('4');
@@ -195,10 +197,10 @@ export function RankingPageClient() {
             <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center">
                 <div className="text-center">
                     <div className="text-6xl mb-4">😔</div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">랭킹 정보를 불러올 수 없습니다</h2>
-                    <p className="text-gray-600 mb-4">잠시 후 다시 시도해주세요.</p>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("ranking.error")}</h2>
+                    <p className="text-gray-600 mb-4">{t("ranking.errorDescription")}</p>
                     <Button onClick={() => window.location.reload()}>
-                        다시 시도
+                        {t("ranking.retry")}
                     </Button>
                 </div>
             </div>
@@ -212,7 +214,7 @@ export function RankingPageClient() {
                     {/* Simple Filter summary (no dropdowns) */}
                     <div className="mb-6 rounded-lg border bg-white p-4">
                         <div className="flex items-center justify-between">
-                            <div className="text-sm font-semibold text-gray-800">필터</div>
+                            <div className="text-sm font-semibold text-gray-800">{t("ranking.filter")}</div>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -222,28 +224,28 @@ export function RankingPageClient() {
                                     setCurrentPage(1);
                                 }}
                             >
-                                필터 초기화
+                                {t("ranking.resetFilter")}
                             </Button>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-600">평점</span>
+                                <span className="text-gray-600">{t("ranking.rating")}</span>
                                 <Select value={ratingFilter} onValueChange={(v) => setRatingFilter(v)}>
                                     <SelectTrigger className="w-32">
-                                        <SelectValue placeholder="평점" />
+                                        <SelectValue placeholder={t("ranking.rating")} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">평점 없음</SelectItem>
-                                        <SelectItem value="1">1점 이상</SelectItem>
-                                        <SelectItem value="2">2점 이상</SelectItem>
-                                        <SelectItem value="3">3점 이상</SelectItem>
-                                        <SelectItem value="4">4점 이상</SelectItem>
-                                        <SelectItem value="5">5점 이상</SelectItem>
+                                        <SelectItem value="none">{t("ranking.ratingOptions.none")}</SelectItem>
+                                        <SelectItem value="1">{t("ranking.ratingOptions.1")}</SelectItem>
+                                        <SelectItem value="2">{t("ranking.ratingOptions.2")}</SelectItem>
+                                        <SelectItem value="3">{t("ranking.ratingOptions.3")}</SelectItem>
+                                        <SelectItem value="4">{t("ranking.ratingOptions.4")}</SelectItem>
+                                        <SelectItem value="5">{t("ranking.ratingOptions.5")}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-gray-600">카테고리</span>
+                                <span className="text-gray-600">{t("ranking.category")}</span>
                                 <CategoryDropdown
                                     categories={categories}
                                     selectedCategoryId={selectedCategory === 'all' ? '' : selectedCategory}
@@ -262,10 +264,10 @@ export function RankingPageClient() {
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-sm">
-                                총 {(ratingFilter === 'none' ? noneModeProducts.length : products.length)}개 상품
+                                {t("ranking.totalProducts").replace("{count}", (ratingFilter === 'none' ? noneModeProducts.length : products.length).toString())}
                             </Badge>
                             <span className="text-sm text-gray-600">
-                                {ratingFilter === 'none' ? '평점 없음' : `${ratingFilter}점 이상`} · 총 리뷰 {totalReviewsAcross}개
+                                {ratingFilter === 'none' ? t("ranking.noRating") : t("ranking.ratingFilter").replace("{rating}", ratingFilter)} · {t("ranking.totalReviews").replace("{count}", totalReviewsAcross.toString())}
                             </span>
                         </div>
                     </div>
@@ -275,10 +277,10 @@ export function RankingPageClient() {
                         <div className="text-center py-16">
                             <div className="text-6xl mb-4">⭐</div>
                             <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                조건에 맞는 상품이 없습니다
+                                {t("ranking.noProducts")}
                             </h3>
                             <p className="text-gray-600 mb-4">
-                                필터 조건을 조정해보세요.
+                                {t("ranking.noProductsDescription")}
                             </p>
                             <Button
                                 variant="outline"
@@ -288,7 +290,7 @@ export function RankingPageClient() {
                                     setCurrentPage(1);
                                 }}
                             >
-                                필터 초기화
+                                {t("ranking.resetFilter")}
                             </Button>
                         </div>
                     ) : (
@@ -321,10 +323,10 @@ export function RankingPageClient() {
                         <div className="flex items-center justify-center mt-8">
                             <div ref={loadMoreRef} />
                             {noneLoading && (
-                                <span className="text-sm text-gray-500">더 불러오는 중...</span>
+                                <span className="text-sm text-gray-500">{t("ranking.loadingMore")}</span>
                             )}
                             {!noneHasMore && (
-                                <span className="text-sm text-gray-400">모두 불러왔습니다</span>
+                                <span className="text-sm text-gray-400">{t("ranking.allLoaded")}</span>
                             )}
                         </div>
                     ) : (
@@ -337,7 +339,7 @@ export function RankingPageClient() {
                                     disabled={currentPage === 1}
                                 >
                                     <ChevronLeft className="w-4 h-4" />
-                                    이전
+                                    {t("ranking.previous")}
                                 </Button>
 
                                 <div className="flex items-center gap-1">
@@ -363,7 +365,7 @@ export function RankingPageClient() {
                                     onClick={() => handlePageChange(currentPage + 1)}
                                     disabled={currentPage === pagination.totalPages}
                                 >
-                                    다음
+                                    {t("ranking.next")}
                                     <ChevronRight className="w-4 h-4" />
                                 </Button>
                             </div>

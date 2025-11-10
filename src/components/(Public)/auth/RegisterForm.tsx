@@ -14,6 +14,7 @@ interface RegisterFormData {
 
 // Utils
 import { useAuth } from "@/providers/authProvider";
+import { useLanguage } from "@/providers/languageProvider";
 import { toast } from "sonner";
 
 // UI Components
@@ -23,6 +24,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function RegisterForm() {
   const { register } = useAuth();
+  const { t } = useLanguage();
   
   // State
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -46,7 +48,7 @@ function RegisterForm() {
     const missingFields = requiredFields.filter(field => !formData[field]);
     
     if (missingFields.length > 0) {
-      const errorMessage = "모든 필드를 입력해주세요";
+      const errorMessage = t("auth.pleaseFillAllFields");
       setError(errorMessage);
       toast.warning(errorMessage);
       return false;
@@ -90,7 +92,7 @@ function RegisterForm() {
       }, 500);
     } catch (err) {
       // Error toast already handled by AuthProvider
-      setError(err instanceof Error ? err.message : "회원가입에 실패했습니다");
+      setError(err instanceof Error ? err.message : t("auth.signUpFailed"));
     } finally {
       setLoading(false);
     }
@@ -102,36 +104,36 @@ function RegisterForm() {
       id: "registerName",
       name: "name" as keyof RegisterFormData,
       type: "text",
-      label: "이름",
-      placeholder: "이름을 입력하세요"
+      label: t("auth.name"),
+      placeholder: t("auth.namePlaceholder")
     },
     {
       id: "registerUserId",
       name: "userId" as keyof RegisterFormData,
       type: "text",
-      label: "사용자 ID",
-      placeholder: "사용자 ID를 입력하세요"
+      label: t("auth.userId"),
+      placeholder: t("auth.userIdPlaceholder")
     },
     {
       id: "registerEmail",
       name: "email" as keyof RegisterFormData,
       type: "email",
-      label: "이메일",
-      placeholder: "이메일을 입력하세요"
+      label: t("auth.email"),
+      placeholder: t("auth.emailPlaceholder")
     },
     {
       id: "registerPhone",
       name: "phone" as keyof RegisterFormData,
       type: "tel",
-      label: "전화번호",
-      placeholder: "전화번호를 입력하세요"
+      label: t("auth.phone"),
+      placeholder: t("auth.phonePlaceholder")
     },
     {
       id: "registerPassword",
       name: "password" as keyof RegisterFormData,
       type: "password",
-      label: "비밀번호",
-      placeholder: "비밀번호를 입력하세요"
+      label: t("auth.password"),
+      placeholder: t("auth.passwordPlaceholder")
     }
   ];
 
@@ -143,8 +145,8 @@ function RegisterForm() {
             <div className="space-y-6">
               {/* Header */}
               <div className="text-center">
-                <h3 className="text-xl font-bold text-[#FF84CD]">회원가입</h3>
-                <p className="text-sm font-medium text-gray-600 mt-1">새 계정을 만드세요</p>
+                <h3 className="text-xl font-bold text-[#FF84CD]">{t("auth.signUp")}</h3>
+                <p className="text-sm font-medium text-gray-600 mt-1">{t("auth.createNewAccount")}</p>
               </div>
 
               {/* Form */}
@@ -182,7 +184,7 @@ function RegisterForm() {
                     className="w-full h-11 bg-gradient-to-r from-[#FF84CD] to-[#D74FDF] hover:from-[#FF6BB3] hover:to-[#B83DCF] text-white shadow-lg" 
                     disabled={loading}
                   >
-                    {loading ? "회원가입 중..." : "회원가입"}
+                    {loading ? t("auth.signingUp") : t("auth.signUp")}
                   </Button>
                 </div>
               </form>
@@ -195,13 +197,14 @@ function RegisterForm() {
 }
 
 function RegisterFormWrapper() {
+  const { t } = useLanguage();
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">회원가입 페이지 로딩 중...</p>
+            <p className="mt-4 text-gray-600">{t("auth.loadingSignUpPage")}</p>
           </div>
         </div>
       }

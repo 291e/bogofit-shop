@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Eye, Building2, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { ApiApplicationResponse } from "@/types/application";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface DashboardSectionProps {
   applicationData: ApiApplicationResponse | null;
@@ -19,6 +20,7 @@ export default function DashboardSection({
   onShowApplicationModal,
   onCreateBrand,
 }: DashboardSectionProps) {
+  const { t } = useLanguage();
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "approved":
@@ -37,15 +39,15 @@ export default function DashboardSection({
   const getStatusText = (status: string) => {
     switch (status) {
       case "approved":
-        return "승인됨";
+        return t("header.business.dashboard.statusApproved");
       case "pending":
-        return "검토 중";
+        return t("header.business.dashboard.statusPending");
       case "rejected":
-        return "거부됨";
+        return t("header.business.dashboard.statusRejected");
       case "banned":
-        return "차단됨";
+        return t("header.business.dashboard.statusBanned");
       default:
-        return "알 수 없음";
+        return t("header.business.dashboard.statusUnknown");
     }
   };
 
@@ -75,30 +77,30 @@ export default function DashboardSection({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-blue-600" />
-            비즈니스 대시보드
+            {t("header.business.dashboard.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-gray-600 mb-4">
-            안녕하세요! BOGOFIT 비즈니스 플랫폼에 오신 것을 환영합니다.
+            {t("header.business.dashboard.welcome")}
           </p>
           {hasApplication && application && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">신청 코드:</span>
+                <span className="text-sm font-medium text-gray-700">{t("header.business.dashboard.applicationCode")}</span>
                 <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
                   {application.appCode}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">상태:</span>
+                <span className="text-sm font-medium text-gray-700">{t("header.business.dashboard.status")}</span>
                 <Badge variant={getStatusVariant(application.status)} className="flex items-center gap-1">
                   {getStatusIcon(application.status)}
                   {getStatusText(application.status)}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">비즈니스명:</span>
+                <span className="text-sm font-medium text-gray-700">{t("header.business.dashboard.businessName")}</span>
                 <span className="text-sm">{application.businessName}</span>
               </div>
             </div>
@@ -106,14 +108,14 @@ export default function DashboardSection({
           {!hasApplication && (
             <div className="text-center mt-16">
               <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 mb-3">아직 신청서가 없습니다</p>
+              <p className="text-sm text-gray-500 mb-3">{t("header.business.dashboard.noApplication")}</p>
               <Button 
                 onClick={onShowApplicationModal}
                 size="sm"
                 className="w-full font-semibold"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                신청서 작성하기
+                {t("header.business.dashboard.createApplication")}
               </Button>
             </div>
           )}
@@ -126,19 +128,19 @@ export default function DashboardSection({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5 text-blue-600" />
-              신청서 관리
+              {t("header.business.dashboard.applicationManagement")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              제출한 신청서의 상세 정보를 확인하고 관리할 수 있습니다.
+              {t("header.business.dashboard.applicationDescription")}
             </p>
             <Button 
               onClick={onShowApplicationView}
               className="w-full font-semibold mt-6"
             >
               <Eye className="h-4 w-4 mr-2" />
-              신청서 보기
+              {t("header.business.dashboard.viewApplication")}
             </Button>
           </CardContent>
         </Card>
@@ -151,19 +153,19 @@ export default function DashboardSection({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-purple-800">
               <Building2 className="h-5 w-5 text-purple-600" />
-              브랜드 관리
+              {t("header.business.dashboard.brandManagement")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-purple-700 mb-4">
-              축하합니다! 신청이 승인되었습니다. 이제 브랜드를 등록하고 관리할 수 있습니다.
+              {t("header.business.dashboard.brandDescription")}
             </p>
             <Button 
               onClick={onCreateBrand}
               className="w-full font-semibold mt-6"
             >
               <Plus className="h-4 w-4 mr-2" />
-              브랜드 등록하기
+              {t("header.business.dashboard.registerBrand")}
             </Button>
           </CardContent>
         </Card>
@@ -176,9 +178,9 @@ export default function DashboardSection({
           <CardContent className="pt-6">
             <div className="text-center">
               <Clock className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-yellow-800 mb-2">검토 중입니다</h3>
+              <h3 className="text-lg font-medium text-yellow-800 mb-2">{t("header.business.dashboard.underReview")}</h3>
               <p className="text-yellow-700">
-                신청서가 검토 중입니다. 승인되면 브랜드 등록 기능이 활성화됩니다.
+                {t("header.business.dashboard.underReviewDescription")}
               </p>
             </div>
           </CardContent>
@@ -191,9 +193,9 @@ export default function DashboardSection({
           <CardContent className="pt-6">
             <div className="text-center">
               <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-red-800 mb-2">신청이 거부되었습니다</h3>
+              <h3 className="text-lg font-medium text-red-800 mb-2">{t("header.business.dashboard.rejected")}</h3>
               <p className="text-red-700 mb-4">
-                신청서가 거부되었습니다. 자세한 내용은 관리자에게 문의해주세요.
+                {t("header.business.dashboard.rejectedDescription")}
               </p>
               <Button 
                 onClick={onShowApplicationModal}
@@ -201,7 +203,7 @@ export default function DashboardSection({
                 className="w-full font-semibold"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                신청서 다시 작성
+                {t("header.business.dashboard.reapply")}
               </Button>
             </div>
           </CardContent>
@@ -214,9 +216,9 @@ export default function DashboardSection({
           <CardContent className="pt-6">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-red-800 mb-2">계정이 차단되었습니다</h3>
+              <h3 className="text-lg font-medium text-red-800 mb-2">{t("header.business.dashboard.accountBanned")}</h3>
               <p className="text-red-700 mb-4">
-                귀하의 계정이 차단되었습니다. 자세한 사항은 고객지원팀에 문의하세요.
+                {t("header.business.dashboard.bannedDescription")}
               </p>
               <Button 
                 onClick={onShowApplicationView}
@@ -224,7 +226,7 @@ export default function DashboardSection({
                 className="w-full font-semibold"
               >
                 <Eye className="h-4 w-4 mr-2" />
-                신청서 정보 보기
+                {t("header.business.dashboard.viewApplicationInfo")}
               </Button>
             </div>
           </CardContent>

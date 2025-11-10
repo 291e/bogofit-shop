@@ -9,6 +9,7 @@ import {  CreateApplicationResponse, ApplicationFormData, ApiApplicationResponse
 import { useAuth } from "@/providers/authProvider";
 import { Building2, User, Mail, Phone, FileText } from "lucide-react";
 import { ImageUploader } from "@/components/ui/imageUploader";
+import { useLanguage } from "@/providers/languageProvider";
 // import { toast } from "sonner"; // Unused - toast handled by mutation hook
 
 interface ApplicationRegisterProps {
@@ -26,6 +27,7 @@ export default function ApplicationRegister({
   applicationStatus = "none",
   existingApplication = null 
 }: ApplicationRegisterProps) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const [formData, setFormData] = useState<ApplicationFormData>({
     businessName: "",
@@ -78,25 +80,25 @@ export default function ApplicationRegister({
     setLoading(true);
 
     if (!formData.businessName) {
-      setError("회사명을 입력해주세요");
+      setError(t("header.business.applicationRegister.errors.companyNameRequired"));
       setLoading(false);
       return;
     }
 
     if (!businessLicenseUrl) {
-      setError("사업자등록증을 업로드해주세요");
+      setError(t("header.business.applicationRegister.errors.businessLicenseRequired"));
       setLoading(false);
       return;
     }
 
     if (!taxCodeUrl) {
-      setError("세금계산서를 업로드해주세요");
+      setError(t("header.business.applicationRegister.errors.taxInvoiceRequired"));
       setLoading(false);
       return;
     }
 
     if (!token) {
-      setError("로그인이 필요합니다");
+      setError(t("header.business.applicationRegister.errors.loginRequired"));
       setLoading(false);
       return;
     }
@@ -106,21 +108,21 @@ export default function ApplicationRegister({
     if (businessLicenseUrl) {
       docs.push({
         type: "business_license",
-        name: "사업자등록증",
+        name: t("header.business.applicationRegister.businessLicense"),
         url: businessLicenseUrl
       });
     }
     if (taxCodeUrl) {
       docs.push({
         type: "tax_code",
-        name: "세금계산서",
+        name: t("header.business.applicationRegister.taxInvoice"),
         url: taxCodeUrl
       });
     }
     otherDocsUrls.forEach((url, index) => {
       docs.push({
         type: "other",
-        name: `기타서류_${index + 1}`,
+        name: `${t("header.business.applicationRegister.otherDocuments")}_${index + 1}`,
         url
       });
     });
@@ -150,10 +152,10 @@ export default function ApplicationRegister({
         // Toast is handled by the mutation hook
         onSuccess(data); // Pass response data
       } else {
-        setError(data.message || (isEditing ? "수정 실패" : "신청 실패"));
+        setError(data.message || (isEditing ? t("header.business.applicationRegister.errors.editFailed") : t("header.business.applicationRegister.errors.submitFailed")));
       }
     } catch (err) {
-      setError("서버 연결 오류입니다. API를 다시 확인해주세요.");
+      setError(t("header.business.applicationRegister.errors.serverError"));
       console.error("Application error:", err);
     } finally {
       setLoading(false);
@@ -173,19 +175,19 @@ export default function ApplicationRegister({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold text-blue-600">
             <FileText className="h-6 w-6" />
-            {existingApplication ? "사업자 신청 수정" :
-             applicationStatus === "rejected" ? "사업자 신청 재제출" : 
-             applicationStatus === "banned" ? "계정 복구 신청" : "사업자 신청 (필수)"}
+            {existingApplication ? t("header.business.applicationRegister.titleEdit") :
+             applicationStatus === "rejected" ? t("header.business.applicationRegister.titleResubmit") : 
+             applicationStatus === "banned" ? t("header.business.applicationRegister.titleRecover") : t("header.business.applicationRegister.title")}
           </DialogTitle>
           <p className="text-sm text-gray-600 mt-2">
-            {existingApplication ? "거부 사유를 확인하고 정보를 수정한 후 다시 제출해주세요." :
-             applicationStatus === "rejected" ? "이전 신청이 거부되었습니다. 정보를 수정하여 다시 신청해주세요." :
-             applicationStatus === "banned" ? "계정이 정지되었습니다. 복구를 위해 사업자 정보를 제출해주세요." :
-             "브랜드 대시보드에 접근하려면 사업자 신청이 필요합니다."}
+            {existingApplication ? t("header.business.applicationRegister.subtitleEdit") :
+             applicationStatus === "rejected" ? t("header.business.applicationRegister.subtitleResubmit") :
+             applicationStatus === "banned" ? t("header.business.applicationRegister.subtitleRecover") :
+             t("header.business.applicationRegister.subtitle")}
           </p>
           {existingApplication?.application?.noteAdmin && (
             <div className="mt-3 p-3 bg-red-50 border-l-4 border-red-500 rounded">
-              <p className="text-sm font-semibold text-red-800 mb-1">거부 사유:</p>
+              <p className="text-sm font-semibold text-red-800 mb-1">{t("header.business.applicationRegister.rejectionReason")}</p>
               <p className="text-sm text-red-700">{existingApplication.application.noteAdmin}</p>
             </div>
           )}
@@ -195,7 +197,7 @@ export default function ApplicationRegister({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <label htmlFor="businessName" className="text-base font-bold text-gray-700">
-                회사명 *
+                {t("header.business.applicationRegister.companyName")}
               </label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -204,7 +206,7 @@ export default function ApplicationRegister({
                   name="businessName"
                   type="text"
                   required
-                  placeholder="회사명을 입력하세요"
+                  placeholder={t("header.business.applicationRegister.companyNamePlaceholder")}
                   value={formData.businessName}
                   onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
                   className="h-10 pl-12 text-base"
@@ -214,13 +216,13 @@ export default function ApplicationRegister({
 
             <div className="space-y-3">
               <label htmlFor="bizRegNo" className="text-base font-bold text-gray-700">
-                사업자등록번호
+                {t("header.business.applicationRegister.businessRegistrationNumber")}
               </label>
               <Input
                 id="bizRegNo"
                 name="bizRegNo"
                 type="text"
-                placeholder="사업자등록번호를 입력하세요"
+                placeholder={t("header.business.applicationRegister.businessRegistrationNumberPlaceholder")}
                 value={formData.bizRegNo}
                 onChange={(e) => setFormData(prev => ({ ...prev, bizRegNo: e.target.value }))}
                 className="h-10 text-base"
@@ -231,7 +233,7 @@ export default function ApplicationRegister({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
               <label htmlFor="contactName" className="text-base font-bold text-gray-700">
-                담당자명
+                {t("header.business.applicationRegister.contactPerson")}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -239,7 +241,7 @@ export default function ApplicationRegister({
                   id="contactName"
                   name="contactName"
                   type="text"
-                  placeholder="담당자명을 입력하세요"
+                  placeholder={t("header.business.applicationRegister.contactPersonPlaceholder")}
                   value={formData.contactName}
                   onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
                   className="h-10 pl-12 text-base"
@@ -249,7 +251,7 @@ export default function ApplicationRegister({
 
             <div className="space-y-3">
               <label htmlFor="contactPhone" className="text-base font-bold text-gray-700">
-                연락처
+                {t("header.business.applicationRegister.contact")}
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -257,7 +259,7 @@ export default function ApplicationRegister({
                   id="contactPhone"
                   name="contactPhone"
                   type="tel"
-                  placeholder="연락처를 입력하세요"
+                  placeholder={t("header.business.applicationRegister.contactPlaceholder")}
                   value={formData.contactPhone}
                   onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
                   className="h-10 pl-12 text-base"
@@ -268,7 +270,7 @@ export default function ApplicationRegister({
 
             <div className="space-y-3">
               <label htmlFor="contactEmail" className="text-base font-bold text-gray-700">
-                이메일
+                {t("header.business.applicationRegister.email")}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -276,7 +278,7 @@ export default function ApplicationRegister({
                   id="contactEmail"
                   name="contactEmail"
                   type="email"
-                  placeholder="이메일을 입력하세요"
+                  placeholder={t("header.business.applicationRegister.emailPlaceholder")}
                   value={formData.contactEmail}
                   onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
                   className="h-10 pl-12 text-base"
@@ -287,16 +289,16 @@ export default function ApplicationRegister({
           {/* Documents Upload Section */}
           <div className="space-y-6">
             <div className="border-t pt-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">필수 서류</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">{t("header.business.applicationRegister.requiredDocuments")}</h3>
               <p className="text-base text-gray-600 mb-6">
-                사업자 신청에 필요한 서류 이미지를 업로드해주세요. (JPG, PNG, WebP, GIF)
+                {t("header.business.applicationRegister.requiredDocumentsDescription")}
               </p>
               
               <div className="space-y-6">
                 {/* Business License */}
                 <div className="space-y-3">
                   <label className="text-base font-bold text-gray-700">
-                    사업자등록증 *
+                    {t("header.business.applicationRegister.businessLicense")}
                   </label>
                   <ImageUploader
                     value={businessLicenseUrl || undefined}
@@ -313,7 +315,7 @@ export default function ApplicationRegister({
                 {/* Tax Code */}
                 <div className="space-y-3">
                   <label className="text-base font-bold text-gray-700">
-                    세금계산서 *
+                    {t("header.business.applicationRegister.taxInvoice")}
                   </label>
                   <ImageUploader
                     value={taxCodeUrl || undefined}
@@ -330,7 +332,7 @@ export default function ApplicationRegister({
                 {/* Additional Documents */}
                 <div className="space-y-3">
                   <label className="text-base font-bold text-gray-700">
-                    기타 서류 (선택)
+                    {t("header.business.applicationRegister.otherDocuments")}
                   </label>
                   <ImageUploader
                     value={otherDocsUrls}
@@ -361,7 +363,7 @@ export default function ApplicationRegister({
               onClick={onClose}
               className="flex-1 h-10 text-base"
             >
-              취소
+              {t("header.business.applicationRegister.cancel")}
             </Button>
             <Button 
               type="submit" 
@@ -369,8 +371,8 @@ export default function ApplicationRegister({
               disabled={loading}
             >
               {loading 
-                ? (existingApplication ? "수정 중..." : "신청 중...") 
-                : (existingApplication ? "수정 제출" : "사업자 신청")
+                ? (existingApplication ? t("header.business.applicationRegister.editing") : t("header.business.applicationRegister.submitting")) 
+                : (existingApplication ? t("header.business.applicationRegister.submitEdit") : t("header.business.applicationRegister.submit"))
               }
             </Button>
           </div>

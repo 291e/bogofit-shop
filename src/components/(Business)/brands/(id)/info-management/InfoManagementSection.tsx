@@ -1,6 +1,7 @@
 "use client";
 
 import SideBarSection from "@/components/ui/sidebar-section";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface InfoManagementSectionProps {
   brandId: string;
@@ -9,18 +10,19 @@ interface InfoManagementSectionProps {
 export default function InfoManagementSection({ 
   brandId 
 }: InfoManagementSectionProps) {
+  const { t } = useLanguage();
   const infoManagementData = {
     id: "info-management",
-    label: "정보관리",
+    label: t("header.business.brandDetail.sidebar.infoManagement"),
     subSections: [
       {
         id: "company-info",
-        label: "업체 정보관리",
+        label: t("header.business.brandDetail.sidebar.companyInfo"),
         href: `/business/brands/${brandId}/settings`
       },
       {
         id: "shipping-policy",
-        label: "업체 배송정책",
+        label: t("header.business.brandDetail.sidebar.shippingPolicy"),
         href: `/business/brands/${brandId}/settings/shipping`
       }
     ]

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface SearchBarProps {
   className?: string;
@@ -14,12 +15,15 @@ interface SearchBarProps {
 
 export function SearchBar({
   className = "",
-  placeholder = "상품을 검색하세요...",
+  placeholder,
   isMobile = false,
 }: SearchBarProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [isExpanded, setIsExpanded] = useState(!isMobile);
+  
+  const searchPlaceholder = placeholder || t("search.placeholder");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +49,7 @@ export function SearchBar({
         variant="ghost"
         size="icon"
         onClick={() => setIsExpanded(true)}
-        aria-label="검색"
+        aria-label={t("search.button")}
       >
         <Search className="w-5 h-5 text-[#D74FDF]" />
       </Button>
@@ -64,7 +68,7 @@ export function SearchBar({
               setIsExpanded(false);
               setSearchQuery("");
             }}
-            aria-label="검색 닫기"
+            aria-label={t("search.close")}
           >
             <X className="w-5 h-5" />
           </Button>
@@ -74,7 +78,7 @@ export function SearchBar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={placeholder}
+              placeholder={searchPlaceholder}
               className="w-full h-10"
               autoFocus
             />
@@ -85,12 +89,12 @@ export function SearchBar({
             disabled={!searchQuery.trim()}
             className="bg-[#D74FDF] hover:bg-[#B83DCF] text-white"
           >
-            검색
+            {t("search.button")}
           </Button>
         </div>
         {/* 검색 제안이나 최근 검색어 등을 추가할 수 있는 공간 */}
         <div className="flex-1 p-4">
-          <p className="text-gray-500 text-sm">검색어를 입력해주세요</p>
+          <p className="text-gray-500 text-sm">{t("search.instruction")}</p>
         </div>
       </div>
     );
@@ -107,7 +111,7 @@ export function SearchBar({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={searchPlaceholder}
           className="pl-3 pr-10 h-9 rounded-full ring-0"
         />
         <Button

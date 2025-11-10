@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Store, Search, X, SlidersHorizontal, Mail, Phone, Loader2 } from "lucide-react";
+import { Store, Search, X, Mail, Phone, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { ProductResponseDto } from "@/types/product";
@@ -10,6 +10,9 @@ import { BrandResponseDto } from "@/types/brand";
 import Link from "next/link";
 import Image from "next/image";
 import { Cafe24ProductCard } from "@/components/(Public)/mainPage/sections/Cafe24ProductCard";
+import { useLanguage } from "@/providers/languageProvider";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Convert ProductResponseDto to display format
 const convertToDisplayProduct = (product: ProductResponseDto) => {
@@ -51,13 +54,30 @@ const convertToDisplayProduct = (product: ProductResponseDto) => {
 // Product Card Component
 
 export default function BrandDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const brandSlug = params.brandSlug as string;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
-  const [showFilters, setShowFilters] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Map frontend sortBy to backend sortBy and sortOrder
+  const getBackendSortParams = (frontendSortBy: string) => {
+    switch (frontendSortBy) {
+      case "price-low":
+        return { sortBy: "finalPrice", sortOrder: "asc" };
+      case "price-high":
+        return { sortBy: "price", sortOrder: "desc" };
+      case "newest":
+        // For newest, we can use createdAt or just rely on default backend sorting
+        return { sortBy: undefined, sortOrder: undefined };
+      case "name":
+        return { sortBy: "name", sortOrder: "asc" };
+      default:
+        return { sortBy: undefined, sortOrder: undefined };
+    }
+  };
 
   // Fetch brand data
   const { data: brandData, isLoading: brandLoading, error: brandError } = useQuery({
@@ -92,10 +112,18 @@ export default function BrandDetailPage() {
         page: pageParam.toString(),
         pageSize: "24",
         ...(searchQuery && { search: searchQuery }),
-        ...(sortBy && { sortBy }),
         ...(brandData?.id && { brandId: brandData.id.toString() }),
       });
       searchParams.append('include', 'true');
+
+      // Add backend sorting parameters
+      const backendSort = getBackendSortParams(sortBy);
+      if (backendSort.sortBy) {
+        searchParams.append('sortBy', backendSort.sortBy);
+      }
+      if (backendSort.sortOrder) {
+        searchParams.append('sortOrder', backendSort.sortOrder);
+      }
 
       const response = await fetch(`/api/product?${searchParams}`);
       if (!response.ok) throw new Error("Failed to fetch products");
@@ -115,9 +143,10 @@ export default function BrandDetailPage() {
     initialPageParam: 1,
   });
 
-  // Convert products to display format
+  // Convert products to display format (backend already sorted)
   const allProducts = productsData?.pages.flatMap((page) => page?.products || []) || [];
   const displayProducts = allProducts.map(convertToDisplayProduct);
+
   const firstPage = productsData?.pages[0];
   const totalCount = firstPage?.pagination?.totalCount ?? 0;
 
@@ -145,7 +174,7 @@ export default function BrandDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">브랜드 정보를 불러오는 중...</p>
+          <p className="text-gray-600">{t("brandDetail.loading")}</p>
         </div>
       </div>
     );
@@ -156,9 +185,9 @@ export default function BrandDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">브랜드 정보를 불러올 수 없습니다.</p>
+          <p className="text-red-600 mb-4">{t("brandDetail.error")}</p>
           <Link href="/brands" className="text-blue-600 hover:text-blue-700">
-            브랜드 목록으로 돌아가기
+            {t("brandDetail.backToList")}
           </Link>
         </div>
       </div>
@@ -169,9 +198,9 @@ export default function BrandDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">브랜드를 찾을 수 없습니다.</p>
+          <p className="text-gray-600 mb-4">{t("brandDetail.notFound")}</p>
           <Link href="/brands" className="text-blue-600 hover:text-blue-700">
-            브랜드 목록으로 돌아가기
+            {t("brandDetail.backToList")}
           </Link>
         </div>
       </div>
@@ -232,18 +261,18 @@ export default function BrandDetailPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
+              <Input
                 type="text"
-                placeholder="상품 검색..."
+                placeholder={t("brandDetail.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-10"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -251,32 +280,24 @@ export default function BrandDetailPage() {
             </div>
 
             {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="newest">최신순</option>
-              <option value="price-low">가격 낮은순</option>
-              <option value="price-high">가격 높은순</option>
-              <option value="name">이름순</option>
-            </select>
-
-            {/* Filter Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              필터
-            </button>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">{t("brandDetail.sortOptions.newest")}</SelectItem>
+                <SelectItem value="price-low">{t("brandDetail.sortOptions.priceLow")}</SelectItem>
+                <SelectItem value="price-high">{t("brandDetail.sortOptions.priceHigh")}</SelectItem>
+                <SelectItem value="name">{t("brandDetail.sortOptions.name")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">
-            {brandData.name} 상품 ({totalCount.toLocaleString()}개)
+            {t("brandDetail.products").replace("{brandName}", brandData.name).replace("{count}", totalCount.toLocaleString())}
           </h2>
         </div>
 
@@ -301,8 +322,8 @@ export default function BrandDetailPage() {
         ) : (
           <div className="text-center py-12">
             <Store className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-2">등록된 상품이 없습니다.</p>
-            <p className="text-sm text-gray-400">다른 검색어로 시도해보세요.</p>
+            <p className="text-gray-500 mb-2">{t("brandDetail.noProducts")}</p>
+            <p className="text-sm text-gray-400">{t("brandDetail.noProductsDescription")}</p>
           </div>
         )}
 
@@ -311,11 +332,11 @@ export default function BrandDetailPage() {
           {isFetchingNextPage && (
             <div className="flex items-center gap-2 text-blue-600">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span>더 많은 상품을 불러오는 중...</span>
+              <span>{t("brandDetail.loadingMore")}</span>
             </div>
           )}
           {!hasNextPage && displayProducts.length > 0 && (
-            <p className="text-gray-500 text-sm">모든 상품을 불러왔습니다.</p>
+            <p className="text-gray-500 text-sm">{t("brandDetail.allLoaded")}</p>
           )}
         </div>
       </div>

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X } from "lucide-react";
 import { useActivePromotions } from "@/hooks/usePromotions";
 import { Promotion } from "@/types/promotion";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface PromotionDropdownProps {
     brandId: string;
@@ -25,13 +26,14 @@ export default function PromotionDropdown({
     className = "",
     compactMode = false
 }: PromotionDropdownProps) {
+    const { t } = useLanguage();
     const { promotions, loading: isLoading } = useActivePromotions(brandId);
 
     const getPromotionTypeLabel = (type: string) => {
         const labels = {
-            percentage: '퍼센트 할인',
-            fixed_amount: '고정 금액 할인',
-            free_shipping: '무료 배송'
+            percentage: t("ui.promotion.percentageDiscount"),
+            fixed_amount: t("ui.promotion.fixedAmountDiscount"),
+            free_shipping: t("ui.promotion.freeShipping")
         };
         return labels[type as keyof typeof labels] || type;
     };
@@ -54,7 +56,7 @@ export default function PromotionDropdown({
             <div className={`border rounded-lg bg-white p-4 ${className}`}>
                 <div className="text-center py-4 text-gray-500">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
-                    <p className="text-sm">프로모션을 불러오는 중...</p>
+                    <p className="text-sm">{t("ui.promotion.loading")}</p>
                 </div>
             </div>
         );
@@ -69,12 +71,12 @@ export default function PromotionDropdown({
                     onValueChange={onPromotionSelect}
                 >
                     <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="프로모션을 선택하세요" />
+                        <SelectValue placeholder={t("ui.promotion.selectPromotionPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                         {promotions.length === 0 ? (
                             <div className="p-2 text-center text-sm text-gray-500">
-                                활성화된 프로모션이 없습니다
+                                {t("ui.promotion.noActivePromotions")}
                             </div>
                         ) : (
                             promotions.map((promotion) => (
@@ -102,7 +104,7 @@ export default function PromotionDropdown({
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                         <X className="h-4 w-4 mr-1" />
-                        제거
+                        {t("ui.promotion.remove")}
                     </Button>
                 )}
             </div>
@@ -119,7 +121,7 @@ export default function PromotionDropdown({
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                                 <Badge variant="secondary" className="bg-purple-600 text-white">
-                                    적용중
+                                    {t("ui.promotion.applied")}
                                 </Badge>
                                 <span className="font-semibold text-gray-900">{currentPromotion.name}</span>
                             </div>
@@ -147,19 +149,19 @@ export default function PromotionDropdown({
             {/* Promotion Selector */}
             <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    프로모션 선택 {!currentPromotion && <span className="text-gray-400">(선택사항)</span>}
+                    {t("ui.promotion.selectPromotion")} {!currentPromotion && <span className="text-gray-400">{t("ui.promotion.optional")}</span>}
                 </label>
                 <Select
                     value={selectedPromotionId || ""}
                     onValueChange={onPromotionSelect}
                 >
                     <SelectTrigger>
-                        <SelectValue placeholder="프로모션을 선택하세요" />
+                        <SelectValue placeholder={t("ui.promotion.selectPromotionPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                         {promotions.length === 0 ? (
                             <div className="p-2 text-center text-sm text-gray-500">
-                                활성화된 프로모션이 없습니다
+                                {t("ui.promotion.noActivePromotions")}
                             </div>
                         ) : (
                             promotions.map((promotion) => (

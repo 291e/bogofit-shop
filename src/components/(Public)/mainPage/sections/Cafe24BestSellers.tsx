@@ -6,6 +6,7 @@ import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { usePublicProducts } from "@/hooks/useProducts";
 import { useState } from "react";
+import { useLanguage } from "@/providers/languageProvider";
 
 interface Cafe24BestSellersProps {
   products?: ProductResponseDto[]; // Optional - sẽ dùng hook nếu không có
@@ -13,6 +14,7 @@ interface Cafe24BestSellersProps {
 
 export function Cafe24BestSellers({ products: initialProducts }: Cafe24BestSellersProps) {
   const [showAll, setShowAll] = useState(false);
+  const { t } = useLanguage();
 
   // ✅ Only use hook if no initial products provided (standalone usage)
   const { data: hookData } = usePublicProducts({
@@ -71,17 +73,17 @@ export function Cafe24BestSellers({ products: initialProducts }: Cafe24BestSelle
             <div className="flex items-center gap-3">
               <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-amber-500 to-yellow-500" />
               <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
-                베스트 상품
+                {t("mainPage.sections.bestSellers")}
               </h2>
               <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full">
-                가장 인기 있는 상품
+                {t("mainPage.sections.bestSellersSubtitle")}
               </span>
             </div>
             <Link
               href="/products?badge=BEST"
               className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-white/70 hover:border-gray-400 transition-colors shadow-sm backdrop-blur"
             >
-              전체보기
+              {t("mainPage.sections.viewAll")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -109,12 +111,12 @@ export function Cafe24BestSellers({ products: initialProducts }: Cafe24BestSelle
             >
               {showAll ? (
                 <>
-                  닫기
+                  {t("mainPage.sections.close")}
                   <ChevronUp className="h-4 w-4" />
                 </>
               ) : (
                 <>
-                  더보기
+                  {t("mainPage.sections.showMore")}
                   <ChevronDown className="h-4 w-4" />
                 </>
               )}

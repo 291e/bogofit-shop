@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, MessageSquare, Lock, User, Calendar } from 'lucide-react';
 import { useAuth } from '@/providers/authProvider';
+import { useLanguage } from '@/providers/languageProvider';
 import { ProductInquiry } from '@/types/productInquiry';
 import { toast } from 'sonner';
 
@@ -23,6 +24,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
     productId,
     fetchList = true,
 }) => {
+    const { t } = useLanguage();
     const { isAuthenticated, user } = useAuth();
     const [queryParams, setQueryParams] = useState<ProductInquiryQueryParams>({
         page: 1,
@@ -44,12 +46,12 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
         e.preventDefault();
 
         if (!isAuthenticated) {
-            toast.error('로그인이 필요합니다');
+            toast.error(t("productDetail.productInquiries.loginRequired"));
             return;
         }
 
         if (question.length < 10 || question.length > 2000) {
-            toast.error('질문은 10자 이상 2000자 이하여야 합니다');
+            toast.error(t("productDetail.productInquiries.questionLengthError"));
             return;
         }
 
@@ -83,7 +85,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                 <CardContent className="p-8">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto mb-4"></div>
-                        <p className="text-gray-600">문의 정보를 불러오는 중...</p>
+                        <p className="text-gray-600">{t("productDetail.productInquiries.loading")}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -95,7 +97,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
             <Card>
                 <CardContent className="p-8">
                     <div className="text-center">
-                        <p className="text-red-600">문의를 불러오는데 실패했습니다.</p>
+                        <p className="text-red-600">{t("productDetail.productInquiries.error")}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -117,7 +119,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                         >
                             <MessageSquare className="w-5 h-5 text-pink-600" />
                             <CardTitle className="text-xl font-bold">
-                                상품 문의
+                                {t("productDetail.productInquiries.productInquiries")}
                             </CardTitle>
                             {pagination && pagination.totalCount > 0 && (
                                 <span className="text-sm text-gray-500 font-normal">
@@ -136,7 +138,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                 variant="outline"
                                 size="sm"
                             >
-                                {showCreateForm ? '취소' : '문의하기'}
+                                {showCreateForm ? t("productDetail.productInquiries.cancel") : t("productDetail.productInquiries.createInquiry")}
                             </Button>
                         )}
                     </div>
@@ -147,17 +149,17 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
             {showCreateForm && isAuthenticated && isSectionOpen && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">새 문의 작성</CardTitle>
+                        <CardTitle className="text-lg">{t("productDetail.productInquiries.newInquiry")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleCreateInquiry} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="question">문의 내용</Label>
+                                <Label htmlFor="question">{t("productDetail.productInquiries.inquiryContent")}</Label>
                                 <Textarea
                                     id="question"
                                     value={question}
                                     onChange={(e) => setQuestion(e.target.value)}
-                                    placeholder="문의 내용을 입력하세요 (최소 10자 이상)"
+                                    placeholder={t("productDetail.productInquiries.inquiryPlaceholder")}
                                     rows={5}
                                     required
                                     minLength={10}
@@ -165,7 +167,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                     className="resize-none"
                                 />
                                 <p className="text-sm text-gray-500">
-                                    {question.length} / 2000자
+                                    {t("productDetail.productInquiries.characters").replace("{count}", question.length.toString())}
                                 </p>
                             </div>
 
@@ -179,7 +181,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                     htmlFor="isSecret"
                                     className="text-sm font-normal cursor-pointer"
                                 >
-                                    비공개 문의 (판매자와 나만 볼 수 있습니다)
+                                    {t("productDetail.productInquiries.secretInquiry")}
                                 </Label>
                             </div>
 
@@ -189,7 +191,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                     disabled={createMutation.isPending || question.length < 10}
                                     className="flex-1"
                                 >
-                                    {createMutation.isPending ? '등록 중...' : '문의 등록'}
+                                    {createMutation.isPending ? t("productDetail.productInquiries.registering") : t("productDetail.productInquiries.registerInquiry")}
                                 </Button>
                                 <Button
                                     type="button"
@@ -200,7 +202,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                         setIsSecret(false);
                                     }}
                                 >
-                                    취소
+                                    {t("productDetail.productInquiries.cancel")}
                                 </Button>
                             </div>
                         </form>
@@ -213,7 +215,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                     <CardContent className="p-6">
                         <div className="text-center">
                             <p className="text-gray-600 mb-4">
-                                문의를 작성하려면 로그인이 필요합니다.
+                                {t("productDetail.productInquiries.loginToInquire")}
                             </p>
                             <Button
                                 onClick={() => {
@@ -221,7 +223,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                 }}
                                 variant="outline"
                             >
-                                로그인하기
+                                {t("productDetail.productInquiries.login")}
                             </Button>
                         </div>
                     </CardContent>
@@ -237,10 +239,10 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                             <div className="text-center py-12">
                                 <div className="text-6xl mb-4">💬</div>
                                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                    아직 등록된 문의가 없습니다
+                                    {t("productDetail.productInquiries.noInquiries")}
                                 </h3>
                                 <p className="text-gray-600">
-                                    첫 번째 문의를 작성해보세요.
+                                    {t("productDetail.productInquiries.noInquiriesDescription")}
                                 </p>
                             </div>
                         ) : (
@@ -266,7 +268,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                                         {inquiry.isSecret && (
                                                             <Badge variant="secondary" className="text-xs bg-gray-100">
                                                                 <Lock className="w-3 h-3 mr-1" />
-                                                                비공개
+                                                                {t("productDetail.productInquiries.secret")}
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -285,7 +287,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                                         <div className="flex-1 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                                                             <p className="text-gray-500 italic text-sm flex items-center gap-2">
                                                                 <Lock className="w-4 h-4" />
-                                                                비공개 문의입니다. 문의 작성자와 판매자만 볼 수 있습니다.
+                                                                {t("productDetail.productInquiries.secretInquiryDescription")}
                                                             </p>
                                                         </div>
                                                     ) : (
@@ -303,7 +305,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                                         <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                                                             <p className="text-gray-500 italic text-sm flex items-center gap-2">
                                                                 <Lock className="w-4 h-4" />
-                                                                비공개 문의의 답변입니다. 문의 작성자와 판매자만 볼 수 있습니다.
+                                                                {t("productDetail.productInquiries.secretAnswerDescription")}
                                                             </p>
                                                         </div>
                                                     ) : (
@@ -319,7 +321,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                                                     {inquiry.answeredByUser && (
                                                                         <>
                                                                             <User className="w-4 h-4" />
-                                                                            <span>판매자: {inquiry.answeredByUser.name}</span>
+                                                                            <span>{t("productDetail.productInquiries.seller").replace("{name}", inquiry.answeredByUser.name)}</span>
                                                                             {inquiry.answeredAt && <span className="text-gray-300">•</span>}
                                                                         </>
                                                                     )}
@@ -351,7 +353,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                     disabled={queryParams.page === 1}
                                 >
                                     <ChevronLeft className="w-4 h-4" />
-                                    이전
+                                    {t("productDetail.productInquiries.previous")}
                                 </Button>
 
                                 <div className="flex items-center gap-1">
@@ -406,7 +408,7 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
                                     onClick={() => handlePageChange(queryParams.page! + 1)}
                                     disabled={queryParams.page === pagination.totalPages}
                                 >
-                                    다음
+                                    {t("productDetail.productInquiries.next")}
                                     <ChevronRight className="w-4 h-4" />
                                 </Button>
                             </div>

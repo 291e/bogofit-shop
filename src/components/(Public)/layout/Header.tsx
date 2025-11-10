@@ -20,10 +20,12 @@ import {
 
 // Hooks
 import { useAuth } from "@/providers/authProvider";
+import { useLanguage } from "@/providers/languageProvider";
 
 // Components
 import { SearchBar } from "@/components/(Public)/layout/SearchBar";
 import { CartBadge } from "@/components/(Public)/cart/CartBadge";
+import { LanguageSelector } from "@/components/(Public)/layout/LanguageSelector";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -61,6 +63,7 @@ export default function Header() {
   const pathname = usePathname();
   const { isAuthenticated, logout, getToken } = useAuth();
   const router = useRouter();
+  const { t, language } = useLanguage();
   // Effects
   useEffect(() => {
     setMounted(true);
@@ -143,7 +146,7 @@ export default function Header() {
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>BOGOFIT 홈으로 이동</p>
+                  <p>{t("header.goToHome")}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -151,21 +154,21 @@ export default function Header() {
                 <div className="flex-col md:flex-row flex items-start md:items-center gap-0 md:gap-3 text-base line-seed-kr select-none">
                   <span className="font-bold text-gray-900">BOGOFIT</span>
                   <Badge variant="outline" className="pt-1 bg-[#ff84cd] text-white">
-                    AI 가상 쇼핑물
+                    {t("common.tagline")}
                   </Badge>
                 </div>
                 <div className="hidden md:flex items-center gap-6 mt-1 text-sm line-seed-kr">
                   <Link href="/recommend" className={getNavLinkClassName("/recommend")}>
-                    추천
+                    {t("navigation.recommend")}
                   </Link>
                   <Link href="/ranking" className={getNavLinkClassName("/ranking")}>
-                    랭킹
+                    {t("navigation.ranking")}
                   </Link>
                   <Link href="/sale" className={getNavLinkClassName("/sale")}>
-                    세일
+                    {t("navigation.sale")}
                   </Link>
                   <Link href="/brands" className={getNavLinkClassName("/brands")}>
-                    브랜드
+                    {t("navigation.brands")}
                   </Link>
                 </div>
               </div>
@@ -176,6 +179,8 @@ export default function Header() {
               <SearchBar className="w-64 xl:w-72" />
 
               <div className="flex items-center gap-2">
+                {/* Language Selector */}
+                <LanguageSelector />
                 {mounted && (
                   <>
                     {isAuthenticated ? (
@@ -188,7 +193,7 @@ export default function Header() {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>장바구니</p>
+                            <p>{t("header.cart")}</p>
                           </TooltipContent>
                         </Tooltip>
 
@@ -200,7 +205,7 @@ export default function Header() {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>찜한 상품</p>
+                            <p>{t("header.wishlist")}</p>
                           </TooltipContent>
                         </Tooltip>
 
@@ -229,44 +234,44 @@ export default function Header() {
                               </Avatar>
                               <div className="flex flex-col">
                                 <span className="text-sm font-medium">{user?.name || user?.userId}</span>
-                                <span className="text-xs text-gray-500">환영합니다!</span>
+                                <span className="text-xs text-gray-500">{t("user.welcomeMessage")}</span>
                               </div>
                             </div>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                               <Link href="/myPage?section=order" className="flex items-center gap-2">
                                 <Clock className="w-4 h-4" />
-                                주문 내역
+                                {t("header.userMenu.orderHistory")}
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href="/myPage?section=coupon" className="flex items-center gap-2">
                                 <Ticket className="w-4 h-4" />
-                                쿠폰
+                                {t("header.userMenu.coupon")}
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href="/myPage?section=address" className="flex items-center gap-2">
                                 <MapPin className="w-4 h-4" />
-                                주소록
+                                {t("header.userMenu.addressBook")}
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href="/myPage?section=recent" className="flex items-center gap-2">
                                 <ShoppingBag className="w-4 h-4" />
-                                최근 본 상품
+                                {t("header.userMenu.recentlyViewed")}
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href="/myPage?section=profile" className="flex items-center gap-2">
                                 <User className="w-4 h-4" />
-                                프로필 수정
+                                {t("header.userMenu.editProfile")}
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleLogout} className="text-red-500">
                               <LogOut className="w-4 h-4 mr-2" />
-                              로그아웃
+                              {t("common.logout")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -275,7 +280,7 @@ export default function Header() {
                       <Link href="/login">
                         <Button variant="ghost" size="sm" className="gap-2">
                           <User className="w-4 h-4" />
-                          <span className="hidden xl:inline">로그인</span>
+                          <span className="hidden xl:inline">{t("common.login")}</span>
                         </Button>
                       </Link>
                     )}
@@ -287,13 +292,14 @@ export default function Header() {
             {/* Mobile Section */}
             <div className="flex md:hidden items-center gap-2">
               {mounted && <SearchBar isMobile={true} />}
+              <LanguageSelector />
 
               <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="메뉴 열기"
+                    aria-label={t("header.mobile.openMenu")}
                     className="text-[#D74FDF] hover:bg-pink-50"
                   >
                     <Menu className="w-6 h-6" />
@@ -319,10 +325,10 @@ export default function Header() {
                     {/* Navigation Links */}
                     <div className="flex-1 px-2 py-4 space-y-2">
                       {[
-                        { href: "/recommend", label: "추천" },
-                        { href: "/category", label: "카테고리" },
-                        { href: "/sale", label: "세일" },
-                        { href: "/products", label: "전체상품" }
+                        { href: "/recommend", label: t("navigation.recommend") },
+                        { href: "/category", label: t("navigation.category") },
+                        { href: "/sale", label: t("navigation.sale") },
+                        { href: "/products", label: t("navigation.allProducts") }
                       ].map(({ href, label }) => (
                         <Link
                           key={href}
@@ -354,20 +360,21 @@ export default function Header() {
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-gray-900 text-sm truncate">
-                                {user?.name || user?.userId || "사용자"}님
+                                {user?.name || user?.userId || t("user.user")}
+                                {language === "ko" && "님"}
                               </p>
-                              <p className="text-xs text-gray-500">환영합니다!</p>
+                              <p className="text-xs text-gray-500">{t("user.welcomeMessage")}</p>
                             </div>
                           </div>
 
                           {/* User Menu Links */}
                           <div className="space-y-1">
                             {[
-                              { href: "/myPage?section=order", icon: Clock, label: "주문 내역" },
-                              { href: "/myPage?section=coupon", icon: Ticket, label: "쿠폰" },
-                              { href: "/myPage?section=address", icon: MapPin, label: "주소록" },
-                              { href: "/myPage?section=recent", icon: ShoppingBag, label: "최근 본 상품" },
-                              { href: "/myPage?section=profile", icon: User, label: "프로필 수정" }
+                              { href: "/myPage?section=order", icon: Clock, label: t("header.userMenu.orderHistory") },
+                              { href: "/myPage?section=coupon", icon: Ticket, label: t("header.userMenu.coupon") },
+                              { href: "/myPage?section=address", icon: MapPin, label: t("header.userMenu.addressBook") },
+                              { href: "/myPage?section=recent", icon: ShoppingBag, label: t("header.userMenu.recentlyViewed") },
+                              { href: "/myPage?section=profile", icon: User, label: t("header.userMenu.editProfile") }
                             ].map(({ href, icon: Icon, label }) => (
                               <Link
                                 key={href}
@@ -387,7 +394,7 @@ export default function Header() {
                               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors w-full text-left"
                             >
                               <LogOut className="w-4 h-4" />
-                              로그아웃
+                              {t("common.logout")}
                             </button>
                           </div>
                         </div>
@@ -398,7 +405,7 @@ export default function Header() {
                           onClick={() => setOpen(false)}
                         >
                           <User className="w-4 h-4" />
-                          로그인
+                          {t("common.login")}
                         </Link>
                       )}
                     </div>

@@ -8,6 +8,7 @@ import { X, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import { useLanguage } from '@/providers/languageProvider';
 
 interface ImageUploaderProps {
   /** 이미 업로드된 이미지 URL들 */
@@ -57,6 +58,7 @@ export const ImageUploader = ({
   enableDragDrop = true,
   onError
 }: ImageUploaderProps) => {
+  const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadImage, deleteImage, isUploading, error } = useImageUpload();
@@ -88,14 +90,14 @@ export const ImageUploader = ({
     for (const file of filesToUpload) {
       // Validate file type
       if (!allowedTypes.includes(file.type)) {
-        const errorMsg = `지원되지 않는 파일 형식입니다: ${file.name}`;
+        const errorMsg = t("ui.imageUploader.unsupportedFormat").replace("{filename}", file.name);
         onError?.(errorMsg);
         continue;
       }
 
       // Validate file size
       if (file.size > maxSize) {
-        const errorMsg = `파일 크기가 5MB를 초과합니다: ${file.name}`;
+        const errorMsg = t("ui.imageUploader.fileTooLarge").replace("{filename}", file.name);
         onError?.(errorMsg);
         continue;
       }
@@ -116,7 +118,7 @@ export const ImageUploader = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [currentUrls, folder, maxFiles, onChange, onError, single, uploadImage]);
+  }, [currentUrls, folder, maxFiles, onChange, onError, single, uploadImage, t]);
 
   // Handle file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,7 +138,7 @@ export const ImageUploader = ({
         const urlParts = urlToDelete.split('.amazonaws.com/');
         if (urlParts.length < 2) {
           console.log('❌ Invalid S3 URL format');
-          onError?.('잘못된 이미지 URL입니다.');
+          onError?.(t("ui.imageUploader.invalidImageUrl"));
           return;
         }
         const s3Key = urlParts[1];
@@ -161,7 +163,7 @@ export const ImageUploader = ({
         onChange?.(newUrls.length > 0 ? newUrls : null);
       }
       console.log('✅ Image removed from form');
-      toast.success('이미지가 삭제되었습니다');
+      toast.success(t("ui.imageUploader.imageDeleted"));
     } catch (err) {
       console.error('❌ Delete error:', err);
       // Even if there's an error, try to remove from form
@@ -172,9 +174,9 @@ export const ImageUploader = ({
           const newUrls = currentUrls.filter(url => url !== urlToDelete);
           onChange?.(newUrls.length > 0 ? newUrls : null);
         }
-        toast.success('이미지가 삭제되었습니다');
+        toast.success(t("ui.imageUploader.imageDeleted"));
       } catch (removeErr) {
-        onError?.(removeErr instanceof Error ? removeErr.message : '이미지 삭제에 실패했습니다.');
+        onError?.(removeErr instanceof Error ? removeErr.message : t("ui.imageUploader.deleteFailed"));
       }
     }
   };
@@ -244,20 +246,20 @@ export const ImageUploader = ({
             {isUploading ? (
               <>
                 <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                <p className="text-sm text-gray-600">업로드 중...</p>
+                <p className="text-sm text-gray-600">{t("ui.imageUploader.uploading")}</p>
               </>
             ) : (
               <>
                 <Upload className="w-12 h-12 text-gray-400 mb-4" />
                 <p className="text-sm font-medium text-gray-700 mb-1">
-                  {enableDragDrop ? '이미지를 드래그하거나 클릭하여 업로드' : '클릭하여 이미지 업로드'}
+                  {enableDragDrop ? t("ui.imageUploader.dragOrClick") : t("ui.imageUploader.clickToUpload")}
                 </p>
                 <p className="text-xs text-gray-500">
-                  JPEG, PNG, WebP, GIF (최대 5MB)
+                  {t("ui.imageUploader.supportedFormats")}
                 </p>
                 {!single && (
                   <p className="text-xs text-gray-500 mt-1">
-                    최대 {maxFiles}개 업로드 가능 ({currentUrls.length}/{maxFiles})
+                    {t("ui.imageUploader.maxUpload").replace("{max}", maxFiles.toString()).replace("{current}", currentUrls.length.toString())}
                   </p>
                 )}
                 <Button
@@ -269,7 +271,7 @@ export const ImageUploader = ({
                   className="mt-4"
                 >
                   <ImageIcon className="w-4 h-4 mr-2" />
-                  이미지 선택
+                  {t("ui.imageUploader.selectImage")}
                 </Button>
               </>
             )}
@@ -288,8 +290,7 @@ export const ImageUploader = ({
       {currentUrls.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700">
-            업로드된 이미지 ({currentUrls.length}
-            {!single && `/${maxFiles}`})
+            {t("ui.imageUploader.uploadedImages").replace("{count}", currentUrls.length.toString()).replace("{max}", !single ? `/${maxFiles}` : "")}
           </p>
           <div className="flex flex-wrap gap-4">
             {currentUrls.map((url, index) => (
@@ -317,7 +318,7 @@ export const ImageUploader = ({
                       className="gap-1"
                     >
                       <X className="w-4 h-4" />
-                      삭제
+                      {t("ui.imageUploader.delete")}
                     </Button>
                   </div>
                 )}

@@ -4,8 +4,10 @@
 import React from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function ProductReviewsFullPage() {
+    const { t } = useLanguage();
     const params = useParams();
     const brandId = (params as any)?.id;
     const productId = (params as any)?.productId;
@@ -38,25 +40,25 @@ export default function ProductReviewsFullPage() {
     return (
         <div className="p-6">
             <div className="mb-4 flex items-center justify-between">
-                <h1 className="text-xl font-bold text-gray-900">상품 리뷰 상세</h1>
+                <h1 className="text-xl font-bold text-gray-900">{t("header.business.brandDetail.products.reviews.detailTitle")}</h1>
                 <Link className="text-sm text-blue-600 hover:underline" href={`/business/brands/${brandId}/products/reviews`}>
-                    목록으로
+                    {t("header.business.brandDetail.products.reviews.backToList")}
                 </Link>
             </div>
 
             {stats && (
-                <div className="mb-4 text-sm text-gray-700">평점 {stats?.averageRating ?? 0} · 리뷰수 {stats?.totalReviews ?? 0}</div>
+                <div className="mb-4 text-sm text-gray-700">{t("header.business.brandDetail.products.reviews.ratingAndCount", { rating: stats?.averageRating ?? 0, count: stats?.totalReviews ?? 0 })}</div>
             )}
 
             <div className="border rounded">
                 {reviews.length === 0 ? (
-                    <div className="p-4 text-sm text-gray-500">리뷰가 없습니다</div>
+                    <div className="p-4 text-sm text-gray-500">{t("header.business.brandDetail.products.reviews.noReviews")}</div>
                 ) : (
                     <ul className="divide-y">
                         {reviews.map((r: any) => (
                             <li key={r.id} className="p-4">
                                 <div className="flex items-center justify-between">
-                                    <div className="text-sm font-medium text-gray-900">{r.authorName || '익명'}</div>
+                                    <div className="text-sm font-medium text-gray-900">{r.authorName || t("header.business.brandDetail.products.reviews.anonymous")}</div>
                                     <div className="text-xs text-gray-600">{r.rating}⭐</div>
                                 </div>
                                 <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{r.content}</div>

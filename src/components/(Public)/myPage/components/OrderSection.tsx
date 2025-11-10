@@ -12,9 +12,11 @@ import Link from "next/link";
 import { useOrders } from "@/hooks/useOrders";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatOrderItemOptions, OrderStatus, OrderItem, Order, OrderGroup } from "@/types/order";
 import OrderDetailModal from "./OrderDetailModal";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function OrderSection() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [page, setPage] = useState(1);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function OrderSection() {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16">
           <Loader2 className="w-12 h-12 text-pink-600 animate-spin mb-4" />
-          <p className="text-gray-600">주문 내역을 불러오는 중...</p>
+          <p className="text-gray-600">{t("myPage.order.loading")}</p>
         </CardContent>
       </Card>
     );
@@ -66,9 +68,9 @@ export default function OrderSection() {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h3 className="text-xl font-medium text-gray-900 mb-2">오류가 발생했습니다</h3>
+          <h3 className="text-xl font-medium text-gray-900 mb-2">{t("myPage.order.error")}</h3>
           <p className="text-gray-500 mb-6">{error.message}</p>
-          <Button onClick={() => window.location.reload()}>다시 시도</Button>
+          <Button onClick={() => window.location.reload()}>{t("myPage.order.retry")}</Button>
         </CardContent>
       </Card>
     );
@@ -79,10 +81,10 @@ export default function OrderSection() {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16">
           <Package className="w-16 h-16 text-gray-300 mb-4" />
-          <h3 className="text-xl font-medium text-gray-900 mb-2">주문 내역이 없습니다</h3>
-          <p className="text-gray-500 mb-6">아직 주문한 상품이 없어요</p>
+          <h3 className="text-xl font-medium text-gray-900 mb-2">{t("myPage.order.noOrders")}</h3>
+          <p className="text-gray-500 mb-6">{t("myPage.order.noOrdersDescription")}</p>
           <Link href="/">
-            <Button>쇼핑 시작하기</Button>
+            <Button>{t("myPage.order.startShopping")}</Button>
           </Link>
         </CardContent>
       </Card>
@@ -92,7 +94,7 @@ export default function OrderSection() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-gray-500">총 {totalOrders}건의 주문</p>
+        <p className="text-gray-500">{t("myPage.order.totalOrders").replace("{count}", totalOrders.toString())}</p>
       </div>
 
       {/* Order Groups (MoR - Multiple Brands) */}
@@ -103,7 +105,7 @@ export default function OrderSection() {
             <div className="flex items-center justify-between mb-4 pb-4 border-b">
               <div>
                 <div className="text-xs text-purple-600 font-semibold uppercase">
-                  {group.orders.length > 1 ? "멀티 브랜드 주문" : "주문"}
+                  {group.orders.length > 1 ? t("myPage.order.multiBrandOrder") : t("myPage.order.order")}
                 </div>
                 <p className="font-mono text-sm text-gray-600 mt-1">{group.groupNo}</p>
                 <p className="text-sm text-gray-500">
@@ -145,10 +147,10 @@ export default function OrderSection() {
                         </div>
                       )}
                       <div className="text-left">
-                        <div className="font-semibold">{order.brand?.name || "브랜드"}</div>
+                        <div className="font-semibold">{order.brand?.name || t("myPage.order.brand")}</div>
                         <div className="text-xs text-gray-500 font-mono">{order.orderNo}</div>
                         <div className="text-sm text-gray-600">
-                          {order.items.length}개 상품
+                          {t("myPage.order.products").replace("{count}", order.items.length.toString())}
                         </div>
                       </div>
                     </div>
@@ -176,11 +178,11 @@ export default function OrderSection() {
                             <p className="text-sm font-medium truncate">{item.productTitle}</p>
                             {item.optionsJson && item.optionsJson.length > 0 && (
                               <p className="text-xs text-gray-500">
-                                {formatOrderItemOptions(item.optionsJson)}
+                                {t("myPage.order.option").replace("{options}", formatOrderItemOptions(item.optionsJson))}
                               </p>
                             )}
                             <p className="text-xs text-gray-600">
-                              {item.quantity}개 × ₩{item.unitPrice.toLocaleString()}
+                              {t("myPage.order.quantity").replace("{count}", item.quantity.toString())} × ₩{item.unitPrice.toLocaleString()}
                             </p>
                           </div>
                           <p className="text-sm font-semibold">₩{item.rowTotal.toLocaleString()}</p>
@@ -196,21 +198,21 @@ export default function OrderSection() {
             <div className="mt-4 pt-4 border-t bg-purple-50 -mx-6 -mb-6 p-6 rounded-b-lg">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-600">
-                  <span>상품 금액</span>
+                  <span>{t("myPage.order.productAmount")}</span>
                   <span>₩{group.totalAmount.toLocaleString()}</span>
                 </div>
                 {group.discountAmount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>할인</span>
+                    <span>{t("myPage.order.discount")}</span>
                     <span>-₩{group.discountAmount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm text-gray-600">
-                  <span>배송비</span>
+                  <span>{t("myPage.order.shippingFee")}</span>
                   <span>₩{group.shippingFee.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-purple-200">
-                  <span className="font-semibold">{group.orders.length}개 브랜드 주문 총액</span>
+                  <span className="font-semibold">{t("myPage.order.totalBrandOrderAmount").replace("{count}", group.orders.length.toString())}</span>
                   <span className="text-xl font-bold text-purple-600">
                     ₩{group.finalAmount.toLocaleString()}
                   </span>
@@ -225,7 +227,7 @@ export default function OrderSection() {
                   className="w-full"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  주문 상세보기
+                  {t("myPage.order.viewDetails")}
                 </Button>
               </div>
             </div>
@@ -281,10 +283,10 @@ export default function OrderSection() {
                       <p className="text-sm font-medium truncate">{item.productTitle}</p>
                       {item.optionsJson && item.optionsJson.length > 0 && (
                         <p className="text-xs text-gray-500">
-                          {formatOrderItemOptions(item.optionsJson)}
+                          {t("myPage.order.option").replace("{options}", formatOrderItemOptions(item.optionsJson))}
                         </p>
                       )}
-                      <p className="text-xs text-gray-600">수량: {item.quantity}개</p>
+                      <p className="text-xs text-gray-600">{t("myPage.order.quantity").replace("{count}", item.quantity.toString())}</p>
                     </div>
                     <p className="text-sm font-semibold">₩{item.rowTotal.toLocaleString()}</p>
                   </div>
@@ -292,7 +294,7 @@ export default function OrderSection() {
 
                 {(order.items?.length || 0) > 2 && (
                   <p className="text-sm text-gray-500 text-center">
-                    +{(order.items?.length || 0) - 2}개 상품 더보기
+                    {t("myPage.order.moreProducts").replace("{count}", ((order.items?.length || 0) - 2).toString())}
                   </p>
                 )}
               </div>
@@ -301,7 +303,7 @@ export default function OrderSection() {
 
               {/* Total - Calculate from items if no group data */}
               <div className="flex items-center justify-between mb-4">
-                <p className="font-semibold">총 결제금액</p>
+                <p className="font-semibold">{t("myPage.order.totalPaymentAmount")}</p>
                 <p className="text-xl font-bold text-pink-600">
                   ₩{((groupData as OrderGroup)?.finalAmount || order.items?.reduce((sum: number, item: OrderItem) => sum + item.rowTotal, 0) || 0).toLocaleString()}
                 </p>
@@ -315,14 +317,14 @@ export default function OrderSection() {
                   className="flex-1"
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  상세보기
+                  {t("myPage.order.viewDetails")}
                 </Button>
                 {order.status === "pending" && (
                   <Button
                     onClick={() => router.push(`/payment/${order.groupId || order.id}`)}
                     className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
                   >
-                    결제하기
+                    {t("myPage.order.payment")}
                   </Button>
                 )}
               </div>
@@ -340,7 +342,7 @@ export default function OrderSection() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
           >
-            이전
+            {t("myPage.order.previous")}
           </Button>
           <span className="text-sm text-gray-600">
             {page} / {Math.ceil(totalOrders / 10)}
@@ -351,7 +353,7 @@ export default function OrderSection() {
             onClick={() => setPage((p) => p + 1)}
             disabled={page >= Math.ceil(totalOrders / 10)}
           >
-            다음
+            {t("myPage.order.next")}
           </Button>
         </div>
       )}

@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
 
     const promotion = searchParams.get('promotion'); // Include promotion data
     const reviews = searchParams.get('reviews'); // Include review stats
+    const sortBy = searchParams.get('sortBy'); // Sort field (finalPrice, price, etc.)
+    const sortOrder = searchParams.get('sortOrder'); // Sort order (asc, desc)
 
     // Priority 1: Get by ID (single product)
     if (id) {
@@ -79,6 +81,10 @@ export async function GET(request: NextRequest) {
       if (reviews) queryParams.set('reviews', reviews);
       if (includeReviewStats) queryParams.set('includeReviewStats', includeReviewStats);
       if (includeInquiryStats) queryParams.set('includeInquiryStats', includeInquiryStats);
+
+      // Add sorting parameters
+      if (sortBy) queryParams.set('sortBy', sortBy);
+      if (sortOrder) queryParams.set('sortOrder', sortOrder);
     }
 
     // Get authorization header from the incoming request

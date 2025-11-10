@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Link from "next/link";
+import { useLanguage } from "@/providers/languageProvider";
 
 export default function BrandProductReviewsPage() {
+    const { t } = useLanguage();
     const params = useParams();
     const brandId = Array.isArray((params as any)?.id) ? (params as any)?.id[0] : (params as any)?.id;
 
@@ -52,56 +54,56 @@ export default function BrandProductReviewsPage() {
     return (
         <div className="p-6">
             <div className="mb-6 flex items-center justify-between">
-                <h1 className="text-xl font-bold text-gray-900">상품 리뷰</h1>
+                <h1 className="text-xl font-bold text-gray-900">{t("header.business.brandDetail.products.reviews.title")}</h1>
                 <div className="flex gap-2">
                     <Input
-                        placeholder="상품명 검색"
+                        placeholder={t("header.business.brandDetail.products.reviews.searchPlaceholder")}
                         value={search}
                         onChange={(e) => { setPage(1); setSearch(e.target.value); }}
                         className="w-56"
                     />
                     <Select value={minStar} onValueChange={(v) => { setPage(1); setMinStar(v); }}>
-                        <SelectTrigger className="w-32"><SelectValue placeholder="평점" /></SelectTrigger>
+                        <SelectTrigger className="w-32"><SelectValue placeholder={t("header.business.brandDetail.products.reviews.rating")} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">전체</SelectItem>
-                            <SelectItem value="none">평점 없음</SelectItem>
-                            <SelectItem value="1">1점 이상</SelectItem>
-                            <SelectItem value="2">2점 이상</SelectItem>
-                            <SelectItem value="3">3점 이상</SelectItem>
-                            <SelectItem value="4">4점 이상</SelectItem>
-                            <SelectItem value="5">5점 이상</SelectItem>
+                            <SelectItem value="all">{t("header.business.brandDetail.products.reviews.all")}</SelectItem>
+                            <SelectItem value="none">{t("header.business.brandDetail.products.reviews.noRating")}</SelectItem>
+                            <SelectItem value="1">{t("header.business.brandDetail.products.reviews.oneStarOrMore")}</SelectItem>
+                            <SelectItem value="2">{t("header.business.brandDetail.products.reviews.twoStarsOrMore")}</SelectItem>
+                            <SelectItem value="3">{t("header.business.brandDetail.products.reviews.threeStarsOrMore")}</SelectItem>
+                            <SelectItem value="4">{t("header.business.brandDetail.products.reviews.fourStarsOrMore")}</SelectItem>
+                            <SelectItem value="5">{t("header.business.brandDetail.products.reviews.fiveStarsOrMore")}</SelectItem>
                         </SelectContent>
                     </Select>
                     <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-                        <SelectTrigger className="w-36"><SelectValue placeholder="정렬" /></SelectTrigger>
+                        <SelectTrigger className="w-36"><SelectValue placeholder={t("header.business.brandDetail.products.reviews.sort")} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="rating">평점순</SelectItem>
-                            <SelectItem value="reviews">리뷰수순</SelectItem>
+                            <SelectItem value="rating">{t("header.business.brandDetail.products.reviews.byRating")}</SelectItem>
+                            <SelectItem value="reviews">{t("header.business.brandDetail.products.reviews.byReviewCount")}</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" onClick={() => { setSearch(""); setMinStar("all"); setSortBy("rating"); setPage(1); }}>초기화</Button>
+                    <Button variant="outline" onClick={() => { setSearch(""); setMinStar("all"); setSortBy("rating"); setPage(1); }}>{t("header.business.brandDetail.products.reviews.reset")}</Button>
                 </div>
             </div>
 
             {error && (
-                <div className="text-red-600">불러오기에 실패했습니다.</div>
+                <div className="text-red-600">{t("header.business.brandDetail.products.reviews.loadFailed")}</div>
             )}
 
             <div className="overflow-x-auto border rounded-lg">
                 <table className="min-w-full text-sm">
                     <thead className="bg-gray-50 text-gray-700">
                         <tr>
-                            <th className="p-3 text-left">상품</th>
-                            <th className="p-3 text-right">평점</th>
-                            <th className="p-3 text-right">리뷰수</th>
-                            <th className="p-3 text-right">작업</th>
+                            <th className="p-3 text-left">{t("header.business.brandDetail.products.reviews.product")}</th>
+                            <th className="p-3 text-right">{t("header.business.brandDetail.products.reviews.rating")}</th>
+                            <th className="p-3 text-right">{t("header.business.brandDetail.products.reviews.reviewCount")}</th>
+                            <th className="p-3 text-right">{t("header.business.brandDetail.products.reviews.actions")}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
-                            <tr><td className="p-4" colSpan={3}>불러오는 중...</td></tr>
+                            <tr><td className="p-4" colSpan={3}>{t("header.business.brandDetail.products.reviews.loading")}</td></tr>
                         ) : filtered.length === 0 ? (
-                            <tr><td className="p-6 text-center text-gray-500" colSpan={3}>리뷰 데이터가 없습니다</td></tr>
+                            <tr><td className="p-6 text-center text-gray-500" colSpan={3}>{t("header.business.brandDetail.products.reviews.noReviewData")}</td></tr>
                         ) : (
                             filtered.map((p: any) => (
                                 <tr key={p.id} className="border-t">
@@ -117,7 +119,7 @@ export default function BrandProductReviewsPage() {
                                     <td className="p-3 text-right">{p.reviewStats?.averageRating ?? 0}</td>
                                     <td className="p-3 text-right">{p.reviewStats?.totalReviews ?? 0}</td>
                                     <td className="p-3 text-right">
-                                        <Button variant="outline" size="sm" onClick={() => setSelectedProduct(p)}>빠른보기</Button>
+                                        <Button variant="outline" size="sm" onClick={() => setSelectedProduct(p)}>{t("header.business.brandDetail.products.reviews.quickView")}</Button>
                                     </td>
                                 </tr>
                             ))
@@ -127,9 +129,9 @@ export default function BrandProductReviewsPage() {
             </div>
 
             <div className="mt-4 flex justify-center gap-2">
-                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((x) => x - 1)}>이전</Button>
+                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((x) => x - 1)}>{t("header.business.brandDetail.products.reviews.previous")}</Button>
                 <div className="text-sm text-gray-600 px-2 py-1">{page} / {totalPages}</div>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((x) => x + 1)}>다음</Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((x) => x + 1)}>{t("header.business.brandDetail.products.reviews.next")}</Button>
             </div>
 
             {/* Quick view modal for product reviews */}
@@ -143,6 +145,7 @@ export default function BrandProductReviewsPage() {
 }
 
 function ProductReviewsQuickModal({ brandId, product, onClose }: { brandId?: string, product?: any, onClose: () => void }) {
+    const { t } = useLanguage();
     const open = !!product;
     const [reviews, setReviews] = React.useState<any[]>([]);
     const [stats, setStats] = React.useState<any>(null);
@@ -175,29 +178,29 @@ function ProductReviewsQuickModal({ brandId, product, onClose }: { brandId?: str
         <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>상품 리뷰 - {product?.name}</DialogTitle>
+                    <DialogTitle>{t("header.business.brandDetail.products.reviews.modalTitle", { productName: product?.name })}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600">평점: <span className="font-medium text-gray-900">{product?.reviewStats?.averageRating ?? 0}</span> · 리뷰수: <span className="font-medium text-gray-900">{product?.reviewStats?.totalReviews ?? 0}</span></div>
+                        <div className="text-sm text-gray-600">{t("header.business.brandDetail.products.reviews.ratingLabel")} <span className="font-medium text-gray-900">{product?.reviewStats?.averageRating ?? 0}</span> · {t("header.business.brandDetail.products.reviews.reviewCountLabel")} <span className="font-medium text-gray-900">{product?.reviewStats?.totalReviews ?? 0}</span></div>
                         {!!brandId && !!productId && (
                             <Link className="text-sm text-blue-600 hover:underline" href={`/business/brands/${brandId}/products/${productId}/reviews`}>
-                                전체 보기
+                                {t("header.business.brandDetail.products.reviews.viewAll")}
                             </Link>
                         )}
                     </div>
                     {stats && (
-                        <div className="text-xs text-gray-600">최근 평균: {stats?.averageRating ?? 0} · 분포: {stats?.ratingDistribution ? Object.entries(stats.ratingDistribution).map(([k, v]) => `${k}⭐ ${v}`).join(' · ') : '—'}</div>
+                        <div className="text-xs text-gray-600">{t("header.business.brandDetail.products.reviews.recentAverage")} {stats?.averageRating ?? 0} · {t("header.business.brandDetail.products.reviews.distribution")} {stats?.ratingDistribution ? Object.entries(stats.ratingDistribution).map(([k, v]) => `${k}⭐ ${v}`).join(' · ') : '—'}</div>
                     )}
                     <div className="max-h-80 overflow-auto border rounded">
                         {reviews.length === 0 ? (
-                            <div className="p-4 text-sm text-gray-500">리뷰가 없습니다</div>
+                            <div className="p-4 text-sm text-gray-500">{t("header.business.brandDetail.products.reviews.noReviews")}</div>
                         ) : (
                             <ul className="divide-y">
                                 {reviews.slice(0, 10).map((r: any) => (
                                     <li key={r.id} className="p-3">
                                         <div className="flex items-center justify-between">
-                                            <div className="text-sm font-medium text-gray-900">{r.authorName || '익명'}</div>
+                                            <div className="text-sm font-medium text-gray-900">{r.authorName || t("header.business.brandDetail.products.reviews.anonymous")}</div>
                                             <div className="text-xs text-gray-600">{r.rating}⭐</div>
                                         </div>
                                         <div className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{r.content}</div>
