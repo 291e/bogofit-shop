@@ -1053,6 +1053,32 @@
       "aiGeneratingYourImage": "AI is generating your image",
       "highQualityImageNote": "It may take a bit longer to generate high-quality images"
     },
+    "solution": {
+      "title": "Virtual Fitting Solution",
+      "description": "Experience virtual fitting with just model and items",
+      "selectSolutionType": "Select Solution Type",
+      "itemSolution": "Item Solution",
+      "hairSolution": "Hair Solution",
+      "hairColorSolution": "Hair Color Solution",
+      "imageUpload": "Image Upload",
+      "modelImage": "Model Image",
+      "modelImageDescription": "Full body photo recommended",
+      "itemImage": "Item Image",
+      "itemImageDescription": "Accessories, bags, hats, etc.",
+      "hairImage": "Hair Style Image",
+      "hairImageDescription": "Select a hair style sample to apply",
+      "startVirtualFitting": "Start Virtual Fitting",
+      "processing": "Processing...",
+      "starting": "Starting virtual fitting...",
+      "analyzing": "AI analyzing...",
+      "complete": "Complete!",
+      "generatedImage": "Generated Image",
+      "error": "Error",
+      "uploadModelImage": "Please upload model image.",
+      "uploadItemImage": "Please upload item image.",
+      "unknownError": "An unknown error occurred.",
+      "selectHairColor": "Select Hair Color"
+    },
     "productReviews": {
       "loading": "Loading review information...",
       "error": "Failed to load reviews.",
@@ -1185,7 +1211,17 @@
       "selectSampleImage": "Select Sample Image",
       "selectSampleImageLabel": "{label} Select Sample Image",
       "selectionComplete": "Selection Complete",
-      "removeImage": "Remove Image"
+      "removeImage": "Remove Image",
+      "sampleAlt": {
+        "modelImage": "Model Image {number}",
+        "garmentSample": "Top Sample {number}",
+        "outerSample": "Outer Sample {number}",
+        "dressSample": "Dress Sample {number}",
+        "lowerSample": "Bottom Sample {number}",
+        "itemSample": "Item Sample {number}",
+        "hairSample": "Hair Sample {number}",
+        "backgroundImage": "Background Image {number}"
+      }
     },
     "imageUploader": {
       "uploading": "Uploading...",

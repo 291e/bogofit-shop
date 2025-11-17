@@ -250,3 +250,127 @@ export const itemSamples: SampleImage[] = [
   },
 
 ];
+
+// 헤어 이미지 샘플 (hair/hair_1~7.png) - Hair Solution 전용
+export const hairSamples: SampleImage[] = [
+  {
+    id: "hair-1",
+    src: "/hair/hair_1.png",
+    alt: "헤어 샘플 1",
+  },
+  {
+    id: "hair-2",
+    src: "/hair/hair_2.png",
+    alt: "헤어 샘플 2",
+  },
+  {
+    id: "hair-3",
+    src: "/hair/hair_3.png",
+    alt: "헤어 샘플 3",
+  },
+  {
+    id: "hair-4",
+    src: "/hair/hair_4.png",
+    alt: "헤어 샘플 4",
+  },
+  {
+    id: "hair-5",
+    src: "/hair/hair_5.png",
+    alt: "헤어 샘플 5",
+  },
+  {
+    id: "hair-6",
+    src: "/hair/hair_6.png",
+    alt: "헤어 샘플 6",
+  },
+  {
+    id: "hair-7",
+    src: "/hair/hair_7.png",
+    alt: "헤어 샘플 7",
+  },
+];
+
+
+export const hairColorSamples: SampleImage[] = [
+  {
+    id: "hair-color-1",
+    src: "/hairColor/Image1.jpg",
+    alt: "헤어 컬러 샘플 1",
+  },
+  {
+    id: "hair-color-2",
+    src: "/hairColor/Image2.jpg",
+    alt: "헤어 컬러 샘플 2",
+  },
+  {
+    id: "hair-color-3",
+    src: "/hairColor/Image3.jpg",
+    alt: "헤어 컬러 샘플 3",
+  },
+  {
+    id: "hair-color-4",
+    src: "/hairColor/Image4.jpg",
+    alt: "헤어 컬러 샘플 4",
+  },
+  {
+    id: "hair-color-5",
+    src: "/hairColor/Image5.jpg",
+    alt: "헤어 컬러 샘플 5",
+  },
+  {
+    id: "hair-color-6",
+    src: "/hairColor/Image6.jpg",
+    alt: "헤어 컬러 샘플 6",
+  },
+  {
+    id: "hair-color-7",
+    src: "/hairColor/Image7.jpg",
+    alt: "헤어 컬러 샘플 7",
+  },
+  {
+    id: "hair-color-8",
+    src: "/hairColor/Image8.jpg",
+    alt: "헤어 컬러 샘플 8",
+  },
+  {
+    id: "hair-color-9",
+    src: "/hairColor/Image9.jpg",
+    alt: "헤어 컬러 샘플 9",
+  },
+  {
+    id: "hair-color-10",
+    src: "/hairColor/Image10.jpg",
+    alt: "헤어 컬러 샘플 10",
+  },
+  {
+    id: "hair-color-11",
+    src: "/hairColor/Image11.jpg",
+    alt: "헤어 컬러 샘플 11",
+  },
+  {
+    id: "hair-color-12",
+    src: "/hairColor/Image12.jpg",
+    alt: "헤어 컬러 샘플 12",
+  },
+  {
+    id: "hair-color-13",
+    src: "/hairColor/Image13.jpg",
+    alt: "헤어 컬러 샘플 13",
+  },
+  {
+    id: "hair-color-14",
+    src: "/hairColor/Image14.jpg",
+    alt: "헤어 컬러 샘플 14",
+  },
+  {
+    id: "hair-color-15",
+    src: "/hairColor/Image15.jpg",
+    alt: "헤어 컬러 샘플 15",
+  },
+  {
+    id: "hair-color-16",
+    src: "/hairColor/Image16.jpg",
+    alt: "헤어 컬러 샘플 16",
+  },
+];
+

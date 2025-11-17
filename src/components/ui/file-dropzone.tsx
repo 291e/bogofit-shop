@@ -51,6 +51,36 @@ export function FileDropzone({
   const { t } = useLanguage();
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Helper function to translate sample alt text
+  const translateSampleAlt = (alt: string): string => {
+    // Extract number from alt text (e.g., "모델 이미지 1" -> 1)
+    const numberMatch = alt.match(/\d+/);
+    const number = numberMatch ? numberMatch[0] : "";
+
+    // Determine translation key based on alt text pattern
+    if (alt.includes("모델 이미지") || alt.includes("Model Image") || alt.includes("Hình ảnh mẫu") || alt.includes("模特图片")) {
+      return t("ui.fileDropzone.sampleAlt.modelImage", { number });
+    } else if (alt.includes("상의 샘플") || alt.includes("Top Sample") || alt.includes("Mẫu áo") || alt.includes("上衣示例")) {
+      return t("ui.fileDropzone.sampleAlt.garmentSample", { number });
+    } else if (alt.includes("아우터 샘플") || alt.includes("Outer Sample") || alt.includes("Mẫu áo khoác") || alt.includes("外套示例")) {
+      return t("ui.fileDropzone.sampleAlt.outerSample", { number });
+    } else if (alt.includes("원피스 샘플") || alt.includes("Dress Sample") || alt.includes("Mẫu váy liền") || alt.includes("连衣裙示例")) {
+      return t("ui.fileDropzone.sampleAlt.dressSample", { number });
+    } else if (alt.includes("하의 샘플") || alt.includes("Bottom Sample") || alt.includes("Mẫu quần") || alt.includes("下装示例")) {
+      return t("ui.fileDropzone.sampleAlt.lowerSample", { number });
+    } else if (alt.includes("아이템 샘플") || alt.includes("Item Sample") || alt.includes("Mẫu sản phẩm") || alt.includes("单品示例")) {
+      return t("ui.fileDropzone.sampleAlt.itemSample", { number });
+    } else if (alt.includes("헤어 샘플") || alt.includes("Hair Sample") || alt.includes("Mẫu tóc") || alt.includes("发型样本")) {
+      return t("ui.fileDropzone.sampleAlt.hairSample", { number });
+    } else if (alt.includes("배경 이미지") || alt.includes("Background Image") || alt.includes("Hình nền") || alt.includes("背景图片")) {
+      return t("ui.fileDropzone.sampleAlt.backgroundImage", { number });
+    }
+
+    // Fallback to original alt if no pattern matches
+    return alt;
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -312,7 +342,7 @@ export function FileDropzone({
                         ? "text-pink-600 font-semibold"
                         : "text-gray-600 group-hover:text-gray-900"
                         }`}>
-                        {sample.alt}
+                        {translateSampleAlt(sample.alt)}
                       </p>
                     </div>
                   ))}

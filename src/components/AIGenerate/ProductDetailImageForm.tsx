@@ -53,65 +53,17 @@ export function ProductDetailImageForm() {
                 textSections.push(`Size Chart:\n${sizeCharts.filter(sc => sc.trim()).map(sc => `• ${sc}`).join('\n')}`);
             }
 
-            const detailPrompt = `TASK: Create a professional product detail image based on the uploaded base image.
+            // Build detail image prompt using product information
+            const detailPrompt = `You are creating a product detail page image. The uploaded image shows the product - keep it exactly as shown, do not change anything about the product itself.
 
-CRITICAL - USE THE BASE IMAGE AS FOUNDATION:
-- You MUST use the uploaded base image as the foundation to create the detail image
-- The product in the base image MUST appear EXACTLY the same in the output detail image
-- Same design, same colors, same style, same details, same shape, same proportions
-- DO NOT modify, recreate, or change the product from the base image
-- The product image should be IDENTICAL to the base image
-- Only add text information BELOW or AROUND the product, never modify the product itself
+Create a vertical 9:16 image with this structure:
 
-FORMAT:
-- Vertical long banner: width 1000px, height minimum 2000px
+1. Top half: Place the product from the uploaded image. Keep it identical - same colors, design, everything. Center it with white space around.
 
-CRITICAL - TEXT LANGUAGE REQUIREMENT:
-- ALL text in the image MUST be in English ONLY
-- NO Korean text (한국어) allowed
-- NO other languages allowed
-- All section headers, labels, and information must be written in English
-- Use English text for everything displayed in the image
+2. Bottom half: Add product information in Korean text below. Organize it like a real e-commerce product detail page:
+${textSections.length > 0 ? textSections.map(section => `   ${section}`).join('\n\n') : '   (No additional information)'}
 
-LAYOUT STRUCTURE (arrange vertically from top to bottom with proper spacing):
-
-1. TOP SECTION - Product Image from Base Image (40-50% of total height):
-   - Display the EXACT product from the uploaded base image at the top
-   - Use the product image from the base image unchanged and identical
-   - Clean white or light gray background
-   - Product should be clearly visible, centered, and unchanged from the base image
-   - Generous padding around the product image
-   - Professional product photography style
-
-2. TEXT INFORMATION SECTION (50-60% of total height, ALL IN ENGLISH):
-${textSections.length > 0 ? `   - Below the product image, create a well-organized text section with proper spacing
-   - Add generous padding and spacing between sections
-   - Use clear visual hierarchy with section headers and content
-   - Display the following information in clean English text ONLY:
-${textSections.map(section => `   ${section}`).join('\n\n')}
-   - Each text section should have proper spacing and visual separation
-   - Use professional typography with clear hierarchy` : '   - (No additional text information provided)'}
-
-DESIGN GUIDELINES (for beautiful layout):
-- Clean white or light gray background throughout
-- Professional e-commerce style (like Uniqlo, Zara, H&M)
-- Generous padding and margins throughout (at least 60-80px on sides, 40-60px between sections)
-- Clear visual hierarchy:
-  * Section headers: Bold, larger font size (24-32px)
-  * Content text: Clear, readable font size (16-18px)
-  * Proper line spacing and letter spacing
-- Balanced composition: Product image takes 40-50% of height, text section takes 50-60%
-- Center-aligned or left-aligned text with proper margins
-- Subtle section dividers or spacing between different text sections
-- Professional typography with good contrast
-- Clean, minimal, and elegant design
-- ALL text must be in English - clear, readable English text only
-no
-REMEMBER: 
-- Use the base image as the foundation - the product must be IDENTICAL to the base image
-- Only add text below the product image, never modify the product itself
-- ALL text in the image must be in English ONLY - no Korean or other languages
-- Create a professional product detail image based on the base image`;
+Make it look like a real product detail page from online shopping sites. Clean white background. Professional typography. Good spacing between sections. The product stays at the top, information flows naturally below.`;
 
             const reader = new FileReader();
             reader.onload = async (e) => {

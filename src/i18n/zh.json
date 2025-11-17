@@ -1053,6 +1053,32 @@
       "aiGeneratingYourImage": "AI正在生成您的图片",
       "highQualityImageNote": "生成高质量图片可能需要更长时间"
     },
+    "solution": {
+      "title": "虚拟试穿解决方案",
+      "description": "仅使用模特和配饰体验虚拟试穿",
+      "selectSolutionType": "选择解决方案类型",
+      "itemSolution": "配饰解决方案",
+      "hairSolution": "发型解决方案",
+      "hairColorSolution": "染发解决方案",
+      "imageUpload": "图片上传",
+      "modelImage": "模特图片",
+      "modelImageDescription": "建议全身照片",
+      "itemImage": "配饰图片",
+      "itemImageDescription": "配饰、包包、帽子等",
+      "hairImage": "发型图片",
+      "hairImageDescription": "选择要应用的发型样本",
+      "startVirtualFitting": "开始虚拟试穿",
+      "processing": "处理中...",
+      "starting": "正在开始虚拟试穿...",
+      "analyzing": "AI分析中...",
+      "complete": "完成！",
+      "generatedImage": "生成的图片",
+      "error": "错误",
+      "uploadModelImage": "请上传模特图片。",
+      "uploadItemImage": "请上传配饰图片。",
+      "unknownError": "发生未知错误。",
+      "selectHairColor": "选择发型颜色"
+    },
     "productReviews": {
       "loading": "正在加载评价信息...",
       "error": "加载评价失败。",
@@ -1185,7 +1211,17 @@
       "selectSampleImage": "选择示例图片",
       "selectSampleImageLabel": "{label} 选择示例图片",
       "selectionComplete": "选择完成",
-      "removeImage": "移除图片"
+      "removeImage": "移除图片",
+      "sampleAlt": {
+        "modelImage": "模特图片 {number}",
+        "garmentSample": "上衣示例 {number}",
+        "outerSample": "外套示例 {number}",
+        "dressSample": "连衣裙示例 {number}",
+        "lowerSample": "下装示例 {number}",
+        "itemSample": "单品示例 {number}",
+        "hairSample": "发型样本 {number}",
+        "backgroundImage": "背景图片 {number}"
+      }
     },
     "imageUploader": {
       "uploading": "上传中...",

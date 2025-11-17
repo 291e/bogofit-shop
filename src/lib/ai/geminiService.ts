@@ -74,17 +74,14 @@ export async function generateProductImage({
       mimeType = "image/webp";
     }
 
-    const requestPrompt = [
+    // Build prompt array according to Google GenAI API format
+    const promptArray = [
+      { text: enhancedPrompt },
       {
-        parts: [
-          { text: enhancedPrompt },
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: cleanBase64,
-            },
-          },
-        ],
+        inlineData: {
+          mimeType: mimeType,
+          data: cleanBase64,
+        },
       },
     ];
 
@@ -95,26 +92,20 @@ export async function generateProductImage({
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: any = {};
-
-    // Add aspect ratio config if provided
-    if (aspectRatio) {
-      config.imageConfig = {
-        aspectRatio: aspectRatio,
-      };
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestParams: any = {
       model: "gemini-2.5-flash-image",
-      contents: requestPrompt,
+      contents: promptArray,
       generationConfig: generateConfig,
     };
 
-    // Add config with imageConfig if aspectRatio is provided
-    if (aspectRatio && Object.keys(config).length > 0) {
-      requestParams.config = config;
-      console.log('📐 Using aspect ratio config:', config);
+    // Add aspect ratio config if provided
+    if (aspectRatio) {
+      requestParams.config = {
+        imageConfig: {
+          aspectRatio: aspectRatio,
+        },
+      };
+      console.log('📐 Using aspect ratio config:', aspectRatio);
     }
 
     console.log('🎨 Generating image with aspect ratio:', aspectRatio || 'default');

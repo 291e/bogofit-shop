@@ -1053,6 +1053,32 @@
             "aiGeneratingYourImage": "AI đang tạo hình ảnh của bạn",
             "highQualityImageNote": "Có thể mất nhiều thời gian hơn để tạo hình ảnh chất lượng cao"
         },
+        "solution": {
+            "title": "Giải Pháp Thử Ảo",
+            "description": "Trải nghiệm thử ảo chỉ với model và phụ kiện",
+            "selectSolutionType": "Chọn Loại Giải Pháp",
+            "itemSolution": "Giải Pháp Phụ Kiện",
+            "hairSolution": "Giải Pháp Kiểu Tóc",
+            "hairColorSolution": "Giải Pháp Nhuộm Màu Tóc",
+            "imageUpload": "Tải Lên Hình Ảnh",
+            "modelImage": "Hình Ảnh Model",
+            "modelImageDescription": "Khuyến nghị ảnh toàn thân",
+            "itemImage": "Hình Ảnh Phụ Kiện",
+            "itemImageDescription": "Phụ kiện, túi xách, mũ, v.v.",
+            "hairImage": "Hình Ảnh Kiểu Tóc",
+            "hairImageDescription": "Chọn mẫu kiểu tóc để áp dụng",
+            "startVirtualFitting": "Bắt Đầu Thử Ảo",
+            "processing": "Đang xử lý...",
+            "starting": "Đang bắt đầu thử ảo...",
+            "analyzing": "AI đang phân tích...",
+            "complete": "Hoàn thành!",
+            "generatedImage": "Hình Ảnh Đã Tạo",
+            "error": "Lỗi",
+            "uploadModelImage": "Vui lòng tải lên hình ảnh model.",
+            "uploadItemImage": "Vui lòng tải lên hình ảnh phụ kiện.",
+            "unknownError": "Đã xảy ra lỗi không xác định.",
+            "selectHairColor": "Chọn màu tóc"
+        },
         "productReviews": {
             "loading": "Đang tải thông tin đánh giá...",
             "error": "Không thể tải đánh giá.",
@@ -1185,7 +1211,17 @@
             "selectSampleImage": "Chọn Hình ảnh Mẫu",
             "selectSampleImageLabel": "{label} Chọn Hình ảnh Mẫu",
             "selectionComplete": "Chọn xong",
-            "removeImage": "Xóa hình ảnh"
+            "removeImage": "Xóa hình ảnh",
+            "sampleAlt": {
+                "modelImage": "Mẫu {number}",
+                "garmentSample": "Mẫu {number}",
+                "outerSample": "Mẫu {number}",
+                "dressSample": "Mẫu {number}",
+                "lowerSample": "Mẫu {number}",
+                "itemSample": "Mẫu {number}",
+                "hairSample": "Mẫu Tóc {number}",
+                "backgroundImage": "Mẫu {number}"
+            }
         },
         "imageUploader": {
             "uploading": "Đang tải lên...",
