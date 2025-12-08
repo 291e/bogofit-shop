@@ -220,6 +220,11 @@ export async function GET(request: NextRequest) {
       apiUrl.searchParams.append('id', brandId);
       headers['Authorization'] = `Bearer ${token}`;
     }
+    // Case 2: Get single brand by slug (public - no auth needed)
+    else if (slug) {
+      apiUrl.searchParams.append('slug', slug);
+      // No token required for public brand pages
+    }
     // Case 3: Get brands by application (requires auth)
     else if (applicationId) {
       if (!token) {

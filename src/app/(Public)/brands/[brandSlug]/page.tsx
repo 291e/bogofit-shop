@@ -87,9 +87,9 @@ export default function BrandDetailPage() {
       if (!response.ok) throw new Error("Failed to fetch brand");
       const data = await response.json();
 
-      // API returns { brands: [...] } so we need to find the matching brand
-      if (data.brands && data.brands.length > 0) {
-        return data.brands[0] as BrandResponseDto;
+      // ✅ API now returns { brand: {...} } for single brand
+      if (data.brand) {
+        return data.brand as BrandResponseDto;
       }
 
       throw new Error("Brand not found");
