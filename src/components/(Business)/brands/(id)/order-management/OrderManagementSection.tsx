@@ -4,11 +4,13 @@ import SideBarSection from "@/components/ui/sidebar-section";
 import { useLanguage } from "@/providers/languageProvider";
 
 interface OrderManagementSectionProps {
-    brandId: string;
+    brandSlug: string;
+    theme?: 'dark' | 'light';
 }
 
 export default function OrderManagementSection({
-    brandId
+    brandSlug,
+    theme
 }: OrderManagementSectionProps) {
     const { t } = useLanguage();
     const orderManagementData = {
@@ -18,32 +20,32 @@ export default function OrderManagementSection({
             {
                 id: "all-orders",
                 label: t("header.business.brandDetail.sidebar.allOrders"),
-                href: `/business/brands/${brandId}/orders`
+                href: `/business/brands/${brandSlug}/orders`
             },
             {
                 id: "pending",
                 label: t("header.business.brandDetail.sidebar.paymentPending"),
-                href: `/business/brands/${brandId}/orders?status=pending`
+                href: `/business/brands/${brandSlug}/orders?status=pending`
             },
             {
                 id: "confirmed",
                 label: t("header.business.brandDetail.sidebar.paymentCompleted"),
-                href: `/business/brands/${brandId}/orders?status=confirmed`
+                href: `/business/brands/${brandSlug}/orders?status=confirmed`
             },
             {
                 id: "processing",
                 label: t("header.business.brandDetail.sidebar.processing"),
-                href: `/business/brands/${brandId}/orders?status=processing`
+                href: `/business/brands/${brandSlug}/orders?status=processing`
             },
             {
                 id: "completed",
                 label: t("header.business.brandDetail.sidebar.shippingCompleted"),
-                href: `/business/brands/${brandId}/orders?status=completed`
+                href: `/business/brands/${brandSlug}/orders?status=completed`
             },
             {
                 id: "canceled",
                 label: t("header.business.brandDetail.sidebar.canceled"),
-                href: `/business/brands/${brandId}/orders?status=canceled`
+                href: `/business/brands/${brandSlug}/orders?status=canceled`
             }
         ]
     };
@@ -51,6 +53,7 @@ export default function OrderManagementSection({
     return (
         <SideBarSection
             mainSection={orderManagementData}
+            theme={theme}
         />
     );
 }

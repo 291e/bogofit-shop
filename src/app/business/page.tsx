@@ -13,14 +13,14 @@ export default function BusinessPage() {
   const [activeTab, setActiveTab] = useState("login");
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  
+
   // ✅ 모든 Hook을 조건부 return보다 먼저 호출
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       router.replace("/business/brands");
     }
   }, [authLoading, isAuthenticated, router]);
-  
+
   // ✅ Auth가 로딩 중이면 로딩 화면 표시
   if (authLoading) {
     return (
@@ -32,7 +32,7 @@ export default function BusinessPage() {
       </div>
     );
   }
-  
+
   // ✅ 인증된 사용자는 리다이렉트 중이므로 로딩 화면 표시
   if (isAuthenticated) {
     return (
@@ -50,32 +50,30 @@ export default function BusinessPage() {
       <div className="w-full max-w-lg mx-auto">
         {/* Fixed tabs at top */}
         <div className="sticky top-0 z-10 bg-gray-50 pt-8 pb-4">
-        <div className="flex justify-center">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border border-blue-200 flex">
-            <button
-              onClick={() => setActiveTab("login")}
-              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all ${
-                activeTab === "login"
-                  ? "bg-white shadow-sm text-blue-500"
-                  : "text-gray-600 hover:text-blue-400"
-              }`}
-            >
-              <Building2 className="h-4 w-4" />
-              <span className="font-bold">{t("header.business.businessLogin")}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("register")}
-              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all ${
-                activeTab === "register"
-                  ? "bg-white shadow-sm text-blue-500"
-                  : "text-gray-600 hover:text-blue-400"
-              }`}
-            >
-              <User className="h-4 w-4" />
-              <span className="font-bold">{t("header.business.businessRegister")}</span>
-            </button>
+          <div className="flex justify-center">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border border-blue-200 flex">
+              <button
+                onClick={() => setActiveTab("login")}
+                className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all ${activeTab === "login"
+                    ? "bg-white shadow-sm text-blue-500"
+                    : "text-gray-600 hover:text-blue-400"
+                  }`}
+              >
+                <Building2 className="h-4 w-4" />
+                <span className="font-bold">{t("header.business.businessLogin")}</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("register")}
+                className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all ${activeTab === "register"
+                    ? "bg-white shadow-sm text-blue-500"
+                    : "text-gray-600 hover:text-blue-400"
+                  }`}
+              >
+                <User className="h-4 w-4" />
+                <span className="font-bold">{t("header.business.businessRegister")}</span>
+              </button>
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Render form based on active tab */}

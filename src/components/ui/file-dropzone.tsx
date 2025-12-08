@@ -33,6 +33,7 @@ interface FileDropzoneProps {
   type?: "model" | "clothing"; // 모델 이미지인지 상의/하의인지 구분
   selectedSampleSrc?: string; // Source URL of currently selected sample image
   version?: "v1" | "v2"; // BOGOFIT V1 or V2
+  solutionType?: "item" | "hair" | "hairColor"; // Solution type for VirtualFittingSolution
 }
 
 export function FileDropzone({
@@ -47,6 +48,7 @@ export function FileDropzone({
   type = "clothing", // 기본값은 상의/하의
   selectedSampleSrc,
   version,
+  solutionType,
 }: FileDropzoneProps) {
   const { t } = useLanguage();
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
@@ -271,11 +273,15 @@ export function FileDropzone({
                     ? t("ui.fileDropzone.dropFile")
                     : type === "model"
                       ? t("ui.fileDropzone.uploadModelImage")
-                      : version === "v2" && type === "clothing" && label.includes("아이템")
+                      : solutionType === "item"
                         ? t("ui.fileDropzone.uploadItemImage")
-                        : version === "v1" && type === "clothing" && label.includes("하의")
-                          ? t("ui.fileDropzone.uploadBottomImage")
-                          : t("ui.fileDropzone.uploadClothingImage")}
+                        : solutionType === "hair"
+                          ? t("ui.fileDropzone.uploadHairImage")
+                          : version === "v2" && type === "clothing" && label.includes("아이템")
+                            ? t("ui.fileDropzone.uploadItemImage")
+                            : version === "v1" && type === "clothing" && label.includes("하의")
+                              ? t("ui.fileDropzone.uploadBottomImage")
+                              : t("ui.fileDropzone.uploadClothingImage")}
                 </p>
                 <p className="text-sm text-gray-500">
                   {t("ui.fileDropzone.dragOrClick")}

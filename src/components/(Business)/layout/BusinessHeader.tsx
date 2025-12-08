@@ -1,9 +1,7 @@
 "use client";
 
-import { Building2, LogOut, User as UserIcon, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { Bell, LogOut, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/providers/authProvider";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LanguageSelector } from "@/components/(Public)/layout/LanguageSelector";
 import { useLanguage } from "@/providers/languageProvider";
@@ -22,80 +22,80 @@ export default function BusinessHeader() {
   const { user, isLoading, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
 
-  // ✅ Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo and Title */}
-          <div className="flex items-center">
-            <Link href="/business" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-white" />
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        {/* Title Section (Matches Admin) */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">비즈니스 대시보드</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            BOGOFIT 브랜드 관리 시스템
+          </p>
+        </div>
+
+        {/* Actions Section */}
+        <div className="flex items-center gap-4">
+          {/* Language Selector */}
+          <LanguageSelector />
+
+          {/* Notifications (Matches Admin) */}
+          <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
+          {!mounted || isLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          ) : user ? (
+            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+              {/* User Info (Matches Admin style) */}
+              <div className="hidden md:block text-right">
+                <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                <div className="text-xs text-gray-500">{user.email}</div>
               </div>
-              <span className="text-xl font-bold text-gray-900">BOGOFIT Business</span>
-            </Link>
-          </div>
 
-          {/* User Menu */}
-          <div className="flex items-center gap-3">
-            {/* Language Selector */}
-            <LanguageSelector />
-
-            {!mounted || isLoading ? (
-              // ✅ Show loading while checking auth state
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-            ) : user ? (
-              <>
-                {/* User Info */}
-                <div className="hidden md:block text-right">
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
-                </div>
-
-                {/* User Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={undefined} alt={user.name} />
-                        <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                          {user.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <UserIcon className="mr-2 h-4 w-4" />
-                      <span>{t("header.business.profile")}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600 focus:text-red-600"
-                      onClick={logout}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>{t("header.business.logout")}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : null}
-          </div>
+              {/* User Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:bg-transparent">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={undefined} alt={user.name} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>{t("header.business.profile")}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-600 focus:text-red-600"
+                    onClick={logout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{t("header.business.logout")}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : null}
         </div>
       </div>
     </header>

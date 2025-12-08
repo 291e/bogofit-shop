@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useBrandContext } from "@/app/business/brands/[id]/layout";
+import { useBrandContext } from "@/app/business/brands/[slug]/layout";
 import { usePublicProducts } from "@/hooks/useProducts";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,9 @@ import {
   Edit,
   Trash2,
   Search,
-  Filter
+  Filter,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ProductResponseDto } from "@/types/product";
@@ -46,6 +48,17 @@ export default function InventorySubSection({
   } | null>(null);
   const [showVariantEditModal, setShowVariantEditModal] = useState(false);
   const [isSavingVariant, setIsSavingVariant] = useState(false);
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+
+  const toggleProduct = (productId: string) => {
+    const newExpanded = new Set(expandedProducts);
+    if (newExpanded.has(productId)) {
+      newExpanded.delete(productId);
+    } else {
+      newExpanded.add(productId);
+    }
+    setExpandedProducts(newExpanded);
+  };
 
   // Debounce search term to avoid spamming API
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -201,14 +214,28 @@ export default function InventorySubSection({
             {/* Product + Variant Rows - v2.0: Show product first, then variants */}
             {filteredProducts.flatMap((product) => {
               const rows = [];
+              const isExpanded = expandedProducts.has(product.id);
+              const hasVariants = product.variants && product.variants.length > 0;
 
               // 1. ALWAYS show product-level row first
               rows.push(
                 <div key={`${product.id}-product`} className="border-b border-gray-200 bg-blue-50 hover:bg-blue-100 transition-colors">
                   <div className="flex items-center py-3 px-4">
-                    {/* SKU */}
-                    <div className="w-20 text-center">
-                      <p className="text-xs font-mono text-gray-600 truncate">{product.sku}</p>
+                    {/* SKU & Toggle */}
+                    <div className="w-20 flex items-center gap-2">
+                      {hasVariants && (
+                        <button
+                          onClick={() => toggleProduct(product.id)}
+                          className="p-1 hover:bg-blue-200 rounded transition-colors"
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-gray-600" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-gray-600" />
+                          )}
+                        </button>
+                      )}
+                      <p className="text-xs font-mono text-gray-600 truncate flex-1 text-center">{product.sku}</p>
                     </div>
 
                     {/* 이미지 */}
@@ -243,8 +270,8 @@ export default function InventorySubSection({
                     {/* 옵션 */}
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       <div className="text-xs text-gray-600 font-medium">
-                        {product.variants && product.variants.length > 0
-                          ? t("header.business.brandDetail.products.inventory.variantsCount", { count: product.variants.length })
+                        {hasVariants
+                          ? t("header.business.brandDetail.products.inventory.variantsCount", { count: product.variants?.length || 0 })
                           : t("header.business.brandDetail.products.inventory.variantsCount", { count: 0 })}
                       </div>
                     </div>
@@ -252,8 +279,8 @@ export default function InventorySubSection({
                     {/* 재고 */}
                     <div className="flex-1 text-center border-l border-gray-300 pl-2">
                       <p className="text-sm font-semibold text-blue-900">
-                        {product.variants && product.variants.length > 0
-                          ? `${product.variants.reduce((sum, v) => sum + (v.quantity || 0), 0)} ${t("header.business.brandDetail.products.inventory.stockUnit")}`
+                        {hasVariants
+                          ? `${product.variants?.reduce((sum, v) => sum + (v.quantity || 0), 0)} ${t("header.business.brandDetail.products.inventory.stockUnit")}`
                           : (product.quantity === null ? t("header.business.brandDetail.products.inventory.unlimited") : `${product.quantity} ${t("header.business.brandDetail.products.inventory.stockUnit")}`)}
                       </p>
                     </div>
@@ -289,9 +316,9 @@ export default function InventorySubSection({
                 </div>
               );
 
-              // 2. Then show variant rows if they exist
-              if (product.variants && product.variants.length > 0) {
-                product.variants.forEach((variant, variantIndex) => {
+              // 2. Then show variant rows if they exist AND are expanded
+              if (hasVariants && isExpanded) {
+                product.variants?.forEach((variant, variantIndex) => {
                   rows.push(
                     <div key={`${product.id}-${variant.id || variantIndex}`} className="border-b border-gray-200 bg-green-50 hover:bg-green-100 transition-colors">
                       <div className="flex items-center py-3 px-4 pl-8">

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {  CreateApplicationResponse, ApplicationFormData, ApiApplicationResponse } from "@/types/application";
+import { CreateApplicationResponse, ApplicationFormData, ApiApplicationResponse } from "@/types/application";
 import { useAuth } from "@/providers/authProvider";
 import { Building2, User, Mail, Phone, FileText } from "lucide-react";
 import { ImageUploader } from "@/components/ui/imageUploader";
@@ -20,12 +20,12 @@ interface ApplicationRegisterProps {
   existingApplication?: ApiApplicationResponse | null; // Existing application for editing
 }
 
-export default function ApplicationRegister({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
+export default function ApplicationRegister({
+  isOpen,
+  onClose,
+  onSuccess,
   applicationStatus = "none",
-  existingApplication = null 
+  existingApplication = null
 }: ApplicationRegisterProps) {
   const { t } = useLanguage();
   const { token } = useAuth();
@@ -129,8 +129,9 @@ export default function ApplicationRegister({
 
     try {
       const isEditing = !!existingApplication;
+      // Use PUT for updates, POST for creation
       const response = await fetch("/api/application", {
-        method: isEditing ? "PATCH" : "POST",
+        method: isEditing ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
@@ -164,10 +165,10 @@ export default function ApplicationRegister({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="w-[35vw] max-h-[90vh] overflow-y-auto" 
-        style={{ 
-          width: '35vw', 
+      <DialogContent
+        className="w-[35vw] max-h-[90vh] overflow-y-auto"
+        style={{
+          width: '35vw',
           maxWidth: '45vw',
           minWidth: '25vw'
         }}
@@ -176,14 +177,14 @@ export default function ApplicationRegister({
           <DialogTitle className="flex items-center gap-2 text-xl font-bold text-blue-600">
             <FileText className="h-6 w-6" />
             {existingApplication ? t("header.business.applicationRegister.titleEdit") :
-             applicationStatus === "rejected" ? t("header.business.applicationRegister.titleResubmit") : 
-             applicationStatus === "banned" ? t("header.business.applicationRegister.titleRecover") : t("header.business.applicationRegister.title")}
+              applicationStatus === "rejected" ? t("header.business.applicationRegister.titleResubmit") :
+                applicationStatus === "banned" ? t("header.business.applicationRegister.titleRecover") : t("header.business.applicationRegister.title")}
           </DialogTitle>
           <p className="text-sm text-gray-600 mt-2">
             {existingApplication ? t("header.business.applicationRegister.subtitleEdit") :
-             applicationStatus === "rejected" ? t("header.business.applicationRegister.subtitleResubmit") :
-             applicationStatus === "banned" ? t("header.business.applicationRegister.subtitleRecover") :
-             t("header.business.applicationRegister.subtitle")}
+              applicationStatus === "rejected" ? t("header.business.applicationRegister.subtitleResubmit") :
+                applicationStatus === "banned" ? t("header.business.applicationRegister.subtitleRecover") :
+                  t("header.business.applicationRegister.subtitle")}
           </p>
           {existingApplication?.application?.noteAdmin && (
             <div className="mt-3 p-3 bg-red-50 border-l-4 border-red-500 rounded">
@@ -268,23 +269,23 @@ export default function ApplicationRegister({
             </div>
           </div>
 
-            <div className="space-y-3">
-              <label htmlFor="contactEmail" className="text-base font-bold text-gray-700">
-                {t("header.business.applicationRegister.email")}
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  id="contactEmail"
-                  name="contactEmail"
-                  type="email"
-                  placeholder={t("header.business.applicationRegister.emailPlaceholder")}
-                  value={formData.contactEmail}
-                  onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
-                  className="h-10 pl-12 text-base"
-                />
-              </div>
+          <div className="space-y-3">
+            <label htmlFor="contactEmail" className="text-base font-bold text-gray-700">
+              {t("header.business.applicationRegister.email")}
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                id="contactEmail"
+                name="contactEmail"
+                type="email"
+                placeholder={t("header.business.applicationRegister.emailPlaceholder")}
+                value={formData.contactEmail}
+                onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                className="h-10 pl-12 text-base"
+              />
             </div>
+          </div>
 
           {/* Documents Upload Section */}
           <div className="space-y-6">
@@ -293,7 +294,7 @@ export default function ApplicationRegister({
               <p className="text-base text-gray-600 mb-6">
                 {t("header.business.applicationRegister.requiredDocumentsDescription")}
               </p>
-              
+
               <div className="space-y-6">
                 {/* Business License */}
                 <div className="space-y-3">
@@ -357,21 +358,21 @@ export default function ApplicationRegister({
           )}
 
           <div className="flex gap-4 pt-6">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
               className="flex-1 h-10 text-base"
             >
               {t("header.business.applicationRegister.cancel")}
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="flex-1 h-12 text-base bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
               disabled={loading}
             >
-              {loading 
-                ? (existingApplication ? t("header.business.applicationRegister.editing") : t("header.business.applicationRegister.submitting")) 
+              {loading
+                ? (existingApplication ? t("header.business.applicationRegister.editing") : t("header.business.applicationRegister.submitting"))
                 : (existingApplication ? t("header.business.applicationRegister.submitEdit") : t("header.business.applicationRegister.submit"))
               }
             </Button>

@@ -1,239 +1,217 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize Gemini AI with proper error handling
+interface VideoRequestParams {
+    model: string;
+    prompt: string;
+    config: {
+        durationSeconds: number;
+        aspectRatio: string;
+        resolution: string;
+        personGeneration: string;
+    };
+    image?: {
+        imageBytes: string;
+        mimeType: string;
+    };
+    negativePrompt?: string;
+}
+
+// Kết quả operation tối thiểu mà ta cần dùng
+
+
+// Initialize Gemini AI
 const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY || "",
 });
 
 /**
  * POST /api/ai/generate-video
- * Generate video from virtual fitting result using Google GenAI
+ * Generate video using Google Gemini Veo 3.1
+ *
+ * Request body:
+ * - prompt: string (required) - Video generation prompt
+ * - imageUrl?: string (optional) - Base image for image-to-video
+ * - negativePrompt?: string (optional) - What to avoid in video
+ * - config?: object (optional) - Video configuration (duration, aspect ratio, resolution)
  */
 export async function POST(request: NextRequest) {
     try {
-        console.log('🎬 AI Generate Video API called');
+        const { prompt, imageUrl, negativePrompt, config } = await request.json();
 
-        const { imageUrl, prompt, productTitle, negativePrompt } = await request.json();
-
-        console.log('📝 Request data:', {
-            hasImageUrl: !!imageUrl,
-            prompt: prompt?.substring(0, 50) + '...',
-            productTitle
-        });
-
-        if (!imageUrl) {
-            console.log('❌ No image URL provided');
+        if (!prompt) {
             return NextResponse.json(
-                { success: false, message: "Image URL is required" },
+                { success: false, message: "Prompt is required" },
                 { status: 400 }
             );
         }
 
         if (!process.env.GEMINI_API_KEY) {
-            console.log('⚠️ GEMINI_API_KEY not configured, returning mock response');
-            return NextResponse.json({
-                success: true,
-                data: {
-                    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                    prompt: prompt || `Fashionshow turning: A model wearing ${productTitle || 'fashionable clothing'} turning and rotating on a runway. Fashion show presentation with smooth turning motion.`,
-                    operationName: "mock-operation",
-                    duration: "6초",
-                    generationTime: "15-20초",
-                    aspectRatio: "9:16",
-                    resolution: "720p"
+            console.log("⚠️ GEMINI_API_KEY not configured");
+            return NextResponse.json(
+                { success: false, message: "API key not configured" },
+                { status: 500 }
+            );
+        }
+
+        console.log("🎬 Generating video with Veo 3.1...");
+
+        // Build request parameters following Google's Veo 3.1 pattern
+        const requestParams: VideoRequestParams = {
+            model: "veo-3.1-generate-preview",
+            prompt,
+            config: {
+                durationSeconds: config?.durationSeconds || 6,
+                aspectRatio: config?.aspectRatio || "9:16",
+                resolution: config?.resolution || "720p",
+                personGeneration: config?.personGeneration || "allow_adult",
+            },
+        };
+
+        // Add image if provided (for image-to-video)
+        if (imageUrl) {
+            // Handle data URL (base64 encoded image)
+            if (imageUrl.startsWith("data:")) {
+                const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+                if (matches) {
+                    requestParams.image = {
+                        imageBytes: matches[2],
+                        mimeType: matches[1],
+                    };
                 }
-            });
+            } else {
+                // For regular URLs, download and convert to base64
+                const imageResponse = await fetch(imageUrl);
+                const imageBuffer = await imageResponse.arrayBuffer();
+                requestParams.image = {
+                    imageBytes: Buffer.from(imageBuffer).toString("base64"),
+                    mimeType:
+                        imageResponse.headers.get("content-type") || "image/png",
+                };
+            }
         }
 
-        console.log('✅ API key found, proceeding with video generation...');
+        // Add negative prompt if provided
+        if (negativePrompt) {
+            requestParams.negativePrompt = negativePrompt;
+        }
 
-        // Step 1: Handle image - either data URL or regular URL
-        let imageBase64: string;
-        let mimeType: string;
+        // Log request params for debugging (without full imageBytes to avoid spam)
+        console.log("📤 Request params:", {
+            model: requestParams.model,
+            prompt: requestParams.prompt,
+            config: requestParams.config,
+            hasImage: !!requestParams.image,
+            imageSize: requestParams.image
+                ? `${requestParams.image.imageBytes.length} bytes`
+                : "N/A",
+            mimeType: requestParams.image?.mimeType,
+            hasNegativePrompt: !!requestParams.negativePrompt,
+        });
 
-        if (imageUrl.startsWith('data:')) {
-            // Data URL (base64) from Gemini AI
-            console.log('📥 Processing data URL from Gemini AI...');
-            const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
-            if (!matches) {
-                throw new Error('Invalid data URL format');
+        // Validate image size (Gemini has limits)
+        if (requestParams.image) {
+            const imageSizeInMB =
+                requestParams.image.imageBytes.length / (1024 * 1024);
+            console.log(`📏 Image size: ${imageSizeInMB.toFixed(2)} MB`);
+
+            if (imageSizeInMB > 20) {
+                throw new Error(
+                    `Image too large: ${imageSizeInMB.toFixed(
+                        2
+                    )} MB. Maximum allowed is 20 MB.`
+                );
             }
-            mimeType = matches[1];
-            imageBase64 = matches[2];
-            console.log('📥 Data URL processed successfully');
-            console.log('📥 MIME type:', mimeType);
-        } else {
-            // Regular URL - download and convert
-            console.log('📥 Downloading image from URL...');
-            let imageResponse;
+        }
+
+        // Generate video with retry logic
+        const operation = await ai.models.generateVideos(requestParams);
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        while (retryCount < maxRetries) {
             try {
-                imageResponse = await fetch(imageUrl);
-                console.log('📥 Image response status:', imageResponse.status);
-            } catch (fetchError: unknown) {
-                console.error('❌ Image fetch error:', fetchError);
-                throw new Error(`Failed to fetch image: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
-            }
+                console.log(
+                    `🎬 Attempt ${retryCount + 1}/${maxRetries} to generate video...`
+                );
 
-            if (!imageResponse.ok) {
-                const errorText = await imageResponse.text();
-                console.error('❌ Image download failed:', errorText);
-                throw new Error(`Failed to fetch image: ${imageResponse.status} - ${errorText}`);
-            }
-
-            let imageBuffer;
-            try {
-                imageBuffer = await imageResponse.arrayBuffer();
-                imageBase64 = Buffer.from(imageBuffer).toString('base64');
-                mimeType = imageResponse.headers.get('content-type') || 'image/png';
-
-                console.log('📥 Image downloaded successfully');
-                console.log('📥 Image size:', imageBuffer.byteLength, 'bytes');
-                console.log('📥 MIME type:', mimeType);
-            } catch (bufferError: unknown) {
-                console.error('❌ Image buffer conversion error:', bufferError);
-                throw new Error(`Failed to convert image to base64: ${bufferError instanceof Error ? bufferError.message : String(bufferError)}`);
-            }
-        }
-
-        // Step 2: Generate video from the REAL image
-        const videoPrompt = prompt || `Fashionshow turning: A model wearing ${productTitle || 'fashionable clothing'} turning and rotating 360 degrees on a runway. Fashion show presentation, professional model pose, smooth turning motion, showing front, side, back views. Vertical 9:16 format. Fashion runway style.`;
-
-        // Negative prompt to avoid unwanted elements
-        const videoNegativePrompt = negativePrompt || "blurry, distorted, low quality, artifacts, bad proportions, deformed, ugly, multiple people, crowd, background people, text overlay, watermark";
-
-        console.log('🎬 Starting video generation with Veo 3.1 using REAL image');
-        console.log('🎬 Video settings: 6 seconds, vertical 9:16 (720p), 360° rotation showcase');
-
-        let operation;
-        try {
-            console.log('🎬 Calling Google GenAI generateVideos with real image...');
-            operation = await ai.models.generateVideos({
-                model: "veo-3.1-generate-preview",
-                prompt: videoPrompt,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                negativePrompt: videoNegativePrompt as any, // Tham số mới để tránh những thứ không mong muốn (SDK có thể chưa update type)
-                image: {
-                    imageBytes: imageBase64,
-                    mimeType: mimeType,
-                },
-                config: {
-                    durationSeconds: 6, // 6 giây (theo spec Veo 3.1: 4, 6, 8)
-                    aspectRatio: "9:16", // Video dọc (vertical/portrait) - hỗ trợ 720p và 1080p
-                    resolution: "720p", // 720p (mặc định). 1080p chỉ hỗ trợ thời lượng 8 giây
-                    personGeneration: "allow_adult" // Cho phép generate người lớn (image-to-video) - chỉ hỗ trợ "allow_adult" cho image-to-video
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any // Type cast vì SDK có thể chưa update với latest API
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any); // Type cast toàn bộ object để hỗ trợ negativePrompt
-            console.log('🎬 Google GenAI API call successful');
-        } catch (apiError: unknown) {
-            console.error('❌ Google GenAI API error:', apiError);
-            console.error('❌ API Error details:', {
-                message: apiError instanceof Error ? apiError.message : String(apiError),
-                name: apiError instanceof Error ? apiError.name : 'Unknown',
-                stack: apiError instanceof Error ? apiError.stack : undefined
-            });
-            throw new Error(`Google GenAI API error: ${apiError instanceof Error ? apiError.message : String(apiError)}`);
-        }
-
-        console.log('🎬 Video generation operation started:', operation.name);
-
-        // Step 3: Poll the operation status until the video is ready
-        console.log('🎬 Polling for video generation completion...');
-
-        while (!operation.done) {
-            console.log("🎬 Waiting for video generation to complete...");
-            await new Promise((resolve) => setTimeout(resolve, 10000)); // Wait 10 seconds
-
-            try {
-                operation = await ai.operations.getVideosOperation({
-                    operation: operation,
-                });
-            } catch (pollError: unknown) {
-                console.error('❌ Polling error:', pollError);
-                throw new Error(`Polling error: ${pollError instanceof Error ? pollError.message : String(pollError)}`);
-            }
-        }
-
-        if (operation.error) {
-            throw new Error(`Video generation failed: ${operation.error.message}`);
-        }
-
-        // Step 4: Get the video URL and download it
-        const googleVideoUrl = operation.response?.generatedVideos?.[0]?.video?.uri;
-
-        if (!googleVideoUrl) {
-            throw new Error("No video URL returned from generation");
-        }
-
-        console.log('🎬 Video generation completed successfully');
-        console.log('📥 Original Google Video URL:', googleVideoUrl);
-
-        // Download video with API key authentication
-        console.log('📥 Downloading video from Google API...');
-        const downloadUrl = new URL(googleVideoUrl);
-        downloadUrl.searchParams.set('key', process.env.GEMINI_API_KEY || '');
-
-        const videoResponse = await fetch(downloadUrl.toString());
-
-        if (!videoResponse.ok) {
-            console.error('❌ Failed to download video:', videoResponse.status);
-            // Fallback to proxy URL if download fails
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-                (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-            const proxyVideoUrl = `${baseUrl}/api/ai/video-proxy?url=${encodeURIComponent(googleVideoUrl)}`;
-
-            return NextResponse.json({
-                success: true,
-                data: {
-                    videoUrl: proxyVideoUrl,
-                    originalUrl: googleVideoUrl,
-                    prompt: videoPrompt,
-                    operationName: operation.name,
-                    duration: "6초",
-                    generationTime: "15-20초",
-                    aspectRatio: "9:16",
-                    resolution: "720p"
+                // Poll đến khi xong
+                while (!operation.done) {
+                    await new Promise((resolve) => setTimeout(resolve, 10_000));
                 }
-            });
+
+                // Check for errors in the operation
+                if (operation.error) {
+                    const errorMessage =
+                        operation.error.message ||
+                        JSON.stringify(operation.error) ||
+                        "Unknown error occurred";
+                    console.error("❌ Operation error:", operation.error);
+                    throw new Error(`Video generation failed: ${errorMessage}`);
+                }
+
+                // Nếu thành công thì thoát vòng lặp
+                break;
+            } catch (err) {
+                console.error(
+                    `❌ Attempt ${retryCount + 1} failed:`,
+                    err
+                );
+                retryCount++;
+                if (retryCount === maxRetries) {
+                    throw err; // Re-throw last error if all retries fail
+                }
+                // Exponential backoff: 2s, 4s, 8s
+                await new Promise((resolve) =>
+                    setTimeout(resolve, 2000 * Math.pow(2, retryCount - 1))
+                );
+            }
         }
 
-        // Convert video to base64 data URL
-        const videoBuffer = await videoResponse.arrayBuffer();
-        const videoBase64 = Buffer.from(videoBuffer).toString('base64');
-        const videoDataUrl = `data:video/mp4;base64,${videoBase64}`;
+        // Ensure operation is defined
+        if (!operation) {
+            throw new Error("Video generation failed: operation is undefined");
+        }
 
-        console.log('✅ Video downloaded and converted to base64');
-        console.log('📊 Video size:', videoBuffer.byteLength, 'bytes');
+        const videoUrl =
+            operation.response?.generatedVideos?.[0]?.video?.uri;
+
+        if (!videoUrl) {
+            throw new Error("No video URL returned");
+        }
+
+        // Return proxy URL for client-side access
+        const baseUrl =
+            process.env.NEXT_PUBLIC_BASE_URL ||
+            (process.env.VERCEL_URL
+                ? `https://${process.env.VERCEL_URL}`
+                : "http://localhost:3000");
+
+        const proxyVideoUrl = `${baseUrl}/api/ai/video-proxy?url=${encodeURIComponent(
+            videoUrl
+        )}`;
 
         return NextResponse.json({
             success: true,
             data: {
-                videoUrl: videoDataUrl,
-                originalUrl: googleVideoUrl,
-                prompt: videoPrompt,
+                videoUrl: proxyVideoUrl,
+                originalUrl: videoUrl,
+                prompt,
                 operationName: operation.name,
-                duration: "6초",
-                generationTime: "15-20초",
-                aspectRatio: "9:16",
-                resolution: "720p"
-            }
+                duration: `${config?.durationSeconds || 6}초`,
+                aspectRatio: config?.aspectRatio || "9:16",
+                resolution: config?.resolution || "720p",
+            },
         });
-
-
     } catch (error) {
-        console.error("Video Generation API Error:", error);
-        console.error("Error details:", {
-            message: error instanceof Error ? error.message : "Unknown error",
-            stack: error instanceof Error ? error.stack : undefined,
-            name: error instanceof Error ? error.name : undefined,
-        });
+        console.error("Video Generation Error:", error);
         return NextResponse.json(
             {
                 success: false,
-                message: error instanceof Error ? error.message : "Internal server error",
-                error: error instanceof Error ? error.stack : undefined,
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : "Internal server error",
             },
             { status: 500 }
         );

@@ -4,11 +4,13 @@ import SideBarSection from "@/components/ui/sidebar-section";
 import { useLanguage } from "@/providers/languageProvider";
 
 interface InfoManagementSectionProps {
-  brandId: string;
+  brandSlug: string;
+  theme?: 'dark' | 'light';
 }
 
-export default function InfoManagementSection({ 
-  brandId 
+export default function InfoManagementSection({
+  brandSlug,
+  theme
 }: InfoManagementSectionProps) {
   const { t } = useLanguage();
   const infoManagementData = {
@@ -18,12 +20,12 @@ export default function InfoManagementSection({
       {
         id: "company-info",
         label: t("header.business.brandDetail.sidebar.companyInfo"),
-        href: `/business/brands/${brandId}/settings`
+        href: `/business/brands/${brandSlug}/settings`
       },
       {
         id: "shipping-policy",
         label: t("header.business.brandDetail.sidebar.shippingPolicy"),
-        href: `/business/brands/${brandId}/settings/shipping`
+        href: `/business/brands/${brandSlug}/settings/shipping`
       }
     ]
   };
@@ -32,6 +34,7 @@ export default function InfoManagementSection({
     <SideBarSection
       mainSection={infoManagementData}
       className="border-t-0"
+      theme={theme}
     />
   );
 }

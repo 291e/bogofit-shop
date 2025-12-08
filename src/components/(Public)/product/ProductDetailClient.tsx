@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { PurchaseButton } from "@/components/(Public)/product/PurchaseButton";
-import VirtualFitting from "@/components/(Public)/product/VirtualFitting";
+import VirtualFitting from "@/components/(Public)/solution/fashion/VirtualFitting";
 import { ProductReviews } from "@/components/(Public)/product/ProductReviews";
 import { ProductInquiries } from "@/components/(Public)/product/ProductInquiries";
 import { useLanguage } from "@/providers/languageProvider";

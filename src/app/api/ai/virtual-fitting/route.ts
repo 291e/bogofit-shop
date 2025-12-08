@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { buildPrompt } from "./prompts";
+import { getImageDimensions, getClosestAspectRatio } from "./image-utils";
 
 // Initialize Gemini AI
 const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY || "",
 });
-
-// Fixed aspect ratio: 9:16 (768x1344)
-const FIXED_ASPECT_RATIO = "9:16";
 
 /**
  * POST /api/ai/virtual-fitting
@@ -19,10 +18,7 @@ export async function POST(request: NextRequest) {
         const personImage = formData.get('personImage') as File;
         const garmentImage = formData.get('garmentImage') as File;
         const itemImage = formData.get('itemImage') as File | null;
-        const hairColor = formData.get('hairColor') as string | null;
         const productTitle = formData.get('productTitle') as string;
-        const solutionType = formData.get('solutionType') as string | null; // "item" or "hair"
-
         // Validation - At least one image is required
         if (!personImage && !garmentImage && !itemImage) {
             return NextResponse.json(
@@ -66,129 +62,34 @@ export async function POST(request: NextRequest) {
             itemMimeType = itemImage.type || 'image/jpeg';
         }
 
-        // Build dynamic prompt based on available images
-        let prompt = `TASK: Create a fashion image`;
-        let imageIndex = 1;
+        // Extract image dimensions from the primary image (person image if available, otherwise garment)
+        let imageDimensions = '768×1344'; // Default fallback
+        let aspectRatio = '9:16'; // Default fallback
 
-        // Handle Hair Color Solution: personImage + hairColor
-        if (solutionType === "hairColor" && personImage && hairColor) {
-            prompt = `You are an expert AI colorist. Your ONLY task is to digitally recolor the person's existing hair in IMAGE ${imageIndex} to the exact color value "${hairColor}". You MUST NOT modify the hair shape, style, volume, length, texture, parting, or silhouette in any way.
+        const primaryBuffer = personImage
+            ? Buffer.from(await personImage.arrayBuffer())
+            : garmentImage
+                ? Buffer.from(await garmentImage.arrayBuffer())
+                : itemImage
+                    ? Buffer.from(await itemImage.arrayBuffer())
+                    : null;
 
-TASK: Virtual Hair Coloring
-
-SOURCE - IMAGE ${imageIndex} (THE PERSON):
-This is the BASE image. You must preserve EVERYTHING from this image EXCEPT the hair color:
-• Person's face - IDENTICAL (same facial features, skin tone, expression, makeup)
-• Person's body - IDENTICAL (same proportions, pose, stance, arms position, legs position)
-• Hairstyle - IDENTICAL (same length, style, volume, texture, direction, strands)
-• Background - IDENTICAL (same environment, lighting, colors, shadows)
-• Image framing - IDENTICAL (same camera angle, distance, composition)
-
-HAIR COLOR TARGET:
-• Hex color value: ${hairColor}
-• Apply this color realistically to the CURRENT HAIR while keeping every strand in the exact same place
-• Maintain natural highlights, shadows, shine, reflections, and hair texture from the original photo
-• Blend seamlessly with the existing hairstyle; NO added hair, NO removed hair, NO new shapes
-
-OUTPUT SPECIFICATIONS:
-Format: 768×1344 pixels (9:16 portrait - vertical orientation for mobile)
-Aspect Ratio: EXACTLY 9:16 (portrait/vertical format)
-Quality: Photorealistic, high-resolution, professional fashion photography
-Content: The EXACT SAME person from IMAGE ${imageIndex}, with only the hair color changed to ${hairColor}
-
-CRITICAL RULES - MUST FOLLOW:
-✓ DO: Keep person's identity 100% identical (face, body, pose)
-✓ DO: Keep hairstyle 100% identical (only recolor, do not restyle, stretch, shrink, add, or remove strands)
-✓ DO: Keep background 100% identical
-✓ DO: Keep pose and position 100% identical
-✓ DO: Apply hair color naturally with realistic lighting and consistent shading
-✓ DO: Output image MUST be 768×1344 pixels (9:16 aspect ratio, portrait format)
-✓ DO: Use vertical portrait orientation, NOT square or horizontal
-
-✗ DON'T: Change or modify the person's face
-✗ DON'T: Change or modify the person's body shape
-✗ DON'T: Change or modify the background
-✗ DON'T: Change or modify the hairstyle (length, style, volume, silhouette, flyaways)
-✗ DON'T: Crop or cut off body parts
-✗ DON'T: Change camera angle or distance
-✗ DON'T: Use horizontal format
-✗ DON'T: Output square format (1024×1024) - MUST be 768×1344 portrait
-✗ DON'T: Output any other dimensions - ONLY 768×1344 pixels
-
-RESULT: A perfect virtual hair coloring where ONLY the hair color has changed to ${hairColor}. The person should look exactly as they do in IMAGE ${imageIndex}, with the identical hairstyle and only the hue adjusted.`;
-            imageIndex = 2;
-            // Handle Hair Solution: personImage + itemImage (hair style)
-        } else if (solutionType === "hair" && personImage && itemImage) {
-            prompt = `Create a professional e-commerce fashion photo. Take the hairstyle from the second image and apply it to the woman in the first image. Generate a realistic, full-body shot of the woman with the new hairstyle, maintaining her exact same face, body, pose, and background. The hairstyle should be applied naturally and seamlessly, matching the reference style exactly (length, texture, volume, layers, bangs, curls, waves). Keep the lighting and shadows adjusted to match the original environment. Output must be 768×1344 pixels (9:16 portrait format).`;
-            imageIndex = 2;
-        } else if (personImage && garmentImage) {
-            // Both person and garment - virtual try-on
-            prompt = `You are an expert AI for virtual clothing try-on. Your ONLY task is to digitally dress the person from IMAGE ${imageIndex} with the clothing from IMAGE ${imageIndex + 1}.
-
-TASK: Virtual Try-On (like IDM-VTON)
-
-SOURCE - IMAGE ${imageIndex} (THE PERSON):
-This is the BASE image. You must preserve EVERYTHING from this image:
-• Person's face - IDENTICAL (same facial features, skin tone, expression, hair, makeup)
-• Person's body - IDENTICAL (same proportions, pose, stance, arms position, legs position)
-• Person's hair - IDENTICAL (same hairstyle, color, length, style)
-• Background - IDENTICAL (same environment, lighting, colors, shadows)
-• Image framing - IDENTICAL (same camera angle, distance, composition)
-
-GARMENT - IMAGE ${imageIndex + 1} (THE CLOTHING):
-Extract ONLY the ${productTitle || 'clothing item'}:
-• Copy: Design, pattern, color, fabric texture, style details
-• Fit: Naturally onto the person's body from IMAGE ${imageIndex}
-• Adapt: Wrinkles, shadows, and draping to match body shape and pose
-
-OUTPUT SPECIFICATIONS:
-Format: 768×1344 pixels (9:16 portrait - vertical orientation for mobile)
-Aspect Ratio: EXACTLY 9:16 (portrait/vertical format)
-Quality: Photorealistic, high-resolution, professional fashion photography
-Content: The EXACT SAME person from IMAGE ${imageIndex}, wearing the clothing from IMAGE ${imageIndex + 1}
-
-CRITICAL RULES - MUST FOLLOW:
-✓ DO: Keep person's identity 100% identical
-✓ DO: Keep background 100% identical
-✓ DO: Keep pose and position 100% identical
-✓ DO: Show full body from head to feet
-✓ DO: Apply clothing naturally with realistic fit
-✓ DO: Output image MUST be 768×1344 pixels (9:16 aspect ratio, portrait format)
-✓ DO: Use vertical portrait orientation, NOT square or horizontal
-
-✗ DON'T: Change or modify the person's face
-✗ DON'T: Change or modify the person's body shape
-✗ DON'T: Change or modify the background
-✗ DON'T: Crop or cut off body parts
-✗ DON'T: Change camera angle or distance
-✗ DON'T: Use horizontal format
-✗ DON'T: Output square format (1024×1024) - MUST be 768×1344 portrait
-✗ DON'T: Output any other dimensions - ONLY 768×1344 pixels
-
-RESULT: A perfect virtual try-on where ONLY the clothing has changed. The person should look exactly as they do in IMAGE ${imageIndex}, just wearing different clothes.`;
-            imageIndex = 3;
-        } else if (personImage) {
-            // Only person - enhance or add accessories
-            prompt = `Create a professional fashion photo based on this person in image ${imageIndex}. Keep their face, body, pose, and background EXACTLY the same. High quality fashion photography.`;
-            imageIndex = 2;
-        } else if (garmentImage) {
-            // Only garment - create fashion image
-            prompt = `Create a professional product photo for this ${productTitle || 'clothing item'} from image ${imageIndex}. Show it in a professional fashion photography style.`;
-            imageIndex = 2;
+        if (primaryBuffer) {
+            const dimensions = getImageDimensions(primaryBuffer);
+            if (dimensions) {
+                imageDimensions = `${dimensions.width}×${dimensions.height}`;
+                aspectRatio = getClosestAspectRatio(dimensions.width, dimensions.height);
+            }
         }
 
-        // Add item if provided (only for item solution, not hair solution)
-        if (itemImage && solutionType === "item") {
-            prompt += `
-5. Add the item from image ${imageIndex} - the person should be naturally holding/wearing this accessory item (bag, hat, etc.) while maintaining their exact same appearance (DO NOT change the person's face or body)`;
-        }
-
-        // Only add this output instruction if not hair solution (hair solution already has its own output instruction)
-        if (solutionType !== "hair" && solutionType !== "hairColor") {
-            prompt += `
-
-OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (same face, same hair, same pose, same background), but wearing the clothing from image 2${itemImage && solutionType === "item" ? ' with the accessory item' : ''}. The result should look like a professional product photo where only the outfit has been changed.`;
-        }
+        // Build dynamic prompt based on available images using centralized prompts
+        const prompt = buildPrompt({
+            personImage: !!personImage,
+            garmentImage: !!garmentImage,
+            itemImage: !!itemImage,
+            productTitle,
+            imageDimensions,
+        });
 
         // Build content parts dynamically - format similar to example
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,7 +130,7 @@ OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (s
         // Generate image with Gemini (using image generation model)
         // Format matches the example: contents is the array directly
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-image",
+            model: "gemini-3-pro-image-preview",
             contents: promptParts,
             generationConfig: {
                 candidateCount: 1,
@@ -237,7 +138,7 @@ OUTPUT: A photorealistic image where the person looks EXACTLY like in image 1 (s
             },
             config: {
                 imageConfig: {
-                    aspectRatio: FIXED_ASPECT_RATIO,
+                    aspectRatio: aspectRatio, // Use dynamic aspect ratio from input image
                 },
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

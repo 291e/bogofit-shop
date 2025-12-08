@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreateReviewModal } from '@/components/(Public)/product/CreateReviewModal';
 import { Star, MessageSquare, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/providers/languageProvider';
 
 interface OrderItemReviewButtonProps {
     orderItem: {
@@ -47,6 +48,7 @@ export const OrderItemReviewButton: React.FC<OrderItemReviewButtonProps> = ({
 }) => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const router = useRouter();
+    const { t } = useLanguage();
 
     // Check if user can write review
     const canWriteReview = () => {
@@ -90,12 +92,12 @@ export const OrderItemReviewButton: React.FC<OrderItemReviewButtonProps> = ({
 
     const getReviewButtonText = () => {
         if (hasExistingReview()) {
-            return '리뷰 보기';
+            return t("myPage.review.viewReview");
         }
         if (orderStatus === 'completed' || orderStatus === 'delivered') {
-            return '리뷰 작성';
+            return t("myPage.review.writeReview");
         }
-        return '배송 완료 후 리뷰 작성 가능';
+        return t("myPage.review.writeAfterDelivery");
     };
 
     const getReviewButtonVariant = () => {
@@ -120,12 +122,12 @@ export const OrderItemReviewButton: React.FC<OrderItemReviewButtonProps> = ({
 
     const getBadgeText = () => {
         if (hasExistingReview()) {
-            return '리뷰 작성 완료';
+            return t("myPage.review.reviewCompleted");
         }
         if (orderStatus === 'completed' || orderStatus === 'delivered') {
-            return '리뷰 작성 가능';
+            return t("myPage.review.canWriteReview");
         }
-        return '배송 대기 중';
+        return t("myPage.review.waitingDelivery");
     };
 
     const getBadgeVariant = () => {

@@ -26,7 +26,7 @@ export default function BrandsPage() {
 
   // ✅ Use React Query for application data
   const { data: applicationData, isLoading: isCheckingApplication } = useApplication();
-  
+
   // ✅ Use React Query for brands data
   const { data: brandsData, isLoading: isLoadingBrands, error: brandsError, refetch: refetchBrands } = useBrands(applicationData?.application?.id);
 
@@ -38,12 +38,12 @@ export default function BrandsPage() {
   // Check authentication and show appropriate modals
   useEffect(() => {
     if (!isHydrated) return; // ✅ Hydration 완료 후에만 실행
-        
+
     // ✅ Chỉ check auth khi AuthProvider đã load xong
     if (authLoading) {
       return;
     }
-    
+
     if (!isAuthenticated) {
       router.replace("/business");
       return;
@@ -94,7 +94,7 @@ export default function BrandsPage() {
       return;
     }
     // Navigate to brand detail page
-    router.push(`/business/brands/${brand.id}`);
+    router.push(`/business/brands/${brand.slug}`);
   };
 
 
@@ -150,7 +150,7 @@ export default function BrandsPage() {
           onShowApplicationModal={() => setShowApplicationModal(true)}
           onCreateBrand={handleCreateBrand}
         />
-        
+
         {/* Brand List Section */}
         <div className="mt-12">
           <div className="text-center mb-8">
@@ -161,7 +161,7 @@ export default function BrandsPage() {
               {t("header.business.brandListDescription")}
             </p>
           </div>
-          
+
           {isLoadingBrands ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -175,7 +175,7 @@ export default function BrandsPage() {
                 <div className="text-red-500 text-xl mb-4">❌</div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">{t("header.business.errorOccurred")}</h2>
                 <p className="text-gray-600 mb-4">{brandsError.message}</p>
-                <button 
+                <button
                   onClick={() => refetchBrands()}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
@@ -184,28 +184,28 @@ export default function BrandsPage() {
               </div>
             </div>
           ) : (
-            <BrandListSection 
+            <BrandListSection
               brands={brandsData?.brands || []}
-              onViewBrand={handleViewBrand} 
+              onViewBrand={handleViewBrand}
             />
           )}
         </div>
       </main>
 
-      <ApplicationRegister 
+      <ApplicationRegister
         isOpen={showApplicationModal}
         onClose={() => {
           setShowApplicationModal(false);
           setIsEditingApplication(false);
         }}
         onSuccess={handleApplicationSuccess}
-        applicationStatus={applicationData?.application ? 
-          (applicationData.application.status === "rejected" ? "rejected" : 
-           applicationData.application.status === "banned" ? "banned" : "none") : "none"}
+        applicationStatus={applicationData?.application ?
+          (applicationData.application.status === "rejected" ? "rejected" :
+            applicationData.application.status === "banned" ? "banned" : "none") : "none"}
         existingApplication={isEditingApplication ? applicationData : null}
       />
 
-      <ApplicationView 
+      <ApplicationView
         isOpen={showApplicationView}
         onClose={() => setShowApplicationView(false)}
         application={applicationData || null}
@@ -216,7 +216,7 @@ export default function BrandsPage() {
         }}
       />
 
-      <BrandRegister 
+      <BrandRegister
         isOpen={showBrandModal}
         onClose={() => setShowBrandModal(false)}
         onSuccess={handleBrandSuccess}

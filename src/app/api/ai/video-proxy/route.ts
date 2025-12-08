@@ -30,10 +30,19 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        // Check for Range header from browser
+        const rangeHeader = request.headers.get('range');
+
         // Build headers with authentication if needed
         const headers: HeadersInit = {
             'Accept': 'video/*',
         };
+
+        // Forward Range header if present
+        if (rangeHeader) {
+            headers['Range'] = rangeHeader;
+            console.log('📊 Range request:', rangeHeader);
+        }
 
         // Add API key to URL for Google API (they use query parameter authentication)
         let fetchUrl = videoUrl;
@@ -70,18 +79,29 @@ export async function GET(request: NextRequest) {
         // Get video content
         const videoBuffer = await response.arrayBuffer();
         const contentType = response.headers.get('content-type') || 'video/mp4';
+        const contentLength = response.headers.get('content-length');
+        const contentRange = response.headers.get('content-range');
+        const acceptRanges = response.headers.get('accept-ranges');
 
         console.log('✅ Video proxied successfully, size:', videoBuffer.byteLength);
 
-        // Return video with proper headers
+        // Build response headers
+        const responseHeaders: HeadersInit = {
+            'Content-Type': contentType,
+            'Content-Length': contentLength || videoBuffer.byteLength.toString(),
+            'Cache-Control': 'public, max-age=31536000, immutable',
+            'Accept-Ranges': acceptRanges || 'bytes',
+        };
+
+        // Add Content-Range if this is a partial response
+        if (contentRange) {
+            responseHeaders['Content-Range'] = contentRange;
+        }
+
+        // Return video with proper headers (206 for partial, 200 for full)
         return new NextResponse(videoBuffer, {
-            status: 200,
-            headers: {
-                'Content-Type': contentType,
-                'Content-Length': videoBuffer.byteLength.toString(),
-                'Cache-Control': 'public, max-age=31536000, immutable',
-                'Accept-Ranges': 'bytes',
-            },
+            status: response.status, // Preserve 206 Partial Content status
+            headers: responseHeaders,
         });
 
     } catch (error) {

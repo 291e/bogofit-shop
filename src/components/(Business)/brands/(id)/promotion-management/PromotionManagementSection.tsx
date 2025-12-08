@@ -4,11 +4,13 @@ import SideBarSection from "@/components/ui/sidebar-section";
 import { useLanguage } from "@/providers/languageProvider";
 
 interface PromotionManagementSectionProps {
-    brandId: string;
+    brandSlug: string;
+    theme?: 'dark' | 'light';
 }
 
 export default function PromotionManagementSection({
-    brandId
+    brandSlug,
+    theme
 }: PromotionManagementSectionProps) {
     const { t } = useLanguage();
     const promotionManagementData = {
@@ -18,17 +20,17 @@ export default function PromotionManagementSection({
             {
                 id: "all-promotions",
                 label: t("header.business.brandDetail.sidebar.allPromotions"),
-                href: `/business/brands/${brandId}/promotions`
+                href: `/business/brands/${brandSlug}/promotions`
             },
             {
                 id: "create-promotion",
                 label: t("header.business.brandDetail.sidebar.createPromotion"),
-                href: `/business/brands/${brandId}/promotions/create`
+                href: `/business/brands/${brandSlug}/promotions/create`
             },
             {
                 id: "active-promotions",
                 label: t("header.business.brandDetail.sidebar.activePromotions"),
-                href: `/business/brands/${brandId}/promotions/active`
+                href: `/business/brands/${brandSlug}/promotions/active`
             }
         ]
     };
@@ -36,6 +38,7 @@ export default function PromotionManagementSection({
     return (
         <SideBarSection
             mainSection={promotionManagementData}
+            theme={theme}
         />
     );
 }

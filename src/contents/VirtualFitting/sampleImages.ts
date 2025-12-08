@@ -283,11 +283,7 @@ export const hairSamples: SampleImage[] = [
     src: "/hair/hair_6.png",
     alt: "헤어 샘플 6",
   },
-  {
-    id: "hair-7",
-    src: "/hair/hair_7.png",
-    alt: "헤어 샘플 7",
-  },
+
 ];
 
 

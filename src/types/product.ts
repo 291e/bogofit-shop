@@ -62,6 +62,7 @@ export interface CreateProductDto {
   basePrice: number;
   baseCompareAtPrice?: number;
   quantity?: number | null; // v2.0: product-level inventory (null = unlimited)
+  promotionId?: string | null; // ✅ v2.2: Assign promotion on creation
   hasOptions?: boolean; // ✅ v2.1: Whether product has variants
   variants: CreateProductVariantDto[];
 }
@@ -265,6 +266,7 @@ export const convertProductFormToDto = (product: ProductForm): CreateProductDto 
   basePrice: product.basePrice,
   baseCompareAtPrice: product.baseCompareAtPrice,
   quantity: product.quantity ?? null,
+  promotionId: product.promotionId, // ✅ v2.2: Include promotion assignment
   hasOptions: product.hasOptions, // ✅ v2.1: Include hasOptions flag
   variants: product.variants.map(convertVariantFormToDto)
 });

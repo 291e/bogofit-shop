@@ -4,11 +4,13 @@ import SideBarSection from "@/components/ui/sidebar-section";
 import { useLanguage } from "@/providers/languageProvider";
 
 interface ProductManagementSectionProps {
-  brandId: string;
+  brandSlug: string;
+  theme?: 'dark' | 'light';
 }
 
 export default function ProductManagementSection({
-  brandId
+  brandSlug,
+  theme
 }: ProductManagementSectionProps) {
   const { t } = useLanguage();
   const productManagementData = {
@@ -18,28 +20,28 @@ export default function ProductManagementSection({
       {
         id: "all-products",
         label: t("header.business.brandDetail.sidebar.allProducts"),
-        href: `/business/brands/${brandId}/products`
+        href: `/business/brands/${brandSlug}/products`
       },
       {
         id: "product-register",
         label: t("header.business.brandDetail.sidebar.productRegister"),
-        href: `/business/brands/${brandId}/products/register`
+        href: `/business/brands/${brandSlug}/products/register`
       },
       {
         id: "inventory",
         label: t("header.business.brandDetail.sidebar.inventory"),
-        href: `/business/brands/${brandId}/products/inventory`
+        href: `/business/brands/${brandSlug}/products/inventory`
       }
       ,
       {
         id: "reviews",
         label: t("header.business.brandDetail.sidebar.reviews"),
-        href: `/business/brands/${brandId}/products/reviews`
+        href: `/business/brands/${brandSlug}/products/reviews`
       },
       {
         id: "inquiries",
         label: t("header.business.brandDetail.sidebar.inquiries"),
-        href: `/business/brands/${brandId}/products/inquiries`
+        href: `/business/brands/${brandSlug}/products/inquiries`
       }
     ]
   };
@@ -47,6 +49,7 @@ export default function ProductManagementSection({
   return (
     <SideBarSection
       mainSection={productManagementData}
+      theme={theme}
     />
   );
 }

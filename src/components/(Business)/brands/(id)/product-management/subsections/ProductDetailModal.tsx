@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 // import { Separator } from "@/components/ui/separator";
 import { ProductResponseDto } from "@/types/product";
+import { BrandResponseDto } from "@/types/brand";
 import { Package, DollarSign, Box, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -14,13 +15,15 @@ interface ProductDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     brandId?: string;
+    brand?: BrandResponseDto;
 }
 
 export default function ProductDetailModal({
     product,
     isOpen,
     onClose,
-    brandId
+    brandId,
+    brand
 }: ProductDetailModalProps) {
     const router = useRouter();
 
@@ -47,7 +50,7 @@ export default function ProductDetailModal({
     };
 
     const handleEdit = () => {
-        router.push(`/business/brands/${brandId}/products/${product.id}/edit`);
+        router.push(`/business/brands/${brand?.slug || brandId}/products/${product.slug || product.id}/edit`);
         onClose();
     };
 

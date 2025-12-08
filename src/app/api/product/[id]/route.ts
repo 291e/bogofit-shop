@@ -3,7 +3,7 @@ import { UpdateProductVariantDto, CreateProductVariantDto, UpdateProductDto } fr
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-// GET /api/product/[id] - Get product by ID
+// GET /api/product/[id] - Get product by ID or Slug
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -12,9 +12,20 @@ export async function GET(
     const { id } = await params;
     const authHeader = request.headers.get('authorization');
 
+    // Helper function to check if string is UUID
+    const isUUID = (str: string) => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(str);
+    };
 
-    // Backend uses query param for id with include
-    const response = await fetch(`${API_URL}/api/Product?id=${id}&include=true`, {
+    // Determine if we're using ID or slug
+    const isId = isUUID(id);
+    const queryParam = isId ? `id=${id}` : `slug=${id}`;
+
+    console.log(`🔍 Fetching product by ${isId ? 'ID' : 'slug'}:`, id);
+
+    // Backend uses query param for id/slug with include
+    const response = await fetch(`${API_URL}/api/Product?${queryParam}&include=true`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

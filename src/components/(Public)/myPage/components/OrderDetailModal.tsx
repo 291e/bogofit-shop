@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Package, MapPin, CreditCard, Calendar, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatOrderItemOptions, OrderStatus, OrderItem, Order, OrderGroup } from "@/types/order";
+import { ORDER_STATUS_COLORS, formatOrderItemOptions, OrderStatus, OrderItem, Order, OrderGroup } from "@/types/order";
 import { OrderItemReviewButton } from './OrderItemReviewButton';
+import { useLanguage } from "@/providers/languageProvider";
 
 interface OrderDetailModalProps {
     isOpen: boolean;
@@ -24,6 +25,14 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
     const [orderData, setOrderData] = useState<Order | OrderGroup | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { t, language } = useLanguage();
+
+    const localeMap: Record<string, string> = {
+        ko: "ko-KR",
+        en: "en-US",
+        vi: "vi-VN",
+        zh: "zh-CN"
+    };
 
     useEffect(() => {
         if (isOpen && orderId) {
@@ -39,7 +48,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
         try {
             const token = localStorage.getItem("token");
             if (!token) {
-                setError("로그인이 필요합니다");
+                setError(t("myPage.orderDetail.loginRequired"));
                 return;
             }
 
@@ -66,11 +75,11 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                 }
                 setOrderData(data.data);
             } else {
-                setError(data.message || "주문 정보를 불러올 수 없습니다");
+                setError(data.message || t("myPage.orderDetail.cannotLoad"));
             }
         } catch (err) {
             console.error("Failed to load order detail:", err);
-            setError("주문 정보 로드 실패");
+            setError(t("myPage.orderDetail.loadFailed"));
         } finally {
             setLoading(false);
         }
@@ -92,7 +101,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
         // Check cancellation conditions
         if (status === 'pending') {
             // Pending orders can be cancelled anytime
-            if (confirm("정말로 이 주문을 취소하시겠습니까?")) {
+            if (confirm(t("myPage.orderDetail.confirmCancel"))) {
                 cancelOrder();
             }
         } else if (status === 'confirmed') {
@@ -102,19 +111,19 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
             const hoursDiff = (now.getTime() - orderDate.getTime()) / (1000 * 60 * 60);
 
             if (hoursDiff > 24) {
-                alert("확인된 주문은 24시간 이내에만 취소 가능합니다.");
+                alert(t("myPage.orderDetail.confirmedCancelWarning"));
                 return;
             }
 
-            if (confirm("확인된 주문을 취소하시겠습니까? 환불은 3-5일 소요됩니다.")) {
+            if (confirm(t("myPage.orderDetail.confirmedCancelConfirm"))) {
                 cancelOrder();
             }
         } else if (status === 'processing') {
             // Processing orders can only be cancelled if not shipped
-            alert("처리 중인 주문은 배송 시작 전에만 취소 가능합니다. 고객센터에 문의하세요.");
+            alert(t("myPage.orderDetail.processingCancelWarning"));
             return;
         } else {
-            alert("이 주문은 취소할 수 없습니다.");
+            alert(t("myPage.orderDetail.cannotCancel"));
             return;
         }
     };
@@ -158,23 +167,23 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    reason: '구매자 요청'
+                    reason: t("myPage.orderDetail.cancelReason")
                 })
             });
 
             const result = await response.json();
 
             if (result.success) {
-                alert("주문이 취소되었습니다.");
+                alert(t("myPage.orderDetail.orderCancelled"));
                 onClose();
                 // Refresh the page to update order list
                 window.location.reload();
             } else {
-                alert(`취소 실패: ${result.message}`);
+                alert(t("myPage.orderDetail.cancelFailed", { message: result.message }));
             }
         } catch (error) {
             console.error('Cancel order error:', error);
-            alert("주문 취소 중 오류가 발생했습니다.");
+            alert(t("myPage.orderDetail.cancelError"));
         }
     };
 
@@ -184,22 +193,22 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">주문 상세 정보</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold">{t("myPage.orderDetail.title")}</DialogTitle>
                 </DialogHeader>
 
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-16">
                         <Loader2 className="w-12 h-12 text-pink-600 animate-spin mb-4" />
-                        <p className="text-gray-600">주문 정보를 불러오는 중...</p>
+                        <p className="text-gray-600">{t("myPage.orderDetail.loading")}</p>
                     </div>
                 )}
 
                 {error && (
                     <div className="flex flex-col items-center justify-center py-16">
                         <div className="text-red-500 text-6xl mb-4">⚠️</div>
-                        <h3 className="text-xl font-medium text-gray-900 mb-2">오류가 발생했습니다</h3>
+                        <h3 className="text-xl font-medium text-gray-900 mb-2">{t("myPage.orderDetail.error")}</h3>
                         <p className="text-gray-500 mb-6">{error}</p>
-                        <Button onClick={loadOrderDetail}>다시 시도</Button>
+                        <Button onClick={loadOrderDetail}>{t("myPage.orderDetail.retry")}</Button>
                     </div>
                 )}
 
@@ -211,13 +220,13 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                 <div className="flex items-center justify-between mb-4">
                                     <div>
                                         <h3 className="text-lg font-semibold">
-                                            {orderType === 'group' ? '주문 그룹' : '주문'}
+                                            {orderType === 'group' ? t("myPage.orderDetail.orderGroup") : t("myPage.orderDetail.order")}
                                         </h3>
                                         <p className="font-mono text-sm text-gray-600 mt-1">
                                             {orderType === 'group' ? (orderData as OrderGroup).groupNo : (orderData as Order).orderNo}
                                         </p>
                                         <p className="text-sm text-gray-500">
-                                            {new Date(orderData.createdAt).toLocaleDateString("ko-KR", {
+                                            {new Date(orderData.createdAt).toLocaleDateString(localeMap[language] || "ko-KR", {
                                                 year: "numeric",
                                                 month: "long",
                                                 day: "numeric",
@@ -227,13 +236,13 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                         </p>
                                     </div>
                                     <Badge className={ORDER_STATUS_COLORS[orderData.status as OrderStatus]}>
-                                        {ORDER_STATUS_LABELS[orderData.status as OrderStatus]}
+                                        {t(`myPage.orderDetail.status.${orderData.status}`)}
                                     </Badge>
                                 </div>
 
                                 {/* Total Amount */}
                                 <div className="flex justify-between items-center pt-4 border-t">
-                                    <span className="text-lg font-semibold">총 결제금액</span>
+                                    <span className="text-lg font-semibold">{t("myPage.orderDetail.totalPaymentAmount")}</span>
                                     <span className="text-2xl font-bold text-pink-600">
                                         ₩{((orderData as OrderGroup).finalAmount || (orderData as Order).items?.reduce((sum: number, item: OrderItem) => sum + item.rowTotal, 0) || 0).toLocaleString()}
                                     </span>
@@ -247,7 +256,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                 <CardContent className="p-6">
                                     <div className="flex items-center gap-2 mb-4">
                                         <MapPin className="w-5 h-5 text-gray-600" />
-                                        <h3 className="text-lg font-semibold">배송 정보</h3>
+                                        <h3 className="text-lg font-semibold">{t("myPage.orderDetail.shippingInfo")}</h3>
                                     </div>
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
@@ -273,7 +282,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Package className="w-5 h-5 text-gray-600" />
-                                    <h3 className="text-lg font-semibold">주문 상품</h3>
+                                    <h3 className="text-lg font-semibold">{t("myPage.orderDetail.orderProducts")}</h3>
                                 </div>
 
                                 {orderType === 'group' ? (
@@ -293,7 +302,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                                         </div>
                                                     )}
                                                     <div>
-                                                        <div className="font-semibold">{order.brand?.name || "브랜드"}</div>
+                                                        <div className="font-semibold">{order.brand?.name || t("myPage.order.brand")}</div>
                                                         <div className="text-xs text-gray-500 font-mono">{order.orderNo}</div>
                                                     </div>
                                                 </div>
@@ -316,12 +325,12 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                                                     <h4 className="font-medium text-gray-900 mb-1 line-clamp-2">{item.productTitle}</h4>
                                                                     {item.optionsJson && item.optionsJson.length > 0 && (
                                                                         <p className="text-sm text-gray-600 mb-2">
-                                                                            옵션: {formatOrderItemOptions(item.optionsJson)}
+                                                                            {t("myPage.orderDetail.option", { options: formatOrderItemOptions(item.optionsJson) })}
                                                                         </p>
                                                                     )}
                                                                     <div className="flex items-center gap-4 text-sm text-gray-600">
-                                                                        <span>수량: {item.quantity}개</span>
-                                                                        <span>단가: ₩{item.unitPrice.toLocaleString()}</span>
+                                                                        <span>{t("myPage.orderDetail.quantity", { count: item.quantity })}</span>
+                                                                        <span>{t("myPage.orderDetail.unitPrice", { price: item.unitPrice.toLocaleString() })}</span>
                                                                     </div>
                                                                 </div>
                                                                 <div className="text-right">
@@ -375,12 +384,12 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                                         <h4 className="font-medium text-gray-900 mb-1 line-clamp-2">{item.productTitle}</h4>
                                                         {item.optionsJson && item.optionsJson.length > 0 && (
                                                             <p className="text-sm text-gray-600 mb-2">
-                                                                옵션: {formatOrderItemOptions(item.optionsJson)}
+                                                                {t("myPage.orderDetail.option", { options: formatOrderItemOptions(item.optionsJson) })}
                                                             </p>
                                                         )}
                                                         <div className="flex items-center gap-4 text-sm text-gray-600">
-                                                            <span>수량: {item.quantity}개</span>
-                                                            <span>단가: ₩{item.unitPrice.toLocaleString()}</span>
+                                                            <span>{t("myPage.orderDetail.quantity", { count: item.quantity })}</span>
+                                                            <span>{t("myPage.orderDetail.unitPrice", { price: item.unitPrice.toLocaleString() })}</span>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
@@ -423,17 +432,17 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                 <CardContent className="p-6">
                                     <div className="flex items-center gap-2 mb-4">
                                         <CreditCard className="w-5 h-5 text-gray-600" />
-                                        <h3 className="text-lg font-semibold">결제 정보</h3>
+                                        <h3 className="text-lg font-semibold">{t("myPage.orderDetail.paymentInfo")}</h3>
                                     </div>
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
                                             <Calendar className="w-4 h-4 text-gray-500" />
                                             <span className="text-sm text-gray-600">
-                                                결제일: {new Date((orderData as OrderGroup).paidAt!).toLocaleDateString("ko-KR")}
+                                                {t("myPage.orderDetail.paymentDate", { date: new Date((orderData as OrderGroup).paidAt!).toLocaleDateString(localeMap[language] || "ko-KR") })}
                                             </span>
                                         </div>
                                         <div className="text-sm text-gray-600">
-                                            결제방법: 카드 결제
+                                            {t("myPage.orderDetail.paymentMethod")}
                                         </div>
                                     </div>
                                 </CardContent>
@@ -447,7 +456,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                     onClick={handlePayment}
                                     className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
                                 >
-                                    결제하기
+                                    {t("myPage.orderDetail.paymentButton")}
                                 </Button>
                             )}
 
@@ -457,7 +466,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                     variant="outline"
                                     className="flex-1"
                                 >
-                                    주문 취소
+                                    {t("myPage.orderDetail.cancelOrder")}
                                 </Button>
                             )}
 
@@ -466,7 +475,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                 variant="outline"
                                 className="flex-1"
                             >
-                                닫기
+                                {t("myPage.orderDetail.close")}
                             </Button>
                         </div>
                     </div>

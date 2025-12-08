@@ -21,12 +21,16 @@ import ProductDeleteConfirmModal from "./ProductForm/ProductDeleteConfirmModal";
 import ProductDetailModal from "./ProductDetailModal";
 import BulkPromotionAssign from "../components/BulkPromotionAssign";
 
+import { BrandResponseDto } from "@/types/brand";
+
 interface AllProductsSubSectionProps {
   brandId?: string;
+  brand?: BrandResponseDto;
 }
 
 export default function AllProductsSubSection({
-  brandId
+  brandId,
+  brand
 }: AllProductsSubSectionProps) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -112,12 +116,12 @@ export default function AllProductsSubSection({
   };
 
   const handleEditProduct = (product: ProductResponseDto) => {
-    // Navigate to edit page with product ID
-    router.push(`/business/brands/${brandId}/products/${product.id}/edit`);
+    // Navigate to edit page with brand slug and product slug
+    router.push(`/business/brands/${brand?.slug || brandId}/products/${product.slug || product.id}/edit`);
   };
 
   const handleRegisterClick = () => {
-    router.push(`/business/brands/${brandId}/products/register`);
+    router.push(`/business/brands/${brand?.slug || brandId}/products/register`);
   };
 
   // Bulk promotion handlers
@@ -245,7 +249,7 @@ export default function AllProductsSubSection({
       }
 
       // ✅ Show success toast
-      toast.success(isActive 
+      toast.success(isActive
         ? t("header.business.brandDetail.products.allProducts.productActivated")
         : t("header.business.brandDetail.products.allProducts.productDeactivated"));
 
@@ -683,6 +687,7 @@ export default function AllProductsSubSection({
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
         brandId={brandId}
+        brand={brand}
       />
 
       {/* Bulk Promotion Assign Modal */}

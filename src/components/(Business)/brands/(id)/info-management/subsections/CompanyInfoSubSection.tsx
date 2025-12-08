@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BrandResponseDto } from "@/types/brand";
-import { useBrandContext } from "@/app/business/brands/[id]/layout";
+import { useBrandContext } from "@/app/business/brands/[slug]/layout";
 import { useLanguage } from "@/providers/languageProvider";
 import Image from "next/image";
 interface CompanyInfoSubSectionProps {

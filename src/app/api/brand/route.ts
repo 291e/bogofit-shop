@@ -6,7 +6,6 @@ import {
   GetBrandsResponse,
   BrandResponseDto,
   BackendBrandResponse,
-  BackendBrandsResponse,
   BrandStatus,
   PaymentMode,
 } from "@/types/brand";
@@ -201,9 +200,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const applicationId = searchParams.get('applicationId');
     const brandId = searchParams.get('id');
+    const slug = searchParams.get('slug');
 
     // Build URL with query parameters
-    let apiUrl = `${API_URL}/api/Brand`;
+    // Base URL: http://localhost:5000/api/Brand
+    const apiUrl = new URL(`${API_URL}/api/Brand`);
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
@@ -216,10 +217,10 @@ export async function GET(request: NextRequest) {
           { status: 401 }
         );
       }
-      apiUrl += `/${brandId}`;
+      apiUrl.searchParams.append('id', brandId);
       headers['Authorization'] = `Bearer ${token}`;
     }
-    // Case 2: Get brands by application (requires auth)
+    // Case 3: Get brands by application (requires auth)
     else if (applicationId) {
       if (!token) {
         return NextResponse.json(
@@ -227,14 +228,14 @@ export async function GET(request: NextRequest) {
           { status: 401 }
         );
       }
-      apiUrl += `?applicationId=${applicationId}`;
+      apiUrl.searchParams.append('applicationId', applicationId);
       headers['Authorization'] = `Bearer ${token}`;
     }
-    // Case 3: Get all brands (public - no auth needed)
-    // apiUrl stays as is
+    // Case 4: Get all brands (public - no auth needed)
+    // No query params needed
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch(apiUrl.toString(), {
         method: 'GET',
         headers,
       });
@@ -245,60 +246,75 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(result, { status: result.status || 500 });
       }
 
-      const data = result.data as BackendBrandsResponse;
+      // The backend returns a unified structure now based on the C# controller
+      // If getting by ID or Slug, it returns { success: true, brand: { ... } }
+      // If getting list, it returns { success: true, brands: [ ... ], count: ... }
 
-      // Handle single brand response
-      if (brandId && data.brands && data.brands.length > 0) {
-        const brand = data.brands[0];
-        const convertedData = {
-          success: data.success || true,
-          message: data.message || "브랜드 정보를 성공적으로 가져왔습니다.",
-          brand: {
-            id: brand.id,
-            name: brand.name,
-            slug: brand.slug,
-            status: brand.status as BrandStatus,
-            description: brand.description,
-            logoUrl: brand.logoUrl,
-            coverUrl: brand.bannerUrl,
-            contactEmail: brand.contactEmail,
-            contactPhone: brand.contactPhone,
-            paymentMode: "platform" as PaymentMode,
-            createdAt: brand.createdAt,
-            updatedAt: brand.updatedAt,
-          } as BrandResponseDto
+      const data = result.data as Record<string, unknown>;
+
+      // Handle single brand response (ID or Slug)
+      if ((brandId || slug) && data.brand) {
+        const brand = data.brand as Record<string, unknown>;
+        const convertedData: BrandResponseDto = {
+          id: brand.id as string,
+          name: brand.name as string,
+          slug: brand.slug as string,
+          status: brand.status as BrandStatus,
+          description: (brand.description as string | null) || undefined,
+          logoUrl: (brand.logoUrl as string | null) || undefined,
+          coverUrl: (brand.coverUrl as string | null) || (brand.bannerUrl as string | null) || undefined,
+          contactEmail: (brand.contactEmail as string | null) || undefined,
+          contactPhone: (brand.contactPhone as string | null) || undefined,
+          paymentMode: "platform" as PaymentMode,
+          createdAt: brand.createdAt as string,
+          updatedAt: brand.updatedAt as string,
+        };
+
+        return NextResponse.json({
+          success: true,
+          message: (data.message as string) || "브랜드 정보를 성공적으로 가져왔습니다.",
+          brand: convertedData
+        }, { status: response.status });
+      }
+
+      // Handle brand list response (All or ApplicationId)
+      if (data.brands && Array.isArray(data.brands)) {
+        const brands = data.brands.map((brand: Record<string, unknown>) => ({
+          id: brand.id as string,
+          name: brand.name as string,
+          slug: brand.slug as string,
+          status: brand.status as BrandStatus,
+          description: (brand.description as string | null) || undefined,
+          logoUrl: (brand.logoUrl as string | null) || undefined,
+          coverUrl: (brand.coverUrl as string | null) || (brand.bannerUrl as string | null) || undefined,
+          contactEmail: (brand.contactEmail as string | null) || undefined,
+          contactPhone: (brand.contactPhone as string | null) || undefined,
+          paymentMode: "platform" as PaymentMode,
+          createdAt: brand.createdAt as string,
+          updatedAt: brand.updatedAt as string,
+        })) as BrandResponseDto[];
+
+        const convertedData: GetBrandsResponse = {
+          success: true,
+          message: (data.message as string) || "브랜드 목록을 성공적으로 가져왔습니다.",
+          brands: brands,
+          count: (data.count as number) || brands.length,
         };
         return NextResponse.json(convertedData, { status: response.status });
       }
 
-      // Handle brand list response
-      const convertedData: GetBrandsResponse = {
-        success: data.success || true,
-        message: data.message || "브랜드 목록을 성공적으로 가져왔습니다.",
-        brands: data.brands ? data.brands.map((brand) => ({
-          id: brand.id,
-          name: brand.name,
-          slug: brand.slug,
-          status: brand.status as BrandStatus,
-          description: brand.description,
-          logoUrl: brand.logoUrl,
-          coverUrl: brand.bannerUrl,
-          contactEmail: brand.contactEmail,
-          contactPhone: brand.contactPhone,
-          paymentMode: "platform" as PaymentMode,
-          createdAt: brand.createdAt,
-          updatedAt: brand.updatedAt,
-        })) as BrandResponseDto[] : [],
-        count: data.count || 0,
-      };
-      return NextResponse.json(convertedData, { status: response.status });
-    } catch {
+      // Fallback if structure doesn't match expected
+      return NextResponse.json(data, { status: response.status });
+
+    } catch (error) {
+      console.error("Brand fetch error:", error);
       return NextResponse.json(
-        { success: false, message: "브랜드 목록을 가져오는 중 오류가 발생했습니다." },
+        { success: false, message: "브랜드 정보를 가져오는 중 오류가 발생했습니다." },
         { status: 500 }
       );
     }
-  } catch {
+  } catch (error) {
+    console.error("Request processing error:", error);
     return NextResponse.json(
       { success: false, message: "요청 처리 중 오류가 발생했습니다." },
       { status: 500 }

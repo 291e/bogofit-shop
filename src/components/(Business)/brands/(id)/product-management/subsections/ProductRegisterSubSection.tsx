@@ -5,6 +5,7 @@ import { ProductForm, ProductVariantForm, VariantOption, convertProductFormToDto
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateProduct } from "@/hooks/useProducts";
 import { useAIImageGeneration } from "@/hooks/useAIImageGeneration";
+import { useActivePromotions } from "@/hooks/usePromotions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,6 @@ import { ImageUploader } from "@/components/ui/imageUploader";
 import { ChevronDown, ChevronUp, Plus, Trash2, Sparkles, Wand2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import VirtualFitting from "@/components/(Public)/product/VirtualFitting";
 import { useLanguage } from "@/providers/languageProvider";
 
 interface ProductRegisterFormProps {
@@ -35,6 +35,9 @@ export default function ProductRegisterSubSection({
   // ✅ Use React Query for categories with caching
   const { data: categoriesData, isLoading: isLoadingCategories } = useCategories();
   const categories = categoriesData?.data || [];
+
+  // ✅ Fetch active promotions for this brand
+  const { promotions: activePromotions, loading: isLoadingPromotions } = useActivePromotions(brandId || "");
 
   // ✅ Section collapse states - must be called before early returns
   const [openSections, setOpenSections] = useState({
@@ -67,17 +70,12 @@ export default function ProductRegisterSubSection({
   const createProduct = useCreateProduct(brandId || "");
 
   // ✅ AI Image Generation hook
-  const { generateImage, isGenerating: isAIGenerating } = useAIImageGeneration();
+  const { generateImage } = useAIImageGeneration();
 
-  // ✅ AI Generated image preview state
-  const [aiGeneratedImage, setAiGeneratedImage] = useState<string | null>(null);
-  const [showAiPreview, setShowAiPreview] = useState(false);
-  const [isUploadingToS3] = useState(false);
-
-  // ✅ Virtual Fitting state (inline in AI modal)
-  const [showVirtualFitting, setShowVirtualFitting] = useState(false);
-  const [aiImageCategory, setAiImageCategory] = useState<"상의" | "하의" | null>(null);
-  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  // ✅ Detail Images Generator state (4 images: Hero, Features, Lifestyle, Info)
+  const [generatedDetailImages, setGeneratedDetailImages] = useState<{ type: string, url: string }[]>([]);
+  const [selectedDetailImages, setSelectedDetailImages] = useState<Set<string>>(new Set());
+  const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
 
   // ✅ AI Auto Fill state
   const [isAnalyzingProduct, setIsAnalyzingProduct] = useState(false);
@@ -200,6 +198,14 @@ export default function ProductRegisterSubSection({
     try {
       // ✅ Use mutation hook - handles API call, toast, and cache update
       const dto = convertProductFormToDto(formData);
+
+      // 🔍 Log data being sent to backend
+      console.log('📤 Sending product data to backend:', {
+        ...dto,
+        promotionId: dto.promotionId || '(No promotion selected)',
+        hasPromotion: !!dto.promotionId
+      });
+
       await createProduct.mutateAsync(dto);
 
       // ✅ Delay 0.5s for better UX (show toast & cache already updated!)
@@ -216,14 +222,26 @@ export default function ProductRegisterSubSection({
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // ✅ AI Image Generation handler
-  const handleAIGenerate = async () => {
+
+  // ✅ Generate Detail Images (4 images: Hero, Features, Lifestyle, Info)
+  const handleGenerateDetailImages = async () => {
     if (!formData.thumbUrl) {
       toast.error(t("header.business.brandDetail.products.register.toastMessages.mainImageRequired"));
       return;
     }
 
+    if (!formData.name) {
+      toast.error("제품명을 먼저 입력해주세요.");
+      return;
+    }
+
     try {
+      setIsGeneratingDetails(true);
+      setGeneratedDetailImages([]);
+      setSelectedDetailImages(new Set());
+
+      toast.info("4장의 상세 이미지 생성 중... (15-20초 소요)");
+
       // Convert image URL to base64
       const response = await fetch(formData.thumbUrl);
       const blob = await response.blob();
@@ -233,85 +251,139 @@ export default function ProductRegisterSubSection({
         reader.readAsDataURL(blob);
       });
 
-      const result = await generateImage({
-        baseImage: base64.split(',')[1], // Remove data:image/...;base64, prefix
-        prompt: `Create a professional product photo for "${formData.name}" that closely follows the original image composition, angle, and framing. Maintain the same perspective and product positioning. Enhance with clean background, professional lighting, and high quality. Output as 512x512 square format.`,
-        productName: formData.name
+      // Build info text for Info image (Korean)
+      const textSections: string[] = [];
+      if (formData.name) textSections.push(`제품명: ${formData.name}`);
+      if (formData.description) textSections.push(`설명: ${formData.description}`);
+
+      // Add price information
+      if (formData.basePrice) {
+        textSections.push(`가격: ₩${formData.basePrice.toLocaleString()}`);
+        if (formData.baseCompareAtPrice) {
+          textSections.push(`정가: ₩${formData.baseCompareAtPrice.toLocaleString()}`);
+        }
+      }
+
+      // Add variants information (sizes, colors, etc.)
+      if (formData.hasOptions && formData.variants.length > 0) {
+        const sizes = new Set<string>();
+        const colors = new Set<string>();
+        const otherOptions = new Map<string, Set<string>>();
+
+        formData.variants.forEach(variant => {
+          variant.options.forEach(option => {
+            const key = option.key?.toLowerCase() || '';
+            const value = option.value || '';
+
+            if (key.includes('size') || key.includes('사이즈')) {
+              sizes.add(value);
+            } else if (key.includes('color') || key.includes('색상') || key.includes('컬러')) {
+              colors.add(value);
+            } else if (key && value) {
+              if (!otherOptions.has(option.key!)) {
+                otherOptions.set(option.key!, new Set());
+              }
+              otherOptions.get(option.key!)!.add(value);
+            }
+          });
+        });
+
+        if (sizes.size > 0) {
+          textSections.push(`사이즈: ${Array.from(sizes).join(', ')}`);
+        }
+        if (colors.size > 0) {
+          textSections.push(`색상: ${Array.from(colors).join(', ')}`);
+        }
+        otherOptions.forEach((values, key) => {
+          textSections.push(`${key}: ${Array.from(values).join(', ')}`);
+        });
+      }
+
+      const infoPrompt = textSections.join('\n');
+
+      // Define 4 image types
+      const types = [
+        { id: 'hero', label: 'Hero Image' },
+        { id: 'features', label: 'Features' },
+        { id: 'lifestyle', label: 'Lifestyle' },
+        { id: 'info', label: 'Info & Size', prompt: infoPrompt }
+      ];
+
+      // Fire requests in parallel
+      const promises = types.map(async (type) => {
+        try {
+          const result = await generateImage({
+            baseImage: base64.split(',')[1],
+            prompt: type.prompt || "",
+            productName: formData.name,
+            aspectRatio: type.id, // Pass type as aspect ratio to trigger specific prompt
+          });
+
+          if (result.success && result.imageUrl) {
+            return { type: type.label, url: result.imageUrl };
+          }
+          return null;
+        } catch (error) {
+          console.error(`Failed to generate ${type.label}:`, error);
+          return null;
+        }
       });
 
-      if (result.success && result.imageUrl) {
-        // Show preview instead of directly adding
-        setAiGeneratedImage(result.imageUrl);
-        setShowAiPreview(true);
-        toast.success(t("header.business.brandDetail.products.register.toastMessages.aiImageGenerated"));
+      const results = await Promise.all(promises);
+      const validResults = results.filter((r): r is { type: string, url: string } => r !== null);
+
+      // Sort by fixed order
+      const order = ['Hero Image', 'Features', 'Lifestyle', 'Info & Size'];
+      validResults.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+
+      setGeneratedDetailImages(validResults);
+
+      if (validResults.length > 0) {
+        toast.success(`${validResults.length}장의 상세 이미지가 생성되었습니다!`);
       } else {
-        toast.error(result.error || t("header.business.brandDetail.products.register.toastMessages.aiImageFailed"));
+        toast.error("이미지 생성에 실패했습니다.");
       }
     } catch (error) {
-      console.error('AI Generation Error:', error);
-      toast.error(t("header.business.brandDetail.products.register.toastMessages.aiImageError"));
-    }
-  };
-
-
-  // ✅ Reject AI generated image
-  const handleRejectAiImage = () => {
-    setShowAiPreview(false);
-    setAiGeneratedImage(null);
-    toast.info(t("header.business.brandDetail.products.register.toastMessages.aiImageRejected"));
-  };
-
-  // ✅ Analyze AI image to determine if it's 상의 or 하의
-  const analyzeImageCategory = async (imageDataUrl: string): Promise<"상의" | "하의"> => {
-    try {
-      setIsAnalyzingImage(true);
-
-      // Extract base64 from data URL
-      const base64Image = imageDataUrl.split(',')[1];
-
-      const response = await fetch('/api/ai/analyze-garment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: base64Image,
-          productName: formData.name
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.category) {
-        return data.category;
-      }
-
-      // Fallback: Use form category if available
-      const categoryName = getCategoryName();
-      if (categoryName === "하의") return "하의";
-      return "상의"; // Default to 상의
-
-    } catch (error) {
-      console.error('AI category analysis failed:', error);
-      // Fallback to category from form
-      const categoryName = getCategoryName();
-      return categoryName === "하의" ? "하의" : "상의";
+      console.error('Detail images generation error:', error);
+      toast.error("이미지 생성 중 오류가 발생했습니다.");
     } finally {
-      setIsAnalyzingImage(false);
+      setIsGeneratingDetails(false);
     }
   };
 
-  // ✅ Try on AI generated image (Virtual Fitting) - Show inline
-  const handleTryOnAiImage = async () => {
-    if (!aiGeneratedImage) return;
-
-    // Analyze image to determine category
-    const category = await analyzeImageCategory(aiGeneratedImage);
-    setAiImageCategory(category);
-
-    // Show Virtual Fitting section inline
-    setShowVirtualFitting(true);
-
-    toast.success(t("header.business.brandDetail.products.register.toastMessages.categoryRecognized", { category }));
+  // Toggle image selection
+  const toggleImageSelection = (url: string) => {
+    setSelectedDetailImages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(url)) {
+        newSet.delete(url);
+      } else {
+        newSet.add(url);
+      }
+      return newSet;
+    });
   };
+
+  // Add selected images to product detail images
+  const handleAddSelectedImages = () => {
+    if (selectedDetailImages.size === 0) {
+      toast.error("추가할 이미지를 선택해주세요.");
+      return;
+    }
+
+    const selectedUrls = Array.from(selectedDetailImages);
+    setFormData(prev => ({
+      ...prev,
+      images: [...(prev.images || []), ...selectedUrls]
+    }));
+
+    toast.success(`${selectedDetailImages.size}장의 이미지가 상세 이미지에 추가되었습니다.`);
+
+    // Clear selection and generated images
+    setGeneratedDetailImages([]);
+    setSelectedDetailImages(new Set());
+  };
+
 
   // ✅ AI Auto Fill - Analyze product image and auto-fill form
   const handleAIAutoFill = async () => {
@@ -436,42 +508,7 @@ export default function ProductRegisterSubSection({
     }
   };
 
-  // ✅ Get category name for Virtual Fitting
-  const getCategoryName = (): string => {
-    if (!formData.categoryId || !categories.length) return t("header.business.brandDetail.products.register.defaultCategory");
 
-    // Find category by ID
-    const findCategory = (cats: typeof categories, id: string): typeof categories[0] | null => {
-      for (const cat of cats) {
-        if (cat.id === id) return cat;
-        if (cat.children) {
-          const found = findCategory(cat.children, id);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-
-    const category = findCategory(categories, formData.categoryId);
-    if (!category) return t("header.business.brandDetail.products.register.defaultCategory");
-
-    // Try to find level 2 category (상의, 하의, 원피스, etc.)
-    const findLevel2Category = (cat: typeof category): string | null => {
-      if (!cat.parentId) return null; // Level 1 (root)
-
-      const parent = findCategory(categories, cat.parentId);
-      if (!parent || !parent.parentId) {
-        // This is level 2 (parent is level 1, no grandparent)
-        return cat.name;
-      }
-
-      // This is level 3+, recursively find level 2
-      return findLevel2Category(parent);
-    };
-
-    const level2Category = findLevel2Category(category);
-    return level2Category || category.name || t("header.business.brandDetail.products.register.defaultCategory");
-  };
 
   return (
     <div className={`bg-white rounded-lg shadow ${className}`}>
@@ -571,7 +608,7 @@ export default function ProductRegisterSubSection({
               </CardTitle>
             </CardHeader>
             {openSections.pricing && (
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="basePrice">{t("header.business.brandDetail.products.register.basePrice")}</Label>
@@ -594,99 +631,61 @@ export default function ProductRegisterSubSection({
                   </div>
                 </div>
 
-              </CardContent>
-            )}
-          </Card>
+                {/* Promotion Selection */}
+                <div className="border-t pt-4">
+                  <Label htmlFor="promotion">Promotion (선택사항)</Label>
+                  <select
+                    id="promotion"
+                    className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={formData.promotionId || ""}
+                    onChange={(e) => setFormData(prev => ({ ...prev, promotionId: e.target.value || null }))}
+                    disabled={isLoadingPromotions}
+                  >
+                    <option value="">선택 안함 (No Promotion)</option>
+                    {activePromotions.map((promo) => {
+                      const now = new Date();
+                      const isActive = new Date(promo.startDate) <= now && now <= new Date(promo.endDate);
+                      return (
+                        <option key={promo.id} value={promo.id}>
+                          {promo.name} ({promo.type === 'percentage' ? `${promo.value}%` : `₩${promo.value}`} OFF)
+                          {!isActive && ' - 비활성'}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {isLoadingPromotions && (
+                    <p className="text-sm text-gray-500 mt-1">프로모션 로딩 중...</p>
+                  )}
 
-          {/* Images Section */}
-          <Card>
-            <CardHeader className="cursor-pointer" onClick={() => toggleSection('images')}>
-              <CardTitle className="flex items-center justify-between">
-                <span>{t("header.business.brandDetail.products.register.images")}</span>
-                {openSections.images ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </CardTitle>
-            </CardHeader>
-            {openSections.images && (
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-full flex items-center justify-between mb-2">
-                      <Label>{t("header.business.brandDetail.products.register.mainImage")}</Label>
-                      {formData.thumbUrl && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleAIAutoFill}
-                          disabled={isAnalyzingProduct}
-                          className="text-xs"
-                        >
-                          {isAnalyzingProduct ? (
-                            <>
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
-                              {t("header.business.brandDetail.products.register.analyzingForFitting")}
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              {t("header.business.brandDetail.products.register.aiAutoFill")}
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                    <div className="w-full max-w-md flex justify-center">
-                      <ImageUploader
-                        value={formData.thumbUrl}
-                        onChange={(url) => setFormData(prev => ({ ...prev, thumbUrl: Array.isArray(url) ? url[0] : url || "" }))}
-                        maxFiles={1}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>{t("header.business.brandDetail.products.register.detailImages")}</Label>
-                    <p className="text-sm text-gray-600 mb-2">
-                      {t("header.business.brandDetail.products.register.aiGeneratedImages")}
-                    </p>
-                    <ImageUploader
-                      value={formData.images}
-                      onChange={(urls) => setFormData(prev => ({ ...prev, images: Array.isArray(urls) ? urls : urls ? [urls] : [] }))}
-                      single={false}
-                      maxFiles={10}
-                    />
+                  {/* Final Price Preview */}
+                  {formData.promotionId && (() => {
+                    const selectedPromo = activePromotions.find(p => p.id === formData.promotionId);
+                    if (!selectedPromo || !formData.basePrice) return null;
 
-                    {/* ✅ AI Image Generation */}
-                    {formData.thumbUrl && (
-                      <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Sparkles className="h-5 w-5 text-purple-600" />
-                          <span className="font-medium text-purple-900">{t("header.business.brandDetail.products.register.aiImageGeneration")}</span>
+                    let finalPrice = formData.basePrice;
+                    if (selectedPromo.type === 'percentage' && selectedPromo.value) {
+                      finalPrice = formData.basePrice * (1 - selectedPromo.value / 100);
+                    } else if (selectedPromo.type === 'fixed_amount' && selectedPromo.value) {
+                      finalPrice = Math.max(0, formData.basePrice - selectedPromo.value);
+                    }
+
+                    return (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-green-900">할인 후 가격 (Final Price):</span>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-green-600">₩{finalPrice.toLocaleString()}</div>
+                            <div className="text-xs text-gray-500 line-through">₩{formData.basePrice.toLocaleString()}</div>
+                          </div>
                         </div>
-                        <p className="text-sm text-purple-700 mb-3">
-                          {t("header.business.brandDetail.products.register.aiImageGenerationDescription")}
+                        <p className="text-xs text-green-700 mt-2">
+                          {selectedPromo.name} 적용됨 ({selectedPromo.type === 'percentage' ? `${selectedPromo.value}% 할인` : `₩${selectedPromo.value?.toLocaleString()} 할인`})
                         </p>
-                        <Button
-                          type="button"
-                          onClick={handleAIGenerate}
-                          disabled={isAIGenerating}
-                          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                        >
-                          {isAIGenerating ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              {t("header.business.brandDetail.products.register.generating")}
-                            </>
-                          ) : (
-                            <>
-                              <Wand2 className="h-4 w-4 mr-2" />
-                              {t("header.business.brandDetail.products.register.generateAiImage")}
-                            </>
-                          )}
-                        </Button>
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
                 </div>
+
               </CardContent>
             )}
           </Card>
@@ -917,6 +916,145 @@ export default function ProductRegisterSubSection({
             )}
           </Card>
 
+          {/* Images Section */}
+          <Card>
+            <CardHeader className="cursor-pointer" onClick={() => toggleSection('images')}>
+              <CardTitle className="flex items-center justify-between">
+                <span>{t("header.business.brandDetail.products.register.images")}</span>
+                {openSections.images ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </CardTitle>
+            </CardHeader>
+            {openSections.images && (
+              <CardContent>
+                <div className="space-y-6">
+                  {/* 대표 이미지 (Main Image) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>{t("header.business.brandDetail.products.register.mainImage")}</Label>
+                      {formData.thumbUrl && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAIAutoFill}
+                          disabled={isAnalyzingProduct}
+                          className="text-xs"
+                        >
+                          {isAnalyzingProduct ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
+                              {t("header.business.brandDetail.products.register.analyzingForFitting")}
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              {t("header.business.brandDetail.products.register.aiAutoFill")}
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    <ImageUploader
+                      value={formData.thumbUrl}
+                      onChange={(url) => setFormData(prev => ({ ...prev, thumbUrl: Array.isArray(url) ? url[0] : url || "" }))}
+                      maxFiles={1}
+                    />
+                  </div>
+
+                  {/* 상세 이미지 (Detail Images) */}
+                  <div>
+                    <Label>{t("header.business.brandDetail.products.register.detailImages")}</Label>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {t("header.business.brandDetail.products.register.aiGeneratedImages")}
+                    </p>
+                    <ImageUploader
+                      value={formData.images}
+                      onChange={(urls) => setFormData(prev => ({ ...prev, images: Array.isArray(urls) ? urls : urls ? [urls] : [] }))}
+                      single={false}
+                      maxFiles={10}
+                    />
+
+                    {/* ✅ Detail Images Generator (4 images) */}
+                    {formData.thumbUrl && (
+                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Sparkles className="h-5 w-5 text-blue-600" />
+                          <span className="font-medium text-blue-900">상세 이미지 생성 (4장)</span>
+                        </div>
+                        <p className="text-sm text-blue-700 mb-3">
+                          제품 정보를 바탕으로 Hero, Features, Lifestyle, Info 4가지 타입의 상세 이미지를 자동 생성합니다.
+                        </p>
+                        <Button
+                          type="button"
+                          onClick={handleGenerateDetailImages}
+                          disabled={isGeneratingDetails || !formData.name}
+                          className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                        >
+                          {isGeneratingDetails ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              상세 이미지 생성 중... (15-20초)
+                            </>
+                          ) : (
+                            <>
+                              <Wand2 className="h-4 w-4 mr-2" />
+                              상세 이미지 4장 생성하기
+                            </>
+                          )}
+                        </Button>
+
+                        {/* Generated Images Grid */}
+                        {generatedDetailImages.length > 0 && (
+                          <div className="mt-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-700">
+                                생성된 이미지 ({generatedDetailImages.length}/4)
+                              </span>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleAddSelectedImages}
+                                disabled={selectedDetailImages.size === 0}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                선택한 이미지 추가 ({selectedDetailImages.size})
+                              </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3">
+                              {generatedDetailImages.map((img, index) => (
+                                <div key={index} className="relative group">
+                                  <div className="relative aspect-[9/16] max-h-[600px] mx-auto rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50">
+                                    <img
+                                      src={img.url}
+                                      alt={img.type}
+                                      className="w-full h-full object-contain"
+                                    />
+                                    <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                                      {img.type}
+                                    </div>
+                                    <div className="absolute top-2 right-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedDetailImages.has(img.url)}
+                                        onChange={() => toggleImageSelection(img.url)}
+                                        className="w-5 h-5 cursor-pointer"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
           {/* Submit Buttons */}
           <div className="flex justify-end gap-4">
             <Button
@@ -933,171 +1071,6 @@ export default function ProductRegisterSubSection({
         </form>
       </div>
 
-      {/* ✅ AI Generated Image Preview Modal */}
-      {showAiPreview && aiGeneratedImage && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className={`bg-white rounded-lg p-6 transition-all duration-300 ${showVirtualFitting
-            ? 'max-w-[95vw] w-full max-h-[95vh]'
-            : 'max-w-2xl w-full max-h-[80vh]'
-            } overflow-y-auto`}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-purple-600" />
-                {t("header.business.brandDetail.products.register.aiPreview")}
-              </h3>
-              <button
-                onClick={() => {
-                  handleRejectAiImage();
-                  setShowVirtualFitting(false);
-                  setAiImageCategory(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className={`grid gap-8 ${showVirtualFitting
-              ? 'grid-cols-1 lg:grid-cols-5'
-              : 'grid-cols-1'
-              }`}>
-              {/* Left: AI Generated Image - 2/5 width */}
-              <div className={showVirtualFitting ? 'lg:col-span-2' : 'w-full'}>
-                <h4 className="font-semibold mb-3 text-gray-700">{t("header.business.brandDetail.products.register.generatedImages")}</h4>
-                <div className="mb-4 flex justify-center bg-gray-50 rounded-lg p-4">
-                  <div className="relative w-80 h-80">
-                    <img
-                      src={aiGeneratedImage}
-                      alt="AI Generated Product Image"
-                      className="w-full h-full object-contain rounded-lg"
-                      onError={(e) => {
-                        console.error('AI Image load error:', aiGeneratedImage);
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {aiImageCategory && (
-                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800 font-semibold">
-                      {t("header.business.brandDetail.products.register.aiAnalysisResult")} <span className="text-blue-600">{aiImageCategory}</span>
-                    </p>
-                  </div>
-                )}
-
-                {/* Virtual Fitting Result Display */}
-                {formData.images && formData.images.length > 1 && (
-                  <div className="mt-4">
-                    <h5 className="text-sm font-semibold mb-2 text-gray-700">
-                      {t("header.business.brandDetail.products.register.virtualFittingResult", { count: formData.images.length - 1 })}
-                    </h5>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {formData.images.slice(1).map((image, idx) => (
-                        <div key={idx} className="relative group">
-                          <div className="relative w-full h-32 bg-gray-50 rounded-lg overflow-hidden">
-                            <img
-                              src={image}
-                              alt={`Virtual Fitting Result ${idx + 1}`}
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                console.error('Image load error:', image);
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          </div>
-                          <button
-                            onClick={() => {
-                              setFormData(prev => ({
-                                ...prev,
-                                images: prev.images?.filter((_, i) => i !== idx + 1) || []
-                              }));
-                            }}
-                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      {t("header.business.brandDetail.products.register.virtualFittingDescription")}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      handleRejectAiImage();
-                      setShowVirtualFitting(false);
-                      setAiImageCategory(null);
-                    }}
-                    disabled={isUploadingToS3 || isAnalyzingImage}
-                    className="flex-1"
-                  >
-                    {t("header.business.brandDetail.products.register.reject")}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleTryOnAiImage}
-                    disabled={isUploadingToS3 || isAnalyzingImage}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
-                  >
-                    {isAnalyzingImage ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        {t("header.business.brandDetail.products.register.analyzingForFitting")}
-                      </>
-                    ) : (
-                      t("header.business.brandDetail.products.register.tryOn")
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Right: Virtual Fitting - 3/5 width */}
-              {showVirtualFitting && aiImageCategory && (
-                <div className="lg:col-span-3 border-l pl-6">
-                  <h4 className="font-semibold mb-3 text-gray-700">
-                    {t("header.business.brandDetail.products.register.virtualFitting")}
-                  </h4>
-                  <VirtualFitting
-                    productTitle={formData.name || t("header.business.brandDetail.products.register.aiProduct")}
-                    productCategory={aiImageCategory}
-                    currentImage={aiGeneratedImage}
-                    onResultGenerated={(resultImage) => {
-                      // Add the virtual fitting result to detailed images
-                      console.log('🔥 Callback triggered with resultImage:', resultImage);
-                      if (resultImage) {
-                        console.log('Virtual fitting result received:', resultImage);
-                        setFormData(prev => {
-                          const currentImages = prev.images || [];
-                          // Ensure we keep the AI generated image (first image) and add virtual fitting result
-                          const aiImage = aiGeneratedImage;
-                          const otherImages = currentImages.filter(img => img !== aiImage);
-                          const newImages = [aiImage, ...otherImages, resultImage];
-                          console.log('AI Image:', aiImage);
-                          console.log('Previous images:', currentImages);
-                          console.log('New images array:', newImages);
-                          return {
-                            ...prev,
-                            images: newImages
-                          };
-                        });
-                      } else {
-                        console.log('❌ No resultImage provided to callback');
-                      }
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

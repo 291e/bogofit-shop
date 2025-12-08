@@ -24,11 +24,13 @@ interface MainSectionItem {
 interface SideBarSectionProps {
   mainSection: MainSectionItem;
   className?: string;
+  theme?: 'dark' | 'light';
 }
 
 export default function SideBarSection({
   mainSection,
   className,
+  theme = 'dark',
 }: SideBarSectionProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -66,6 +68,8 @@ export default function SideBarSection({
     return pathname === sub.href;
   }) || false;
 
+  const isDark = theme === 'dark';
+
   return (
     <div className={cn("", className)}>
 
@@ -73,10 +77,15 @@ export default function SideBarSection({
         {/* Main Section Header */}
         <div
           className={cn(
-            "flex items-center justify-between py-3 px-4 cursor-pointer transition-colors hover:bg-gray-50",
+            "flex items-center justify-between py-3 px-4 cursor-pointer transition-all",
             isActive
-              ? "bg-blue-50 text-blue-900 font-medium"
-              : "text-gray-700 font-medium"
+              ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg"
+              : cn(
+                "font-medium transition-colors",
+                isDark
+                  ? "text-gray-300 hover:bg-gray-700/50"
+                  : "text-gray-600 hover:bg-gray-100"
+              )
           )}
           onClick={() => hasSubSections && toggleSection()}
         >
@@ -84,9 +93,9 @@ export default function SideBarSection({
             {hasSubSections && (
               <div className="w-4 h-4 flex items-center justify-center">
                 {isExpanded ? (
-                  <ChevronDown className="w-3 h-3 text-gray-500" />
+                  <ChevronDown className={cn("w-3 h-3", isActive ? "text-white" : (isDark ? "text-gray-400" : "text-gray-500"))} />
                 ) : (
-                  <ChevronRight className="w-3 h-3 text-gray-500" />
+                  <ChevronRight className={cn("w-3 h-3", isActive ? "text-white" : (isDark ? "text-gray-400" : "text-gray-500"))} />
                 )}
               </div>
             )}
@@ -96,7 +105,12 @@ export default function SideBarSection({
           </div>
 
           {mainSection.count !== undefined && (
-            <div className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
+            <div className={cn(
+              "text-xs px-2 py-1 rounded-full min-w-[20px] text-center font-medium",
+              isActive
+                ? "bg-white/20 text-white"
+                : (isDark ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-600")
+            )}>
               {mainSection.count}
             </div>
           )}
@@ -104,7 +118,10 @@ export default function SideBarSection({
 
         {/* Sub Sections */}
         {hasSubSections && isExpanded && (
-          <div className="bg-white">
+          <div className={cn(
+            "transition-colors",
+            isDark ? "bg-gray-800/50" : "bg-gray-50"
+          )}>
             {mainSection.subSections!.map((subSection) => {
               // Check if subsection is active (including query params)
               const isSubActive = (() => {
@@ -137,22 +154,28 @@ export default function SideBarSection({
                   key={subSection.id}
                   href={subSection.href || "#"}
                   className={cn(
-                    "flex items-center justify-between py-2 px-4 cursor-pointer transition-colors pl-8 hover:bg-gray-50",
+                    "flex items-center justify-between py-2 px-4 cursor-pointer transition-all pl-8",
                     isSubActive
-                      ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500 font-medium"
-                      : "text-gray-600"
+                      ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-600 border-l-4 border-blue-500 font-medium"
+                      : cn(
+                        "transition-colors",
+                        isDark
+                          ? "text-gray-400 hover:bg-gray-700/30 hover:text-gray-200"
+                          : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                      )
                   )}
                 >
-                  <span className="text-sm font-normal">
+                  <span className={cn("text-sm font-normal", isSubActive && isDark && "text-blue-300")}>
                     {subSection.label}
                   </span>
 
                   {subSection.count !== undefined && (
                     <div className={cn(
-                      "text-xs px-2 py-1 rounded-full min-w-[20px] text-center",
+                      "text-xs px-2 py-1 rounded-full min-w-[20px] text-center font-medium",
                       isSubActive
-                        ? "bg-blue-200 text-blue-800"
-                        : "bg-gray-200 text-gray-600"
+                        ? "bg-blue-500/30 text-blue-600"
+                        : (isDark ? "bg-gray-700 text-gray-400" : "bg-gray-200 text-gray-500"),
+                      isSubActive && isDark && "text-blue-200"
                     )}>
                       {subSection.count}
                     </div>

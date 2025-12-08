@@ -51,7 +51,9 @@ export default function ProductEditForm({
   });
 
   // ✅ Use mutation hook for product update (handles toast & cache automatically)
-  const updateProductMutation = useUpdateProduct(brandId, productId);
+  // Store the actual product UUID (not slug) for update operations
+  const [actualProductId, setActualProductId] = useState<string>(productId);
+  const updateProductMutation = useUpdateProduct(brandId, actualProductId);
 
   // Section collapse states
   const [openSections, setOpenSections] = useState({
@@ -88,8 +90,31 @@ export default function ProductEditForm({
 
   // ✅ Load product data from React Query
   useEffect(() => {
-    // ✅ FIX: API returns productData.product, not productData.data
-    const product = productData?.data || productData?.product;
+    // ✅ Handle different API response formats
+    let product;
+
+    // Format 1: { success: true, data: {...} } - Single product (ID query)
+    if (productData?.data && !Array.isArray(productData.data)) {
+      product = productData.data;
+    }
+    // Format 2: { success: true, product: {...} } - Backward compatibility
+    else if (productData?.product && !Array.isArray(productData.product)) {
+      product = productData.product;
+    }
+    // Format 3: { success: true, products: [...] } - When queried by slug
+    else if (productData?.product && Array.isArray(productData.product)) {
+      console.log('📦 Got products array, finding product with slug/id:', productId);
+      // Find product by slug or ID
+      product = productData.product.find(p =>
+        p.slug === productId || p.id === productId
+      );
+      if (!product) {
+        console.error('❌ Product not found in products array');
+        toast.error("상품을 찾을 수 없습니다.");
+        router.push(`/business/brands/${brandId}/products`);
+        return;
+      }
+    }
 
     if (productData?.success && product) {
       console.log('📝 Loading product data for edit:', product);
@@ -98,6 +123,12 @@ export default function ProductEditForm({
       console.log('  - Images:', product.images);
       console.log('  - BasePrice:', product.basePrice);
       console.log('  - Variants:', product.variants);
+
+      // ✅ Store the actual product UUID for update operations
+      if (product.id) {
+        console.log('📌 Setting actualProductId to UUID:', product.id);
+        setActualProductId(product.id);
+      }
 
       setFormData({
         brandId: product.brandId,

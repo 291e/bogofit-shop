@@ -13,27 +13,18 @@ export default function BusinessLayout({
   // Only show sidebar on business/brands/[id] pages
   const shouldShowSidebar = pathname.startsWith("/business/brands/") && pathname !== "/business/brands";
 
-  // Show header for all business pages
-  if (!shouldShowSidebar) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <BusinessHeader />
-        {children}
-      </div>
-    );
+  // If we are in the dashboard (where sidebar is shown), delegate layout to the child layout
+  if (shouldShowSidebar) {
+    return <>{children}</>;
   }
 
+  // For other pages (like brand list), show header and content
   return (
     <div className="min-h-screen bg-gray-50">
       <BusinessHeader />
-
-      <div className="flex min-h-screen">
-
-        {/* Main Content */}
-        <main className="flex-1 p-6 bg-gray-50">
-          {children}
-        </main>
-      </div>
+      <main className="p-6">
+        {children}
+      </main>
     </div>
   );
 }

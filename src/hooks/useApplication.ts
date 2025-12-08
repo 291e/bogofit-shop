@@ -13,7 +13,7 @@ export const APPLICATION_QUERY_KEY = ["application"];
  */
 async function fetchApplication(getToken: () => string | null): Promise<ApiApplicationResponse> {
   const token = getToken();
-  
+
   if (!token) {
     throw new Error("Unauthorized");
   }
@@ -36,7 +36,7 @@ async function fetchApplication(getToken: () => string | null): Promise<ApiAppli
  */
 async function submitApplication(data: ApplicationFormData & { isEditing?: boolean }, isEditing: boolean, applicationId: string, getToken: () => string | null): Promise<CreateApplicationResponse> {
   const token = getToken();
-  
+
   if (!token) {
     throw new Error("Unauthorized");
   }
@@ -44,7 +44,8 @@ async function submitApplication(data: ApplicationFormData & { isEditing?: boole
   const { ...applicationData } = data;
 
   const response = await fetch("/api/application", {
-    method: isEditing ? "PATCH" : "POST",
+    // Valid methods: POST, PUT (not PATCH)
+    method: isEditing ? "PUT" : "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -65,7 +66,7 @@ async function submitApplication(data: ApplicationFormData & { isEditing?: boole
  */
 export function useApplication() {
   const { token, isAuthenticated } = useAuth();
-  
+
   return useQuery({
     queryKey: APPLICATION_QUERY_KEY,
     queryFn: () => fetchApplication(() => token!),
@@ -81,7 +82,7 @@ export function useApplication() {
 export function useSubmitApplication() {
   const queryClient = useQueryClient();
   const { token } = useAuth();
-  
+
   return useMutation({
     mutationFn: ({ data, isEditing, applicationId }: { data: ApplicationFormData & { isEditing?: boolean }, isEditing: boolean, applicationId: string }) => submitApplication(data, isEditing, applicationId, () => token!),
     onSuccess: (data: CreateApplicationResponse) => {
@@ -97,7 +98,7 @@ export function useSubmitApplication() {
         // Fallback: Invalidate nếu không có data
         queryClient.invalidateQueries({ queryKey: APPLICATION_QUERY_KEY });
       }
-      
+
       toast.success(
         isEditing ? "사업자 신청서가 수정되었습니다!" : "사업자 신청이 완료되었습니다!",
         {

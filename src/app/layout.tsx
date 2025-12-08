@@ -81,7 +81,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <head>
         {/* 다음 주소 API */}
         <script
@@ -105,7 +105,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-M6GKBL7R');`,
           }}
         />
-        
+
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-M6GKBL7R"

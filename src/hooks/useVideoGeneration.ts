@@ -6,26 +6,33 @@ import { toast } from "sonner";
 // ==================== TYPES ====================
 
 export interface VideoGenerationRequest {
-    imageUrl: string;
-    prompt?: string;
-    productTitle?: string;
+    prompt: string;
+    imageUrl?: string;
+    negativePrompt?: string;
+    config?: {
+        durationSeconds?: number;
+        aspectRatio?: string;
+        resolution?: string;
+    };
 }
 
 export interface VideoGenerationResponse {
     success: boolean;
     data: {
         videoUrl: string;
+        originalUrl: string;
         prompt: string;
         operationName: string;
         duration?: string;
-        generationTime?: string;
+        aspectRatio?: string;
+        resolution?: string;
     };
 }
 
 // ==================== FETCHER FUNCTIONS ====================
 
 /**
- * Generate video from virtual fitting result
+ * Generate video using Gemini Veo 3.1
  */
 async function generateVideo(request: VideoGenerationRequest): Promise<VideoGenerationResponse> {
     console.log('🎬 useVideoGeneration: Starting video generation');

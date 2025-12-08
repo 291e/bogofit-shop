@@ -4,10 +4,11 @@ import SideBarSection from "@/components/ui/sidebar-section";
 import { useLanguage } from "@/providers/languageProvider";
 
 interface SettlementSectionProps {
-    brandId: string;
+    brandSlug: string;
+    theme?: 'dark' | 'light';
 }
 
-export default function SettlementSection({ brandId }: SettlementSectionProps) {
+export default function SettlementSection({ brandSlug, theme }: SettlementSectionProps) {
     const { t } = useLanguage();
     const settlementData = {
         id: "settlement",
@@ -16,27 +17,27 @@ export default function SettlementSection({ brandId }: SettlementSectionProps) {
             {
                 id: "order-analysis",
                 label: t("header.business.brandDetail.sidebar.orderAnalysis"),
-                href: `/business/brands/${brandId}/settlement/analysis`
+                href: `/business/brands/${brandSlug}/settlement/analysis`
             },
             {
                 id: "settlement-pending",
                 label: t("header.business.brandDetail.sidebar.settlementPending"),
-                href: `/business/brands/${brandId}/settlement/pending`
+                href: `/business/brands/${brandSlug}/settlement/pending`
             },
             {
                 id: "settlement-completed",
                 label: t("header.business.brandDetail.sidebar.settlementCompleted"),
-                href: `/business/brands/${brandId}/settlement/completed`
+                href: `/business/brands/${brandSlug}/settlement/completed`
             },
             {
                 id: "announcements",
                 label: t("header.business.brandDetail.sidebar.announcements"),
-                href: `/business/brands/${brandId}/settlement/announcements`
+                href: `/business/brands/${brandSlug}/settlement/announcements`
             },
             {
                 id: "faq",
                 label: t("header.business.brandDetail.sidebar.faq"),
-                href: `/business/brands/${brandId}/settlement/faq`
+                href: `/business/brands/${brandSlug}/settlement/faq`
             }
         ]
     };
@@ -44,6 +45,7 @@ export default function SettlementSection({ brandId }: SettlementSectionProps) {
     return (
         <SideBarSection
             mainSection={settlementData}
+            theme={theme}
         />
     );
 }

@@ -181,10 +181,10 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * PATCH /api/application
+ * PUT /api/application
  * Cập nhật application
  */
-export async function PATCH(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   try {
     // Get token from Authorization header
     const authHeader = request.headers.get("authorization");
@@ -222,7 +222,7 @@ export async function PATCH(request: NextRequest) {
     // Try-catch for backend call
     try {
       const response = await fetch(`${API_URL}/api/SellApplication`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -280,7 +280,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('Application API error:', {
       timestamp: new Date().toISOString(),
-      endpoint: 'PATCH /api/application',
+      endpoint: 'PUT /api/application',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     return NextResponse.json(

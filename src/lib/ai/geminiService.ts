@@ -41,15 +41,50 @@ export async function generateProductImage({
     console.log('✅ Gemini Service: API key found');
     console.log('📐 Requested aspect ratio:', aspectRatio || 'none (default square)');
 
-    // Create enhanced prompt - don't force square format if aspectRatio is provided
+    // Create enhanced prompt based on image type
     let enhancedPrompt = "";
-    if (aspectRatio) {
-      // If aspectRatio is provided, use the prompt as-is (should already contain format requirements)
-      // For detail images, the prompt already has all instructions, so don't modify it
-      // This prevents AI from recreating the product when productName is provided
+
+    // Define specific prompts for each image type
+    // Define specific prompts for each image type
+    const prompts = {
+      hero: `Design a high-impact "Hero" image for a Korean e-commerce product detail page.
+        - **Content:** Showcase the product attractively with the product name "${productName || 'Product Name'}" in elegant, large Korean typography. Add a badge like "베스트셀러" (Best Seller) or "신상품" (New Arrival).
+        - **Text Rule:** ALL visible text MUST be in Korean (Hangul). Do not use English.
+        - **Style:** Minimalist, premium, clean background.
+        - **Goal:** Catch the customer's eye immediately.
+        - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`,
+
+      features: `Design a "Product Features" section image for a Korean e-commerce detail page.
+        - **Content:** Show a close-up or detailed view of the product. Overlay text highlighting key features in Korean (e.g., "고급 소재" (Premium Material), "편안한 착용감" (Comfortable Fit), "꼼꼼한 마감" (Durable Stitching)).
+        - **Text Rule:** ALL visible text MUST be in Korean (Hangul). Do not use English.
+        - **Style:** Clean, focus on texture and details.
+        - **Goal:** Highlight quality and selling points.
+        - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`,
+
+      lifestyle: `Design a "Lifestyle" image for a Korean e-commerce detail page.
+        - **Content:** Show the product in a realistic, aspirational context (e.g., worn by a model or in a suitable environment).
+        - **Style:** Atmospheric, natural lighting, "Instagrammable".
+        - **Goal:** Help customers visualize using the product.
+        - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`,
+
+      info: `Design a "Product Info & Size" section image for a Korean e-commerce detail page.
+        - **Content:** Display a clean, structured Size Chart and Product Specifications table.
+        - **Details to Include:** ${prompt}
+        - **Text Rule:** ALL visible text MUST be in Korean (Hangul). Translate any English labels to Korean (e.g., Size -> 사이즈, Color -> 색상).
+        - **Style:** Professional, easy to read, grid layout.
+        - **Goal:** Provide clear technical information.
+        - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`
+    };
+
+    if (aspectRatio && ['hero', 'features', 'lifestyle', 'info'].includes(aspectRatio)) {
+      // If aspectRatio is actually passing the image type (a bit of a hack to reuse the interface, but works)
+      const type = aspectRatio as keyof typeof prompts;
+      enhancedPrompt = prompts[type];
+    } else if (aspectRatio) {
+      // Standard aspect ratio provided
       enhancedPrompt = prompt;
     } else {
-      // Default behavior: square format for regular product images
+      // Default behavior
       enhancedPrompt = productName
         ? `IMPORTANT: Use the EXACT product from the uploaded image - DO NOT create a different product. The product must appear IDENTICAL to the uploaded image (same design, colors, style, details). Based on this product image, create a professional product photo for "${productName}". ${prompt}. Maintain the same composition, angle, and framing as the original. Make it suitable for e-commerce with clean background, professional lighting, and high quality.`
         : `IMPORTANT: Use the EXACT product from the uploaded image - DO NOT create a different product. The product must appear IDENTICAL to the uploaded image (same design, colors, style, details). Based on this product image, create a professional product photo. ${prompt}. Maintain the same composition, angle, and framing as the original. Make it suitable for e-commerce with clean background, professional lighting, and high quality.`;
@@ -88,24 +123,27 @@ export async function generateProductImage({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const generateConfig: any = {
       candidateCount: 1,
-      responseMimeType: "image/png",
+      responseModalities: ["TEXT", "IMAGE"],
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestParams: any = {
-      model: "gemini-2.5-flash-image",
+      model: "gemini-3-pro-image-preview",
       contents: promptArray,
       generationConfig: generateConfig,
     };
 
     // Add aspect ratio config if provided
     if (aspectRatio) {
+      // If it's one of our custom types, default to 9:16 (vertical)
+      const ratio = ['hero', 'features', 'lifestyle', 'info'].includes(aspectRatio) ? '9:16' : aspectRatio;
+
       requestParams.config = {
         imageConfig: {
-          aspectRatio: aspectRatio,
+          aspectRatio: ratio,
         },
       };
-      console.log('📐 Using aspect ratio config:', aspectRatio);
+      console.log('📐 Using aspect ratio config:', ratio);
     }
 
     console.log('🎨 Generating image with aspect ratio:', aspectRatio || 'default');
