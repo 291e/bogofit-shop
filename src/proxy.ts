@@ -25,6 +25,7 @@ function isAdminUser(token: string): boolean {
     if (!payload) return false;
 
     // Base64 decode
+    // Trong môi trường Next.js, 'atob' (đối với Base64) có sẵn trong global scope (Node.js/Edge Runtime)
     const decoded = JSON.parse(atob(payload));
 
     // Check isAdmin claim
@@ -35,7 +36,8 @@ function isAdminUser(token: string): boolean {
   }
 }
 
-export function middleware(request: NextRequest) {
+// Hàm xử lý Proxy (Middleware) mới: Phải là Default Export
+export default async function proxyHandler(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 쿠키에서 토큰 가져오기
@@ -75,7 +77,7 @@ export function middleware(request: NextRequest) {
     // 다른 경로는 /login으로 리디렉션
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    console.log('🔒 인증 필요:', pathname, '→ /login으로 리디렉션');
+    console.log('🔒 인증 필요:', pathname, '→ /login으로 리ди렉션');
     return NextResponse.redirect(loginUrl);
   }
 
@@ -85,7 +87,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // 4. 로그인된 상태에서 Business 로그인 페이지 접근 시 brands로 리디렉션
+  // 4. 로그인된 trạng thái에서 Business 로그인 페이지 접근 시 brands로 리디렉션
   if (isBusinessAuthPath && token) {
     console.log('✅ Business 이미 로그인됨:', pathname, '→ /business/brands로 리디렉션');
     return NextResponse.redirect(new URL('/business/brands', request.url));
@@ -95,7 +97,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// 미들웨어가 실행될 경로 설정
+// Cấu hình matcher giữ nguyên
 export const config = {
   matcher: [
     /*
@@ -109,4 +111,3 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\.html|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.ico|.*\\.woff|.*\\.woff2|.*\\.ttf|.*\\.css|.*\\.js).*)',
   ],
 };
-

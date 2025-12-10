@@ -125,53 +125,35 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Generate video with retry logic
-        const operation = await ai.models.generateVideos(requestParams);
-        let retryCount = 0;
-        const maxRetries = 3;
+        // Generate video - this returns immediately with an operation handle
+        console.log("🚀 Starting video generation operation...");
+        let operation = await ai.models.generateVideos(requestParams);
 
-        while (retryCount < maxRetries) {
-            try {
-                console.log(
-                    `🎬 Attempt ${retryCount + 1}/${maxRetries} to generate video...`
-                );
+        console.log("⏳ Waiting for video generation to complete...");
+        console.log(`📋 Operation name: ${operation.name}`);
 
-                // Poll đến khi xong
-                while (!operation.done) {
-                    await new Promise((resolve) => setTimeout(resolve, 10_000));
-                }
+        // Poll the operation status until the video is ready
+        // This is the correct way per Google GenAI SDK documentation
+        while (!operation.done) {
+            console.log("🔄 Polling operation status...");
+            await new Promise((resolve) => setTimeout(resolve, 10_000)); // Wait 10 seconds
 
-                // Check for errors in the operation
-                if (operation.error) {
-                    const errorMessage =
-                        operation.error.message ||
-                        JSON.stringify(operation.error) ||
-                        "Unknown error occurred";
-                    console.error("❌ Operation error:", operation.error);
-                    throw new Error(`Video generation failed: ${errorMessage}`);
-                }
-
-                // Nếu thành công thì thoát vòng lặp
-                break;
-            } catch (err) {
-                console.error(
-                    `❌ Attempt ${retryCount + 1} failed:`,
-                    err
-                );
-                retryCount++;
-                if (retryCount === maxRetries) {
-                    throw err; // Re-throw last error if all retries fail
-                }
-                // Exponential backoff: 2s, 4s, 8s
-                await new Promise((resolve) =>
-                    setTimeout(resolve, 2000 * Math.pow(2, retryCount - 1))
-                );
-            }
+            // Refresh operation status from API
+            operation = await ai.operations.getVideosOperation({
+                operation: operation,
+            });
         }
 
-        // Ensure operation is defined
-        if (!operation) {
-            throw new Error("Video generation failed: operation is undefined");
+        console.log("✅ Video generation completed!");
+
+        // Check for errors in the final operation
+        if (operation.error) {
+            const errorMessage =
+                operation.error.message ||
+                JSON.stringify(operation.error) ||
+                "Unknown error occurred";
+            console.error("❌ Operation error:", operation.error);
+            throw new Error(`Video generation failed: ${errorMessage}`);
         }
 
         const videoUrl =
