@@ -116,8 +116,8 @@ export default function AllProductsSubSection({
   };
 
   const handleEditProduct = (product: ProductResponseDto) => {
-    // Navigate to edit page with brand slug and product slug
-    router.push(`/business/brands/${brand?.slug || brandId}/products/${product.slug || product.id}/edit`);
+    // Navigate to edit page with brand slug and product ID (UUID is required for API fetch)
+    router.push(`/business/brands/${brand?.slug || brandId}/products/${product.id}/edit`);
   };
 
   const handleRegisterClick = () => {

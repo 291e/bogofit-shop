@@ -73,6 +73,7 @@
     "flag-icons": "^7.5.0",
     "framer-motion": "^12.17.3",
     "graphql": "^16.11.0",
+    "hangul-js": "^0.2.6",
     "input-otp": "^1.4.2",
     "jose": "^6.0.12",
     "lucide-react": "^0.511.0",

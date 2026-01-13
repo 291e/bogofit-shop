@@ -93,17 +93,7 @@ export default function ProductRegisterSubSection({
     );
   }
 
-  // Auto-generate slug from name
-  const handleNameChange = (name: string) => {
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
 
-    setFormData(prev => ({ ...prev, name, slug }));
-  };
 
   // Handle variant changes
   const handleVariantChange = (
@@ -301,11 +291,11 @@ export default function ProductRegisterSubSection({
 
       const infoPrompt = textSections.join('\n');
 
-      // Define 4 image types
+      // Define 4 image types with specific prompts
       const types = [
-        { id: 'hero', label: 'Hero Image' },
-        { id: 'features', label: 'Features' },
-        { id: 'lifestyle', label: 'Lifestyle' },
+        { id: 'hero', label: 'Hero Image', prompt: formData.name },
+        { id: 'features', label: 'Features', prompt: "" },
+        { id: 'lifestyle', label: 'Lifestyle', prompt: "" },
         { id: 'info', label: 'Info & Size', prompt: infoPrompt }
       ];
 
@@ -423,14 +413,6 @@ export default function ProductRegisterSubSection({
               // Only update if field is empty
               if (!prev.name && name) {
                 updates.name = name;
-                // Auto-generate slug from name
-                const slug = name
-                  .toLowerCase()
-                  .replace(/[^a-z0-9가-힣\s-]/g, '')
-                  .replace(/\s+/g, '-')
-                  .replace(/-+/g, '-')
-                  .trim();
-                updates.slug = slug;
               }
 
               if (!prev.description && description) {
@@ -555,7 +537,7 @@ export default function ProductRegisterSubSection({
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => handleNameChange(e.target.value)}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       placeholder={t("header.business.brandDetail.products.register.productNamePlaceholder")}
                       required
                     />

@@ -50,7 +50,7 @@ export default function ProductDetailModal({
     };
 
     const handleEdit = () => {
-        router.push(`/business/brands/${brand?.slug || brandId}/products/${product.slug || product.id}/edit`);
+        router.push(`/business/brands/${brand?.slug || brandId}/products/${product.id}/edit`);
         onClose();
     };
 

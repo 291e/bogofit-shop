@@ -169,17 +169,7 @@ export default function ProductEditForm({
     }
   }, [productData, productError, brandId, router]);
 
-  // Auto-generate slug from name
-  const handleNameChange = (name: string) => {
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
 
-    setFormData(prev => ({ ...prev, name, slug }));
-  };
 
   // Validate and sanitize slug when user edits manually
   const handleSlugChange = (slug: string) => {
@@ -431,7 +421,7 @@ export default function ProductEditForm({
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => handleNameChange(e.target.value)}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="상품명을 입력하세요"
                   required
                 />

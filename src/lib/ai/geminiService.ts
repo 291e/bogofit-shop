@@ -48,32 +48,33 @@ export async function generateProductImage({
     // Define specific prompts for each image type
     const prompts = {
       hero: `Design a high-impact "Hero" image for a Korean e-commerce product detail page.
-        - **Content:** Showcase the product attractively with the product name "${productName || 'Product Name'}" in elegant, large Korean typography. Add a badge like "베스트셀러" (Best Seller) or "신상품" (New Arrival).
-        - **Text Rule:** ALL visible text MUST be in Korean (Hangul). Do not use English.
+        - **Content:** Showcase the product attractively with the product name "${productName || 'Product Name'}" in elegant Korean typography.
+        - **Text Rule:** ONLY the product name should be visible. DO NOT add any other badges or promotional text. ALL visible text MUST be in Korean (Hangul).
         - **Style:** Minimalist, premium, clean background.
         - **Goal:** Catch the customer's eye immediately.
         - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`,
 
       features: `Design a "Product Features" section image for a Korean e-commerce detail page.
-        - **Content:** Show a close-up or detailed view of the product. Overlay text highlighting key features in Korean (e.g., "고급 소재" (Premium Material), "편안한 착용감" (Comfortable Fit), "꼼꼼한 마감" (Durable Stitching)).
-        - **Text Rule:** ALL visible text MUST be in Korean (Hangul). Do not use English.
-        - **Style:** Clean, focus on texture and details.
-        - **Goal:** Highlight quality and selling points.
-        - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`,
+        - **Content:** Show the product from 3 different angles (e.g., front, side, and back, or key detailed close-ups) in a clean split-view or collage layout.
+        - **Text Rule:** DO NOT add any text or labels to the image.
+        - **Style:** Clean, professional product photography, focus on multiple perspectives.
+        - **Goal:** Show the product's design from all important sides.
+        - **Important:** Keep the product in all angles looking EXACTLY identical to the uploaded image.`,
 
       lifestyle: `Design a "Lifestyle" image for a Korean e-commerce detail page.
         - **Content:** Show the product in a realistic, aspirational context (e.g., worn by a model or in a suitable environment).
+        - **Text Rule:** DO NOT add any text (names, prices, or labels) to the image.
         - **Style:** Atmospheric, natural lighting, "Instagrammable".
         - **Goal:** Help customers visualize using the product.
         - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`,
 
       info: `Design a "Product Info & Size" section image for a Korean e-commerce detail page.
-        - **Content:** Display a clean, structured Size Chart and Product Specifications table.
+        - **Content:** Display a clean, structured Size Chart and Product Specifications table. 
+        - **Image Rule:** DO NOT include the actual product photo in this graphic. Focus ONLY on the graphical layout of the information.
         - **Details to Include:** ${prompt}
         - **Text Rule:** ALL visible text MUST be in Korean (Hangul). Translate any English labels to Korean (e.g., Size -> 사이즈, Color -> 색상).
-        - **Style:** Professional, easy to read, grid layout.
-        - **Goal:** Provide clear technical information.
-        - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`
+        - **Style:** Professional, easy to read, minimal grid layout, infographic style.
+        - **Goal:** Provide clear technical information without visual distractions.`
     };
 
     if (aspectRatio && ['hero', 'features', 'lifestyle', 'info'].includes(aspectRatio)) {
