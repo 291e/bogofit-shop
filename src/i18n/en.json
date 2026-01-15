@@ -24,7 +24,8 @@
             "coupon": "Coupons",
             "addressBook": "Address Book",
             "recentlyViewed": "Recently Viewed",
-            "editProfile": "Edit Profile"
+            "editProfile": "Edit Profile",
+            "businessDashboard": "Business"
         },
         "mobile": {
             "openMenu": "Open Menu"

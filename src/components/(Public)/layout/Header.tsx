@@ -57,7 +57,7 @@ export default function Header() {
   // State
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState<{ userId: string; name?: string } | null>(null);
+  const [user, setUser] = useState<{ userId: string; name?: string; hasBusinessAccess?: boolean } | null>(null);
 
   // Hooks
   const pathname = usePathname();
@@ -70,25 +70,31 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (typeof window === "undefined") return;
+
+    if (!isAuthenticated || !getToken()) {
       setUser(null);
       return;
     }
 
     const token = getToken();
-    if (!token) {
-      setUser(null);
-      return;
-    }
+    if (!token) return;
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const rawName = payload.name || payload.userId || "User";
       const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
 
+      // Check business access
+      const isBusiness = payload.isBusiness === 'True' || payload.isBusiness === true;
+      const isAdmin = payload.isAdmin === 'True' || payload.isAdmin === true;
+
+      const hasAccess = isBusiness || isAdmin;
+
       setUser({
         userId: payload.userId || payload.sub || "User",
-        name: formattedName
+        name: formattedName,
+        hasBusinessAccess: hasAccess
       });
     } catch (error) {
       console.error("Error decoding token:", error);
@@ -238,6 +244,17 @@ export default function Header() {
                               </div>
                             </div>
                             <DropdownMenuSeparator />
+                            {user?.hasBusinessAccess && (
+                              <>
+                                <DropdownMenuItem asChild>
+                                  <Link href="/business" className="flex items-center gap-2">
+                                    <ShoppingBag className="w-4 h-4" />
+                                    {t("header.userMenu.businessDashboard")}
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
                             <DropdownMenuItem asChild>
                               <Link href="/myPage?section=order" className="flex items-center gap-2">
                                 <Clock className="w-4 h-4" />
@@ -369,6 +386,16 @@ export default function Header() {
 
                           {/* User Menu Links */}
                           <div className="space-y-1">
+                            {user?.hasBusinessAccess && (
+                              <Link
+                                href="/business"
+                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-blue-600 bg-blue-50 hover:text-blue-700 hover:bg-blue-100 mb-1"
+                                onClick={() => setOpen(false)}
+                              >
+                                <ShoppingBag className="w-4 h-4" />
+                                {t("header.userMenu.businessDashboard") || "Business Dashboard"}
+                              </Link>
+                            )}
                             {[
                               { href: "/myPage?section=order", icon: Clock, label: t("header.userMenu.orderHistory") },
                               { href: "/myPage?section=coupon", icon: Ticket, label: t("header.userMenu.coupon") },

@@ -24,7 +24,8 @@
       "coupon": "쿠폰",
       "addressBook": "주소록",
       "recentlyViewed": "최근 본 상품",
-      "editProfile": "프로필 수정"
+      "editProfile": "프로필 수정",
+      "businessDashboard": "비즈니스"
     },
     "mobile": {
       "openMenu": "메뉴 열기"

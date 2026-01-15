@@ -24,7 +24,8 @@
             "coupon": "优惠券",
             "addressBook": "地址簿",
             "recentlyViewed": "最近浏览",
-            "editProfile": "编辑资料"
+            "editProfile": "编辑资料",
+            "businessDashboard": "商家"
         },
         "mobile": {
             "openMenu": "打开菜单"

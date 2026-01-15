@@ -24,7 +24,8 @@
             "coupon": "Phiếu giảm giá",
             "addressBook": "Sổ địa chỉ",
             "recentlyViewed": "Sản phẩm đã xem gần đây",
-            "editProfile": "Chỉnh sửa hồ sơ"
+            "editProfile": "Chỉnh sửa hồ sơ",
+            "businessDashboard": "Quản lí doanh nghiệp"
         },
         "mobile": {
             "openMenu": "Mở menu"
@@ -73,7 +74,7 @@
             "errorOccurred": "Đã xảy ra lỗi",
             "retry": "Thử lại",
             "dashboard": {
-                "title": "Bảng điều khiển doanh nghiệp",
+                "title": "Quản lý doanh nghiệp",
                 "welcome": "Xin chào! Chào mừng đến với nền tảng doanh nghiệp BOGOFIT.",
                 "applicationCode": "Mã đăng ký:",
                 "status": "Trạng thái:",
@@ -552,7 +553,7 @@
                     },
                     "edit": {
                         "title": "Chỉnh sửa sản phẩm",
-                        "loading": "Đang tải sản phẩm",
+                        "loading": "Đang tải thông tin sản phẩm",
                         "description": "Hãy chỉnh sửa thông tin sản phẩm",
                         "update": "Cập nhật"
                     }
@@ -725,7 +726,7 @@
             "couponHistory": "Lịch sử phiếu giảm giá",
             "addressManagement": "Quản lý địa chỉ giao hàng",
             "activityInfo": "Thông tin hoạt động",
-            "recentlyViewed": "Sản phẩm đã xem gần đây",
+            "recentlyViewed": "Sản phẩm đã xem",
             "myInfo": "Thông tin của tôi",
             "editProfile": "Chỉnh sửa thông tin"
         },
@@ -872,7 +873,7 @@
             "noProducts": "Chưa có sản phẩm đã xem gần đây",
             "noProductsDescription": "Hãy xem sản phẩm và bắt đầu mua sắm",
             "startShopping": "Bắt đầu mua sắm",
-            "title": "Sản phẩm đã xem gần đây",
+            "title": "Sản phẩm đã xem",
             "deleteAll": "Xóa tất cả",
             "wishlist": "Yêu thích",
             "cart": "Giỏ hàng"
