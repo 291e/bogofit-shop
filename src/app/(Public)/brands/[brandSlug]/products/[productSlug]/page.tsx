@@ -11,7 +11,8 @@ interface Product {
   discountRate?: number;
   imageUrl: string;
   thumbnailImages?: string[];
-  detailImage?: string;
+  detailImages?: string[]; // Support multiple detail images
+  productDetails?: any[]; // Support size chart/details
   description?: string;
   category: string;
   subCategory?: string;
@@ -31,6 +32,7 @@ interface Product {
     priceDiff: number;
     stock: number;
   }>;
+  quantity?: number;
   status: string;
   sku?: string;
 }
@@ -121,11 +123,6 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
     // Get category name first
     const categoryName = await getParentCategoryName(product.categoryId);
 
-    // Debug image URLs
-    console.log('🖼️ Product Images Debug:');
-    console.log('  - thumbUrl:', product.thumbUrl);
-    console.log('  - images array:', product.images);
-    console.log('  - Final imageUrl:', product.thumbUrl || product.images?.[0] || "/logo.png");
 
     // Convert to expected format
     // Compute promotion-aware pricing
@@ -149,6 +146,8 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
       originalPrice: product.baseCompareAtPrice ?? undefined,
       imageUrl: product.thumbUrl || product.images?.[0] || "/logo.png",
       thumbnailImages: product.images || [],
+      detailImages: product.detail_Images || [], // Support multiple detail images
+      productDetails: product.product_Details || [], // Support size chart/details
       description: product.description,
       category: categoryName,
       subCategory: undefined,
@@ -208,6 +207,7 @@ async function fetchProduct(productSlug: string, brandSlug: string): Promise<Pro
           stock: variant.quantity || 0
         };
       }),
+      quantity: product.quantity ?? undefined,
       status: product.status,
       sku: product.sku
     };

@@ -183,7 +183,7 @@ export function SalePageClient() {
                             price: finalPrice,
                             originalPrice: product.basePrice,
                             discount: discountPercent,
-                            image: product.images?.[0] || "/images/placeholder-product.png",
+                            image: product.thumbUrl || product.images?.[0] || "/images/placeholder-product.png",
                             brand: product.brand?.name || undefined,
                             brandSlug: product.brand?.slug,
                             rating: undefined,

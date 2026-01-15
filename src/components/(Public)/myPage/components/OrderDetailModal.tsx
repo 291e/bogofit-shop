@@ -198,7 +198,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
 
                 {loading && (
                     <div className="flex flex-col items-center justify-center py-16">
-                        <Loader2 className="w-12 h-12 text-pink-600 animate-spin mb-4" />
+                        <Loader2 className="w-12 h-12 text-gray-400 animate-spin mb-4" />
                         <p className="text-gray-600">{t("myPage.orderDetail.loading")}</p>
                     </div>
                 )}
@@ -243,7 +243,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                 {/* Total Amount */}
                                 <div className="flex justify-between items-center pt-4 border-t">
                                     <span className="text-lg font-semibold">{t("myPage.orderDetail.totalPaymentAmount")}</span>
-                                    <span className="text-2xl font-bold text-pink-600">
+                                    <span className="text-2xl font-bold text-gray-900">
                                         ₩{((orderData as OrderGroup).finalAmount || (orderData as Order).items?.reduce((sum: number, item: OrderItem) => sum + item.rowTotal, 0) || 0).toLocaleString()}
                                     </span>
                                 </div>
@@ -309,10 +309,10 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
 
                                                 <div className="space-y-4">
                                                     {order.items.map((item) => (
-                                                        <div key={item.id} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 shadow-sm">
+                                                        <div key={item.id} className="bg-white rounded-xl p-4 border border-gray-200">
                                                             <div className="flex items-start gap-4 mb-4">
                                                                 {item.imageUrl && (
-                                                                    <div className="relative w-16 h-16 bg-white rounded-lg flex-shrink-0 shadow-sm border">
+                                                                    <div className="relative w-16 h-16 bg-white rounded-lg flex-shrink-0 border border-gray-100">
                                                                         <Image
                                                                             src={item.imageUrl}
                                                                             alt={item.productTitle}
@@ -339,7 +339,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                                             </div>
 
                                                             {/* Review Button */}
-                                                            <div className="flex justify-end pt-3 border-t border-gray-200">
+                                                            <div className="flex justify-end pt-3 border-t border-gray-100">
                                                                 <OrderItemReviewButton
                                                                     orderItem={{
                                                                         id: item.id,
@@ -368,10 +368,10 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                     // Single order
                                     <div className="space-y-4">
                                         {(orderData as Order).items?.map((item) => (
-                                            <div key={item.id} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 shadow-sm">
+                                            <div key={item.id} className="bg-white rounded-xl p-4 border border-gray-200">
                                                 <div className="flex items-start gap-4 mb-4">
                                                     {item.imageUrl && (
-                                                        <div className="relative w-16 h-16 bg-white rounded-lg flex-shrink-0 shadow-sm border">
+                                                        <div className="relative w-16 h-16 bg-white rounded-lg flex-shrink-0 border border-gray-100">
                                                             <Image
                                                                 src={item.imageUrl}
                                                                 alt={item.productTitle}
@@ -398,7 +398,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                                                 </div>
 
                                                 {/* Review Button */}
-                                                <div className="flex justify-end pt-3 border-t border-gray-200">
+                                                <div className="flex justify-end pt-3 border-t border-gray-100">
                                                     {/* Debug log for single order item data */}
 
                                                     <OrderItemReviewButton
@@ -454,7 +454,7 @@ export default function OrderDetailModal({ isOpen, onClose, orderId, orderType }
                             {(orderData as Order).status === "pending" && (
                                 <Button
                                     onClick={handlePayment}
-                                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
                                 >
                                     {t("myPage.orderDetail.paymentButton")}
                                 </Button>

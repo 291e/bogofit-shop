@@ -21,19 +21,20 @@ interface GetCategoriesResponse {
  */
 async function fetchCategories(token?: string): Promise<GetCategoriesResponse> {
   if (!token) throw new Error('Authentication token not found.');
-  
+
   const response = await fetch('/api/category?isTree=true', {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
+    cache: 'no-store',
   });
-  
+
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Failed to fetch categories');
   }
-  
+
   return response.json();
 }
 
@@ -56,25 +57,26 @@ async function fetchPublicCategories(): Promise<GetCategoriesResponse> {
     headers: {
       'Content-Type': 'application/json',
     },
+    cache: 'no-store',
   });
-  
+
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Failed to fetch categories');
   }
-  
+
   return response.json();
 }
 
 export function useCategories() {
   const { token, isAuthenticated } = useAuth();
-  
+
   return useQuery({
     queryKey: CATEGORIES_QUERY_KEY,
     queryFn: () => fetchCategories(token || undefined),
     enabled: isAuthenticated && !!token,
-    staleTime: 5 * 60 * 1000, // 5 minutes - categories don't change often
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -93,8 +95,8 @@ export function usePublicCategories() {
   return useQuery({
     queryKey: [...CATEGORIES_QUERY_KEY, 'public'],
     queryFn: fetchPublicCategories,
-    staleTime: 10 * 60 * 1000, // 10 minutes - categories don't change often
-    gcTime: 30 * 60 * 1000, // 30 minutes cache time
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

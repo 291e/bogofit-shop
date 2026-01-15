@@ -552,7 +552,9 @@
           },
           "edit": {
             "title": "상품 수정",
-            "description": "상품 정보를 수정하세요"
+            "loading": "로딩중...",
+            "description": "상품 정보를 수정하세요",
+            "update": "수정하기"
           }
         }
       }
@@ -755,6 +757,18 @@
     },
     "orderDetail": {
       "title": "주문 상세 정보",
+      "status": {
+        "pending": "결제 대기",
+        "confirmed": "주문 확인",
+        "processing": "배송 준비 중",
+        "shipping": "배송 중",
+        "shipped": "배송 완료",
+        "delivered": "배송 완료",
+        "completed": "구매 확정",
+        "canceled": "취소됨",
+        "refunded": "환불됨",
+        "failed": "결제 실패"
+      },
       "loading": "주문 정보를 불러오는 중...",
       "error": "오류가 발생했습니다",
       "retry": "다시 시도",
@@ -1033,14 +1047,16 @@
       "imageUpload": "이미지 업로드",
       "aiEngineSelection": "AI 엔진 선택",
       "notSelected": "선택 안됨",
-      "v1Description": "안정적인 피팅 결과 (약 20초 완성) · 상하의 모두 지원",
-      "v2Description": "빠른 피팅 결과 (약 15초 완성) · 상의 및 아이템 전용",
+      "v1Description": "15초 내외 빠른 피팅 결과 · 상의 지원",
+      "v2Description": "40초 내외 전체 착용 기능 · 상의 - 하의 - 아이템 지원",
+      "v3Description": "40초 내외 안전적인 결과 · 상의 - 하의 - 배경 지원",
       "modelImage": "모델 이미지",
       "fullBodyPhotoRecommended": "전신 사진 권장",
       "topImage": "상의 이미지",
       "required": "필수 사항",
       "bottomImage": "하의 이미지",
       "itemImage": "아이템 이미지",
+      "backgroundImage": "배경 이미지",
       "itemTitle": "아이템 이름 (선택사항)",
       "optional": "선택사항",
       "inquiryPlaceholder": "문의 내용을 입력하세요 (최소 10자 이상)",
@@ -1218,6 +1234,7 @@
       "uploadHairImage": "헤어 스타일 이미지를 업로드하세요",
       "uploadBottomImage": "하의 이미지를 업로드하세요",
       "uploadClothingImage": "의류 이미지를 업로드하세요",
+      "uploadBackgroundImage": "배경 이미지를 업로드하세요",
       "dragOrClick": "파일을 드래그하거나 클릭하여 선택하세요",
       "supportedFormats": "지원 형식: JPG, PNG, WEBP",
       "selectSampleImage": "샘플 이미지 선택",
@@ -1263,6 +1280,10 @@
       "priceHigh": "가격 높은순",
       "name": "이름순"
     },
-    "allLoaded": "모든 상품을 불러왔습니다."
+    "allLoaded": "모든 상품을 불러왔습니다.",
+    "products": "{brandName} 상품 ({count})",
+    "noProducts": "상품이 없습니다",
+    "noProductsDescription": "이 브랜드에 등록된 상품이 없습니다.",
+    "loadingMore": "더 불러오는 중..."
   }
 }

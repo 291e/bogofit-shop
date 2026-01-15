@@ -43,7 +43,7 @@ export function useProductReviews(productId: string, params: ReviewQueryParams =
                 searchParams.set('rating', rating.toString());
             }
 
-            const response = await fetch(`/api/review/product/${productId}?${searchParams}`);
+            const response = await fetch(`/api/review/product/${productId}?${searchParams}`, { cache: 'no-store' });
 
             if (!response.ok) {
                 throw new Error('Failed to fetch product reviews');
@@ -52,7 +52,7 @@ export function useProductReviews(productId: string, params: ReviewQueryParams =
             return response.json();
         },
         enabled: !!productId,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 0,
     });
 }
 
@@ -63,7 +63,7 @@ export function useProductReviewStats(productId: string) {
     return useQuery({
         queryKey: [...REVIEW_STATS_QUERY_KEY, productId],
         queryFn: async (): Promise<ReviewStatsResponse> => {
-            const response = await fetch(`/api/review/product/${productId}/stats`);
+            const response = await fetch(`/api/review/product/${productId}/stats`, { cache: 'no-store' });
 
             if (!response.ok) {
                 throw new Error('Failed to fetch review stats');
@@ -72,7 +72,7 @@ export function useProductReviewStats(productId: string) {
             return response.json();
         },
         enabled: !!productId,
-        staleTime: 10 * 60 * 1000, // 10 minutes
+        staleTime: 0,
     });
 }
 
@@ -83,7 +83,7 @@ export function useReview(reviewId: string) {
     return useQuery({
         queryKey: [...REVIEWS_QUERY_KEY, reviewId],
         queryFn: async (): Promise<SingleReviewResponse> => {
-            const response = await fetch(`/api/review/${reviewId}`);
+            const response = await fetch(`/api/review/${reviewId}`, { cache: 'no-store' });
 
             if (!response.ok) {
                 throw new Error('Failed to fetch review');
@@ -128,7 +128,8 @@ export function useUserReviews(params: ReviewQueryParams = {}) {
             const response = await fetch(`/api/review?${searchParams}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cache: 'no-store',
             });
 
             if (!response.ok) {
@@ -159,6 +160,7 @@ export function useCreateReview() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
+                cache: 'no-store',
                 body: JSON.stringify(data)
             });
 
@@ -214,6 +216,7 @@ export function useUpdateReview() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
+                cache: 'no-store',
                 body: JSON.stringify(data)
             });
 
@@ -264,7 +267,8 @@ export function useDeleteReview() {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cache: 'no-store',
             });
 
             const result = await response.json();

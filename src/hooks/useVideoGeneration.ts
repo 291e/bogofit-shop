@@ -43,6 +43,7 @@ async function generateVideo(request: VideoGenerationRequest): Promise<VideoGene
         headers: {
             "Content-Type": "application/json",
         },
+        cache: 'no-store',
         body: JSON.stringify(request),
     });
 

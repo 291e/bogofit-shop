@@ -59,6 +59,8 @@ export interface CreateProductDto {
   categoryId?: string;
   thumbUrl?: string;
   images?: string[];
+  detail_Images?: string[]; // ✅ Renamed to match backend snake_case
+  product_Details?: any[]; // ✅ Changed to any[] to support object arrays
   basePrice: number;
   baseCompareAtPrice?: number;
   quantity?: number | null; // v2.0: product-level inventory (null = unlimited)
@@ -78,6 +80,8 @@ export interface UpdateProductDto {
   categoryId?: string;
   thumbUrl?: string;
   images?: string[];
+  detail_Images?: string[]; // ✅ Renamed to snake_case
+  product_Details?: string[]; // ✅ New field
   basePrice?: number;
   baseCompareAtPrice?: number;
   quantity?: number | null; // v2.0: product-level inventory (null = unlimited)
@@ -102,6 +106,9 @@ export interface ProductResponseDto {
   categoryId?: string;
   thumbUrl?: string;
   images?: string[];
+  detail_Images?: string[]; // ✅ Renamed
+  product_Details?: string[]; // ✅ New field
+  detail: string[];// ✅ v2.4: Detail images for product description
   basePrice: number;
   baseCompareAtPrice?: number;
   finalPrice?: number | null;        // ✅ v2.3: Auto-calculated from promotion (computed on-the-fly)
@@ -219,6 +226,7 @@ export interface ProductForm {
   categoryId?: string;
   thumbUrl?: string;
   images?: string[];
+  detailImages?: string[]; // ✅ v2.4: Detail images for product description
   basePrice: number;
   baseCompareAtPrice?: number;
   quantity?: number | null; // v2.0
@@ -263,6 +271,8 @@ export const convertProductFormToDto = (product: ProductForm): CreateProductDto 
   categoryId: product.categoryId,
   thumbUrl: product.thumbUrl,
   images: product.images,
+  detail_Images: product.detailImages, // ✅ Renamed detailImages to detail_Images
+  product_Details: [], // ✅ Added product_Details field
   basePrice: product.basePrice,
   baseCompareAtPrice: product.baseCompareAtPrice,
   quantity: product.quantity ?? null,
@@ -290,7 +300,3 @@ export const parseOptionsFromJson = (optionsJson: string): VariantOption[] => {
     return [];
   }
 };
-
-
-
-

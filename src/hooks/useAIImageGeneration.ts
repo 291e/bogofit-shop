@@ -23,18 +23,19 @@ export function useAIImageGeneration() {
   const generateImage = useMutation({
     mutationFn: async (request: GenerateImageRequest): Promise<GenerateImageResponse> => {
       setIsGenerating(true);
-      
+
       try {
         const response = await fetch('/api/ai/generate-image', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          cache: 'no-store',
           body: JSON.stringify(request),
         });
 
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.message || 'Failed to generate image');
         }

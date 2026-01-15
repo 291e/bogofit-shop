@@ -32,8 +32,8 @@ interface FileDropzoneProps {
   onClear?: () => void;
   type?: "model" | "clothing"; // 모델 이미지인지 상의/하의인지 구분
   selectedSampleSrc?: string; // Source URL of currently selected sample image
-  version?: "v1" | "v2"; // BOGOFIT V1 or V2
-  solutionType?: "item" | "hair" | "hairColor"; // Solution type for VirtualFittingSolution
+  version?: "v1" | "v2" | "v3"; // BOGOFIT V1 or V2
+  solutionType?: "item" | "hair" | "hairColor" | "background"; // Solution type for VirtualFittingSolution
 }
 
 export function FileDropzone({

@@ -1,12 +1,12 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  Cart, 
-  CartItem, 
-  CreateCartItemDto, 
+import {
+  Cart,
+  CartItem,
+  CreateCartItemDto,
   UpdateCartItemDto,
-  EMPTY_CART 
+  EMPTY_CART
 } from "@/types/cart";
 import { useAuth } from "@/providers/authProvider";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ async function fetchCart(token: string): Promise<Cart> {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -53,11 +54,11 @@ async function fetchCart(token: string): Promise<Cart> {
   }
 
   const data: CartResponse = await response.json();
-  
+
   if (data.success) {
     return data.data;
   }
-  
+
   // Return empty cart if no cart exists
   return EMPTY_CART;
 }
@@ -172,8 +173,8 @@ export function useCart() {
       return fetchCart(token!);
     },
     enabled: isAuthenticated && !!token,
-    staleTime: 30 * 1000, // 30 seconds - cart changes frequently
-    gcTime: 2 * 60 * 1000, // 2 minutes cache time
+    staleTime: 0,
+    gcTime: 0,
   });
 
   return query;
@@ -208,7 +209,7 @@ export function useAddToCart() {
     onSuccess: (newItem) => {
       // ✅ Invalidate cart to refetch
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
-      
+
       // ✅ Show success toast
       toast.success("Added to cart successfully!");
       console.log('✅ Added to cart:', newItem.productName);
@@ -216,11 +217,11 @@ export function useAddToCart() {
     onError: (error: Error) => {
       // ✅ Show error toast
       console.error('❌ Add to cart failed:', error.message);
-      
+
       // Show user-friendly error for stock issues
       if (error.message.includes('Insufficient stock')) {
         toast.error(error.message);
-        } else {
+      } else {
         toast.error("Failed to add to cart");
       }
     }
@@ -251,12 +252,12 @@ export function useUpdateCartItem() {
     onSuccess: (updatedItem) => {
       // ✅ Invalidate cart to refetch
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
-      
+
       console.log('✅ Cart updated:', updatedItem.productName, 'x', updatedItem.quantity);
     },
     onError: (error: Error) => {
       console.error('❌ Update cart item failed:', error.message);
-      
+
       // Show user-friendly error for stock issues
       if (error.message.includes('Insufficient stock')) {
         toast.error(error.message);
@@ -291,7 +292,7 @@ export function useRemoveFromCart() {
     onSuccess: () => {
       // ✅ Invalidate cart to refetch
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
-      
+
       // ✅ Show success toast
       toast.success("Removed from cart");
       console.log('✅ Item removed from cart');
@@ -329,7 +330,7 @@ export function useClearCart() {
     onSuccess: () => {
       // ✅ Invalidate cart to refetch
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
-      
+
       // ✅ Show success toast
       toast.success("Cart cleared");
       console.log('✅ Cart cleared');
@@ -366,11 +367,11 @@ export function useCartCount() {
  */
 export function useIsInCart(productId?: string, variantId?: string) {
   const { data: cart } = useCart();
-  
+
   if (!cart || !productId) return false;
-  
-  return cart.items.some(item => 
-    item.productId === productId && 
+
+  return cart.items.some(item =>
+    item.productId === productId &&
     item.variantId === variantId
   );
 }
@@ -386,11 +387,11 @@ export function useIsInCart(productId?: string, variantId?: string) {
  */
 export function useCartItem(productId?: string, variantId?: string) {
   const { data: cart } = useCart();
-  
+
   if (!cart || !productId) return null;
-  
-  return cart.items.find(item => 
-    item.productId === productId && 
+
+  return cart.items.find(item =>
+    item.productId === productId &&
     item.variantId === variantId
   ) || null;
 }

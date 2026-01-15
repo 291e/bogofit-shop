@@ -68,6 +68,7 @@ async function fetchSellerOrders(
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      cache: 'no-store',
     }
   );
 
@@ -103,6 +104,7 @@ async function updateOrderStatus(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    cache: 'no-store',
     body: JSON.stringify({ status, note }),
   });
 
@@ -132,6 +134,7 @@ async function createOrderFromCart(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    cache: 'no-store',
     body: JSON.stringify(dto),
   });
 
@@ -171,6 +174,7 @@ async function fetchOrders(
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      cache: 'no-store',
     }
   );
 
@@ -201,6 +205,7 @@ async function fetchOrder(orderId: string, token: string): Promise<Order> {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -228,6 +233,7 @@ async function fetchOrderGroup(
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -306,8 +312,8 @@ export function useOrders(page: number = 1, pageSize: number = 20) {
       return fetchOrders(page, pageSize, token);
     },
     enabled: isAuthenticated && !!token,
-    staleTime: 60 * 1000, // 1 minute
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -329,8 +335,8 @@ export function useOrder(orderId: string | undefined) {
       return fetchOrder(orderId, token);
     },
     enabled: isAuthenticated && !!token && !!orderId,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -352,8 +358,8 @@ export function useOrderGroup(groupId: string | undefined) {
       return fetchOrderGroup(groupId, token);
     },
     enabled: isAuthenticated && !!token && !!groupId,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -382,8 +388,8 @@ export function useSellerOrders(
       return fetchSellerOrders(status, page, pageSize, token);
     },
     enabled: isAuthenticated && !!token,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

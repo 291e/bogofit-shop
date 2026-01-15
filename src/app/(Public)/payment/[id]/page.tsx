@@ -47,6 +47,7 @@ export default function PaymentPage({
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        cache: 'no-store',
       });
 
       const data = await response.json();
@@ -73,7 +74,7 @@ export default function PaymentPage({
     }
 
     if (isPaymentProcessing) {
-      console.log("⚠️ Payment already in progress");
+
       return;
     }
 
@@ -102,12 +103,7 @@ export default function PaymentPage({
         ? `${firstOrder.items[0].productTitle} ${firstOrder.items.length > 1 ? `외 ${firstOrder.items.length - 1}건` : ''}`
         : "BOGOFIT 주문";
 
-      console.log("🚀 [PAYMENT] Initiating payment:", {
-        orderId: firstOrderNo,
-        amount,
-        method: selectedMethod,
-        orderName,
-      });
+
 
       // ⚠️ Warning for popup blocker
       toast.info("결제 창이 열립니다. 팝업 차단을 해제해주세요.", { duration: 3000 });
@@ -125,7 +121,7 @@ export default function PaymentPage({
 
       // ⚠️ If we reach here, payment was cancelled or failed
       // Toss should redirect, so this shouldn't execute
-      console.log("⚠️ [PAYMENT] Request completed without redirect - unusual");
+
       setIsPaymentProcessing(false);
 
     } catch (error: unknown) {

@@ -19,7 +19,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { data: cart, isLoading: isLoadingCart } = useCart();
   const createOrder = useCreateOrderFromCart();
-  
+
   const [shippingAddress, setShippingAddress] = useState<CreateOrderAddressDto>({
     recipientName: "",
     phone: "",
@@ -61,29 +61,24 @@ export default function CheckoutPage() {
   };
 
   const handleSubmit = async () => {
-    console.log("🛒 [CHECKOUT] Starting checkout process...");
-    
+
+
     if (!cart || cart.items.length === 0) {
       console.error("❌ [CHECKOUT] Cart is empty");
       alert(t("checkout.validation.cartEmpty"));
       return;
     }
-    console.log("✅ [CHECKOUT] Cart has items:", cart.items.length);
+
 
     if (!validateForm()) {
       console.error("❌ [CHECKOUT] Form validation failed");
       return;
     }
-    console.log("✅ [CHECKOUT] Form validation passed");
-    console.log("📦 [CHECKOUT] Shipping address:", {
-      name: shippingAddress.recipientName,
-      phone: shippingAddress.phone,
-      city: shippingAddress.city,
-      postalCode: shippingAddress.postalCode
-    });
+
+
 
     try {
-      console.log("🔄 [CHECKOUT] Calling createOrder API...");
+
       const result = await createOrder.mutateAsync({
         shippingAddress,
         discountTotal: 0,
@@ -91,21 +86,15 @@ export default function CheckoutPage() {
         taxTotal: 0,
       });
 
-      console.log("✅ [CHECKOUT] Order created successfully!");
-      console.log("📝 [CHECKOUT] Order details:", {
-        orderId: result.id,
-        orderNo: result.orderNo,
-        groupId: result.groupId,
-        status: result.status,
-        itemCount: result.items?.length
-      });
+
+
 
       // Redirect to payment page
       if (result.groupId) {
-        console.log("✅ [CHECKOUT] Order created, redirecting to payment");
+
         router.push(`/payment/${result.groupId}`);
       } else {
-        console.log("⚠️ [CHECKOUT] No groupId, redirecting to orders");
+
         router.push("/myPage?section=order");
       }
     } catch (error) {
@@ -168,7 +157,7 @@ export default function CheckoutPage() {
                   {t("checkout.shippingInfo")}
                 </CardTitle>
               </CardHeader>
-               <CardContent>
+              <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

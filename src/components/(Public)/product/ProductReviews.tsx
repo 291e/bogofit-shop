@@ -34,7 +34,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
         sortBy: 'createdAt',
         sortOrder: 'desc'
     });
-    const [isSectionOpen, setIsSectionOpen] = useState(true); // Collapsible section state
+
 
     // Always call hooks to satisfy React Hooks rules; conditionally use results
     const { data: statsData, isLoading: statsLoading } = useProductReviewStats(productId);
@@ -114,81 +114,62 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
 
     return (
         <div className="space-y-6">
-            {/* Review Stats Section - Collapsible */}
+            {/* Review Stats Section - Always visible */}
+            {/* Review Stats Section - Simplified */}
             {stats && (
-                <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
-                    <CardHeader>
-                        <button
-                            onClick={() => setIsSectionOpen(!isSectionOpen)}
-                            className="flex items-center gap-2 text-gray-800 hover:text-pink-600 transition-colors w-full text-left"
-                        >
-                            <MessageSquare className="w-5 h-5 text-pink-600" />
-                            <CardTitle className="text-xl font-bold">
-                                {t("productDetail.productReviews.customerReviews")}
-                            </CardTitle>
-                            {pagination && pagination.totalCount > 0 && (
-                                <span className="text-sm text-gray-500 font-normal">
-                                    ({pagination.totalCount})
-                                </span>
-                            )}
-                            {isSectionOpen ? (
-                                <ChevronUp className="w-5 h-5 ml-2" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 ml-2" />
-                            )}
-                        </button>
-                    </CardHeader>
-                    {isSectionOpen && (
-                        <CardContent>
-                            <div className="grid md:grid-cols-2 gap-8">
-                                {/* Overall Rating */}
-                                <div className="text-center">
-                                    <div className="text-4xl font-bold text-gray-900 mb-2">
-                                        {stats.averageRating.toFixed(1)}
-                                    </div>
-                                    <StarRating rating={stats.averageRating} size="large" />
-                                    <div className="text-sm text-gray-600 mt-2">
-                                        {t("productDetail.productReviews.reviews").replace("{count}", stats.totalReviews.toString())}
-                                    </div>
-                                </div>
-
-                                {/* Rating Distribution */}
-                                <div className="space-y-2">
-                                    {[5, 4, 3, 2, 1].map(rating => {
-                                        const count = stats.ratingDistribution[rating] || 0;
-                                        const percentage = getPercentage(rating, stats);
-
-                                        return (
-                                            <div key={rating} className="flex items-center gap-3">
-                                                <div className="flex items-center gap-1 w-12">
-                                                    <span className="text-sm font-medium">{rating}</span>
-                                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                                </div>
-                                                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                                    <div
-                                                        className="bg-gradient-to-r from-pink-400 to-purple-400 h-2 rounded-full transition-all duration-300"
-                                                        style={{ width: `${percentage}%` }}
-                                                    />
-                                                </div>
-                                                <div className="text-sm text-gray-600 w-8 text-right">
-                                                    {count}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                <div className="bg-gray-50 rounded-xl p-8 mb-8">
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-12">
+                        {/* Overall Rating */}
+                        <div className="text-center">
+                            <div className="text-5xl font-bold text-gray-900 mb-2">
+                                {stats.averageRating.toFixed(1)}
                             </div>
-                        </CardContent>
-                    )}
-                </Card>
+                            <StarRating rating={stats.averageRating} size="medium" />
+                            <div className="text-sm text-gray-500 mt-2">
+                                {t("productDetail.productReviews.reviews").replace("{count}", stats.totalReviews.toString())}
+                            </div>
+                        </div>
+
+                        {/* Vertical Divider */}
+                        <div className="hidden md:block w-px h-24 bg-gray-200"></div>
+
+                        {/* Rating Distribution */}
+                        <div className="flex-1 max-w-sm w-full space-y-2">
+                            {[5, 4, 3, 2, 1].map(rating => {
+                                const count = stats.ratingDistribution[rating] || 0;
+                                const percentage = getPercentage(rating, stats);
+
+                                return (
+                                    <div key={rating} className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1 w-8">
+                                            <span className="text-xs font-medium text-gray-600">{rating}점</span>
+                                        </div>
+                                        <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                            <div
+                                                className="bg-black h-full rounded-full"
+                                                style={{ width: `${percentage}%` }}
+                                            />
+                                        </div>
+                                        <div className="text-xs text-gray-400 w-8 text-right">
+                                            {count}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
             )}
 
-            {/* Reviews List Section - Only show when section is open */}
-            {fetchList && isSectionOpen && (
-                <Card>
-                    <CardContent className="pt-6">
-                        {/* Filters */}
-                        <div className="flex flex-wrap gap-4 items-center mb-6">
+            {/* Reviews List Section - Always visible */}
+            {fetchList && (
+                <div className="space-y-6">
+                    {/* Filters */}
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+                        <div className="text-lg font-bold">
+                            리뷰 ({stats?.totalReviews || 0})
+                        </div>
+                        <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                                 <label className="text-sm font-medium text-gray-700">{t("productDetail.productReviews.sort")}</label>
                                 <Select value={`${queryParams.sortBy}-${queryParams.sortOrder}`} onValueChange={handleSortChange}>
@@ -221,155 +202,155 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                                 </Select>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Reviews List */}
-                        {reviews.length === 0 ? (
-                            <div className="text-center py-12">
-                                <div className="text-6xl mb-4">📝</div>
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                    {t("productDetail.productReviews.noReviewsDescription")}
-                                </h3>
-                                <p className="text-gray-600">
-                                    {t("productDetail.productReviews.noReviewsHelp")}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-6">
-                                {reviews.map((review) => (
-                                    <Card key={review.id} className="border-0 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
-                                        <CardContent className="p-6">
-                                            {/* Review Header */}
-                                            <div className="flex items-start gap-4 mb-4">
-                                                <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full flex items-center justify-center flex-shrink-0">
-                                                    <span className="text-white font-semibold text-lg">
-                                                        {review.user.name.charAt(0).toUpperCase()}
+                    {/* Reviews List */}
+                    {reviews.length === 0 ? (
+                        <div className="text-center py-12">
+                            <div className="text-6xl mb-4">📝</div>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                                {t("productDetail.productReviews.noReviewsDescription")}
+                            </h3>
+                            <p className="text-gray-600">
+                                {t("productDetail.productReviews.noReviewsHelp")}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {reviews.map((review) => (
+                                <Card key={review.id} className="border-0 shadow-sm bg-white hover:shadow-md transition-shadow duration-200">
+                                    <CardContent className="p-6">
+                                        {/* Review Header */}
+                                        <div className="flex items-start gap-4 mb-4">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <span className="text-white font-semibold text-lg">
+                                                    {review.user.name.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="font-medium text-gray-900 text-lg">
+                                                        {review.user.name}
+                                                    </span>
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {t("productDetail.productReviews.purchaseConfirmed")}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <StarRating rating={review.rating} size="small" />
+                                                    <span className="text-sm text-gray-500">
+                                                        {formatDate(review.createdAt)}
                                                     </span>
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <span className="font-medium text-gray-900 text-lg">
-                                                            {review.user.name}
-                                                        </span>
-                                                        <Badge variant="secondary" className="text-xs">
-                                                            {t("productDetail.productReviews.purchaseConfirmed")}
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <StarRating rating={review.rating} size="small" />
-                                                        <span className="text-sm text-gray-500">
-                                                            {formatDate(review.createdAt)}
-                                                        </span>
-                                                    </div>
-                                                </div>
                                             </div>
+                                        </div>
 
-                                            {/* Review Content */}
-                                            {review.title && (
-                                                <h4 className="font-medium text-gray-900 mb-3 text-lg">
-                                                    {review.title}
-                                                </h4>
-                                            )}
+                                        {/* Review Content */}
+                                        {review.title && (
+                                            <h4 className="font-medium text-gray-900 mb-3 text-lg">
+                                                {review.title}
+                                            </h4>
+                                        )}
 
-                                            {review.content && (
-                                                <p className="text-gray-700 leading-relaxed mb-4 text-base break-words whitespace-pre-wrap">
-                                                    {review.content}
-                                                </p>
-                                            )}
+                                        {review.content && (
+                                            <p className="text-gray-700 leading-relaxed mb-4 text-base break-words whitespace-pre-wrap">
+                                                {review.content}
+                                            </p>
+                                        )}
 
-                                            {/* Review Images */}
-                                            {review.images.length > 0 && (
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-                                                    {review.images.map((image, index) => (
-                                                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
-                                                            <Image
-                                                                src={image}
-                                                                alt={t("productDetail.productReviews.reviewImage").replace("{index}", (index + 1).toString())}
-                                                                fill
-                                                                className="object-cover hover:scale-105 transition-transform cursor-pointer"
-                                                                sizes="(max-width: 640px) 50vw, 33vw"
-                                                            />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        )}
+                                        {/* Review Images */}
+                                        {review.images.length > 0 && (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+                                                {review.images.map((image, index) => (
+                                                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
+                                                        <Image
+                                                            src={image}
+                                                            alt={t("productDetail.productReviews.reviewImage").replace("{index}", (index + 1).toString())}
+                                                            fill
+                                                            className="object-cover hover:scale-105 transition-transform cursor-pointer"
+                                                            sizes="(max-width: 640px) 50vw, 33vw"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
 
-                        {/* Pagination */}
-                        {pagination && pagination.totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2 mt-8">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(queryParams.page! - 1)}
-                                    disabled={queryParams.page === 1}
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                    {t("productDetail.productReviews.previous")}
-                                </Button>
+                    {/* Pagination */}
+                    {pagination && pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-8">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(queryParams.page! - 1)}
+                                disabled={queryParams.page === 1}
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                {t("productDetail.productReviews.previous")}
+                            </Button>
 
-                                <div className="flex items-center gap-1">
-                                    {(() => {
-                                        const totalPages = pagination.totalPages;
-                                        const currentPage = queryParams.page || 1;
-                                        const pages: number[] = [];
+                            <div className="flex items-center gap-1">
+                                {(() => {
+                                    const totalPages = pagination.totalPages;
+                                    const currentPage = queryParams.page || 1;
+                                    const pages: number[] = [];
 
-                                        // Show up to 5 pages around current page
-                                        if (totalPages <= 5) {
-                                            // Show all pages if total <= 5
-                                            for (let i = 1; i <= totalPages; i++) {
+                                    // Show up to 5 pages around current page
+                                    if (totalPages <= 5) {
+                                        // Show all pages if total <= 5
+                                        for (let i = 1; i <= totalPages; i++) {
+                                            pages.push(i);
+                                        }
+                                    } else {
+                                        // Show pages around current page
+                                        if (currentPage <= 3) {
+                                            // Near the beginning
+                                            for (let i = 1; i <= 5; i++) {
+                                                pages.push(i);
+                                            }
+                                        } else if (currentPage >= totalPages - 2) {
+                                            // Near the end
+                                            for (let i = totalPages - 4; i <= totalPages; i++) {
                                                 pages.push(i);
                                             }
                                         } else {
-                                            // Show pages around current page
-                                            if (currentPage <= 3) {
-                                                // Near the beginning
-                                                for (let i = 1; i <= 5; i++) {
-                                                    pages.push(i);
-                                                }
-                                            } else if (currentPage >= totalPages - 2) {
-                                                // Near the end
-                                                for (let i = totalPages - 4; i <= totalPages; i++) {
-                                                    pages.push(i);
-                                                }
-                                            } else {
-                                                // In the middle
-                                                for (let i = currentPage - 2; i <= currentPage + 2; i++) {
-                                                    pages.push(i);
-                                                }
+                                            // In the middle
+                                            for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+                                                pages.push(i);
                                             }
                                         }
+                                    }
 
-                                        return pages.map((page) => (
-                                            <Button
-                                                key={page}
-                                                variant={currentPage === page ? "default" : "outline"}
-                                                size="sm"
-                                                onClick={() => handlePageChange(page)}
-                                                className="w-8 h-8 p-0"
-                                            >
-                                                {page}
-                                            </Button>
-                                        ));
-                                    })()}
-                                </div>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(queryParams.page! + 1)}
-                                    disabled={queryParams.page === pagination.totalPages}
-                                >
-                                    {t("productDetail.productReviews.next")}
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
+                                    return pages.map((page) => (
+                                        <Button
+                                            key={page}
+                                            variant={currentPage === page ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => handlePageChange(page)}
+                                            className="w-8 h-8 p-0"
+                                        >
+                                            {page}
+                                        </Button>
+                                    ));
+                                })()}
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(queryParams.page! + 1)}
+                                disabled={queryParams.page === pagination.totalPages}
+                            >
+                                {t("productDetail.productReviews.next")}
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );

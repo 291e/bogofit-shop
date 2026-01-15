@@ -552,7 +552,9 @@
                     },
                     "edit": {
                         "title": "Chỉnh sửa sản phẩm",
-                        "description": "Hãy chỉnh sửa thông tin sản phẩm"
+                        "loading": "Đang tải sản phẩm",
+                        "description": "Hãy chỉnh sửa thông tin sản phẩm",
+                        "update": "Cập nhật"
                     }
                 }
             }
@@ -755,6 +757,18 @@
         },
         "orderDetail": {
             "title": "Chi tiết đơn hàng",
+            "status": {
+                "pending": "Chờ thanh toán",
+                "confirmed": "Đã xác nhận",
+                "processing": "Đang chuẩn bị hàng",
+                "shipping": "Đang giao hàng",
+                "shipped": "Đã giao hàng",
+                "delivered": "Đã giao hàng",
+                "completed": "Đã hoàn thành",
+                "canceled": "Đã hủy",
+                "refunded": "Đã hoàn tiền",
+                "failed": "Thanh toán thất bại"
+            },
             "loading": "Đang tải thông tin đơn hàng...",
             "error": "Đã xảy ra lỗi",
             "retry": "Thử lại",
@@ -1033,15 +1047,17 @@
             "imageUpload": "Tải ảnh lên",
             "aiEngineSelection": "Chọn engine AI",
             "notSelected": "Chưa chọn",
-            "v1Description": "Kết quả ổn định (khoảng 20 giây) · Hỗ trợ cả áo và quần",
-            "v2Description": "Kết quả nhanh (khoảng 15 giây) · Chỉ hỗ trợ áo và item",
+            "v1Description": "Kết quả thử đồ nhanh trong khoảng 15 giây · Hỗ trợ áo (phần thân trên)",
+            "v2Description": "Chức năng thử đồ toàn bộ trong khoảng 40 giây · Hỗ trợ áo – quần – phụ kiện",
+            "v3Description": "Kết quả ổn định trong khoảng 40 giây · Hỗ trợ áo – quần – nền",
             "modelImage": "Ảnh mẫu",
             "fullBodyPhotoRecommended": "Khuyến nghị ảnh toàn thân",
             "topImage": "Ảnh áo",
             "required": "Bắt buộc",
             "bottomImage": "Ảnh quần",
-            "itemImage": "Ảnh item",
-            "itemTitle": "Tên item (tùy chọn)",
+            "itemImage": "Ảnh phụ kiện",
+            "backgroundImage": "Ảnh nền",
+            "itemTitle": "Tên phụ kiện (tùy chọn)",
             "optional": "Không bắt buộc",
             "inquiryPlaceholder": "Nhập nội dung câu hỏi (tối thiểu 10 ký tự)",
             "characters": "{count} / 2000 ký tự",
@@ -1214,10 +1230,11 @@
         "fileDropzone": {
             "dropFile": "Thả tệp vào đây",
             "uploadModelImage": "Tải lên ảnh mẫu",
-            "uploadItemImage": "Tải lên ảnh item",
+            "uploadItemImage": "Tải lên ảnh phụ kiện",
             "uploadHairImage": "Tải lên ảnh kiểu tóc",
             "uploadBottomImage": "Tải lên ảnh quần",
-            "uploadClothingImage": "Tải lên ảnh quần áo",
+            "uploadClothingImage": "Tải lên ảnh quần",
+            "uploadBackgroundImage": "Tải lên ảnh nền",
             "dragOrClick": "Kéo thả tệp hoặc nhấn để chọn",
             "supportedFormats": "Định dạng hỗ trợ: JPG, PNG, WEBP",
             "selectSampleImage": "Chọn ảnh mẫu",
@@ -1230,7 +1247,7 @@
                 "outerSample": "Ảnh mẫu áo khoác {number}",
                 "dressSample": "Ảnh mẫu váy liền {number}",
                 "lowerSample": "Ảnh mẫu quần {number}",
-                "itemSample": "Ảnh mẫu item {number}",
+                "itemSample": "Ảnh mẫu phụ kiện {number}",
                 "hairSample": "Ảnh mẫu tóc {number}",
                 "backgroundImage": "Ảnh nền {number}"
             }

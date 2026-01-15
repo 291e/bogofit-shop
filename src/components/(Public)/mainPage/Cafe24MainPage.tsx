@@ -17,7 +17,7 @@ async function fetchBestSellers(): Promise<ProductResponseDto[]> {
     const response = await fetch(
       `${API_URL}/api/Product?page=3&pageSize=30&isActive=true&sortBy=updatedAt&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by recently updated (popular) with reviews
       {
-        next: { revalidate: 300 } // 5분 캐시
+        cache: 'no-store' // 캐시 사용 안 함
       }
     );
 
@@ -38,7 +38,7 @@ async function fetchNewArrivals(): Promise<ProductResponseDto[]> {
     const response = await fetch(
       `${API_URL}/api/Product?page=1&pageSize=60&isActive=true&sortBy=createdAt&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by newest with reviews
       {
-        next: { revalidate: 300 }, // 5분 캐시
+        cache: 'no-store', // 캐시 사용 안 함
       }
     );
 
@@ -58,7 +58,7 @@ async function fetchSpecialOffers(): Promise<ProductResponseDto[]> {
     const response = await fetch(
       `${API_URL}/api/Product?page=1&pageSize=30&isActive=true&sortBy=discount&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by discount with reviews
       {
-        next: { revalidate: 300 }, // 5분 캐시
+        cache: 'no-store', // 캐시 사용 안 함
       }
     );
 
@@ -83,7 +83,7 @@ async function fetchFeaturedProducts(): Promise<ProductResponseDto[]> {
     const response = await fetch(
       `${API_URL}/api/Product?page=2&pageSize=30&isActive=true&sortBy=basePrice&sortOrder=desc&include=true&includeReviewStats=true`, // Sort by price (premium) with reviews
       {
-        next: { revalidate: 300 }, // 5분 캐시
+        cache: 'no-store', // 캐시 사용 안 함
       }
     );
 
@@ -101,7 +101,7 @@ async function fetchAllProducts(): Promise<ProductResponseDto[]> {
     const response = await fetch(
       `${API_URL}/api/Product?page=1&pageSize=12&isActive=true&include=true&includeReviewStats=true`, // 초기 12개 (2행) with reviews
       {
-        next: { revalidate: 300 }, // 5분 캐시
+        cache: 'no-store', // 캐시 사용 안 함
       }
     );
 

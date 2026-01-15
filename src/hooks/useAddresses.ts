@@ -19,15 +19,16 @@ export function useAddresses(options: UseAddressesOptions = {}) {
       if (addressType) queryParams.append('addressType', addressType);
       if (brandId) queryParams.append('brandId', brandId);
       if (onlyDefault) queryParams.append('onlyDefault', 'true');
-      
+
       const queryString = queryParams.toString();
       const url = `/api/addresses${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        cache: 'no-store',
       });
 
       if (!response.ok) {
@@ -39,7 +40,8 @@ export function useAddresses(options: UseAddressesOptions = {}) {
       return data.addresses || [];
     },
     enabled: !!token,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -68,7 +70,7 @@ export function useCreateAddress(brandId?: string) {
     },
     onSuccess: (data) => {
       console.log('✅', data.message);
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: ['addresses'],
         exact: false
       });
@@ -104,7 +106,7 @@ export function useUpdateAddress() {
     },
     onSuccess: (data) => {
       console.log('✅', data.message);
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: ['addresses'],
         exact: false
       });
@@ -139,7 +141,7 @@ export function useDeleteAddress() {
     },
     onSuccess: (data) => {
       console.log('✅', data.message);
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: ['addresses'],
         exact: false
       });
@@ -175,9 +177,9 @@ export function useSetDefaultAddress() {
     onSuccess: (data) => {
       // ✅ Show success message from backend
       console.log('✅', data.message);
-      
+
       // ✅ Invalidate all address queries
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: ['addresses'],
         exact: false
       });

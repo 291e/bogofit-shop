@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  getTossPaymentStatus, 
-  cancelTossPayment 
+import {
+  getTossPaymentStatus,
+  cancelTossPayment
 } from "@/lib/payment/toss";
 import { useAuth } from "@/providers/authProvider";
 import { toast } from "sonner";
@@ -35,8 +35,8 @@ export function usePaymentStatus(paymentKey: string | undefined) {
       return getTossPaymentStatus(paymentKey, token);
     },
     enabled: isAuthenticated && !!token && !!paymentKey,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -79,14 +79,14 @@ export function useCancelPayment() {
       queryClient.invalidateQueries({
         queryKey: PAYMENT_QUERY_KEYS.status(variables.paymentKey),
       });
-      
+
       // Invalidate order queries (payment affects order status)
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      
+
       const isPartial = !!variables.cancelAmount;
       toast.success(
-        isPartial 
-          ? `₩${variables.cancelAmount?.toLocaleString()} 부분 환불 완료` 
+        isPartial
+          ? `₩${variables.cancelAmount?.toLocaleString()} 부분 환불 완료`
           : "결제 취소 완료"
       );
       console.log("✅ Payment canceled:", data);

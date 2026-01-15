@@ -109,312 +109,289 @@ export const ProductInquiries: React.FC<ProductInquiriesProps> = ({
 
     return (
         <div className="space-y-6">
-            {/* Header - Collapsible */}
-            <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <button
-                            onClick={() => setIsSectionOpen(!isSectionOpen)}
-                            className="flex items-center gap-2 text-gray-800 hover:text-pink-600 transition-colors"
-                        >
-                            <MessageSquare className="w-5 h-5 text-pink-600" />
-                            <CardTitle className="text-xl font-bold">
-                                {t("productDetail.productInquiries.productInquiries")}
-                            </CardTitle>
-                            {pagination && pagination.totalCount > 0 && (
-                                <span className="text-sm text-gray-500 font-normal">
-                                    ({pagination.totalCount})
-                                </span>
-                            )}
-                            {isSectionOpen ? (
-                                <ChevronUp className="w-5 h-5 ml-2" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 ml-2" />
-                            )}
-                        </button>
-                        {isAuthenticated && (
-                            <Button
-                                onClick={() => setShowCreateForm(!showCreateForm)}
-                                variant="outline"
-                                size="sm"
+            {/* Header - Simple */}
+            <div className="flex items-center justify-between border-b pb-4 mb-6">
+                <div className="flex items-center gap-2 text-gray-800">
+                    <h3 className="text-lg font-bold">
+                        {t("productDetail.productInquiries.productInquiries")}
+                    </h3>
+                    {pagination && pagination.totalCount > 0 && (
+                        <span className="text-sm text-gray-500 font-normal">
+                            ({pagination.totalCount})
+                        </span>
+                    )}
+                </div>
+                {isAuthenticated && (
+                    <Button
+                        onClick={() => setShowCreateForm(!showCreateForm)}
+                        variant="outline"
+                        size="sm"
+                    >
+                        {showCreateForm ? t("productDetail.productInquiries.cancel") : t("productDetail.productInquiries.createInquiry")}
+                    </Button>
+                )}
+            </div>
+
+            {/* Create Form */}
+            {showCreateForm && isAuthenticated && (
+                <div className="bg-gray-50 p-6 rounded-xl mb-8">
+                    <h4 className="text-lg font-semibold mb-4">{t("productDetail.productInquiries.newInquiry")}</h4>
+                    <form onSubmit={handleCreateInquiry} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="question">{t("productDetail.productInquiries.inquiryContent")}</Label>
+                            <Textarea
+                                id="question"
+                                value={question}
+                                onChange={(e) => setQuestion(e.target.value)}
+                                placeholder={t("productDetail.productInquiries.inquiryPlaceholder")}
+                                rows={5}
+                                required
+                                minLength={10}
+                                maxLength={2000}
+                                className="resize-none bg-white"
+                            />
+                            <p className="text-sm text-gray-500">
+                                {t("productDetail.productInquiries.characters").replace("{count}", question.length.toString())}
+                            </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="isSecret"
+                                checked={isSecret}
+                                onCheckedChange={(checked) => setIsSecret(checked as boolean)}
+                            />
+                            <Label
+                                htmlFor="isSecret"
+                                className="text-sm font-normal cursor-pointer"
                             >
-                                {showCreateForm ? t("productDetail.productInquiries.cancel") : t("productDetail.productInquiries.createInquiry")}
+                                {t("productDetail.productInquiries.secretInquiry")}
+                            </Label>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <Button
+                                type="submit"
+                                disabled={createMutation.isPending || question.length < 10}
+                                className="flex-1"
+                            >
+                                {createMutation.isPending ? t("productDetail.productInquiries.registering") : t("productDetail.productInquiries.registerInquiry")}
                             </Button>
-                        )}
-                    </div>
-                </CardHeader>
-            </Card>
-
-            {/* Create Form - Only show when section is open */}
-            {showCreateForm && isAuthenticated && isSectionOpen && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">{t("productDetail.productInquiries.newInquiry")}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleCreateInquiry} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="question">{t("productDetail.productInquiries.inquiryContent")}</Label>
-                                <Textarea
-                                    id="question"
-                                    value={question}
-                                    onChange={(e) => setQuestion(e.target.value)}
-                                    placeholder={t("productDetail.productInquiries.inquiryPlaceholder")}
-                                    rows={5}
-                                    required
-                                    minLength={10}
-                                    maxLength={2000}
-                                    className="resize-none"
-                                />
-                                <p className="text-sm text-gray-500">
-                                    {t("productDetail.productInquiries.characters").replace("{count}", question.length.toString())}
-                                </p>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="isSecret"
-                                    checked={isSecret}
-                                    onCheckedChange={(checked) => setIsSecret(checked as boolean)}
-                                />
-                                <Label
-                                    htmlFor="isSecret"
-                                    className="text-sm font-normal cursor-pointer"
-                                >
-                                    {t("productDetail.productInquiries.secretInquiry")}
-                                </Label>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Button
-                                    type="submit"
-                                    disabled={createMutation.isPending || question.length < 10}
-                                    className="flex-1"
-                                >
-                                    {createMutation.isPending ? t("productDetail.productInquiries.registering") : t("productDetail.productInquiries.registerInquiry")}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        setShowCreateForm(false);
-                                        setQuestion('');
-                                        setIsSecret(false);
-                                    }}
-                                >
-                                    {t("productDetail.productInquiries.cancel")}
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setShowCreateForm(false);
+                                    setQuestion('');
+                                    setIsSecret(false);
+                                }}
+                            >
+                                {t("productDetail.productInquiries.cancel")}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
             )}
 
             {!isAuthenticated && (
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="text-center">
-                            <p className="text-gray-600 mb-4">
-                                {t("productDetail.productInquiries.loginToInquire")}
-                            </p>
-                            <Button
-                                onClick={() => {
-                                    window.location.href = '/login';
-                                }}
-                                variant="outline"
-                            >
-                                {t("productDetail.productInquiries.login")}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="text-center py-8 bg-gray-50 rounded-xl mb-8">
+                    <p className="text-gray-600 mb-4">
+                        {t("productDetail.productInquiries.loginToInquire")}
+                    </p>
+                    <Button
+                        onClick={() => {
+                            window.location.href = '/login';
+                        }}
+                        variant="outline"
+                    >
+                        {t("productDetail.productInquiries.login")}
+                    </Button>
+                </div>
             )}
 
-            {/* Inquiries List - Only show when section is open */}
-            {fetchList && isSectionOpen && (
-                <Card>
-                    <CardContent className="pt-6">
-                        {/* Inquiries List */}
-                        {inquiries.length === 0 ? (
-                            <div className="text-center py-12">
-                                <div className="text-6xl mb-4">💬</div>
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                    {t("productDetail.productInquiries.noInquiries")}
-                                </h3>
-                                <p className="text-gray-600">
-                                    {t("productDetail.productInquiries.noInquiriesDescription")}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-6">
-                                {inquiries.map((inquiry: ProductInquiry) => (
-                                    <Card
-                                        key={inquiry.id}
-                                        className="border-0 shadow-sm bg-white hover:shadow-md transition-shadow duration-200"
-                                    >
-                                        <CardContent className="p-6">
-                                            {/* Inquiry Header */}
-                                            <div className="flex items-start gap-4 mb-4">
-                                                <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full flex items-center justify-center flex-shrink-0">
-                                                    <span className="text-white font-semibold text-lg">
-                                                        {inquiry.user.name.charAt(0).toUpperCase()}
-                                                    </span>
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <span className="font-medium text-gray-900 text-lg">
-                                                            {inquiry.user.name}
-                                                        </span>
-                                                        {inquiry.isSecret && (
-                                                            <Badge variant="secondary" className="text-xs bg-gray-100">
-                                                                <Lock className="w-3 h-3 mr-1" />
-                                                                {t("productDetail.productInquiries.secret")}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex items-center gap-3 text-sm text-gray-500">
-                                                        <Calendar className="w-4 h-4" />
-                                                        {formatDate(inquiry.createdAt)}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Question */}
-                                            <div className="mb-4">
-                                                <div className="flex items-start gap-2 mb-2">
-                                                    <span className="font-bold text-pink-600 text-lg">Q:</span>
-                                                    {inquiry.isSecret && user?.id !== inquiry.userId ? (
-                                                        <div className="flex-1 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                                            <p className="text-gray-500 italic text-sm flex items-center gap-2">
-                                                                <Lock className="w-4 h-4" />
-                                                                {t("productDetail.productInquiries.secretInquiryDescription")}
-                                                            </p>
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-gray-700 leading-relaxed text-base break-words whitespace-pre-wrap flex-1">
-                                                            {inquiry.question}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Answer */}
-                                            {inquiry.answer ? (
-                                                <div className="mt-4 pt-4 border-t border-gray-200">
-                                                    {inquiry.isSecret && user?.id !== inquiry.userId ? (
-                                                        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                                            <p className="text-gray-500 italic text-sm flex items-center gap-2">
-                                                                <Lock className="w-4 h-4" />
-                                                                {t("productDetail.productInquiries.secretAnswerDescription")}
-                                                            </p>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <div className="flex items-start gap-2 mb-2">
-                                                                <span className="font-bold text-purple-600 text-lg">A:</span>
-                                                                <p className="text-gray-700 leading-relaxed text-base break-words whitespace-pre-wrap flex-1">
-                                                                    {inquiry.answer}
-                                                                </p>
-                                                            </div>
-                                                            {(inquiry.answeredByUser || inquiry.answeredAt) && (
-                                                                <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
-                                                                    {inquiry.answeredByUser && (
-                                                                        <>
-                                                                            <User className="w-4 h-4" />
-                                                                            <span>{t("productDetail.productInquiries.seller").replace("{name}", inquiry.answeredByUser.name)}</span>
-                                                                            {inquiry.answeredAt && <span className="text-gray-300">•</span>}
-                                                                        </>
-                                                                    )}
-                                                                    {inquiry.answeredAt && (
-                                                                        <>
-                                                                            <Calendar className="w-4 h-4" />
-                                                                            <span>{formatDate(inquiry.answeredAt)}</span>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            ) : null}
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Pagination */}
-                        {pagination && pagination.totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2 mt-8">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(queryParams.page! - 1)}
-                                    disabled={queryParams.page === 1}
+            {/* Inquiries List - Always visible */}
+            {fetchList && (
+                <div className="space-y-0">
+                    {/* Inquiries List */}
+                    {inquiries.length === 0 ? (
+                        <div className="text-center py-12">
+                            <div className="text-6xl mb-4">💬</div>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                                {t("productDetail.productInquiries.noInquiries")}
+                            </h3>
+                            <p className="text-gray-600">
+                                {t("productDetail.productInquiries.noInquiriesDescription")}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {inquiries.map((inquiry: ProductInquiry) => (
+                                <Card
+                                    key={inquiry.id}
+                                    className="border-0 shadow-sm bg-white hover:shadow-md transition-shadow duration-200"
                                 >
-                                    <ChevronLeft className="w-4 h-4" />
-                                    {t("productDetail.productInquiries.previous")}
-                                </Button>
+                                    <CardContent className="p-6">
+                                        {/* Inquiry Header */}
+                                        <div className="flex items-start gap-4 mb-4">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <span className="text-white font-semibold text-lg">
+                                                    {inquiry.user.name.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="font-medium text-gray-900 text-lg">
+                                                        {inquiry.user.name}
+                                                    </span>
+                                                    {inquiry.isSecret && (
+                                                        <Badge variant="secondary" className="text-xs bg-gray-100">
+                                                            <Lock className="w-3 h-3 mr-1" />
+                                                            {t("productDetail.productInquiries.secret")}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-3 text-sm text-gray-500">
+                                                    <Calendar className="w-4 h-4" />
+                                                    {formatDate(inquiry.createdAt)}
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                <div className="flex items-center gap-1">
-                                    {(() => {
-                                        const totalPages = pagination.totalPages;
-                                        const currentPage = queryParams.page || 1;
-                                        const pages: number[] = [];
+                                        {/* Question */}
+                                        <div className="mb-4">
+                                            <div className="flex items-start gap-2 mb-2">
+                                                <span className="font-bold text-pink-600 text-lg">Q:</span>
+                                                {inquiry.isSecret && user?.id !== inquiry.userId ? (
+                                                    <div className="flex-1 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                                        <p className="text-gray-500 italic text-sm flex items-center gap-2">
+                                                            <Lock className="w-4 h-4" />
+                                                            {t("productDetail.productInquiries.secretInquiryDescription")}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-gray-700 leading-relaxed text-base break-words whitespace-pre-wrap flex-1">
+                                                        {inquiry.question}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
 
-                                        // Show up to 5 pages around current page
-                                        if (totalPages <= 5) {
-                                            // Show all pages if total <= 5
-                                            for (let i = 1; i <= totalPages; i++) {
+                                        {/* Answer */}
+                                        {inquiry.answer ? (
+                                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                                {inquiry.isSecret && user?.id !== inquiry.userId ? (
+                                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                                        <p className="text-gray-500 italic text-sm flex items-center gap-2">
+                                                            <Lock className="w-4 h-4" />
+                                                            {t("productDetail.productInquiries.secretAnswerDescription")}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="flex items-start gap-2 mb-2">
+                                                            <span className="font-bold text-purple-600 text-lg">A:</span>
+                                                            <p className="text-gray-700 leading-relaxed text-base break-words whitespace-pre-wrap flex-1">
+                                                                {inquiry.answer}
+                                                            </p>
+                                                        </div>
+                                                        {(inquiry.answeredByUser || inquiry.answeredAt) && (
+                                                            <div className="flex items-center gap-2 mt-3 text-sm text-gray-500">
+                                                                {inquiry.answeredByUser && (
+                                                                    <>
+                                                                        <User className="w-4 h-4" />
+                                                                        <span>{t("productDetail.productInquiries.seller").replace("{name}", inquiry.answeredByUser.name)}</span>
+                                                                        {inquiry.answeredAt && <span className="text-gray-300">•</span>}
+                                                                    </>
+                                                                )}
+                                                                {inquiry.answeredAt && (
+                                                                    <>
+                                                                        <Calendar className="w-4 h-4" />
+                                                                        <span>{formatDate(inquiry.answeredAt)}</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        ) : null}
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    {pagination && pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-8">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(queryParams.page! - 1)}
+                                disabled={queryParams.page === 1}
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                {t("productDetail.productInquiries.previous")}
+                            </Button>
+
+                            <div className="flex items-center gap-1">
+                                {(() => {
+                                    const totalPages = pagination.totalPages;
+                                    const currentPage = queryParams.page || 1;
+                                    const pages: number[] = [];
+
+                                    // Show up to 5 pages around current page
+                                    if (totalPages <= 5) {
+                                        // Show all pages if total <= 5
+                                        for (let i = 1; i <= totalPages; i++) {
+                                            pages.push(i);
+                                        }
+                                    } else {
+                                        // Show pages around current page
+                                        if (currentPage <= 3) {
+                                            // Near the beginning
+                                            for (let i = 1; i <= 5; i++) {
+                                                pages.push(i);
+                                            }
+                                        } else if (currentPage >= totalPages - 2) {
+                                            // Near the end
+                                            for (let i = totalPages - 4; i <= totalPages; i++) {
                                                 pages.push(i);
                                             }
                                         } else {
-                                            // Show pages around current page
-                                            if (currentPage <= 3) {
-                                                // Near the beginning
-                                                for (let i = 1; i <= 5; i++) {
-                                                    pages.push(i);
-                                                }
-                                            } else if (currentPage >= totalPages - 2) {
-                                                // Near the end
-                                                for (let i = totalPages - 4; i <= totalPages; i++) {
-                                                    pages.push(i);
-                                                }
-                                            } else {
-                                                // In the middle
-                                                for (let i = currentPage - 2; i <= currentPage + 2; i++) {
-                                                    pages.push(i);
-                                                }
+                                            // In the middle
+                                            for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+                                                pages.push(i);
                                             }
                                         }
+                                    }
 
-                                        return pages.map((page) => (
-                                            <Button
-                                                key={page}
-                                                variant={currentPage === page ? "default" : "outline"}
-                                                size="sm"
-                                                onClick={() => handlePageChange(page)}
-                                                className="w-8 h-8 p-0"
-                                            >
-                                                {page}
-                                            </Button>
-                                        ));
-                                    })()}
-                                </div>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handlePageChange(queryParams.page! + 1)}
-                                    disabled={queryParams.page === pagination.totalPages}
-                                >
-                                    {t("productDetail.productInquiries.next")}
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
+                                    return pages.map((page) => (
+                                        <Button
+                                            key={page}
+                                            variant={currentPage === page ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => handlePageChange(page)}
+                                            className="w-8 h-8 p-0"
+                                        >
+                                            {page}
+                                        </Button>
+                                    ));
+                                })()}
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(queryParams.page! + 1)}
+                                disabled={queryParams.page === pagination.totalPages}
+                            >
+                                {t("productDetail.productInquiries.next")}
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );

@@ -137,6 +137,8 @@ export async function PATCH(
       categoryId: body.categoryId ?? undefined,
       thumbUrl: body.thumbUrl ?? undefined,
       images: body.images ?? undefined,
+      detail_Images: body.detail_Images ?? undefined, // ✅ Renamed to detail_Images (snake_case)
+      product_Details: body.product_Details ?? undefined, // ✅ Added product_Details (snake_case)
       basePrice: body.basePrice ?? undefined,
       baseCompareAtPrice: body.baseCompareAtPrice ?? undefined,
       quantity: body.quantity ?? undefined,

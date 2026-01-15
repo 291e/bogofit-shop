@@ -552,7 +552,9 @@
                     },
                     "edit": {
                         "title": "Edit Product",
-                        "description": "Edit product information"
+                        "loading": "Loading product information...",
+                        "description": "Edit product information",
+                        "update": "Update"
                     }
                 }
             }
@@ -755,6 +757,18 @@
         },
         "orderDetail": {
             "title": "Order Details",
+            "status": {
+                "pending": "Pending Payment",
+                "confirmed": "Order Confirmed",
+                "processing": "Preparing Shipment",
+                "shipping": "Shipping",
+                "shipped": "Shipped",
+                "delivered": "Delivered",
+                "completed": "Purchase Confirmed",
+                "canceled": "Canceled",
+                "refunded": "Refunded",
+                "failed": "Payment Failed"
+            },
             "loading": "Loading order information...",
             "error": "An error occurred",
             "retry": "Retry",
@@ -1033,14 +1047,16 @@
             "imageUpload": "Upload Image",
             "aiEngineSelection": "Select AI Engine",
             "notSelected": "Not selected",
-            "v1Description": "Stable fitting results (about 20 seconds) · Supports both top and bottom",
-            "v2Description": "Fast fitting results (about 15 seconds) · Supports tops and items only",
+            "v1Description": "Fast fitting results within about 15 seconds · Supports tops",
+            "v2Description": "Full-body fitting in about 40 seconds · Supports tops, bottoms, and items",
+            "v3Description": "Stable results within about 40 seconds · Supports tops, bottoms, and background",
             "modelImage": "Model Image",
             "fullBodyPhotoRecommended": "Full-body photo recommended",
             "topImage": "Top Image",
             "required": "Required",
             "bottomImage": "Bottom Image",
             "itemImage": "Item Image",
+            "backgroundImage": "Background Image",
             "itemTitle": "Item Name (Optional)",
             "optional": "Optional",
             "inquiryPlaceholder": "Enter your inquiry (at least 10 characters)",
@@ -1218,6 +1234,7 @@
             "uploadHairImage": "Upload hair style image",
             "uploadBottomImage": "Upload bottom image",
             "uploadClothingImage": "Upload clothing image",
+            "uploadBackgroundImage": "Upload background image",
             "dragOrClick": "Drag and drop files or click to select",
             "supportedFormats": "Supported formats: JPG, PNG, WEBP",
             "selectSampleImage": "Select Sample Image",
@@ -1263,6 +1280,10 @@
             "priceHigh": "Price: High to Low",
             "name": "Name"
         },
-        "allLoaded": "All products have been loaded."
+        "allLoaded": "All products have been loaded.",
+        "products": "{brandName} Products ({count})",
+        "noProducts": "No products available",
+        "noProductsDescription": "There are no products for this brand yet.",
+        "loadingMore": "Loading more..."
     }
 }

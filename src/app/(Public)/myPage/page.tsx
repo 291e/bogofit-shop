@@ -18,7 +18,7 @@ function MyPageSuspenseWrapper() {
   const { t } = useLanguage();
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen w-full flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
           <p className="text-gray-600">{t("myPage.loading")}</p>
@@ -73,7 +73,7 @@ function MyPageContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-16 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
           {/* Left Sidebar Navigation */}
           <div className="lg:col-span-2">
@@ -89,33 +89,30 @@ function MyPageContent() {
                   <div className="px-4 py-2">
                     <button
                       onClick={() => setActiveTab("order")}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                        activeTab === "order"
-                          ? "bg-purple-100 text-purple-700 font-medium"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === "order"
+                        ? "bg-purple-100 text-purple-700 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                        }`}
                     >
                       <Clock className="w-5 h-5" />
                       <span>{t("myPage.sections.orderHistory")}</span>
                     </button>
                     <button
                       onClick={() => setActiveTab("coupon")}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                        activeTab === "coupon"
-                          ? "bg-purple-100 text-purple-700 font-medium"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === "coupon"
+                        ? "bg-purple-100 text-purple-700 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                        }`}
                     >
                       <Ticket className="w-5 h-5" />
                       <span>{t("myPage.sections.couponHistory")}</span>
                     </button>
                     <button
                       onClick={() => setActiveTab("address")}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                        activeTab === "address"
-                          ? "bg-purple-100 text-purple-700 font-medium"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === "address"
+                        ? "bg-purple-100 text-purple-700 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                        }`}
                     >
                       <MapPin className="w-5 h-5" />
                       <span>{t("myPage.sections.addressManagement")}</span>
@@ -131,11 +128,10 @@ function MyPageContent() {
                   <div className="px-4 py-2">
                     <button
                       onClick={() => setActiveTab("recent")}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                        activeTab === "recent"
-                          ? "bg-purple-100 text-purple-700 font-medium"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === "recent"
+                        ? "bg-purple-100 text-purple-700 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                        }`}
                     >
                       <Clock className="w-5 h-5" />
                       <span>{t("myPage.sections.recentlyViewed")}</span>
@@ -151,11 +147,10 @@ function MyPageContent() {
                   <div className="px-4 py-2">
                     <button
                       onClick={() => setActiveTab("profile")}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                        activeTab === "profile"
-                          ? "bg-purple-100 text-purple-700 font-medium"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === "profile"
+                        ? "bg-purple-100 text-purple-700 font-medium"
+                        : "text-gray-600 hover:bg-gray-100"
+                        }`}
                     >
                       <User className="w-5 h-5" />
                       <span>{t("myPage.sections.editProfile")}</span>

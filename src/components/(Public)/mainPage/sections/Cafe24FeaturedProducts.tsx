@@ -43,7 +43,7 @@ export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24Feat
           ? Math.round(((product.promotion.value || 0) / (product.basePrice || 1)) * 100)
           : 0)
       : undefined,
-    image: product.images?.[0] || "/images/placeholder-product.png",
+    image: product.thumbUrl || product.images?.[0] || "/images/placeholder-product.png",
     brand: product.brand?.name || undefined,
     brandSlug: product.brand?.slug, // Brand slug for SEO-friendly URLs
     rating: product.reviewStats?.averageRating,
@@ -58,35 +58,29 @@ export function Cafe24FeaturedProducts({ products: initialProducts }: Cafe24Feat
   }
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-b from-purple-50 to-white py-12">
-      {/* Decorative gradient lights */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-6 left-[10%] h-72 w-72 rounded-full bg-purple-300/20 blur-[90px]" />
-        <div className="absolute top-14 right-[10%] h-80 w-80 rounded-full bg-violet-300/20 blur-[90px]" />
-      </div>
-
+    <div className="bg-white py-12">
       <div className="relative container mx-auto px-4">
         {/* 섹션 헤더 */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="h-6 w-1.5 rounded-full bg-gradient-to-b from-purple-500 to-violet-500" />
-              <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
+              <span className="h-6 w-1.5 rounded-full bg-black" />
+              <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-gray-900">
                 {t("mainPage.sections.featuredProducts")}
               </h2>
-              <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-purple-800 bg-purple-50 px-2.5 py-1 rounded-full">
+              <span className="hidden sm:inline-flex items-center text-xs sm:text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
                 {t("mainPage.sections.featuredProductsSubtitle")}
               </span>
             </div>
             <Link
               href="/recommend"
-              className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-white/70 hover:border-gray-400 transition-colors shadow-sm backdrop-blur"
+              className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
               {t("mainPage.sections.viewAll")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="mt-4 h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+          <div className="mt-4 h-px w-full bg-gray-200" />
         </div>
 
         {/* 상품 그리드 */}

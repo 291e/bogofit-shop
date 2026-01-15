@@ -19,6 +19,7 @@ import {
   garmentSamples,
   lowerSamples,
   itemSamples,
+  backgroundSamples,
 } from "@/contents/VirtualFitting/sampleImages";
 import { useVideoGeneration } from "@/hooks/useVideoGeneration";
 import { useLanguage } from "@/providers/languageProvider";
@@ -84,7 +85,7 @@ export default function VirtualFitting({
   const [showResults, setShowResults] = useState(false);
   const [imageLoading, setImageLoading] = useState(false); // Generated image loading state
   // Virtual Fitting API Selection
-  const [useGeminiAPI, setUseGeminiAPI] = useState(false); // true: BOGOFIT V2, false: BOGOFIT V1 (default: V1)
+  const [aiVersion, setAiVersion] = useState<'v1' | 'v2' | 'v3'>('v1'); // 'v1', 'v2', 'v3'
 
   // Single item image for Gemini AI
   const [itemImage, setItemImage] = useState<File | null>(null);
@@ -366,6 +367,7 @@ export default function VirtualFitting({
       const formData = new FormData();
       formData.append('personImage', files.human_file || new Blob());
       formData.append('garmentImage', files.garment_file || new Blob());
+      formData.append('aiVersion', aiVersion);
 
       // Add item image if provided
       if (itemImage) {
@@ -402,9 +404,9 @@ export default function VirtualFitting({
         onResultGenerated(result.imageUrl);
       }
 
-      // Enable video generation if pro mode (only for V2)
+      // Enable video generation if pro mode (only for V2/V3)
       // V1: Video generation is disabled (동영상 서비스준비중)
-      if (isProEnabled && useGeminiAPI) {
+      if (isProEnabled && (aiVersion === 'v2' || aiVersion === 'v3')) {
         setStatus(t("productDetail.virtualFitting.videoGenerationInProgress"));
         startProgressTimer(90, 100, 20000);
 
@@ -593,7 +595,7 @@ export default function VirtualFitting({
 
         // V1: Video generation is disabled (동영상 서비스준비중)
         // Only V2 can generate videos
-        if (isProEnabled && useGeminiAPI) {
+        if (isProEnabled && (aiVersion === 'v2' || aiVersion === 'v3')) {
           setStatus(t("productDetail.virtualFitting.videoGenerationInProgress"));
           // 비디오 생성 진행률을 20초 동안 90%에서 100%까지 증가
           startProgressTimer(90, 100, 20000);
@@ -689,8 +691,8 @@ export default function VirtualFitting({
     if (files.human_file) formData.append("human_file", files.human_file);
     if (files.garment_file) formData.append("garment_file", files.garment_file);
     if (files.lower_file) formData.append("lower_file", files.lower_file);
-    if (files.background_file)
-      formData.append("background_file", files.background_file);
+    if (files.background_file) formData.append("background_file", files.background_file);
+
 
     try {
       // WebSocket 대신 직접 연결 정보 생성
@@ -717,10 +719,12 @@ export default function VirtualFitting({
     setIsProcessing(true);
 
     // Choose API based on user selection
-    if (useGeminiAPI) {
+    // V1 (FLASH), V2 (PRO) → Gemini API
+    // V3 (STABLE) → Original EC2 API
+    if (aiVersion === 'v1' || aiVersion === 'v2') {
       await runGeminiVirtualFitting();
     } else {
-      await runWorkflow(); // Original EC2 API
+      await runWorkflow(); // V3: Original EC2 API
     }
   };
 
@@ -767,7 +771,7 @@ export default function VirtualFitting({
               </div>
               {t("productDetail.virtualFitting.title")}
               <Badge variant="secondary" className="ml-2">
-                {useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'}
+                {aiVersion === 'v1' ? 'BOGOFIT V1' : (aiVersion === 'v2' ? 'BOGOFIT V2' : 'BOGOFIT V3')}
               </Badge>
             </div>
             {isOpen ? (
@@ -815,68 +819,102 @@ export default function VirtualFitting({
               <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-lg">
                 <p className="text-sm font-semibold text-gray-900 mb-3">{t("productDetail.virtualFitting.aiEngineSelection")}</p>
                 <div className="space-y-3">
-                  <div
-                    onClick={() => setUseGeminiAPI(false)}
-                    className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${!useGeminiAPI
-                      ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-200'
-                      : 'border-gray-300 bg-gray-50 opacity-60 hover:opacity-80 hover:border-gray-400'
-                      }`}
-                  >
-                    <div className="flex items-center justify-center w-5 h-5 mt-0.5">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${!useGeminiAPI
-                        ? 'border-blue-600 bg-blue-600'
-                        : 'border-gray-400 bg-white'
-                        }`}>
-                        {!useGeminiAPI && (
-                          <div className="w-2 h-2 rounded-full bg-white"></div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-base font-semibold ${!useGeminiAPI ? 'text-gray-900' : 'text-gray-500'}`}>BOGOFIT V1</span>
-                        <Badge variant="outline" className={`text-xs ${!useGeminiAPI ? 'bg-blue-600 border-blue-600 text-white' : 'bg-gray-400 border-gray-400 text-white'}`}>STABLE</Badge>
-                        {useGeminiAPI && (
-                          <span className="text-xs text-gray-400 ml-auto">{t("productDetail.virtualFitting.notSelected")}</span>
-                        )}
-                      </div>
-                      <p className={`text-sm ${!useGeminiAPI ? 'text-gray-600' : 'text-gray-400'}`}>{t("productDetail.virtualFitting.v1Description")}</p>
-                    </div>
-                  </div>
 
+
+
+                  {/* BOGOFIT V1 */}
                   <div
-                    onClick={() => setUseGeminiAPI(true)}
-                    className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${useGeminiAPI
+                    onClick={() => setAiVersion('v1')}
+                    className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${aiVersion === 'v1'
                       ? 'border-purple-600 bg-purple-50 shadow-md ring-2 ring-purple-200'
                       : 'border-gray-300 bg-gray-50 opacity-60 hover:opacity-80 hover:border-gray-400'
                       }`}
                   >
                     <div className="flex items-center justify-center w-5 h-5 mt-0.5">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${useGeminiAPI
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${aiVersion === 'v1'
                         ? 'border-purple-600 bg-purple-600'
                         : 'border-gray-400 bg-white'
                         }`}>
-                        {useGeminiAPI && (
+                        {aiVersion === 'v1' && (
                           <div className="w-2 h-2 rounded-full bg-white"></div>
                         )}
                       </div>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-base font-semibold ${useGeminiAPI ? 'text-gray-900' : 'text-gray-500'}`}>BOGOFIT V2</span>
-                        <Badge variant="secondary" className={`text-xs ${useGeminiAPI ? 'text-white bg-purple-600 border-purple-600' : 'bg-gray-400 border-gray-400 text-white'}`}>NEW</Badge>
-                        {!useGeminiAPI && (
+                        <span className={`text-base font-semibold ${aiVersion === 'v1' ? 'text-gray-900' : 'text-gray-500'}`}>BOGOFIT V1</span>
+                        <Badge variant="secondary" className={`text-xs ${aiVersion === 'v1' ? 'text-white bg-purple-600 border-purple-600' : 'bg-gray-400 border-gray-400 text-white'}`}>FLASH</Badge>
+                        {aiVersion !== 'v1' && (
                           <span className="text-xs text-gray-400 ml-auto">{t("productDetail.virtualFitting.notSelected")}</span>
                         )}
                       </div>
-                      <p className={`text-sm ${useGeminiAPI ? 'text-gray-600' : 'text-gray-400'}`}>{t("productDetail.virtualFitting.v2Description")}</p>
+                      <p className={`text-sm ${aiVersion === 'v1' ? 'text-gray-600' : 'text-gray-400'}`}>{t("productDetail.virtualFitting.v1Description")}</p>
+                    </div>
+                  </div>
+
+                  {/* BOGOFIT V2 */}
+                  <div
+                    onClick={() => setAiVersion('v2')}
+                    className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${aiVersion === 'v2'
+                      ? 'border-pink-600 bg-pink-50 shadow-md ring-2 ring-pink-200'
+                      : 'border-gray-300 bg-gray-50 opacity-60 hover:opacity-80 hover:border-gray-400'
+                      }`}
+                  >
+                    <div className="flex items-center justify-center w-5 h-5 mt-0.5">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${aiVersion === 'v2'
+                        ? 'border-pink-600 bg-pink-600'
+                        : 'border-gray-400 bg-white'
+                        }`}>
+                        {aiVersion === 'v2' && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-base font-semibold ${aiVersion === 'v2' ? 'text-gray-900' : 'text-gray-500'}`}>BOGOFIT V2</span>
+                        <Badge variant="secondary" className={`text-xs ${aiVersion === 'v2' ? 'text-white bg-pink-600 border-pink-600' : 'bg-gray-400 border-gray-400 text-white'}`}>PRO</Badge>
+                        {aiVersion !== 'v2' && (
+                          <span className="text-xs text-gray-400 ml-auto">{t("productDetail.virtualFitting.notSelected")}</span>
+                        )}
+                      </div>
+                      <p className={`text-sm ${aiVersion === 'v2' ? 'text-gray-600' : 'text-gray-400'}`}>{t("productDetail.virtualFitting.v2Description")}</p>
+                    </div>
+                  </div>
+                  {/* BOGOFIT V3 */}
+                  <div
+                    onClick={() => setAiVersion('v3')}
+                    className={`flex items-start space-x-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${aiVersion === 'v3'
+                      ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-200'
+                      : 'border-gray-300 bg-gray-50 opacity-60 hover:opacity-80 hover:border-gray-400'
+                      }`}
+                  >
+                    <div className="flex items-center justify-center w-5 h-5 mt-0.5">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${aiVersion === 'v3'
+                        ? 'border-blue-600 bg-blue-600'
+                        : 'border-gray-400 bg-white'
+                        }`}>
+                        {aiVersion === 'v3' && (
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-base font-semibold ${aiVersion === 'v3' ? 'text-gray-900' : 'text-gray-500'}`}>BOGOFIT V3</span>
+                        <Badge variant="outline" className={`text-xs ${aiVersion === 'v3' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-gray-400 border-gray-400 text-white'}`}>STABLE</Badge>
+                        {aiVersion !== 'v3' && (
+                          <span className="text-xs text-gray-400 ml-auto">{t("productDetail.virtualFitting.notSelected")}</span>
+                        )}
+                      </div>
+                      <p className={`text-sm ${aiVersion === 'v3' ? 'text-gray-600' : 'text-gray-400'}`}>{t("productDetail.virtualFitting.v3Description")}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 3컬럼 파일 업로드 영역 */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+              {/* 파일 업로드 영역 - V1: 2컬럼, V2: 4컬럼, V3: 4컬럼 */}
+              <div className={`grid grid-cols-1 gap-4 lg:gap-6 ${aiVersion === 'v1' ? 'lg:grid-cols-2' : 'lg:grid-cols-4'}`}>
                 {/* 사람 이미지 */}
                 <div className="flex flex-col space-y-3">
                   <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
@@ -935,7 +973,7 @@ export default function VirtualFitting({
                       onClear={() => handleFileChange("garment_file", null)}
                       type="clothing"
                       selectedSampleSrc={selectedSampleSrcs.garment_file}
-                      version={useGeminiAPI ? "v2" : "v1"}
+                      version={(aiVersion === 'v2' || aiVersion === 'v3') ? "v2" : "v1"}
                     />
                   </div>
 
@@ -953,34 +991,8 @@ export default function VirtualFitting({
                   )}
                 </div>
 
-                {/* 하의 이미지 (V1) / 아이템 이미지 (V2) */}
-                {useGeminiAPI ? (
-                  // V2: Item Image (itemImage)
-                  <div className="flex flex-col space-y-3">
-                    <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
-                      <FileDropzone
-                        onDrop={(file) => handleItemImageChange(file)}
-                        preview={itemPreview}
-                        label={t("productDetail.virtualFitting.itemImage")}
-                        description={t("productDetail.virtualFitting.optional")}
-                        sampleImages={itemSamples}
-                        onSampleSelect={async (imageSrc) => {
-                          // Convert imageSrc to File for itemImage
-                          const file = await urlToFile(imageSrc, "item-sample.png");
-                          if (file) {
-                            handleItemImageChange(file);
-                          }
-                          setSelectedSampleSrcs((prev) => ({ ...prev, lower_file: imageSrc }));
-                        }}
-                        onClear={() => handleItemImageChange(null)}
-                        type="clothing"
-                        selectedSampleSrc={selectedSampleSrcs.lower_file}
-                        version="v2"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  // V1: 하의 이미지 (lower_file)
+                {/* Cột thứ 3: Quần (cho V2 và V3) */}
+                {(aiVersion === 'v2' || aiVersion === 'v3') && (
                   <div className="flex flex-col space-y-3">
                     <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
                       <FileDropzone
@@ -1020,6 +1032,72 @@ export default function VirtualFitting({
                     )}
                   </div>
                 )}
+
+                {/* Cột thứ 4: Item (chỉ cho V2) */}
+                {aiVersion === 'v2' && (
+                  // V2: Item Image (itemImage - phụ kiện)
+                  <div className="flex flex-col space-y-3">
+                    <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
+                      <FileDropzone
+                        onDrop={(file) => handleItemImageChange(file)}
+                        preview={itemPreview}
+                        label={t("productDetail.virtualFitting.itemImage")}
+                        description={t("productDetail.virtualFitting.optional")}
+                        sampleImages={itemSamples}
+                        onSampleSelect={async (imageSrc) => {
+                          // Convert imageSrc to File for itemImage
+                          const file = await urlToFile(imageSrc, "item-sample.png");
+                          if (file) {
+                            handleItemImageChange(file);
+                          }
+                          setSelectedSampleSrcs((prev) => ({ ...prev, background_file: imageSrc }));
+                        }}
+                        onClear={() => handleItemImageChange(null)}
+                        type="clothing"
+                        solutionType="item"
+                        selectedSampleSrc={selectedSampleSrcs.background_file}
+                        version="v2"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Cột thứ 4: Background (chỉ cho V3) */}
+                {aiVersion === 'v3' && (
+                  // V3: Background Image
+                  <div className="flex flex-col space-y-3">
+                    <div className="w-full max-w-sm mx-auto lg:max-w-none aspect-[9/16] min-h-[400px] max-h-[500px]">
+                      <FileDropzone
+                        onDrop={(file) => handleFileChange("background_file", file)}
+                        preview={previews.background_file}
+                        label={t("productDetail.virtualFitting.backgroundImage") || "Background"}
+                        description={t("productDetail.virtualFitting.optional")}
+                        sampleImages={backgroundSamples}
+                        onSampleSelect={(imageSrc) =>
+                          handleSampleSelect("background_file", imageSrc)
+                        }
+                        onClear={() => handleFileChange("background_file", null)}
+                        type="clothing"
+                        solutionType="background"
+                        selectedSampleSrc={selectedSampleSrcs.background_file}
+                        version="v3"
+                      />
+                    </div>
+
+                    {/* 배경 이미지 오류 메시지 */}
+                    {fileErrors.background_file && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-red-800">
+                            <p className="font-medium">{t("productDetail.virtualFitting.uploadError")}</p>
+                            <p className="mt-1">{fileErrors.background_file}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* 안내 섹션 - flex 열로 배치 */}
@@ -1046,16 +1124,16 @@ export default function VirtualFitting({
                     id="is_pro"
                     checked={isProEnabled}
                     onChange={(e) => setIsProEnabled(e.target.checked)}
-                    disabled={!useGeminiAPI}
+                    disabled={aiVersion === 'v1'}
                     className="rounded"
                   />
                   <label htmlFor="is_pro" className="text-sm font-medium">
-                    {t("productDetail.virtualFitting.aiVideoGeneration").replace("{version}", useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1')}
+                    {t("productDetail.virtualFitting.aiVideoGeneration").replace("{version}", aiVersion === 'v1' ? 'BOGOFIT V1' : (aiVersion === 'v2' ? 'BOGOFIT V2' : 'BOGOFIT V3'))}
                     <Badge variant="outline" className="ml-2 text-xs">
                       AI
                     </Badge>
                     <span className="ml-2 text-xs text-gray-500">
-                      {useGeminiAPI ? t("productDetail.virtualFitting.videoAvailable") : t("productDetail.virtualFitting.videoServiceInPreparation")}
+                      {aiVersion !== 'v1' ? t("productDetail.virtualFitting.videoAvailable") : t("productDetail.virtualFitting.videoServiceInPreparation")}
                     </span>
                   </label>
                 </div>
@@ -1214,7 +1292,7 @@ export default function VirtualFitting({
 
               {/* 비디오 생성 로딩 상태 */}
               {isProEnabled &&
-                useGeminiAPI &&
+                (aiVersion === 'v2' || aiVersion === 'v3') &&
                 generatedImage &&
                 isProcessing &&
                 !generatedVideo && (
@@ -1223,7 +1301,7 @@ export default function VirtualFitting({
                       <Progress value={progress} className="w-full h-3" />
                     </div>
                     <p className="text-sm text-gray-600 text-center">
-                      {`${useGeminiAPI ? 'BOGOFIT V2' : 'BOGOFIT V1'}가 비디오를 생성하고 있습니다...`} {progress}%
+                      {`${aiVersion === 'v2' ? 'BOGOFIT V2' : 'BOGOFIT V3'}가 비디오를 생성하고 있습니다...`} {progress}%
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <p className="text-xs text-blue-700 text-center">

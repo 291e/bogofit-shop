@@ -140,7 +140,7 @@ export function Cafe24HeroBanner() {
               <div className="absolute inset-0 flex items-end justify-center p-6 md:p-8">
                 <div className="text-center text-white">
                   {heroBannerSlides[0].discount && (
-                    <Badge className="mb-2 bg-red-500 text-white">
+                    <Badge className="mb-2 bg-gray-900 text-white hover:bg-gray-800">
                       {heroBannerSlides[0].discount}
                     </Badge>
                   )}

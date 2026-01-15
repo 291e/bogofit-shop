@@ -7,7 +7,7 @@ const ai = new GoogleGenAI({
 
 export interface GenerateImageRequest {
   baseImage: string; // Base64 encoded image
-  prompt: string;
+  prompt?: string;
   productName?: string;
   aspectRatio?: string; // Optional aspect ratio for image generation
 }
@@ -45,69 +45,82 @@ export async function generateProductImage({
     let enhancedPrompt = "";
 
     // Define specific prompts for each image type
-    // Define specific prompts for each image type
+    // Define specific prompts for each image type based on user request
     const prompts = {
-      hero: `Design a high-impact "Hero" image for a Korean e-commerce product detail page.
-        - **Content:** Showcase the product attractively with the product name "${productName || 'Product Name'}" in elegant Korean typography.
-        - **Text Rule:** ONLY the product name should be visible. DO NOT add any other badges or promotional text. ALL visible text MUST be in Korean (Hangul).
-        - **Style:** Minimalist, premium, clean background.
-        - **Goal:** Catch the customer's eye immediately.
-        - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`,
+      // 1. Hero Image (Beautiful representative shot)
+      hero: `Create a stunning main product image for e-commerce.
+        - **Content:** The garment looks perfectly ironed, voluminous (ghost mannequin style), and premium.
+        - **Style:** High-end fashion commercial photography, clean white background.
+        - **Rule:** ABSOLUTELY NO TEXT, NO LOGOS. Pure product image.`,
 
-      features: `Design a "Product Features" section image for a Korean e-commerce detail page.
-        - **Content:** Show the product from 3 different angles (e.g., front, side, and back, or key detailed close-ups) in a clean split-view or collage layout.
-        - **Text Rule:** DO NOT add any text or labels to the image.
-        - **Style:** Clean, professional product photography, focus on multiple perspectives.
-        - **Goal:** Show the product's design from all important sides.
-        - **Important:** Keep the product in all angles looking EXACTLY identical to the uploaded image.`,
+      // 2. 3-Angle View (Front/Back/Side)
+      features: `Create a multi-view composition image with a specific layout ratio.
+        - **Layout Structure:**
+          1. **Top Section (Occupies 50% of vertical space):** Split equally (50%/50%). Left slot: Front view. Right slot: Back view.
+          2. **Bottom Section (Occupies 50% of vertical space):** Split equally (50%/50%). Left slot: Side view. Right slot: Perspective view.
+        - **Goal:** Strictly follow the 50% Top (Front/Back) and 50% Bottom (Side) proportion. 
+        - **Style:** Clean white background, consistent lighting. NO TEXT.`,
 
-      lifestyle: `Design a "Lifestyle" image for a Korean e-commerce detail page.
-        - **Content:** Show the product in a realistic, aspirational context (e.g., worn by a model or in a suitable environment).
-        - **Text Rule:** DO NOT add any text (names, prices, or labels) to the image.
-        - **Style:** Atmospheric, natural lighting, "Instagrammable".
-        - **Goal:** Help customers visualize using the product.
-        - **Important:** Keep the product looking EXACTLY identical to the uploaded image.`,
+      // 3. Details (Sleeve/Collar)
+      detail: `Create a collage of key product details.
+        - **Content:** Two distinct close-up shots: 1) The collar/neckline area. 2) The sleeve/cuff area.
+        - **Focus:** Show fabric texture, stitching, and material quality.
+        - **Style:** Macro photography, sharp focus, clean background. NO TEXT.`,
 
-      info: `Design a "Product Info & Size" section image for a Korean e-commerce detail page.
-        - **Content:** Display a clean, structured Size Chart and Product Specifications table. 
-        - **Image Rule:** DO NOT include the actual product photo in this graphic. Focus ONLY on the graphical layout of the information.
-        - **Details to Include:** ${prompt}
-        - **Text Rule:** ALL visible text MUST be in Korean (Hangul). Translate any English labels to Korean (e.g., Size -> 사이즈, Color -> 색상).
-        - **Style:** Professional, easy to read, minimal grid layout, infographic style.
-        - **Goal:** Provide clear technical information without visual distractions.`
+      // 4. Model Lifestyle (Wearing the product)
+      lifestyle: `Create a fashion model lookbook shot featuring a Korean model, clean white background.
+        - **Content:** A professional Korean model wearing this exact product. Fit should be natural and stylish.
+        - **Setting:**Soft natural light.
+        - **Rule:** NO TEXT on the image. Focus on the outfit.
+        - **Subject:** Korean model wearing the product.`
+
     };
 
-    if (aspectRatio && ['hero', 'features', 'lifestyle', 'info'].includes(aspectRatio)) {
-      // If aspectRatio is actually passing the image type (a bit of a hack to reuse the interface, but works)
+    if (aspectRatio && ['hero', 'features', 'detail', 'lifestyle'].includes(aspectRatio)) {
       const type = aspectRatio as keyof typeof prompts;
       enhancedPrompt = prompts[type];
-    } else if (aspectRatio) {
-      // Standard aspect ratio provided
-      enhancedPrompt = prompt;
     } else {
-      // Default behavior
-      enhancedPrompt = productName
-        ? `IMPORTANT: Use the EXACT product from the uploaded image - DO NOT create a different product. The product must appear IDENTICAL to the uploaded image (same design, colors, style, details). Based on this product image, create a professional product photo for "${productName}". ${prompt}. Maintain the same composition, angle, and framing as the original. Make it suitable for e-commerce with clean background, professional lighting, and high quality.`
-        : `IMPORTANT: Use the EXACT product from the uploaded image - DO NOT create a different product. The product must appear IDENTICAL to the uploaded image (same design, colors, style, details). Based on this product image, create a professional product photo. ${prompt}. Maintain the same composition, angle, and framing as the original. Make it suitable for e-commerce with clean background, professional lighting, and high quality.`;
+      // Fallback
+      enhancedPrompt = prompt || prompts.hero;
     }
 
     // Clean base64 data (remove data URL prefix if present)
     let cleanBase64 = baseImage;
-    if (baseImage.startsWith('data:')) {
+    let mimeType = "image/png";
+
+    // ✅ Case 1: Image URL provided (e.g. S3 URL)
+    if (baseImage.startsWith('http')) {
+      console.log('🌐 Fetching image from URL:', baseImage);
+      try {
+        const imageRes = await fetch(baseImage);
+        if (!imageRes.ok) throw new Error(`Failed to fetch image: ${imageRes.statusText}`);
+
+        const arrayBuffer = await imageRes.arrayBuffer();
+        cleanBase64 = Buffer.from(arrayBuffer).toString('base64');
+
+        const contentType = imageRes.headers.get('content-type');
+        if (contentType) mimeType = contentType;
+        console.log('✅ Image fetched and converted to Base64');
+      } catch (fetchError) {
+        console.error('❌ Error downloading image:', fetchError);
+        return { success: false, error: 'Failed to download reference image' };
+      }
+    }
+    // ✅ Case 2: Data URL provided
+    else if (baseImage.startsWith('data:')) {
       const base64Match = baseImage.match(/base64,(.+)$/);
       if (base64Match) {
         cleanBase64 = base64Match[1];
       }
-    }
 
-    // Detect mime type from base64 data URL
-    let mimeType = "image/png";
-    if (baseImage.startsWith('data:image/jpeg') || baseImage.startsWith('data:image/jpg')) {
-      mimeType = "image/jpeg";
-    } else if (baseImage.startsWith('data:image/png')) {
-      mimeType = "image/png";
-    } else if (baseImage.startsWith('data:image/webp')) {
-      mimeType = "image/webp";
+      // Detect mime type from base64 data URL
+      if (baseImage.startsWith('data:image/jpeg') || baseImage.startsWith('data:image/jpg')) {
+        mimeType = "image/jpeg";
+      } else if (baseImage.startsWith('data:image/png')) {
+        mimeType = "image/png";
+      } else if (baseImage.startsWith('data:image/webp')) {
+        mimeType = "image/webp";
+      }
     }
 
     // Build prompt array according to Google GenAI API format
@@ -139,11 +152,12 @@ export async function generateProductImage({
       // If it's one of our custom types, default to 9:16 (vertical)
       const ratio = ['hero', 'features', 'lifestyle', 'info'].includes(aspectRatio) ? '9:16' : aspectRatio;
 
-      requestParams.config = {
-        imageConfig: {
-          aspectRatio: ratio,
-        },
+      // Note: Node SDK param structure might differ slightly, but assuming this follows previous working patterns or updated docs
+      // If 'imageConfig' belongs in 'generationConfig':
+      generateConfig.imageConfig = {
+        aspectRatio: ratio
       };
+
       console.log('📐 Using aspect ratio config:', ratio);
     }
 

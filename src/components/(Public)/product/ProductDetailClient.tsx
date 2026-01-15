@@ -41,7 +41,8 @@ interface Product {
   discountRate?: number;
   imageUrl: string;
   thumbnailImages?: string[];
-  detailImage?: string;
+  detailImages?: string[]; // ✅ Changed to array
+  productDetails?: any[]; // ✅ Added size chart support
   description?: string;
   category: string;
   subCategory?: string;
@@ -61,6 +62,7 @@ interface Product {
     priceDiff: number;
     stock: number;
   }>;
+  quantity?: number;
   status: string;
   sku?: string;
 }
@@ -90,6 +92,30 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     // Fallback to original name with first letter capitalized
     return optionName.charAt(0).toUpperCase() + optionName.slice(1);
   };
+
+  // ✅ Size Chart Parsing Logic
+  const sizeChartData = React.useMemo(() => {
+    if (!product.productDetails || product.productDetails.length === 0) return null;
+
+    try {
+      const parsedRows = product.productDetails.map(row => {
+        if (typeof row === 'string') {
+          return JSON.parse(row);
+        }
+        return row;
+      });
+      if (parsedRows.length === 0) return null;
+
+      // Extract columns from the first row's values
+      const firstRow = parsedRows[0];
+      const columns = Object.keys(firstRow.values || {});
+
+      return { columns, rows: parsedRows };
+    } catch (e) {
+      console.error("Failed to parse size chart:", e);
+      return null;
+    }
+  }, [product.productDetails]);
 
   // 옵션별로 그룹화
   const groupedVariants =
@@ -189,21 +215,23 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     ? matchingVariant.stock === 0
     : selectedVariant
       ? selectedVariant.stock === 0
-      : allVariantsOutOfStock;
+      : (product.variants && product.variants.length > 0)
+        ? product.variants.every((v) => v.stock === 0)
+        : (product.quantity !== undefined && product.quantity === 0);
 
   // 옵션이 없는 상품의 경우 기본 variant ID 설정
   const effectiveVariantId =
     Object.keys(groupedVariants).length === 0
       ? product.variants && product.variants.length > 0
         ? product.variants[0].id
-        : product.id
+        : undefined
       : matchingVariant?.id || selectedVariant?.id;
 
   const totalPrice = finalPrice * quantity;
 
   // 썸네일 이미지 배열 분리
   const thumbnails = product.thumbnailImages || [];
-  const detailImage = product.detailImage;
+  const detailImages = product.detailImages || []; // ✅ Use multiple images
 
   const safeAvgRating = product.avgRating ?? 0;
 
@@ -393,31 +421,26 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             </div>
 
             {/* 상품 정보 섹션 */}
-            <div id="product-info" className="space-y-8">
+            <div id="product-info" className="space-y-6">
               {/* 상품명 및 기본 정보 */}
               <div className="space-y-4">
-                <div className="space-y-2">
-                  {/* 브랜드명 및 스토어명 */}
-                  <div className="flex items-center gap-2 text-gray-600">
-                    {product.brand?.name && (
-                      <span className="font-medium text-pink-600">
-                        {product.brand.name}
-                      </span>
-                    )}
-                    {product.storeName &&
-                      product.storeName !== product.brand?.name && (
-                        <>
-                          <span className="text-gray-400">•</span>
-                          <span className="font-medium">
-                            {product.storeName}
-                          </span>
-                        </>
-                      )}
+                <div className="space-y-1">
+                  {/* 1. 브랜드 (Shop Name) */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-pink-600 font-bold text-lg uppercase tracking-wide">
+                      브랜드: {product.storeName ? product.storeName.toUpperCase() : product.brand?.name?.toUpperCase()}
+                    </span>
                   </div>
 
-                  {/* 카테고리 및 서브카테고리 */}
+
+
+                  {/* 3. 상품명 */}
+                  <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+                    상품명: {product.title}
+                  </h1>
+                  {/* 2. 카테고리 */}
                   <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                    <span>{product.category}</span>
+                    <span>카테고리: {product.category}</span>
                     {product.subCategory && (
                       <>
                         <span className="text-gray-300">&gt;</span>
@@ -427,86 +450,64 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       </>
                     )}
                   </div>
-
-                  <h1 className="text-xl text-gray-900 leading-tight">
-                    {product.title}
-                  </h1>
                 </div>
-
-                {/* 평점 */}
+                {/* 평점 (Optional - keeping it for completeness but making it subtle) */}
                 {product.reviewCount !== undefined && (
-                  <div className="flex items-center gap-3">
-                    {safeAvgRating > 0 && (
-                      <>
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-5 h-5 ${i < Math.floor(safeAvgRating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                                }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="font-semibold text-gray-900">
-                          {safeAvgRating}
-                        </span>
-                      </>
-                    )}
-                    <span className="text-gray-500">({t("productDetail.reviews").replace("{count}", product.reviewCount?.toString() || "0")})</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${star <= Math.floor(safeAvgRating)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-200"
+                            }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-400">
+                      ({t("productDetail.reviews").replace("{count}", product.reviewCount?.toString() || "0")})
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* 가격 */}
-              <div className="">
-                <div className="space-y-2">
-                  <div className="flex flex-col items-baseline gap-3 flex-wrap">
-                    {/* 원가 표시 (할인이 있는 경우) */}
-                    {product.originalPrice &&
-                      product.originalPrice > product.price && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg text-gray-500 line-through">
-                            {t("productDetail.won").replace("{amount}", product.originalPrice.toLocaleString('ko-KR'))}
-                          </span>
-                          {product.discountRate && (
-                            <Badge className="bg-red-500 text-white text-xs">
-                              {t("productDetail.discount").replace("{percent}", product.discountRate.toString())}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-
+              {/* 가격 및 혜택 */}
+              <div className="border-b border-gray-100 pb-6 space-y-4">
+                <div className="flex flex-col items-baseline gap-2">
+                  <div className="flex items-center gap-3">
                     {/* 최종 판매가 */}
-                    <span className="text-2xl font-bold text-pink-600">
+                    <span className="text-3xl font-bold text-gray-900">
                       {t("productDetail.won").replace("{amount}", finalPrice.toLocaleString('ko-KR'))}
                     </span>
 
-                    {totalPriceDiff !== 0 && (
-                      <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded-full">
-                        {t("productDetail.basePrice").replace("{amount}", product.price.toLocaleString('ko-KR'))}
-                        {totalPriceDiff > 0 ? " +" : " "}
-                        {t("productDetail.won").replace("{amount}", totalPriceDiff.toLocaleString('ko-KR'))}
-                        {Object.keys(selectedOptions).length > 1 && (
-                          <span className="text-xs text-gray-400 ml-1">
-                            {t("productDetail.optionTotal")}
-                          </span>
-                        )}
-                      </span>
+                    {/* 원가 표시 (할인이 있는 경우) */}
+                    {product.originalPrice &&
+                      product.originalPrice > product.price && (
+                        <span className="text-lg text-gray-400 line-through">
+                          {t("productDetail.won").replace("{amount}", product.originalPrice.toLocaleString('ko-KR'))}
+                        </span>
+                      )}
+
+                    {product.discountRate && (
+                      <Badge className="bg-red-500 text-white hover:bg-red-600">
+                        {t("productDetail.discount").replace("{percent}", product.discountRate.toString())}
+                      </Badge>
                     )}
                   </div>
 
-                  {quantity > 1 && (
-                    <p className="text-lg font-semibold text-gray-700">
-                      {t("productDetail.total").replace("{amount}", totalPrice.toLocaleString('ko-KR')).replace("{quantity}", quantity.toString())}
-                    </p>
+                  {totalPriceDiff !== 0 && (
+                    <span className="text-sm text-gray-500">
+                      {t("productDetail.basePrice").replace("{amount}", product.price.toLocaleString('ko-KR'))}
+                      {totalPriceDiff > 0 ? " +" : " "}
+                      {t("productDetail.won").replace("{amount}", totalPriceDiff.toLocaleString('ko-KR'))}
+                    </span>
                   )}
                 </div>
               </div>
 
               {/* 상품 옵션 */}
-              {Object.keys(groupedVariants).length > 0 && (
+              {Object.keys(groupedVariants).length > 0 ? (
                 <div className="space-y-4">
                   {allVariantsOutOfStock && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -590,6 +591,15 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     )
                   )}
                 </div>
+              ) : (
+                /* No Options - Show OutOfStock warning if needed */
+                isOutOfStock && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700 text-sm font-medium">
+                      {t("productDetail.outOfStock")}
+                    </p>
+                  </div>
+                )
               )}
 
               {/* 수량 선택 */}
@@ -599,7 +609,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={quantity <= 1 || allVariantsOutOfStock}
+                    disabled={quantity <= 1 || isOutOfStock}
                   >
                     -
                   </button>
@@ -609,7 +619,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   <button
                     onClick={() => setQuantity(quantity + 1)}
                     className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={allVariantsOutOfStock}
+                    disabled={isOutOfStock}
                   >
                     +
                   </button>
@@ -617,7 +627,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               </div>
 
               {/* 구매 버튼 */}
-              <div className="sticky">
+              <div className="sticky bottom-0 bg-white/80 backdrop-blur-md py-4 -mx-4 px-4 border-t md:static md:bg-transparent md:p-0 md:border-0 z-10 space-y-4">
                 <PurchaseButton
                   productId={product.id}
                   productTitle={product.title}
@@ -636,40 +646,27 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   isOutOfStock={isOutOfStock}
                   variantId={effectiveVariantId}
                 />
-              </div>
 
-              {/* 배송 및 서비스 정보 */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <Truck className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{t("productDetail.freeShipping")}</p>
-                      <p className="text-xs text-gray-500">{t("productDetail.allOrders")}</p>
-                    </div>
+                {/* 간단한 서비스 정보 - Moved to bottom for better flow */}
+                <div className="flex items-center justify-between gap-2 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5" />
+                    <span>{t("productDetail.freeShipping")}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{t("productDetail.qualityGuarantee")}</p>
-                      <p className="text-xs text-gray-500">{t("productDetail.authenticGuarantee")}</p>
-                    </div>
+                  <div className="w-px h-3 bg-gray-300"></div>
+                  <div className="flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>{t("productDetail.authenticGuarantee")}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                      <RefreshCw className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{t("productDetail.exchangeReturn")}</p>
-                      <p className="text-xs text-gray-500">{t("productDetail.within7Days")}</p>
-                    </div>
+                  <div className="w-px h-3 bg-gray-300"></div>
+                  <div className="flex items-center gap-1.5">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>{t("productDetail.exchangeReturn")}</span>
                   </div>
                 </div>
               </div>
+
+
             </div>
           </div>
 
@@ -682,47 +679,112 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             />
           </div>
 
-          {/* 상품 상세 */}
-          {(product.description || detailImage) && (
-            <div id="product-detail" className="max-w-3xl mx-auto mt-16">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 text-center">{t("productDetail.productDetail")}</h2>
-                <div className="w-16 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mt-2 rounded-full"></div>
-              </div>
-
-              {product.description && (
-                <div
-                  className="prose prose-lg max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: product.description,
+          {/* Sticky Navigation Tabs */}
+          <div className="sticky z-40 bg-white shadow-sm border-b border-gray-100 mt-16">
+            <div className="flex justify-center max-w-8xl mx-auto">
+              {[
+                { id: "product-detail", label: "상품 상세" },
+                { id: "product-size", label: "상품 사이즈" },
+                { id: "reviews", label: "리뷰" },
+                { id: "inquiries", label: "문의" },
+              ].map((tab) => (
+                <a
+                  key={tab.id}
+                  href={`#${tab.id}`}
+                  className="flex-1 py-4 text-center text-sm font-medium text-gray-600 hover:text-pink-600 hover:bg-pink-50 transition-colors border-b-2 border-transparent hover:border-pink-600 focus:outline-none"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const element = document.getElementById(tab.id);
+                    if (element) {
+                      const y = element.getBoundingClientRect().top + window.scrollY - 100; // Offset for sticky header
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }
                   }}
-                />
-              )}
-
-              {!product.description && detailImage && (
-                <Image
-                  src={detailImage}
-                  alt={t("productDetail.productDetailImage")}
-                  width={1200}
-                  height={1600}
-                  className="w-full h-auto"
-                  quality={100}
-                  unoptimized={detailImage.startsWith('http')}
-                />
-              )}
+                >
+                  {tab.label}
+                </a>
+              ))}
             </div>
-          )}
+          </div>
 
-          {/* 상품 문의 섹션 */}
-          <div id="inquiries" className="max-w-6xl mx-auto mt-16">
-            <ProductInquiries
-              productId={product.id}
-              fetchList={true}
-            />
+          {/* 상품 상세 (Description & Images) */}
+          <div id="product-detail" className="max-w-6xl mx-auto mt-8 scroll-mt-28">
+            <div className="flex items-center justify-between border-b pb-4 mb-6">
+              <h3 className="text-lg font-bold text-gray-900">
+                상품 상세
+              </h3>
+            </div>
+            {product.description && (
+              <div
+                className="prose prose-lg max-w-none mb-12"
+                dangerouslySetInnerHTML={{
+                  __html: product.description,
+                }}
+              />
+            )}
+
+            {detailImages.length > 0 ? (
+              <div className="space-y-4">
+                {detailImages.map((img, index) => (
+                  <div key={index} className="w-full">
+                    <Image
+                      src={img}
+                      alt={`${t("productDetail.productDetailImage")} ${index + 1}`}
+                      width={1200}
+                      height={1600}
+                      className="w-full h-auto"
+                      quality={100}
+                      unoptimized={img.startsWith('http')}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {/* 상품 사이즈 (Size Chart) */}
+          <div id="product-size" className="max-w-6xl mx-auto mt-12 scroll-mt-28">
+            <div className="flex items-center justify-between border-b pb-4 mb-6">
+              <h3 className="text-lg font-bold text-gray-900">
+                상품 사이즈
+              </h3>
+            </div>
+            {sizeChartData ? (
+              <div className="mb-12">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-center text-gray-500">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3">사이즈</th>
+                        {sizeChartData.columns.map((col, i) => (
+                          <th key={i} className="px-6 py-3">{col}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sizeChartData.rows.map((row: any, i: number) => (
+                        <tr key={i} className="bg-white border-b">
+                          <td className="px-6 py-4 font-medium text-gray-900">{row.size}</td>
+                          {sizeChartData.columns.map((col, j) => (
+                            <td key={j} className="px-6 py-4">
+                              {row.values[col] || "-"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-10 text-gray-500">
+                <p>등록된 사이즈 정보가 없습니다.</p>
+              </div>
+            )}
           </div>
 
           {/* 리뷰 섹션 */}
-          <div id="reviews" className="max-w-6xl mx-auto mt-16">
+          <div id="reviews" className="max-w-6xl mx-auto mt-12 scroll-mt-28">
             <ProductReviews
               productId={product.id}
               statsFromProduct={{
@@ -732,9 +794,17 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
               fetchList={true}
             />
           </div>
+
+          {/* 상품 문의 섹션 */}
+          <div id="inquiries" className="max-w-6xl mx-auto mt-12 mb-12 scroll-mt-28">
+            <ProductInquiries
+              productId={product.id}
+              fetchList={true}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 

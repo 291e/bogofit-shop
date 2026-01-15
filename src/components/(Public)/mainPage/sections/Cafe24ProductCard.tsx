@@ -42,10 +42,10 @@ const Cafe24ProductCardComponent = ({ product }: ProductCardProps) => {
     : `/products/${product.id}`;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex flex-col h-full">
+    <div className="bg-white group flex flex-col h-full border border-transparent hover:border-gray-200 transition-all duration-200">
       {/* 이미지 */}
       <Link href={productUrl} className="block">
-        <div className="relative aspect-square overflow-hidden">
+        <div className="relative aspect-square overflow-hidden bg-gray-100">
           <Image
             src={product.image}
             alt={product.name}
@@ -57,7 +57,7 @@ const Cafe24ProductCardComponent = ({ product }: ProductCardProps) => {
 
           {/* 할인 배지 */}
           {product.discount && (
-            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            <div className="absolute top-2 left-2 bg-gray-900 text-white text-xs font-bold px-2 py-1">
               {product.discount}%
             </div>
           )}

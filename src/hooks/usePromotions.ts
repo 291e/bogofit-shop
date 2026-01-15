@@ -47,6 +47,7 @@ export function usePromotions(options: UsePromotionsOptions = {}) {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
             });
             const data = await response.json();
 
@@ -112,6 +113,7 @@ export function usePromotion(id: string) {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
             });
             const data = await response.json();
 
@@ -161,6 +163,7 @@ export function useCreatePromotion() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
                 body: JSON.stringify(data),
             });
 
@@ -205,6 +208,7 @@ export function useUpdatePromotion() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
                 body: JSON.stringify(data),
             });
 
@@ -249,6 +253,7 @@ export function useDeletePromotion() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
             });
 
             const result = await response.json();
@@ -287,13 +292,13 @@ export function useActivePromotions(brandId: string) {
         if (!brandId) return;
 
         // ✅ Check cache first (unless force refresh)
-        if (!forceRefresh) {
+        /* if (!forceRefresh) {
             const cached = activePromotionsCache.get(brandId);
             if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
                 setPromotions(cached.data);
                 return;
             }
-        }
+        } */
 
         setLoading(true);
         setError(null);
@@ -315,6 +320,7 @@ export function useActivePromotions(brandId: string) {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
             });
             const data = await response.json();
 
@@ -371,6 +377,7 @@ export function useAssignProductPromotion() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
                 body: JSON.stringify({ promotionId }),
             });
 
@@ -418,6 +425,7 @@ export function useRemoveProductPromotion() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
             });
 
             const result = await response.json();
@@ -464,6 +472,7 @@ export function useBulkAssignProductPromotion() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
+                cache: 'no-store',
                 body: JSON.stringify({ productIds, promotionId }),
             });
 

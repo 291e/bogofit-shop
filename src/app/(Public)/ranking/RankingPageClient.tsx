@@ -15,7 +15,6 @@ import { useLanguage } from '@/providers/languageProvider';
 export function RankingPageClient() {
     const { t } = useLanguage();
     const [currentPage, setCurrentPage] = useState(1);
-    // Rating dropdown options (thresholds): 'none' | '1' | '2' | '3' | '4' | '5'
     const [ratingFilter, setRatingFilter] = useState<string>('4');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -32,18 +31,7 @@ export function RankingPageClient() {
 
 
     // Filter và sort products dựa trên reviewStats
-    React.useEffect(() => {
-        if (allProducts && allProducts.length) {
-            console.log("[Ranking] reviewStats sample:", allProducts.slice(0, 5).map(p => ({
-                id: p.id,
-                name: p.name,
-                averageRating: p.reviewStats?.averageRating,
-                totalReviews: p.reviewStats?.totalReviews
-            })));
-        } else {
-            console.log("[Ranking] No products or empty list.");
-        }
-    }, [allProducts]);
+
     const ratingSelected = ratingFilter;
 
     // Filter products: require reviewStats and meet thresholds
@@ -306,7 +294,7 @@ export function RankingPageClient() {
                                         discount: product.promotion ?
                                             (product.promotion.type === 'percentage' ? product.promotion.value :
                                                 product.promotion.type === 'fixed_amount' ? (product.promotion.value! / product.basePrice * 100) : 0) : undefined,
-                                        image: product.images?.[0] || product.thumbUrl || "",
+                                        image: product.thumbUrl || product.images?.[0] || "",
                                         brand: product.brand?.name,
                                         brandSlug: product.brand?.slug,
                                         slug: product.slug,

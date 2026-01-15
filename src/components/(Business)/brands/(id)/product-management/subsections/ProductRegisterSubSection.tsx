@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ProductForm, ProductVariantForm, VariantOption, convertProductFormToDto } from "@/types/product";
 import { useCategories } from "@/hooks/useCategories";
 import { useCreateProduct } from "@/hooks/useProducts";
-import { useAIImageGeneration } from "@/hooks/useAIImageGeneration";
 import { useActivePromotions } from "@/hooks/usePromotions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -14,10 +13,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import CategoryDropdown from "@/components/ui/category-dropdown";
 import { ImageUploader } from "@/components/ui/imageUploader";
-import { ChevronDown, ChevronUp, Plus, Trash2, Sparkles, Wand2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/providers/languageProvider";
+import { useImageUpload } from "@/hooks/useImageUpload"; // ✅ Import Hook
 
 interface ProductRegisterFormProps {
   brandId?: string;
@@ -39,16 +39,19 @@ export default function ProductRegisterSubSection({
   // ✅ Fetch active promotions for this brand
   const { promotions: activePromotions, loading: isLoadingPromotions } = useActivePromotions(brandId || "");
 
-  // ✅ Section collapse states - must be called before early returns
+  const { uploadImage } = useImageUpload(); // ✅ Use Hook
+
+  // ✅ Section collapse states
   const [openSections, setOpenSections] = useState({
     basic: true,
     category: true,
     pricing: true,
     images: true,
     variants: true,
+    sizeChart: true,
   });
 
-  // ✅ Form data - must be called before early returns
+  // ✅ Form data
   const [formData, setFormData] = useState<ProductForm>({
     brandId: brandId || "",
     name: "",
@@ -59,6 +62,7 @@ export default function ProductRegisterSubSection({
     categoryId: "",
     thumbUrl: "",
     images: [],
+    detailImages: [],
     basePrice: 0,
     baseCompareAtPrice: 0,
     quantity: null, // Product-level inventory (null = unlimited)
@@ -66,22 +70,197 @@ export default function ProductRegisterSubSection({
     hasOptions: false
   });
 
-  // ✅ Use mutation hook for product creation (handles toast & cache automatically)
+  // ✅ Use mutation hook for product creation
   const createProduct = useCreateProduct(brandId || "");
 
-  // ✅ AI Image Generation hook
-  const { generateImage } = useAIImageGeneration();
+  const [measurementColumns, setMeasurementColumns] = useState<string[]>(["가슴단면", "총장", "어깨너비", "소매길이"]);
+  const [measurementRows, setMeasurementRows] = useState<{ size: string; values: Record<string, string> }[]>([
+    { size: "S", values: { "가슴단면": "", "총장": "", "어깨너비": "", "소매길이": "" } },
+    { size: "M", values: { "가슴단면": "", "총장": "", "어깨너비": "", "소매길이": "" } },
+    { size: "L", values: { "가슴단면": "", "총장": "", "어깨너비": "", "소매길이": "" } },
+    { size: "XL", values: { "가슴단면": "", "총장": "", "어깨너비": "", "소매길이": "" } },
+    { size: "FREE", values: { "가슴단면": "", "총장": "", "어깨너비": "", "소매길이": "" } }
+  ]);
 
-  // ✅ Detail Images Generator state (4 images: Hero, Features, Lifestyle, Info)
-  const [generatedDetailImages, setGeneratedDetailImages] = useState<{ type: string, url: string }[]>([]);
-  const [selectedDetailImages, setSelectedDetailImages] = useState<Set<string>>(new Set());
-  const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
+  // ✅ AI Generation State
+  // ✅ AI Generation State
+  const [aiBaseImage, setAiBaseImage] = useState<string>("");
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [generatedSet, setGeneratedSet] = useState<{
+    main: string;
+    gallery: string[];
+    detail: string[];
+  } | null>(null);
 
-  // ✅ AI Auto Fill state
-  const [isAnalyzingProduct, setIsAnalyzingProduct] = useState(false);
+  // ✅ Selection State for Gallery Candidates
+  const [selectedGalleryItems, setSelectedGalleryItems] = useState<string[]>([]);
 
-  // Early return if no brandId
+  const toggleGallerySelection = (url: string) => {
+    setSelectedGalleryItems(prev =>
+      prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
+    );
+  };
+
+  // Step 1: Generate Main Image
+  const handleGenerateMainImage = async () => {
+    if (!aiBaseImage) {
+      toast.error("Please upload a reference image first");
+      return;
+    }
+    setIsGeneratingAI(true);
+    setGeneratedSet(null); // Clear previous results
+    setSelectedGalleryItems([]); // Clear selection
+    try {
+      const response = await fetch('/api/ai/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          baseImage: aiBaseImage,
+          productName: formData.name || "Product",
+          aspectRatio: 'hero', // Generate only Main Image
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGeneratedSet({
+          main: data.imageUrl,
+          gallery: [],
+          detail: []
+        });
+        toast.success("Main Image Generated! Review it and proceed to Step 2.");
+      } else {
+        toast.error(data.message || "Failed to generate main image");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error generating image");
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  // Step 2: Generate Rest of the Set (Accumulates Images)
+  const handleGenerateRestImages = async () => {
+    if (!aiBaseImage) return;
+    setIsGeneratingAI(true);
+    try {
+      const response = await fetch('/api/ai/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          baseImage: generatedSet?.main || aiBaseImage, // Use generated main image if available
+          productName: formData.name || "Product",
+          generateRest: true // Trigger remaining 3 images
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        const newImages = data.galleryImages || [];
+
+        // Append new images to the list
+        setGeneratedSet(prev => ({
+          main: prev?.main || "",
+          gallery: [...(prev?.gallery || []), ...newImages],
+          detail: [] // Not using distinct detail field anymore
+        }));
+
+        // Auto-select the newly generated images
+        setSelectedGalleryItems(prev => [...prev, ...newImages]);
+
+        toast.success(`Generated ${newImages.length} new gallery images!`);
+      } else {
+        toast.error(data.message || "Failed to generate remaining images");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error generating images");
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  // ✅ Helper: Convert Base64 to File
+  const base64ToFile = (dataurl: string, filename: string) => {
+    const arr = dataurl.split(',');
+    const match = arr[0].match(/:(.*?);/);
+    const mime = match ? match[1] : 'image/png';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  const handleApplyAIImages = async () => {
+    if (!generatedSet) return;
+
+    // Use selection or all gallery images
+    const galleryToApply = selectedGalleryItems.length > 0
+      ? selectedGalleryItems
+      : generatedSet.gallery;
+
+    if (!generatedSet.main && galleryToApply.length === 0) {
+      toast.error("No images to apply!");
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    const toastId = toast.loading("Uploading AI images to S3...");
+
+    try {
+      const timestamp = Date.now();
+      let newThumbUrl = formData.thumbUrl;
+
+      // 1. Upload Main Image
+      if (generatedSet.main && generatedSet.main.startsWith('data:')) {
+        const mainFile = base64ToFile(generatedSet.main, `ai-main-${timestamp}.png`);
+        // ✅ Use hook's uploadImage
+        const url = await uploadImage(mainFile, 'products');
+        if (url) newThumbUrl = url;
+      }
+
+      // 2. Upload Gallery Images
+      const newGalleryUrls: string[] = [];
+      for (let i = 0; i < galleryToApply.length; i++) {
+        const imgData = galleryToApply[i];
+        if (imgData.startsWith('data:')) {
+          const file = base64ToFile(imgData, `ai-gallery-${timestamp}-${i}.png`);
+          // ✅ Use hook's uploadImage
+          const url = await uploadImage(file, 'products');
+          if (url) newGalleryUrls.push(url);
+        } else {
+          newGalleryUrls.push(imgData); // Already a URL (rare but possible)
+        }
+      }
+
+      // 3. Update Form Data
+      setFormData(prev => ({
+        ...prev,
+        thumbUrl: newThumbUrl,
+        images: [...(prev.images || []), ...newGalleryUrls],
+        detailImages: [] // Clear detail images if merged
+      }));
+
+      toast.success("AI Images uploaded & applied successfully!", { id: toastId });
+      setOpenSections(prev => ({ ...prev, images: true }));
+
+    } catch (error) {
+      console.error("Failed to upload AI images:", error);
+      toast.error("Failed to upload images. Please try again.", { id: toastId });
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   if (!brandId) {
+    // ... (Render UI updates below)
+    // I will update the buttons in the render section in a separate or larger chunk if needed, 
+    // but for cleaner diff, I will target the handlers first, then the JSX.
+    // Wait, I should do it in one go if they are close, but they are far apart in file (handlers at top, JSX at bottom).
+    // I will split. This step updates Handlers.
+
     return (
       <div className={`bg-white rounded-lg shadow ${className}`}>
         <div className="p-6">
@@ -92,8 +271,6 @@ export default function ProductRegisterSubSection({
       </div>
     );
   }
-
-
 
   // Handle variant changes
   const handleVariantChange = (
@@ -114,17 +291,27 @@ export default function ProductRegisterSubSection({
 
   // Add new variant
   const addVariant = () => {
-    setFormData(prev => ({
-      ...prev,
-      variants: [...prev.variants, {
-        price: prev.basePrice,
-        compareAtPrice: prev.baseCompareAtPrice,
-        quantity: 0,
-        weightGrams: 0,
-        status: "active",
-        options: []
-      }]
-    }));
+    setFormData(prev => {
+      // Get options from the first variant if available to keep consistency
+      const defaultOptions = prev.variants.length > 0
+        ? prev.variants[0].options.map(opt => ({ key: opt.key, value: "" }))
+        : [
+          { key: "사이즈", value: "" },
+          { key: "색깔", value: "" }
+        ];
+
+      return {
+        ...prev,
+        variants: [...prev.variants, {
+          price: prev.basePrice,
+          compareAtPrice: prev.baseCompareAtPrice,
+          quantity: 0,
+          weightGrams: 0,
+          status: "active",
+          options: defaultOptions
+        }]
+      };
+    });
   };
 
   // Remove variant
@@ -152,18 +339,13 @@ export default function ProductRegisterSubSection({
 
     // Validate inventory based on hasOptions
     if (formData.hasOptions) {
-      // Has variants - validate each variant
       if (formData.variants.length === 0) {
         errors.push(t("header.business.brandDetail.products.register.validationErrors.variantRequired"));
       }
-
       formData.variants.forEach((variant, index) => {
-        // Validate quantity
         if (variant.quantity === undefined || variant.quantity === null || variant.quantity < 0) {
           errors.push(t("header.business.brandDetail.products.register.validationErrors.variantQuantityRequired", { index: index + 1 }));
         }
-
-        // Options are now optional - only validate if provided
         if (variant.options && variant.options.length > 0) {
           variant.options.forEach((option, optionIndex) => {
             if (!option.key?.trim() || !option.value?.trim()) {
@@ -173,23 +355,37 @@ export default function ProductRegisterSubSection({
         }
       });
     } else {
-      // No variants - product-level inventory validation
       if (formData.quantity !== null && formData.quantity !== undefined && formData.quantity < 0) {
         errors.push(t("header.business.brandDetail.products.register.validationErrors.quantityInvalid"));
       }
     }
 
     if (errors.length > 0) {
-      // Show validation errors
       toast.error(errors.join(", "));
       return;
     }
 
     try {
-      // ✅ Use mutation hook - handles API call, toast, and cache update
       const dto = convertProductFormToDto(formData);
 
-      // 🔍 Log data being sent to backend
+      // ✅ [Auto-Fix] If no variants exist (Simple Product), create a Default Variant
+      // This prevents "Product variant not found" error in Cart API which requires at least one variant.
+      if (!dto.variants || dto.variants.length === 0) {
+        dto.variants = [{
+          price: dto.basePrice,
+          compareAtPrice: dto.baseCompareAtPrice,
+          quantity: typeof dto.quantity === 'number' ? dto.quantity : 0,
+          weightGrams: 0,
+          status: 'active',
+          optionsJson: undefined // No options indicates default variant
+        }];
+      }
+
+      // ✅ Add Size Chart data to product_Details (Send as JSON string array to match Backend's List<string>)
+      if (measurementRows && measurementRows.length > 0) {
+        dto.product_Details = measurementRows.map(row => JSON.stringify(row));
+      }
+
       console.log('📤 Sending product data to backend:', {
         ...dto,
         promotionId: dto.promotionId || '(No promotion selected)',
@@ -198,12 +394,10 @@ export default function ProductRegisterSubSection({
 
       await createProduct.mutateAsync(dto);
 
-      // ✅ Delay 0.5s for better UX (show toast & cache already updated!)
       setTimeout(() => {
         router.push(`/business/brands/${brandId}/products`);
       }, 500);
     } catch (error) {
-      // Error toast already handled in mutation hook
       console.error('Product creation error:', error);
     }
   };
@@ -212,292 +406,11 @@ export default function ProductRegisterSubSection({
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-
-  // ✅ Generate Detail Images (4 images: Hero, Features, Lifestyle, Info)
-  const handleGenerateDetailImages = async () => {
-    if (!formData.thumbUrl) {
-      toast.error(t("header.business.brandDetail.products.register.toastMessages.mainImageRequired"));
-      return;
-    }
-
-    if (!formData.name) {
-      toast.error("제품명을 먼저 입력해주세요.");
-      return;
-    }
-
-    try {
-      setIsGeneratingDetails(true);
-      setGeneratedDetailImages([]);
-      setSelectedDetailImages(new Set());
-
-      toast.info("4장의 상세 이미지 생성 중... (15-20초 소요)");
-
-      // Convert image URL to base64
-      const response = await fetch(formData.thumbUrl);
-      const blob = await response.blob();
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
-
-      // Build info text for Info image (Korean)
-      const textSections: string[] = [];
-      if (formData.name) textSections.push(`제품명: ${formData.name}`);
-      if (formData.description) textSections.push(`설명: ${formData.description}`);
-
-      // Add price information
-      if (formData.basePrice) {
-        textSections.push(`가격: ₩${formData.basePrice.toLocaleString()}`);
-        if (formData.baseCompareAtPrice) {
-          textSections.push(`정가: ₩${formData.baseCompareAtPrice.toLocaleString()}`);
-        }
-      }
-
-      // Add variants information (sizes, colors, etc.)
-      if (formData.hasOptions && formData.variants.length > 0) {
-        const sizes = new Set<string>();
-        const colors = new Set<string>();
-        const otherOptions = new Map<string, Set<string>>();
-
-        formData.variants.forEach(variant => {
-          variant.options.forEach(option => {
-            const key = option.key?.toLowerCase() || '';
-            const value = option.value || '';
-
-            if (key.includes('size') || key.includes('사이즈')) {
-              sizes.add(value);
-            } else if (key.includes('color') || key.includes('색상') || key.includes('컬러')) {
-              colors.add(value);
-            } else if (key && value) {
-              if (!otherOptions.has(option.key!)) {
-                otherOptions.set(option.key!, new Set());
-              }
-              otherOptions.get(option.key!)!.add(value);
-            }
-          });
-        });
-
-        if (sizes.size > 0) {
-          textSections.push(`사이즈: ${Array.from(sizes).join(', ')}`);
-        }
-        if (colors.size > 0) {
-          textSections.push(`색상: ${Array.from(colors).join(', ')}`);
-        }
-        otherOptions.forEach((values, key) => {
-          textSections.push(`${key}: ${Array.from(values).join(', ')}`);
-        });
-      }
-
-      const infoPrompt = textSections.join('\n');
-
-      // Define 4 image types with specific prompts
-      const types = [
-        { id: 'hero', label: 'Hero Image', prompt: formData.name },
-        { id: 'features', label: 'Features', prompt: "" },
-        { id: 'lifestyle', label: 'Lifestyle', prompt: "" },
-        { id: 'info', label: 'Info & Size', prompt: infoPrompt }
-      ];
-
-      // Fire requests in parallel
-      const promises = types.map(async (type) => {
-        try {
-          const result = await generateImage({
-            baseImage: base64.split(',')[1],
-            prompt: type.prompt || "",
-            productName: formData.name,
-            aspectRatio: type.id, // Pass type as aspect ratio to trigger specific prompt
-          });
-
-          if (result.success && result.imageUrl) {
-            return { type: type.label, url: result.imageUrl };
-          }
-          return null;
-        } catch (error) {
-          console.error(`Failed to generate ${type.label}:`, error);
-          return null;
-        }
-      });
-
-      const results = await Promise.all(promises);
-      const validResults = results.filter((r): r is { type: string, url: string } => r !== null);
-
-      // Sort by fixed order
-      const order = ['Hero Image', 'Features', 'Lifestyle', 'Info & Size'];
-      validResults.sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
-
-      setGeneratedDetailImages(validResults);
-
-      if (validResults.length > 0) {
-        toast.success(`${validResults.length}장의 상세 이미지가 생성되었습니다!`);
-      } else {
-        toast.error("이미지 생성에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error('Detail images generation error:', error);
-      toast.error("이미지 생성 중 오류가 발생했습니다.");
-    } finally {
-      setIsGeneratingDetails(false);
-    }
-  };
-
-  // Toggle image selection
-  const toggleImageSelection = (url: string) => {
-    setSelectedDetailImages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(url)) {
-        newSet.delete(url);
-      } else {
-        newSet.add(url);
-      }
-      return newSet;
-    });
-  };
-
-  // Add selected images to product detail images
-  const handleAddSelectedImages = () => {
-    if (selectedDetailImages.size === 0) {
-      toast.error("추가할 이미지를 선택해주세요.");
-      return;
-    }
-
-    const selectedUrls = Array.from(selectedDetailImages);
-    setFormData(prev => ({
-      ...prev,
-      images: [...(prev.images || []), ...selectedUrls]
-    }));
-
-    toast.success(`${selectedDetailImages.size}장의 이미지가 상세 이미지에 추가되었습니다.`);
-
-    // Clear selection and generated images
-    setGeneratedDetailImages([]);
-    setSelectedDetailImages(new Set());
-  };
-
-
-  // ✅ AI Auto Fill - Analyze product image and auto-fill form
-  const handleAIAutoFill = async () => {
-    if (!formData.thumbUrl) {
-      toast.error(t("header.business.brandDetail.products.register.toastMessages.mainImageRequiredForFitting"));
-      return;
-    }
-
-    try {
-      setIsAnalyzingProduct(true);
-      toast.info(t("header.business.brandDetail.products.register.toastMessages.aiAnalyzing"));
-
-      // Convert image URL to base64
-      const response = await fetch(formData.thumbUrl);
-      const blob = await response.blob();
-      const reader = new FileReader();
-
-      reader.onloadend = async () => {
-        try {
-          const base64Image = (reader.result as string).split(',')[1];
-
-          const analysisResponse = await fetch('/api/ai/analyze-product', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: base64Image })
-          });
-
-          const analysisData = await analysisResponse.json();
-
-          if (analysisData.success && analysisData.data) {
-            const { name, description, category, categoryHint } = analysisData.data;
-
-            // Auto-fill form
-            setFormData(prev => {
-              const updates: Partial<ProductForm> = {};
-
-              // Only update if field is empty
-              if (!prev.name && name) {
-                updates.name = name;
-              }
-
-              if (!prev.description && description) {
-                updates.description = description;
-              }
-
-              return { ...prev, ...updates };
-            });
-
-            // Try to match category - recursive search in nested categories
-            if (category && categories.length > 0) {
-              const findCategoryRecursive = (cats: typeof categories, searchTerm: string, categoryHint?: string): typeof categories[0] | null => {
-                for (const cat of cats) {
-                  const catName = cat.name.toLowerCase();
-
-                  // Try to match with category hint first (more specific)
-                  if (categoryHint) {
-                    const hintLower = categoryHint.toLowerCase();
-                    if (catName.includes(hintLower) || hintLower.includes(catName)) {
-                      return cat;
-                    }
-                  }
-
-                  // Match with main category type
-                  const matchesMainType =
-                    (searchTerm === "상의" && (catName.includes("상의") || catName.includes("top"))) ||
-                    (searchTerm === "하의" && (catName.includes("하의") || catName.includes("bottom"))) ||
-                    (searchTerm === "원피스" && (catName.includes("원피스") || catName.includes("dress") || catName.includes("onepiece"))) ||
-                    (searchTerm === "아우터" && (catName.includes("아우터") || catName.includes("outer") || catName.includes("jacket")));
-
-                  if (matchesMainType) {
-                    return cat;
-                  }
-
-                  // Search in children recursively
-                  if (cat.children && cat.children.length > 0) {
-                    const found = findCategoryRecursive(cat.children, searchTerm, categoryHint);
-                    if (found) return found;
-                  }
-                }
-                return null;
-              };
-
-              // Try to find category using categoryHint first, then category
-              let categoryMatch = null;
-              if (categoryHint) {
-                categoryMatch = findCategoryRecursive(categories, category, categoryHint);
-              }
-
-              // If not found with hint, try without hint
-              if (!categoryMatch) {
-                categoryMatch = findCategoryRecursive(categories, category);
-              }
-
-              if (categoryMatch && !formData.categoryId) {
-                setFormData(prev => ({ ...prev, categoryId: categoryMatch!.id }));
-              }
-            }
-
-            toast.success(t("header.business.brandDetail.products.register.toastMessages.aiAutoFilled"));
-          } else {
-            toast.error(t("header.business.brandDetail.products.register.toastMessages.imageAnalysisFailed"));
-          }
-        } catch {
-          toast.error(t("header.business.brandDetail.products.register.toastMessages.aiAnalysisError"));
-        } finally {
-          setIsAnalyzingProduct(false);
-        }
-      };
-
-      reader.readAsDataURL(blob);
-    } catch {
-      toast.error(t("header.business.brandDetail.products.register.toastMessages.imageLoadError"));
-      setIsAnalyzingProduct(false);
-    }
-  };
-
-
-
   return (
     <div className={`bg-white rounded-lg shadow ${className}`}>
       <div className="p-6">
         <h2 className="text-2xl font-bold mb-6">{t("header.business.brandDetail.products.register.title")}</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-
 
           {/* Category Section */}
           <Card>
@@ -516,10 +429,10 @@ export default function ProductRegisterSubSection({
                   isLoading={isLoadingCategories}
                   compactMode={true}
                 />
-
               </CardContent>
             )}
           </Card>
+
           {/* Basic Info Section */}
           <Card>
             <CardHeader className="cursor-pointer" onClick={() => toggleSection('basic')}>
@@ -530,7 +443,6 @@ export default function ProductRegisterSubSection({
             </CardHeader>
             {openSections.basic && (
               <CardContent className="space-y-4">
-                {/* 상품명, 슬러그, SKU - 3 cột */}
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="name">{t("header.business.brandDetail.products.register.productName")}</Label>
@@ -564,7 +476,6 @@ export default function ProductRegisterSubSection({
                   </div>
                 </div>
 
-                {/* 상품 설명 - full width */}
                 <div>
                   <Label htmlFor="description">{t("header.business.brandDetail.products.register.description")}</Label>
                   <Textarea
@@ -578,8 +489,6 @@ export default function ProductRegisterSubSection({
               </CardContent>
             )}
           </Card>
-
-
 
           {/* Pricing Section */}
           <Card>
@@ -652,27 +561,26 @@ export default function ProductRegisterSubSection({
                     }
 
                     return (
-                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-green-900">할인 후 가격 (Final Price):</span>
+                          <span className="text-sm font-medium text-gray-900">할인 후 가격 (Final Price):</span>
                           <div className="text-right">
-                            <div className="text-lg font-bold text-green-600">₩{finalPrice.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-gray-900">₩{finalPrice.toLocaleString()}</div>
                             <div className="text-xs text-gray-500 line-through">₩{formData.basePrice.toLocaleString()}</div>
                           </div>
                         </div>
-                        <p className="text-xs text-green-700 mt-2">
+                        <p className="text-xs text-gray-600 mt-2">
                           {selectedPromo.name} 적용됨 ({selectedPromo.type === 'percentage' ? `${selectedPromo.value}% 할인` : `₩${selectedPromo.value?.toLocaleString()} 할인`})
                         </p>
                       </div>
                     );
                   })()}
                 </div>
-
               </CardContent>
             )}
           </Card>
 
-          {/* Inventory Section - v2.0: Product + Variants */}
+          {/* Inventory Section */}
           <Card>
             <CardHeader className="cursor-pointer" onClick={() => toggleSection('variants')}>
               <CardTitle className="flex items-center justify-between">
@@ -682,11 +590,9 @@ export default function ProductRegisterSubSection({
             </CardHeader>
             {openSections.variants && (
               <CardContent className="space-y-6">
-                {/* 1. Product-level Inventory */}
-                <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <Label className="text-base font-semibold text-blue-900">{t("header.business.brandDetail.products.register.productLevelStock")}</Label>
+                    <Label className="text-base font-semibold">{t("header.business.brandDetail.products.register.productLevelStock")}</Label>
                   </div>
                   <div>
                     <Label htmlFor="quantity">{t("header.business.brandDetail.products.register.productQuantity")}</Label>
@@ -707,7 +613,6 @@ export default function ProductRegisterSubSection({
                   </div>
                 </div>
 
-                {/* 2. Variants Toggle & Management */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
@@ -725,32 +630,32 @@ export default function ProductRegisterSubSection({
                         setFormData(prev => ({
                           ...prev,
                           hasOptions: checked,
-                          // If switching to variants, ensure at least one variant
                           variants: checked && prev.variants.length === 0 ? [{
                             price: prev.basePrice,
                             compareAtPrice: prev.baseCompareAtPrice,
                             quantity: 0,
                             weightGrams: 0,
                             status: "active",
-                            options: []
+                            options: [
+                              { key: "사이즈", value: "" },
+                              { key: "색깔", value: "" }
+                            ]
                           }] : prev.variants
                         }));
                       }}
                     />
                   </div>
-                  {/* Only show variants when hasOptions is true */}
                   {formData.hasOptions && (
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <Label className="text-base font-semibold text-green-900">{t("header.business.brandDetail.products.register.variantLevelStock")}</Label>
+                        <Label className="text-base font-semibold">{t("header.business.brandDetail.products.register.variantLevelStock")}</Label>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-4 gap-4">
                         {formData.variants.map((variant, index) => (
-                          <Card key={index} className="border-2 border-green-200">
-                            <CardHeader className="pb-3 bg-green-50">
+                          <Card key={index} className="border border-gray-200">
+                            <CardHeader className="pb-3 bg-gray-50/50">
                               <div className="flex items-center justify-between">
-                                <span className="font-medium text-green-900">{t("header.business.brandDetail.products.register.variant", { index: index + 1 })}</span>
+                                <span className="font-medium">{t("header.business.brandDetail.products.register.variant", { index: index + 1 })}</span>
                                 {formData.variants.length > 1 && (
                                   <Button
                                     type="button"
@@ -764,7 +669,6 @@ export default function ProductRegisterSubSection({
                               </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                              {/* 1. 수량 */}
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <Label>{t("header.business.brandDetail.products.register.quantity")}</Label>
@@ -777,7 +681,6 @@ export default function ProductRegisterSubSection({
                                 </div>
                               </div>
 
-                              {/* 2. 옵션 (v2.0: Optional) */}
                               <div>
                                 <Label>{t("header.business.brandDetail.products.register.options")}</Label>
                                 <p className="text-sm text-gray-500 mb-2">
@@ -834,7 +737,6 @@ export default function ProductRegisterSubSection({
                                 </div>
                               </div>
 
-                              {/* 3. 추가 정보 (Collapsible) */}
                               <div>
                                 <div
                                   className="flex items-center gap-2 cursor-pointer"
@@ -898,6 +800,308 @@ export default function ProductRegisterSubSection({
             )}
           </Card>
 
+          {/* ✅ Dynamic Size Chart Builder (UI Moved Here) */}
+          <Card className="border border-gray-200 shadow-sm">
+            <CardHeader className="bg-gray-50/50 cursor-pointer" onClick={() => toggleSection('sizeChart')}>
+              <CardTitle className="flex items-center justify-between text-lg">
+                <span>상세 사이즈표 설정</span>
+                {openSections.sizeChart ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </CardTitle>
+              <p className="text-sm text-gray-500 font-normal">
+                상세 페이지에 포함될 사이즈표입니다. 행(사이즈)과 열(측정 부위)을 자유롭게 구성하세요.
+              </p>
+            </CardHeader>
+            {openSections.sizeChart && (
+              <CardContent className="p-6">
+                {/* 1. 컬럼(측정 부위) 관리 */}
+                <div className="mb-6">
+                  <Label className="mb-2 block text-sm font-medium text-gray-700">측정 부위 (가로 열)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {measurementColumns.map((col, idx) => (
+                      <div key={idx} className="flex items-center bg-blue-50 border border-blue-100 rounded-md pl-3 pr-1 py-1">
+                        <span className="text-sm text-blue-700 font-medium mr-2">{col}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newCols = measurementColumns.filter((_, i) => i !== idx);
+                            setMeasurementColumns(newCols);
+                          }}
+                          className="text-blue-400 hover:text-red-500 p-1"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-1">
+                      <Input
+                        id="new-column-input"
+                        placeholder="예: 허리둘레"
+                        className="h-8 w-32 text-sm"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = e.currentTarget.value.trim();
+                            if (val && !measurementColumns.includes(val)) {
+                              setMeasurementColumns([...measurementColumns, val]);
+                              e.currentTarget.value = '';
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const input = document.getElementById('new-column-input') as HTMLInputElement;
+                          if (input && input.value.trim() && !measurementColumns.includes(input.value.trim())) {
+                            setMeasurementColumns([...measurementColumns, input.value.trim()]);
+                            input.value = '';
+                          }
+                        }}
+                        className="h-8"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. 그리드 테이블 */}
+                <div className="overflow-x-auto border rounded-lg">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-gray-700 font-medium border-b">
+                      <tr>
+                        <th className="px-4 py-3 min-w-[100px]">Size / 구분</th>
+                        {measurementColumns.map((col, idx) => (
+                          <th key={idx} className="px-4 py-3 min-w-[100px]">{col}</th>
+                        ))}
+                        <th className="px-4 py-3 w-[50px]"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {measurementRows.map((row, rowIdx) => (
+                        <tr key={rowIdx} className="hover:bg-gray-50/50">
+                          {/* 사이즈 이름 입력 */}
+                          <td className="p-2">
+                            <Input
+                              value={row.size}
+                              onChange={(e) => {
+                                const newRows = [...measurementRows];
+                                newRows[rowIdx].size = e.target.value;
+                                setMeasurementRows(newRows);
+                              }}
+                              className="font-bold bg-transparent border-transparent hover:border-gray-200 focus:bg-white h-8"
+                              placeholder="Size"
+                            />
+                          </td>
+                          {/* 각 컬럼별 값 입력 */}
+                          {measurementColumns.map((col, colIdx) => (
+                            <td key={colIdx} className="p-2">
+                              <Input
+                                value={row.values[col] || ''}
+                                onChange={(e) => {
+                                  const newRows = [...measurementRows];
+                                  newRows[rowIdx].values = { ...newRows[rowIdx].values, [col]: e.target.value };
+                                  setMeasurementRows(newRows);
+                                }}
+                                className="text-center h-8"
+                                placeholder="0"
+                              />
+                            </td>
+                          ))}
+                          {/* 행 삭제 버튼 */}
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMeasurementRows(measurementRows.filter((_, i) => i !== rowIdx));
+                              }}
+                              className="text-gray-400 hover:text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 3. 행 추가 버튼 */}
+                <div className="mt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMeasurementRows([...measurementRows, { size: "Free", values: {} }]);
+                    }}
+                    className="w-full border-dashed text-gray-500 hover:text-blue-600 hover:border-blue-300"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    새로운 사이즈 행 추가
+                  </Button>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* 🤖 AI Image Studio */}
+          <Card className="border-gray-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gray-50 cursor-pointer" onClick={() => toggleSection('images')}>
+              <CardTitle className="flex items-center justify-between text-gray-900">
+                <div className="flex items-center gap-2">
+                  <span>이미지 생성</span>
+                </div>
+                {openSections.images ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </CardTitle>
+            </CardHeader>
+            {openSections.images && (
+              <CardContent className="space-y-6 pt-6">
+                {/* 1. Reference Image Upload */}
+                <div className="flex flex-col gap-4">
+                  <Label className="text-base font-semibold">원본 이미지</Label>
+                  <div className="flex gap-4 items-start">
+                    <div className="w-1/3 min-w-[200px]">
+                      <ImageUploader
+                        value={aiBaseImage}
+                        onChange={(url) => setAiBaseImage(Array.isArray(url) ? url[0] : url || "")}
+                        maxFiles={1}
+                      />
+                    </div>
+                    <div className="flex-1 flex flex-col justify-center gap-4 pt-4">
+                      <p className="text-sm text-gray-500">
+                        원본 이미지를 업로드해주세요.
+                        <br />
+                        <strong>Step 1:</strong> AI가 대표 이미지를 생성합니다.
+                        <br />
+                        <strong>Step 2:</strong> AI가 갤러리 이미지와 상세 이미지를 생성합니다.
+                      </p>
+
+                      {/* Step 1 Button: Generate Main */}
+                      {!generatedSet?.main && (
+                        <Button
+                          type="button"
+                          onClick={handleGenerateMainImage}
+                          disabled={!aiBaseImage || isGeneratingAI}
+                          className="bg-purple-600 hover:bg-purple-700 text-white w-fit px-8"
+                        >
+                          {isGeneratingAI ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Step 1 생성 중...
+                            </>
+                          ) : (
+                            <>
+                              <Wand2 className="mr-2 h-4 w-4" />
+                              Step 1 생성
+                            </>
+                          )}
+                        </Button>
+                      )}
+
+                      {/* Step 2 Button: Generate Rest */}
+                      {generatedSet?.main && (
+                        <div className="flex gap-3">
+                          <Button
+                            type="button"
+                            onClick={handleGenerateRestImages}
+                            disabled={isGeneratingAI}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+                          >
+                            {isGeneratingAI ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Step 2 생성 중...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Step 2 생성
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleGenerateMainImage}
+                            disabled={isGeneratingAI}
+                          >
+                            Step 1 재생성
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Generation Results */}
+                {generatedSet && (
+                  <div className="space-y-4 border-t pt-6 animation-fade-in">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-semibold">생성 결과</Label>
+
+                      {/* Show 'Apply' button only if full set is generated or at least main exists */}
+                      <Button
+                        type="button"
+                        onClick={handleApplyAIImages}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        disabled={isGeneratingAI}
+                      >
+                        AI 이미지 적용하기
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap items-start gap-8">
+                      {/* Main Image Result - Prominent */}
+                      <div className="space-y-2 w-80 shrink-0">
+                        <span className="text-xs font-bold uppercase text-gray-500">대표 이미지</span>
+                        <div className="aspect-square rounded-lg border border-gray-200 overflow-hidden relative group bg-gray-50">
+                          {generatedSet?.main ? (
+                            <img src={generatedSet.main} alt="AI Main" className="object-contain w-full h-full" />
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-gray-400 text-xs">Waiting for Step 1...</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Gallery Images Result - Small Thumbnails */}
+                      <div className="space-y-2 flex-1 min-w-[300px]">
+                        <span className="text-xs font-bold uppercase text-gray-500">갤러리 이미지</span>
+                        <div className="grid grid-cols-6 gap-2">
+                          {generatedSet?.gallery && generatedSet.gallery.length > 0 ? (
+                            generatedSet.gallery.map((img, idx) => {
+                              const isSelected = selectedGalleryItems.includes(img);
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`aspect-square rounded border overflow-hidden relative cursor-pointer hover:opacity-90 transition-all ${isSelected ? 'border-blue-500 ring-2 ring-blue-500' : 'border-gray-200'}`}
+                                  onClick={() => toggleGallerySelection(img)}
+                                >
+                                  <img src={img} alt={`AI Gallery ${idx}`} className="w-full h-full object-contain" />
+                                  {isSelected && (
+                                    <div className="absolute top-1 right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-sm">
+                                      ✓
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="col-span-4 flex items-center justify-center border border-dashed rounded bg-gray-50 text-gray-400 text-sm p-4 h-32">
+                              Step 2 생성 중...
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
+
           {/* Images Section */}
           <Card>
             <CardHeader className="cursor-pointer" onClick={() => toggleSection('images')}>
@@ -913,28 +1117,6 @@ export default function ProductRegisterSubSection({
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label>{t("header.business.brandDetail.products.register.mainImage")}</Label>
-                      {formData.thumbUrl && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleAIAutoFill}
-                          disabled={isAnalyzingProduct}
-                          className="text-xs"
-                        >
-                          {isAnalyzingProduct ? (
-                            <>
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current mr-1"></div>
-                              {t("header.business.brandDetail.products.register.analyzingForFitting")}
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              {t("header.business.brandDetail.products.register.aiAutoFill")}
-                            </>
-                          )}
-                        </Button>
-                      )}
                     </div>
                     <ImageUploader
                       value={formData.thumbUrl}
@@ -943,94 +1125,32 @@ export default function ProductRegisterSubSection({
                     />
                   </div>
 
-                  {/* 상세 이미지 (Detail Images) */}
+                  {/* 추가 갤러리 이미지 (Gallery Images) */}
                   <div>
-                    <Label>{t("header.business.brandDetail.products.register.detailImages")}</Label>
+                    <Label>추가 갤러리 이미지 (Gallery Images)</Label>
                     <p className="text-sm text-gray-600 mb-2">
-                      {t("header.business.brandDetail.products.register.aiGeneratedImages")}
+                      상품 목록이나 갤러리에서 보여질 추가 이미지들입니다.
                     </p>
                     <ImageUploader
-                      value={formData.images}
+                      value={formData.images || []}
                       onChange={(urls) => setFormData(prev => ({ ...prev, images: Array.isArray(urls) ? urls : urls ? [urls] : [] }))}
                       single={false}
                       maxFiles={10}
                     />
+                  </div>
 
-                    {/* ✅ Detail Images Generator (4 images) */}
-                    {formData.thumbUrl && (
-                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Sparkles className="h-5 w-5 text-blue-600" />
-                          <span className="font-medium text-blue-900">상세 이미지 생성 (4장)</span>
-                        </div>
-                        <p className="text-sm text-blue-700 mb-3">
-                          제품 정보를 바탕으로 Hero, Features, Lifestyle, Info 4가지 타입의 상세 이미지를 자동 생성합니다.
-                        </p>
-                        <Button
-                          type="button"
-                          onClick={handleGenerateDetailImages}
-                          disabled={isGeneratingDetails || !formData.name}
-                          className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-                        >
-                          {isGeneratingDetails ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              상세 이미지 생성 중... (15-20초)
-                            </>
-                          ) : (
-                            <>
-                              <Wand2 className="h-4 w-4 mr-2" />
-                              상세 이미지 4장 생성하기
-                            </>
-                          )}
-                        </Button>
-
-                        {/* Generated Images Grid */}
-                        {generatedDetailImages.length > 0 && (
-                          <div className="mt-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700">
-                                생성된 이미지 ({generatedDetailImages.length}/4)
-                              </span>
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={handleAddSelectedImages}
-                                disabled={selectedDetailImages.size === 0}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                선택한 이미지 추가 ({selectedDetailImages.size})
-                              </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-3">
-                              {generatedDetailImages.map((img, index) => (
-                                <div key={index} className="relative group">
-                                  <div className="relative aspect-[9/16] max-h-[600px] mx-auto rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50">
-                                    <img
-                                      src={img.url}
-                                      alt={img.type}
-                                      className="w-full h-full object-contain"
-                                    />
-                                    <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                                      {img.type}
-                                    </div>
-                                    <div className="absolute top-2 right-2">
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedDetailImages.has(img.url)}
-                                        onChange={() => toggleImageSelection(img.url)}
-                                        className="w-5 h-5 cursor-pointer"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                  {/* 상세 설명 이미지 (Detail Images) */}
+                  <div className="pt-4 border-t">
+                    <Label>{t("header.business.brandDetail.products.register.detailImages")}</Label>
+                    <p className="text-sm text-gray-600 mb-2">
+                      상품 상세 페이지 본문에 들어갈 긴 설명 이미지들입니다.
+                    </p>
+                    <ImageUploader
+                      value={formData.detailImages || []}
+                      onChange={(urls) => setFormData(prev => ({ ...prev, detailImages: Array.isArray(urls) ? urls : urls ? [urls] : [] }))}
+                      single={false}
+                      maxFiles={10}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -1052,8 +1172,6 @@ export default function ProductRegisterSubSection({
           </div>
         </form>
       </div>
-
-
     </div>
   );
 }

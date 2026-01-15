@@ -69,6 +69,7 @@ async function fetchProducts(
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -92,6 +93,7 @@ async function fetchProduct(
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -122,8 +124,8 @@ export function useProducts(brandId?: string, pageNumber: number = 1, searchKeyw
     queryKey: [...PRODUCTS_QUERY_KEY, brandId, pageNumber, searchKeyword],
     queryFn: () => fetchProducts(brandId!, pageNumber, token!, searchKeyword),
     enabled: isAuthenticated && !!token && !!brandId,
-    staleTime: 60 * 1000, // 1 minute - products change more frequently
-    gcTime: 3 * 60 * 1000, // 3 minutes cache time
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -146,8 +148,8 @@ export function useProduct(productId?: string) {
     queryKey: [...PRODUCT_DETAIL_QUERY_KEY, productId],
     queryFn: () => fetchProduct(productId!, token!),
     enabled: isAuthenticated && !!token && !!productId,
-    staleTime: 30 * 1000, // 30 seconds - for edit forms
-    gcTime: 2 * 60 * 1000, // 2 minutes cache time
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -323,6 +325,11 @@ export function useUpdateProduct(brandId: string, productId: string) {
           }
         );
 
+        // ✅ Invalidate public products query to ensure list is updated
+        queryClient.invalidateQueries({
+          queryKey: ["publicProducts"]
+        });
+
         // ✅ Update product detail cache
         queryClient.setQueryData(
           [...PRODUCT_DETAIL_QUERY_KEY, productId],
@@ -373,6 +380,7 @@ export interface UsePublicProductsOptions {
   enabled?: boolean; // ✅ Add enabled option to disable hook
   sortBy?: string; // ✅ Sort field (finalPrice, price, etc.)
   sortOrder?: 'asc' | 'desc'; // ✅ Sort order
+  cache?: RequestCache; // ✅ Cache option
 }
 
 /**
@@ -391,11 +399,12 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
     inquiries,
     enabled = true, // ✅ Default enabled
     sortBy,
-    sortOrder
+    sortOrder,
+    cache
   } = options;
 
   return useQuery({
-    queryKey: ["publicProducts", pageNumber, pageSize, searchKeyword, isActive, brandId, categoryId, promotion, reviews, inquiries, sortBy, sortOrder],
+    queryKey: ["publicProducts", pageNumber, pageSize, searchKeyword, isActive, brandId, categoryId, promotion, reviews, inquiries, sortBy, sortOrder, cache],
     enabled, // ✅ Use enabled option
     queryFn: async (): Promise<GetProductsResponse> => {
       // Build URL with all query params
@@ -439,6 +448,7 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
         headers: {
           'Content-Type': 'application/json',
         },
+        cache: cache,
       });
 
       if (!response.ok) {
@@ -447,8 +457,8 @@ export function usePublicProducts(options: UsePublicProductsOptions = {}) {
 
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 
@@ -500,6 +510,7 @@ export function useBestRatedProducts(options: UseBestRatedProductsOptions = {}) 
         headers: {
           'Content-Type': 'application/json',
         },
+        cache: 'no-store',
       });
 
       if (!response.ok) {
@@ -508,8 +519,8 @@ export function useBestRatedProducts(options: UseBestRatedProductsOptions = {}) 
 
       return response.json();
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes (longer cache for best rated)
-    gcTime: 20 * 60 * 1000, // 20 minutes cache time
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

@@ -6,13 +6,15 @@ export async function POST(request: NextRequest) {
     console.log('🤖 AI Generate Image API called');
 
     const body = await request.json();
-    const { baseImage, prompt, productName, generateVariations = false, aspectRatio } = body;
+    const { baseImage, prompt, productName, generateVariations = false, generateSet = false, generateRest = false, aspectRatio } = body;
 
     console.log('📝 Request data:', {
       hasBaseImage: !!baseImage,
       prompt: prompt?.substring(0, 50) + '...',
       productName,
-      generateVariations
+      generateVariations,
+      generateSet,
+      generateRest
     });
 
     if (!baseImage) {
@@ -33,9 +35,49 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ API key found, proceeding with generation...');
 
-    let result;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let result: any;
 
-    if (generateVariations) {
+    if (generateSet) {
+      // ✅ Step 1: Generate Main (Hero) Image only
+      console.log('🎨 Generating Main Image (Hero)...');
+      const mainResult = await generateProductImage({
+        baseImage,
+        productName,
+        aspectRatio: 'hero'
+      });
+
+      result = {
+        success: mainResult.success,
+        mainImage: mainResult.imageUrl,
+        galleryImages: [],
+        detailImages: [],
+        error: mainResult.error
+      };
+
+    } else if (generateRest) {
+      // ✅ Step 2: Generate Remaining Images (Lifestyle, Features, Info)
+      console.log('🎨 Generating Remaining Images...');
+
+      const restResults = await Promise.all([
+        generateProductImage({ baseImage, productName, aspectRatio: 'features' }),
+        generateProductImage({ baseImage, productName, aspectRatio: 'detail' }),
+        generateProductImage({ baseImage, productName, aspectRatio: 'lifestyle' })
+      ]);
+
+      const successImages = restResults
+        .filter(r => r.success && r.imageUrl)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        .map(r => r.imageUrl!);
+
+      result = {
+        success: successImages.length > 0,
+        galleryImages: successImages,
+        detailImages: [], // Using galleryImages for all additional images
+        error: restResults.find(r => !r.success)?.error
+      };
+
+    } else if (generateVariations) {
       // Generate multiple variations
       const variations = await generateProductImageVariations({
         baseImage,

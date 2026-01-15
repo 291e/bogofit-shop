@@ -13,8 +13,8 @@ export const BRANDS_QUERY_KEY = ["brands"];
  */
 async function fetchBrands(applicationId?: string, token?: string): Promise<GetBrandsResponse> {
   if (!token) throw new Error('Authentication token not found.');
-  
-  const url = applicationId 
+
+  const url = applicationId
     ? `/api/brand?applicationId=${applicationId}`
     : "/api/brand";
 
@@ -22,13 +22,14 @@ async function fetchBrands(applicationId?: string, token?: string): Promise<GetB
     headers: {
       'Authorization': `Bearer ${token}`,
     },
+    cache: 'no-store',
   });
-  
+
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Failed to fetch brands');
   }
-  
+
   return response.json();
 }
 
@@ -37,12 +38,13 @@ async function fetchBrands(applicationId?: string, token?: string): Promise<GetB
  */
 export function useBrands(applicationId?: string) {
   const { token, isAuthenticated } = useAuth();
-  
+
   return useQuery({
     queryKey: [...BRANDS_QUERY_KEY],
     queryFn: () => fetchBrands(applicationId, token!),
     enabled: isAuthenticated && !!token && !!applicationId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    gcTime: 0,
     retry: 1,
   });
 }
@@ -53,11 +55,11 @@ export function useBrands(applicationId?: string) {
 export function useCreateBrand() {
   const queryClient = useQueryClient();
   const { token } = useAuth();
-  
+
   return useMutation({
     mutationFn: async (data: CreateBrandDto) => {
       if (!token) throw new Error('Authentication token not found.');
-      
+
       const response = await fetch('/api/brand', {
         method: 'POST',
         headers: {
@@ -66,19 +68,19 @@ export function useCreateBrand() {
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to create brand');
       }
-      
+
       return response.json();
     },
     onSuccess: (data, variables) => {
       // ✅ Optimistic update: Add new brand to cache
       queryClient.setQueryData(BRANDS_QUERY_KEY, (oldData: GetBrandsResponse | undefined) => {
         if (!oldData) return oldData;
-        
+
         const newBrand = {
           id: data.brand?.id || `temp-${Date.now()}`,
           ...variables,
@@ -86,13 +88,13 @@ export function useCreateBrand() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        
+
         return {
           ...oldData,
           brands: [...oldData.brands, newBrand]
         };
       });
-      
+
       toast.success("브랜드가 성공적으로 생성되었습니다!");
     },
     onError: (error: Error) => {
@@ -109,11 +111,11 @@ export function useCreateBrand() {
 export function useUpdateBrand() {
   const queryClient = useQueryClient();
   const { token } = useAuth();
-  
+
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<BrandResponseDto> }) => {
       if (!token) throw new Error('Authentication token not found.');
-      
+
       const response = await fetch(`/api/brand/${id}`, {
         method: 'PATCH',
         headers: {
@@ -122,12 +124,12 @@ export function useUpdateBrand() {
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to update brand');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -149,23 +151,24 @@ export function useUpdateBrand() {
 export function useDeleteBrand() {
   const queryClient = useQueryClient();
   const { token } = useAuth();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
       if (!token) throw new Error('Authentication token not found.');
-      
+
       const response = await fetch(`/api/brand/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        cache: 'no-store',
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete brand');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -189,13 +192,14 @@ async function fetchPublicBrands(): Promise<GetBrandsResponse> {
     headers: {
       'Content-Type': 'application/json',
     },
+    cache: 'no-store',
   });
-  
+
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Failed to fetch brands');
   }
-  
+
   return response.json();
 }
 
@@ -214,7 +218,7 @@ export function usePublicBrands() {
   return useQuery({
     queryKey: [...BRANDS_QUERY_KEY, 'public'],
     queryFn: fetchPublicBrands,
-    staleTime: 10 * 60 * 1000, // 10 minutes - brands don't change often
-    gcTime: 30 * 60 * 1000, // 30 minutes cache time
+    staleTime: 0,
+    gcTime: 0,
   });
 }

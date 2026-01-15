@@ -149,6 +149,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const authHeader = request.headers.get('authorization');
 
+    // ✅ Debug: Check data from Frontend
+    console.log('🔍 [POST /api/product] Received Body:', body);
+
     // ✅ Validate required fields
     if (!body.brandId || !body.name || !body.slug || !body.basePrice) {
       return NextResponse.json(
@@ -177,9 +180,12 @@ export async function POST(request: NextRequest) {
       categoryId: body.categoryId || null,
       thumbUrl: body.thumbUrl || null,
       images: body.images || [],
+      detail_Images: body.detail_Images || [], // ✅ Pass detail images to backend (snake_case)
+      product_Details: body.product_Details || [], // ✅ Pass product details (snake_case)
       basePrice: body.basePrice,
       baseCompareAtPrice: body.baseCompareAtPrice || null,
       quantity: body.quantity || null, // ✅ v2.1: Product-level inventory
+      promotionId: body.promotionId || null, // ✅ Pass promotion ID
       variants: hasOptions ? body.variants.map((variant: CreateProductVariantDto) => ({
         price: variant.price ?? null,
         compareAtPrice: variant.compareAtPrice ?? null,

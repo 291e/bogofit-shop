@@ -19,19 +19,13 @@ function PaymentSuccessContent() {
   const [isVirtualAccount, setIsVirtualAccount] = useState(false);
 
   const handleConfirm = async () => {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔍 [PAYMENT-SUCCESS] Payment Success Page Loaded');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
 
     const paymentKey = searchParams.get("paymentKey");
     const orderId = searchParams.get("orderId");
     const amount = Number(searchParams.get("amount"));
 
-    console.log('📋 [PAYMENT-SUCCESS] URL Query Params:');
-    console.log('  - paymentKey:', paymentKey);
-    console.log('  - orderId:', orderId);
-    console.log('  - amount:', amount);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
 
     if (!paymentKey || !orderId || !amount) {
       console.error('❌ [PAYMENT-SUCCESS] Missing required params');
@@ -69,20 +63,21 @@ function PaymentSuccessContent() {
 
     try {
       // Step 1: Confirm payment with Toss API
-      console.log("🔄 [PAYMENT-SUCCESS] Step 1: Confirming payment with Toss...");
+
       const result = await confirmPayment(paymentKey, orderId, amount, token);
-      console.log("📋 [PAYMENT-SUCCESS] Payment result:", result);
+
 
       // Extract Toss data from result
       const tossData = result.toss || result;
       setPaymentData(tossData as TossPaymentData);
-      console.log("✅ [PAYMENT-SUCCESS] Step 1: Payment confirmed with Toss");
+
 
       // Step 2: Update order status in database
-      console.log("🔄 [PAYMENT-SUCCESS] Step 2: Updating order status in database...");
+
       try {
         const orderUpdateResponse = await fetch(`/api/order/${orderId}/payment-status`, {
           method: 'PUT',
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
@@ -98,7 +93,7 @@ function PaymentSuccessContent() {
         });
 
         if (orderUpdateResponse.ok) {
-          console.log("✅ [PAYMENT-SUCCESS] Step 2: Order status updated in database");
+
         } else {
           console.warn("⚠️ [PAYMENT-SUCCESS] Step 2: Failed to update order status:", await orderUpdateResponse.text());
           // Don't fail the whole flow - payment is confirmed with Toss
@@ -111,8 +106,7 @@ function PaymentSuccessContent() {
       // Check if virtual account
       if (tossData.method === "가상계좌" || tossData.virtualAccount) {
         setIsVirtualAccount(true);
-        console.log("🏦 [PAYMENT-SUCCESS] Virtual account detected");
-        console.log("🏦 [PAYMENT-SUCCESS] Account info:", tossData.virtualAccount);
+
       }
 
       setLoading(false);

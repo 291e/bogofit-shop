@@ -61,6 +61,7 @@ async function fetchSettlementStats(
             headers: {
                 Authorization: `Bearer ${token}`,
             },
+            cache: 'no-store',
         }
     );
 
@@ -102,7 +103,7 @@ export function useSettlementStats(
             return fetchSettlementStats(timeRange, token, startDate, endDate);
         },
         enabled: isAuthenticated && !!token,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000, // 10 minutes
+        staleTime: 0,
+        gcTime: 0,
     });
 }

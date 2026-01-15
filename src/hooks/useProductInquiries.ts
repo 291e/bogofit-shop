@@ -26,7 +26,7 @@ export function useProductInquiries(productId: string, params: ProductInquiryQue
         pageSize = 10,
         status
     } = params;
-    
+
     const { getToken } = useAuth();
 
     return useQuery({
@@ -46,13 +46,14 @@ export function useProductInquiries(productId: string, params: ProductInquiryQue
             const headers: HeadersInit = {
                 'Content-Type': 'application/json',
             };
-            
+
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
             const response = await fetch(`/api/product/${productId}/inquiries?${searchParams}`, {
-                headers
+                headers,
+                cache: 'no-store',
             });
 
             if (!response.ok) {
@@ -62,7 +63,8 @@ export function useProductInquiries(productId: string, params: ProductInquiryQue
             return response.json();
         },
         enabled: !!productId,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 0,
+        gcTime: 0,
     });
 }
 
@@ -73,7 +75,7 @@ export function useProductInquiry(inquiryId: string) {
     return useQuery({
         queryKey: [...PRODUCT_INQUIRIES_QUERY_KEY, inquiryId],
         queryFn: async (): Promise<SingleProductInquiryResponse> => {
-            const response = await fetch(`/api/ProductInquiry/${inquiryId}`);
+            const response = await fetch(`/api/ProductInquiry/${inquiryId}`, { cache: 'no-store' });
 
             if (!response.ok) {
                 throw new Error('Failed to fetch inquiry');
@@ -196,7 +198,8 @@ export function useDeleteProductInquiry() {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cache: 'no-store',
             });
 
             const result = await response.json();

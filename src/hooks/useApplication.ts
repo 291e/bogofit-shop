@@ -22,6 +22,7 @@ async function fetchApplication(getToken: () => string | null): Promise<ApiAppli
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -50,6 +51,7 @@ async function submitApplication(data: ApplicationFormData & { isEditing?: boole
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    cache: 'no-store',
     body: JSON.stringify(applicationData),
   });
 
@@ -71,7 +73,8 @@ export function useApplication() {
     queryKey: APPLICATION_QUERY_KEY,
     queryFn: () => fetchApplication(() => token!),
     enabled: isAuthenticated && !!token, // Only fetch when authenticated
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0,
+    gcTime: 0,
     retry: 1,
   });
 }

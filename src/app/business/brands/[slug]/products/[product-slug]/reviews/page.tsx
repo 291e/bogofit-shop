@@ -20,8 +20,8 @@ export default function ProductReviewsFullPage() {
         const run = async () => {
             try {
                 const [listRes, statsRes] = await Promise.all([
-                    fetch(`/api/review/product/${productSlug}`),
-                    fetch(`/api/review/product/${productSlug}/stats`)
+                    fetch(`/api/review/product/${productSlug}`, { cache: 'no-store' }),
+                    fetch(`/api/review/product/${productSlug}/stats`, { cache: 'no-store' })
                 ]);
                 if (listRes.ok) {
                     const json = await listRes.json();

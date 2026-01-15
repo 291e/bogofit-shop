@@ -552,7 +552,9 @@
                     },
                     "edit": {
                         "title": "编辑商品",
-                        "description": "修改商品信息"
+                        "loading": "加载中...",
+                        "description": "修改商品信息",
+                        "update": "更新"
                     }
                 }
             }
@@ -1033,14 +1035,16 @@
             "imageUpload": "上传图片",
             "aiEngineSelection": "选择 AI 引擎",
             "notSelected": "未选择",
-            "v1Description": "稳定的试衣效果（约 20 秒）· 支持上衣和下装",
-            "v2Description": "快速试衣效果（约 15 秒）· 仅支持上衣和单品",
+            "v1Description": "约15秒内快速试穿结果 · 支持上衣",
+            "v2Description": "约40秒内全身试穿功能 · 支持上衣、下装、配件",
+            "v3Description": "约40秒内稳定结果 · 支持上衣、下装、背景",
             "modelImage": "模特图片",
             "fullBodyPhotoRecommended": "建议全身照",
             "topImage": "上衣图片",
             "required": "必填",
             "bottomImage": "下装图片",
             "itemImage": "单品图片",
+            "backgroundImage": "背景图片",
             "itemTitle": "单品名称（可选）",
             "optional": "可选",
             "inquiryPlaceholder": "请输入咨询内容（至少 10 个字符）",
@@ -1218,6 +1222,7 @@
             "uploadHairImage": "上传发型图片",
             "uploadBottomImage": "上传下装图片",
             "uploadClothingImage": "上传服装图片",
+            "uploadBackgroundImage": "上传背景图片",
             "dragOrClick": "拖拽文件到此处或点击选择文件",
             "supportedFormats": "支持格式：JPG、PNG、WEBP",
             "selectSampleImage": "选择示例图片",

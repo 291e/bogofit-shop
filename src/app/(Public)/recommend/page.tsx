@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const convertToDisplayProduct = (product: ProductResponseDto) => {
   // v2.0: Use first variant instead of default variant
   const firstVariant = product.variants?.[0];
-  const defaultImage = product.images?.[0] || "/logo.png";
+  const defaultImage = product.thumbUrl || product.images?.[0] || "/logo.png";
 
   return {
     id: product.id,
@@ -113,7 +113,7 @@ export default function RecommendPage() {
 
       // Add search if provided
       if (searchQuery) params.append("search", searchQuery);
-      
+
       // Add backend sorting parameters
       const backendSort = getBackendSortParams(sortBy);
       if (backendSort.sortBy) {
@@ -122,12 +122,14 @@ export default function RecommendPage() {
       if (backendSort.sortOrder) {
         params.append("sortOrder", backendSort.sortOrder);
       }
-      
+
       // Include related data; avoid filtering by promotion
       params.append('include', 'true');
       if (showSoldOut) params.append("showSoldOut", "true");
 
-      const res = await fetch(`/api/product?${params.toString()}`);
+      const res = await fetch(`/api/product?${params.toString()}`, {
+        cache: 'no-store'
+      });
       if (!res.ok) {
         throw new Error("Failed to fetch products");
       }
@@ -156,20 +158,6 @@ export default function RecommendPage() {
   // NEW API Format: pagination.totalCount
   const firstPage = data?.pages[0];
   const totalCount = firstPage?.pagination?.totalCount ?? 0;
-
-  // Debug: Log API response structure
-  useEffect(() => {
-    if (firstPage) {
-      console.log("📊 Recommend API Response:", {
-        productsCount: firstPage?.products?.length,
-        totalCount: firstPage?.pagination?.totalCount,
-        page: firstPage?.pagination?.page,
-        totalPages: firstPage?.pagination?.totalPages,
-        hasNextPage: firstPage?.pagination?.hasNextPage,
-        displayedTotal: displayProducts.length
-      });
-    }
-  }, [firstPage, displayProducts.length]);
 
   // Set page title
   useEffect(() => {

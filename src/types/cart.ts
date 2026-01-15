@@ -21,17 +21,17 @@ export interface CartItem {
   priceSnapshot: number;   // Price at time of adding
   createdAt: string;
   updatedAt: string;
-  
+
   // Product info (joined from backend)
   productName: string;
   productSlug: string;
   productThumbUrl?: string;
-  
+
   // Variant info (if exists)
   variantPrice?: number;
   variantQuantity?: number;
   variantOptionsJson?: string;  // JSON string of variant options
-  
+
   // Calculated
   totalPrice: number;      // priceSnapshot * quantity
 }
@@ -86,7 +86,7 @@ export const EMPTY_CART: Cart = {
  */
 export const parseVariantOptions = (optionsJson?: string): Record<string, string> => {
   if (!optionsJson) return {};
-  
+
   try {
     const parsed = JSON.parse(optionsJson);
     if (Array.isArray(parsed)) {
@@ -119,7 +119,7 @@ export const getCartItemPriceInfo = (item: CartItem) => {
   const currentPrice = item.variantPrice ?? 0;
   const snapshotPrice = item.priceSnapshot;
   const hasDiscount = currentPrice > snapshotPrice;
-  
+
   return {
     displayPrice: snapshotPrice,
     currentPrice: currentPrice,

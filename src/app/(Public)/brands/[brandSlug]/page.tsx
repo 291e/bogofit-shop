@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const convertToDisplayProduct = (product: ProductResponseDto) => {
   // v2.0: Use first variant instead of default variant
   const firstVariant = product.variants?.[0];
-  const defaultImage = product.images?.[0] || "/logo.png";
+  const defaultImage = product.thumbUrl || product.images?.[0] || "/logo.png";
 
   return {
     id: product.id,
@@ -125,7 +125,7 @@ export default function BrandDetailPage() {
         searchParams.append('sortOrder', backendSort.sortOrder);
       }
 
-      const response = await fetch(`/api/product?${searchParams}`);
+      const response = await fetch(`/api/product?${searchParams}`, { cache: 'no-store' });
       if (!response.ok) throw new Error("Failed to fetch products");
 
       const data = await response.json();
@@ -297,7 +297,10 @@ export default function BrandDetailPage() {
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">
-            {t("brandDetail.products").replace("{brandName}", brandData.name).replace("{count}", totalCount.toLocaleString())}
+            {t("brandDetail.products", {
+              brandName: brandData.name,
+              count: totalCount.toLocaleString()
+            })}
           </h2>
         </div>
 

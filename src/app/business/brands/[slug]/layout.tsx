@@ -74,8 +74,6 @@ export default function BrandLayout({
       });
 
       const data = await response.json();
-      console.log('🔍 Brand API Response:', { status: response.status, data, isId });
-
       if (!response.ok) {
         throw new Error(data.message || t("header.business.brandDetail.cannotGetBrand"));
       }
@@ -83,7 +81,6 @@ export default function BrandLayout({
       // Handle response - both ID and Slug now return { brand: ... }
 
       if (!data.success || !data.brand) {
-        console.log('🔍 Brand data validation failed:', { success: data.success, hasBrand: !!data.brand });
         setBrandError(data.message || t("header.business.brandDetail.brandNotFound"));
         return;
       }
@@ -102,7 +99,6 @@ export default function BrandLayout({
 
       setBrand(brandData);
     } catch (error: unknown) {
-      console.error('Brand access check error:', error);
       setBrandError((error as Error).message || t("header.business.brandDetail.errorCheckingBrand"));
     } finally {
       setIsLoadingBrand(false);
@@ -111,7 +107,6 @@ export default function BrandLayout({
 
   // Check brand access on mount and when token changes
   useEffect(() => {
-    console.log('🔍 Layout useEffect triggered - paramValue:', paramValue, 'token:', !!token);
     if (paramValue) {
       checkBrandAccess();
     }

@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ProductResponseDto } from "@/types/product";
-// import { useBrandContext } from "@/app/business/brands/[id]/layout"; // Unused
 import { usePublicProducts } from "@/hooks/useProducts";
 import { useQueryClient } from "@tanstack/react-query";
 import { PRODUCTS_QUERY_KEY, PRODUCT_DETAIL_QUERY_KEY } from "@/hooks/useProducts";
@@ -66,6 +65,7 @@ export default function AllProductsSubSection({
     isActive: true,
     reviews: true,
     searchKeyword: debouncedSearchTerm || undefined,
+    cache: 'no-store',
   });
 
   // ✅ Use query client for cache invalidation
@@ -82,30 +82,10 @@ export default function AllProductsSubSection({
           : [];
   }, [data]);
 
-  // ✅ Debug: Log first product to see data structure
-  useEffect(() => {
-    if (products.length > 0) {
-      console.log('🔍 First product data:', products[0]);
-      console.log('🔍 Product status:', products[0].status);
-      console.log('🔍 Product isActive:', products[0].isActive);
-      console.log('🔍 Product promotion:', products[0].promotion);
-      console.log('🔍 Product promotionId:', products[0].promotionId);
-    }
-  }, [products]);
-
   // Pagination is inside data.data, NOT data.pagination
   const totalPages = data?.data?.totalPages || data?.pagination?.totalPages || data?.totalPages || 1;
   const totalProducts = data?.data?.totalCount || data?.pagination?.totalCount || products.length;
-  const currentPage = data?.data?.page || data?.pagination?.currentPage || pageNumber;
-
-  // Debug logging
-  console.log('🔍 AllProducts - pageNumber:', pageNumber, 'brandId:', brandId);
-  console.log('📊 AllProducts - Pagination:', {
-    totalPages,
-    totalProducts,
-    currentPage,
-    productsCount: products.length
-  });
+  // const currentPage = data?.data?.page || data?.pagination?.currentPage || pageNumber; // Unused variable removed
 
   // No need for client-side filtering anymore - backend handles search
   const filteredProducts = products;
@@ -178,16 +158,6 @@ export default function AllProductsSubSection({
           message: 'Unknown error'
         }));
 
-        // ✅ Debug: Log error response from backend
-        console.log('🔍 Product Update Error Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          success: errorData.success,
-          message: errorData.message,
-          errorType: errorData.errorType,
-          fullErrorData: errorData
-        });
-
         // ✅ Check backend response format first
         if (errorData.success === false && errorData.message) {
           // Backend returned proper error format
@@ -221,14 +191,6 @@ export default function AllProductsSubSection({
 
       const responseData = await response.json();
 
-      // ✅ Debug: Log actual response from backend
-      console.log('🔍 Product Update Response:', {
-        success: responseData.success,
-        message: responseData.message,
-        data: responseData.data,
-        fullResponse: responseData
-      });
-
       // ✅ Check backend response format
       if (!responseData.success) {
         toast.error(responseData.message || 'Product status update failed');
@@ -254,8 +216,6 @@ export default function AllProductsSubSection({
         : t("header.business.brandDetail.products.allProducts.productDeactivated"));
 
     } catch (error) {
-      console.error('Error toggling product active status:', error);
-
       // ✅ Show specific error messages based on error type
       if (error instanceof TypeError && error.message.includes('fetch')) {
         toast.error('Network connection error - Please check your connection');
@@ -318,7 +278,6 @@ export default function AllProductsSubSection({
         toast.error(data.message || t("header.business.brandDetail.products.allProducts.deleteFailed"));
       }
     } catch (error) {
-      console.error('❌ Delete product error:', error);
       toast.error(t("header.business.brandDetail.products.allProducts.deleteFailed"));
     } finally {
       // Remove from deleting set
@@ -485,7 +444,6 @@ export default function AllProductsSubSection({
                     <div className="w-24 text-center border-r border-gray-300 pr-2">
                       {(() => {
                         const status = product.status;
-                        console.log(`🔍 Product ${product.name} status:`, status, typeof status);
 
                         // Handle backend status: pending, approved, rejected, banned
                         if (status === 'approved') {
@@ -635,10 +593,8 @@ export default function AllProductsSubSection({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  console.log('⬅️ Prev clicked, current page:', pageNumber);
                   setPageNumber(prev => {
                     const newPage = Math.max(1, prev - 1);
-                    console.log('⬅️ New page:', newPage);
                     return newPage;
                   });
                 }}
@@ -656,10 +612,8 @@ export default function AllProductsSubSection({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  console.log('➡️ Next clicked, current page:', pageNumber);
                   setPageNumber(prev => {
                     const newPage = Math.min(totalPages, prev + 1);
-                    console.log('➡️ New page:', newPage);
                     return newPage;
                   });
                 }}

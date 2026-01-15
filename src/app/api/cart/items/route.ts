@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Basic validation
     if (!body.productId) {
+      console.error("❌ Cart Error: Missing productId", body);
       return NextResponse.json(
         { success: false, message: "Product ID is required" },
         { status: 400 }
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!body.quantity || body.quantity < 1) {
+      console.error("❌ Cart Error: Invalid quantity", body);
       return NextResponse.json(
         { success: false, message: "Quantity must be at least 1" },
         { status: 400 }
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/cart/items`, {
+      const backendRes = await fetch(`${API_URL}/api/cart/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,15 +48,26 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify(body),
       });
 
-      const result = await safeJsonParse(response);
-    
-    if (!result.success) {
-      return NextResponse.json(result, { status: result.status || 500 });
-    }
+      // Parse backend response
+      let result;
+      const text = await backendRes.text();
+      try {
+        result = JSON.parse(text);
+      } catch (e) {
+        console.error("❌ Backend response parse error:", text);
+        result = { success: false, message: "Invalid JSON from backend" };
+      }
 
-    const data = result.data;
+      if (!backendRes.ok) {
+        console.error(`❌ Backend /api/cart/items Error (${backendRes.status}):`, result);
+        // Pass through the backend error message
+        return NextResponse.json(
+          { success: false, message: result.message || "Failed to add item to cart", errors: result.errors },
+          { status: backendRes.status }
+        );
+      }
 
-      return NextResponse.json(data, { status: response.status });
+      return NextResponse.json(result, { status: 200 });
     } catch {
       return NextResponse.json(
         { success: false, message: 'Backend service unavailable' },

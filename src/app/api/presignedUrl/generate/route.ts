@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     // Check if response has content before parsing JSON
     const responseText = await response.text();
-    
+
     if (!responseText || responseText.trim() === '') {
       return NextResponse.json(
         { success: false, message: 'Backend API không trả về dữ liệu. Kiểm tra xem API đã chạy chưa.' },

@@ -156,8 +156,8 @@ function ProductReviewsQuickModal({ brandId, brand, product, onClose }: { brandI
             if (!productId) return;
             try {
                 const [listRes, statsRes] = await Promise.all([
-                    fetch(`/api/review/product/${productId}`),
-                    fetch(`/api/review/product/${productId}/stats`)
+                    fetch(`/api/review/product/${productId}`, { cache: 'no-store' }),
+                    fetch(`/api/review/product/${productId}/stats`, { cache: 'no-store' })
                 ]);
                 if (listRes.ok) {
                     const json = await listRes.json();
