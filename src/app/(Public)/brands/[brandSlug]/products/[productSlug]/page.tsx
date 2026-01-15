@@ -1,4 +1,4 @@
-import React from "react";
+
 import { notFound } from "next/navigation";
 import { ProductResponseDto } from "@/types/product";
 import ProductDetailClient from "@/components/(Public)/product/ProductDetailClient";

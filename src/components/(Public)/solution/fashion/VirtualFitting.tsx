@@ -29,6 +29,7 @@ interface VirtualFittingProps {
   productCategory?: string;
   currentImage?: string; // 현재 선택된 메인 이미지
   onResultGenerated?: (resultImage: string) => void; // 가상 피팅 결과 콜백
+  simpleMode?: boolean; // If true, renders a simple header instead of the collapsible card
 }
 
 export default function VirtualFitting({
@@ -36,6 +37,7 @@ export default function VirtualFitting({
   productCategory,
   currentImage,
   onResultGenerated,
+  simpleMode = false,
 }: VirtualFittingProps) {
   const { t } = useLanguage();
   const [files, setFiles] = useState<{
@@ -752,40 +754,53 @@ export default function VirtualFitting({
   return (
     <div className="w-full max-w-6xl mx-auto">
       {/* 가상 피팅 헤더 (항상 표시) */}
-      <Card
-        className="mb-6 py-4"
-        style={{
-          background: "linear-gradient(270deg, #FF84CD, #F9CFB7)",
-          backgroundSize: "200% 200%", // 이동 거리 확보
-          animation: "gradientShift 8s ease-in-out infinite", // 더 부드럽게
-        }}
-      >
-        <CardHeader
-          className="cursor-pointer gap-0 "
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-white">
-              <div className="w-8 h-8 bg-gradient-to-r from-[#FF84CD] to-[#F9CFB7] rounded-full flex items-center justify-center">
-                <Play className="w-4 h-4 text-white" />
-              </div>
+      {simpleMode ? (
+        <div className="flex items-center justify-between border-b pb-4 mb-6">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-gray-900">
               {t("productDetail.virtualFitting.title")}
-              <Badge variant="secondary" className="ml-2">
-                {aiVersion === 'v1' ? 'BOGOFIT V1' : (aiVersion === 'v2' ? 'BOGOFIT V2' : 'BOGOFIT V3')}
-              </Badge>
-            </div>
-            {isOpen ? (
-              <ChevronUp className="w-5 h-5 text-white" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-white" />
-            )}
-          </CardTitle>
-        </CardHeader>
-      </Card>
+            </h3>
+            <Badge variant="secondary" className="bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0">
+              {aiVersion === 'v1' ? 'BOGOFIT V1' : (aiVersion === 'v2' ? 'BOGOFIT V2' : 'BOGOFIT V3')}
+            </Badge>
+          </div>
+        </div>
+      ) : (
+        <Card
+          className="mb-6 py-4"
+          style={{
+            background: "linear-gradient(270deg, #FF84CD, #F9CFB7)",
+            backgroundSize: "200% 200%", // 이동 거리 확보
+            animation: "gradientShift 8s ease-in-out infinite", // 더 부드럽게
+          }}
+        >
+          <CardHeader
+            className="cursor-pointer gap-0 "
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white">
+                <div className="w-8 h-8 bg-gradient-to-r from-[#FF84CD] to-[#F9CFB7] rounded-full flex items-center justify-center">
+                  <Play className="w-4 h-4 text-white" />
+                </div>
+                {t("productDetail.virtualFitting.title")}
+                <Badge variant="secondary" className="ml-2">
+                  {aiVersion === 'v1' ? 'BOGOFIT V1' : (aiVersion === 'v2' ? 'BOGOFIT V2' : 'BOGOFIT V3')}
+                </Badge>
+              </div>
+              {isOpen ? (
+                <ChevronUp className="w-5 h-5 text-white" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-white" />
+              )}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      )}
 
       {/* 가상 피팅 콘텐츠 (접기/펼치기) */}
       <div
-        className={`transition-all duration-500 ease-in-out ${isOpen
+        className={simpleMode ? "" : `transition-all duration-500 ease-in-out ${isOpen
           ? "max-h-none opacity-100 overflow-visible"
           : "max-h-0 opacity-0 overflow-hidden"
           }`}

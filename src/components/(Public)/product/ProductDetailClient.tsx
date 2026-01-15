@@ -240,8 +240,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const currentImage = allImages[selectedImageIndex];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen top-0 bg-gradient-to-br from-pink-50 via-white to-purple-50">
+      <div className="container  mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-12">
             {/* 상품 이미지 섹션 */}
@@ -670,19 +670,13 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             </div>
           </div>
 
-          {/* 가상 피팅 */}
-          <div className="mt-8 hidden md:block">
-            <VirtualFitting
-              productTitle={product.title}
-              productCategory={product.category}
-              currentImage={currentImage}
-            />
-          </div>
+
 
           {/* Sticky Navigation Tabs */}
-          <div className="sticky z-40 bg-white shadow-sm border-b border-gray-100 mt-16">
+          <div className="sticky top-16 lg:top-20 z-20 bg-white shadow-sm border-b border-gray-100 mt-16 transition-all duration-200">
             <div className="flex justify-center max-w-8xl mx-auto">
               {[
+                { id: "virtual-fitting", label: "가상 피팅" },
                 { id: "product-detail", label: "상품 상세" },
                 { id: "product-size", label: "상품 사이즈" },
                 { id: "reviews", label: "리뷰" },
@@ -696,7 +690,11 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     e.preventDefault();
                     const element = document.getElementById(tab.id);
                     if (element) {
-                      const y = element.getBoundingClientRect().top + window.scrollY - 100; // Offset for sticky header
+                      const headerHeight = 80; // Approximate header height (lg:h-20)
+                      const tabsHeight = 56;   // Approximate tabs height
+                      const extraPadding = 20; // Extra breathing room
+                      const offset = headerHeight + tabsHeight + extraPadding;
+                      const y = element.getBoundingClientRect().top + window.scrollY - offset;
                       window.scrollTo({ top: y, behavior: 'smooth' });
                     }
                   }}
@@ -705,6 +703,16 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 </a>
               ))}
             </div>
+          </div>
+
+          {/* 가상 피팅 */}
+          <div id="virtual-fitting" className="max-w-6xl mx-auto mt-8 scroll-mt-40 hidden md:block">
+            <VirtualFitting
+              productTitle={product.title}
+              productCategory={product.category}
+              currentImage={currentImage}
+              simpleMode={true}
+            />
           </div>
 
           {/* 상품 상세 (Description & Images) */}
