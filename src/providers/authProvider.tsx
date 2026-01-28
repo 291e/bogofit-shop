@@ -2,16 +2,16 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
-import type { 
-  User, 
-  LoginDto, 
-  LoginByEmailDto, 
+import type {
+  User,
+  LoginDto,
+  LoginByEmailDto,
   RegisterDto,
   UpdatePasswordDto,
   UpdatePhoneDto,
   UpdateEmailDto,
   UpdateNameDto,
-  AuthResponse 
+  AuthResponse
 } from '@/types/auth';
 
 interface AuthContextType {
@@ -28,7 +28,7 @@ interface AuthContextType {
     updateName: boolean;
     updatePassword: boolean;
   };
-  
+
   // Auth methods
   login: (data: LoginDto) => Promise<void>;
   loginByEmail: (data: LoginByEmailDto) => Promise<void>;
@@ -36,7 +36,7 @@ interface AuthContextType {
   logout: () => void;
   getToken: () => string | null;
   refreshAccessToken: () => Promise<string | null>;
-  
+
   // Update methods
   updatePassword: (data: UpdatePasswordDto) => Promise<void>;
   updatePhone: (data: UpdatePhoneDto) => Promise<void>;
@@ -52,17 +52,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window === 'undefined') {
       return { user: null, token: null };
     }
-    
+
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    
-    if (savedToken && savedUser) {
-      return {
-        token: savedToken,
-        user: JSON.parse(savedUser) as User,
-      };
+
+    // Check if values are not just strings "null" or "undefined"
+    const isValidToken = savedToken && savedToken !== 'null' && savedToken !== 'undefined';
+    const isValidUser = savedUser && savedUser !== 'null' && savedUser !== 'undefined';
+
+    if (isValidToken && isValidUser) {
+      try {
+        return {
+          token: savedToken,
+          user: JSON.parse(savedUser) as User,
+        };
+      } catch (e) {
+        console.error('Failed to parse user from localStorage', e);
+        return { user: null, token: null };
+      }
     }
-    
+
     return { user: null, token: null };
   };
 
@@ -86,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ✅ Ensure cookie is set for middleware - use compatible settings
       document.cookie = `auth_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
     }
-    
+
     setIsLoading(false);
   }, [token]);
 
@@ -95,15 +104,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Save to localStorage
     localStorage.setItem('token', authData.token);
     localStorage.setItem('user', JSON.stringify(authData.user));
-    
+
     if (authData.refreshToken) {
       localStorage.setItem('refreshToken', authData.refreshToken);
       setRefreshToken(authData.refreshToken);
     }
-    
+
     // Set cookie for middleware
     document.cookie = `auth_token=${authData.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
-    
+
     setToken(authData.token);
     setUser(authData.user);
   };
@@ -113,10 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('refreshToken');
-    
+
     // Clear cookie for middleware
     document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-    
+
     setToken(null);
     setUser(null);
     setRefreshToken(null);
@@ -133,14 +142,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
-      
+
       if (data.token) {
         localStorage.setItem('token', data.token);
         document.cookie = `auth_token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
         setToken(data.token);
         return data.token;
       }
-      
+
       return null;
     } catch (error) {
       logout();
@@ -262,12 +271,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: 'PUT',
         body: JSON.stringify(updateData),
       });
-      
+
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
       }
-      
+
       toast.success(data.message || '전화번호가 성공적으로 변경되었습니다.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '전화번호 변경에 실패했습니다.');
@@ -284,12 +293,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: 'PUT',
         body: JSON.stringify(updateData),
       });
-      
+
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
       }
-      
+
       toast.success(data.message || '이메일이 성공적으로 변경되었습니다.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '이메일 변경에 실패했습니다.');
@@ -306,12 +315,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: 'PUT',
         body: JSON.stringify(updateData),
       });
-      
+
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
       }
-      
+
       toast.success(data.message || '이름이 성공적으로 변경되었습니다.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '이름 변경에 실패했습니다.');

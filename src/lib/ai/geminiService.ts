@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import { PlatformType, GenderType } from "../../types/ai";
 
 // Initialize Gemini AI
 const ai = new GoogleGenAI({
@@ -144,13 +145,13 @@ export async function generateProductImage({
     const requestParams: any = {
       model: "gemini-3-pro-image-preview",
       contents: promptArray,
-      generationConfig: generateConfig,
+      config: generateConfig,
     };
 
     // Add aspect ratio config if provided
     if (aspectRatio) {
       // If it's one of our custom types, default to 9:16 (vertical)
-      const ratio = ['hero', 'features', 'lifestyle', 'info'].includes(aspectRatio) ? '9:16' : aspectRatio;
+      const ratio = ['hero', 'features', 'lifestyle', 'detail', 'info'].includes(aspectRatio) ? '9:16' : aspectRatio;
 
       // Note: Node SDK param structure might differ slightly, but assuming this follows previous working patterns or updated docs
       // If 'imageConfig' belongs in 'generationConfig':
@@ -222,4 +223,122 @@ export async function generateProductImageVariations({
   }
 
   return results;
+}
+
+/**
+ * Generate platform-specific high-end set (12 images + copy)
+ */
+export async function generatePlatformPage({
+  prompt,
+  baseImage,
+  platform,
+  gender
+}: {
+  prompt: string;
+  baseImage: string;
+  platform: PlatformType;
+  gender: GenderType;
+}) {
+  const details = await generateCopy(prompt, platform, gender);
+  const viewConfigs = getPlatformConfigs(platform, gender);
+
+  const imagePromises = viewConfigs.map(async (config) => {
+    // Clean base64 data
+    let cleanBase64 = baseImage;
+    let mimeType = "image/png";
+
+    if (baseImage.startsWith('data:')) {
+      const base64Match = baseImage.match(/base64,(.+)$/);
+      if (base64Match) cleanBase64 = base64Match[1];
+      const mimeMatch = baseImage.match(/:(.*?);/);
+      if (mimeMatch) mimeType = mimeMatch[1];
+    } else if (baseImage.startsWith('http')) {
+      const imageRes = await fetch(baseImage);
+      const arrayBuffer = await imageRes.arrayBuffer();
+      cleanBase64 = Buffer.from(arrayBuffer).toString('base64');
+      const contentType = imageRes.headers.get('content-type');
+      if (contentType) mimeType = contentType;
+    }
+
+    const promptText = `ACT AS A PROFESSIONAL FASHION PHOTOGRAPHER FOR ${platform}.
+        TARGET: ${gender === 'MAN' ? 'Men' : 'Women'}.
+        STRICT RULES:
+        1. Keep EXACT face and body identity.
+        2. Keep EXACT clothing details (fabric, color, fit).
+        3. IF THE SCENE IS ACCESSORY: Focus on bags, shoes, or jewelry that perfectly match this outfit.
+        SCENE: ${config.desc}.
+        OUTPUT: Professional ${config.ratio} aspect ratio, high-fidelity.`;
+
+    const requestParams: any = {
+      model: "gemini-3-pro-image-preview",
+      contents: [
+        { text: promptText },
+        { inlineData: { mimeType, data: cleanBase64 } }
+      ],
+      config: {
+        candidateCount: 1,
+        responseModalities: ["IMAGE"],
+        imageConfig: { aspectRatio: config.ratio }
+      }
+    };
+
+    const response = await ai.models.generateContent(requestParams);
+
+    if (response.candidates && response.candidates[0]?.content?.parts) {
+      const part = response.candidates[0].content.parts.find((p: any) => p.inlineData);
+      return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : null;
+    }
+    return null;
+  });
+
+  const images = (await Promise.all(imagePromises)).filter((img): img is string => img !== null);
+  return { images, details };
+}
+
+function getPlatformConfigs(platform: PlatformType, gender: GenderType) {
+  const commonRatio = platform === 'ABLY' ? "9:16" : platform === 'MUSINSA' ? "3:4" : "1:1";
+  return [
+    { desc: "Main hero shot, full body, iconic pose", ratio: commonRatio },
+    { desc: "Upper body close-up, natural expression", ratio: commonRatio },
+    { desc: "Side profile showing the drape and fit", ratio: commonRatio },
+    { desc: "Detail shot: Fabric texture and stitching close-up", ratio: "1:1" },
+    { desc: "Walking motion, showing the garment in movement", ratio: commonRatio },
+    { desc: "Accessory matching: Focus on a luxury bag that suits this look", ratio: "1:1" },
+    { desc: "Footwear matching: Focus on shoes and pant-hem detail", ratio: "1:1" },
+    { desc: "Back silhouette, clean composition", ratio: commonRatio },
+    { desc: "Lifestyle shot: Sitting in a modern architectural space", ratio: commonRatio },
+    { desc: "Emotional moody shot, soft lighting", ratio: commonRatio },
+    { desc: "Close-up on buttons or unique design elements", ratio: "1:1" },
+    { desc: "Final full look with all accessories visible", ratio: commonRatio }
+  ];
+}
+
+async function generateCopy(prompt: string, platform: PlatformType, gender: GenderType) {
+  const response = await ai.models.generateContent({
+    model: "gemini-3-pro-preview",
+    contents: `Product: ${prompt}. Platform: ${platform}. Gender: ${gender}. Write a high-end fashion detail page copy in Korean. Include Title, Intro, Fabric, Fit, and Matching Tips for bags/shoes.`,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          intro: { type: Type.STRING },
+          fabric: { type: Type.STRING },
+          fit: { type: Type.STRING },
+          tip: { type: Type.STRING },
+          accessory_matching: { type: Type.STRING }
+        },
+        required: ["title", "intro", "fabric", "fit", "tip", "accessory_matching"]
+      }
+    }
+  });
+
+  try {
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+    return JSON.parse(text || '{}');
+  } catch (e) {
+    console.error("Failed to parse copy JSON:", e);
+    return {};
+  }
 }

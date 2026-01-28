@@ -95,6 +95,21 @@ export default function ProductRegisterSubSection({
   // ✅ Selection State for Gallery Candidates
   const [selectedGalleryItems, setSelectedGalleryItems] = useState<string[]>([]);
 
+  // ✅ AI Step 3: Platform Page State
+  const [aiPlatform, setAiPlatform] = useState("MUSINSA");
+  const [aiGender, setAiGender] = useState("WOMAN");
+  const [platformPageResult, setPlatformPageResult] = useState<{
+    images: string[];
+    details: {
+      title: string;
+      intro: string;
+      fabric: string;
+      fit: string;
+      tip: string;
+      accessory_matching: string;
+    };
+  } | null>(null);
+
   const toggleGallerySelection = (url: string) => {
     setSelectedGalleryItems(prev =>
       prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
@@ -179,6 +194,45 @@ export default function ProductRegisterSubSection({
     }
   };
 
+  // Step 3: Generate Platform-Specific Page (12 Images + Copy)
+  const handleGeneratePlatformPage = async () => {
+    if (!aiBaseImage) {
+      toast.error("Please upload a reference image first");
+      return;
+    }
+    setIsGeneratingAI(true);
+    setPlatformPageResult(null);
+
+    try {
+      const response = await fetch('/api/ai/generate-platform-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: formData.name || "Product",
+          base64Image: generatedSet?.main || aiBaseImage,
+          platform: aiPlatform,
+          gender: aiGender
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setPlatformPageResult({
+          images: data.images,
+          details: data.details
+        });
+        toast.success("Platform Page generated successfully! 12 images and AI copy are ready.");
+      } else {
+        toast.error(data.message || "Failed to generate platform page");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error generating platform page");
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   // ✅ Helper: Convert Base64 to File
   const base64ToFile = (dataurl: string, filename: string) => {
     const arr = dataurl.split(',');
@@ -249,6 +303,46 @@ export default function ProductRegisterSubSection({
     } catch (error) {
       console.error("Failed to upload AI images:", error);
       toast.error("Failed to upload images. Please try again.", { id: toastId });
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleApplyPlatformPage = async () => {
+    if (!platformPageResult) return;
+
+    setIsGeneratingAI(true);
+    const toastId = toast.loading("Uploading platform images...");
+
+    try {
+      const timestamp = Date.now();
+
+      // 1. Upload All 12 Images
+      const productImagesUrls: string[] = [];
+      for (let i = 0; i < platformPageResult.images.length; i++) {
+        const imgData = platformPageResult.images[i];
+        if (imgData.startsWith('data:')) {
+          const file = base64ToFile(imgData, `ai-platform-${timestamp}-${i}.png`);
+          const url = await uploadImage(file, 'products');
+          if (url) productImagesUrls.push(url);
+        }
+      }
+
+      // 2. Update Form Data
+      const { title } = platformPageResult.details;
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name && prev.name !== "Product" ? prev.name : title,
+        // Add to DETAIL images (per user request)
+        detailImages: [...(prev.detailImages || []), ...productImagesUrls],
+      }));
+
+      toast.success("Platform page images applied successfully!", { id: toastId });
+      setOpenSections(prev => ({ ...prev, images: true, basic: true }));
+
+    } catch (error) {
+      console.error("Failed to apply platform page:", error);
+      toast.error("Failed to apply platform page images. Please try again.", { id: toastId });
     } finally {
       setIsGeneratingAI(false);
     }
@@ -1095,6 +1189,119 @@ export default function ProductRegisterSubSection({
                           )}
                         </div>
                       </div>
+                    </div>
+
+                    {/* Step 3: High-end Platform Page (12 Images) */}
+                    <div className="mt-8 pt-8 border-t">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="space-y-1">
+                          <Label className="text-base font-bold text-purple-700 flex items-center gap-2">
+                            <Sparkles className="h-4 w-4" />
+                            Step 3: 고퀄리티 플랫폼 페이지 생성 (12장 + 홍보문구)
+                          </Label>
+                          <p className="text-sm text-gray-500">
+                            특정 플랫폼 스타일에 맞춘 화보급 이미지 12장과 AI 마케팅 문구를 생성합니다.
+                          </p>
+                        </div>
+
+                        {platformPageResult && (
+                          <Button
+                            type="button"
+                            onClick={handleApplyPlatformPage}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                            disabled={isGeneratingAI}
+                          >
+                            AI 플랫폼 페이지 적용하기
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex gap-4 items-end mb-6">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold text-gray-400">Target Platform</Label>
+                          <select
+                            className="w-40 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-purple-500 bg-white"
+                            value={aiPlatform}
+                            onChange={(e) => setAiPlatform(e.target.value)}
+                          >
+                            <option value="MUSINSA">무신사 (3:4)</option>
+                            <option value="ABLY">에이블리 (9:16)</option>
+                            <option value="ZIGZAG">지그재그 (1:1)</option>
+                            <option value="GENERAL">일반 커머스 (1:1)</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold text-gray-400">Gender</Label>
+                          <select
+                            className="w-32 px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-purple-500 bg-white"
+                            value={aiGender}
+                            onChange={(e) => setAiGender(e.target.value)}
+                          >
+                            <option value="WOMAN">여성 모델</option>
+                            <option value="MAN">남성 모델</option>
+                          </select>
+                        </div>
+
+                        <Button
+                          type="button"
+                          onClick={handleGeneratePlatformPage}
+                          disabled={!aiBaseImage || isGeneratingAI}
+                          className="bg-black hover:bg-gray-800 text-white"
+                        >
+                          {isGeneratingAI && !generatedSet ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              생성 중...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Step 3 생성
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {platformPageResult && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-dashed border-gray-300">
+                          {/* Images Grid */}
+                          <div className="space-y-3">
+                            <span className="text-xs font-bold text-gray-500">생성된 화보 이미지 (12장)</span>
+                            <div className="grid grid-cols-4 gap-2">
+                              {platformPageResult.images.map((img, idx) => (
+                                <div key={idx} className="aspect-[3/4] bg-white rounded border overflow-hidden">
+                                  <img src={img} alt={`Platform ${idx}`} className="w-full h-full object-cover" />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* AI Copy */}
+                          <div className="space-y-3">
+                            <span className="text-xs font-bold text-gray-500">AI 생성 마케팅 문구</span>
+                            <div className="bg-white p-4 rounded-lg border shadow-sm space-y-4 text-sm">
+                              <div>
+                                <h4 className="font-bold text-gray-900 border-b pb-1 mb-2">{platformPageResult.details.title}</h4>
+                                <p className="text-gray-600 leading-relaxed italic">"{platformPageResult.details.intro}"</p>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold text-purple-600 uppercase">Fabric</span>
+                                  <p className="text-xs text-gray-700">{platformPageResult.details.fabric}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold text-purple-600 uppercase">Fit</span>
+                                  <p className="text-xs text-gray-700">{platformPageResult.details.fit}</p>
+                                </div>
+                              </div>
+                              <div className="space-y-1 pt-2 border-t">
+                                <span className="text-[10px] font-bold text-blue-600 uppercase">Stylist Tip</span>
+                                <p className="text-xs text-gray-700 line-clamp-2">{platformPageResult.details.tip}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

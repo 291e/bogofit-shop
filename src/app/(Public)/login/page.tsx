@@ -17,7 +17,9 @@ export default function LoginPage() {
   useEffect(() => {
     // Check if user is already authenticated
     if (!isLoading && isAuthenticated) {
-      router.push("/");
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectPath = searchParams.get("redirect") || "/";
+      router.replace(redirectPath);
     }
   }, [isLoading, isAuthenticated, router]);
 
@@ -32,7 +34,7 @@ export default function LoginPage() {
       </div>
     );
   }
-  
+
   // If authenticated, show loading while redirecting
   if (isAuthenticated) {
     return (
@@ -53,25 +55,23 @@ export default function LoginPage() {
           <div className="bg-gradient-to-r from-pink-50 to-rose-50 p-1 rounded-xl border border-pink-200 flex">
             <button
               onClick={() => setActiveTab("login")}
-              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all ${
-                activeTab === "login"
+              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all ${activeTab === "login"
                   ? "bg-white shadow-sm text-pink-500"
                   : "text-gray-600 hover:text-pink-400"
-              }`}
+                }`}
             >
-            <User className="h-4 w-4" />
-            <span className="font-bold">{t("auth.login")}</span>
+              <User className="h-4 w-4" />
+              <span className="font-bold">{t("auth.login")}</span>
             </button>
             <button
               onClick={() => setActiveTab("register")}
-              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all ${
-                activeTab === "register"
+              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-all ${activeTab === "register"
                   ? "bg-white shadow-sm text-pink-500"
                   : "text-gray-600 hover:text-pink-400"
-              }`}
+                }`}
             >
-            <Building2 className="h-4 w-4" />
-            <span className="font-bold">{t("auth.signUp")}</span>
+              <Building2 className="h-4 w-4" />
+              <span className="font-bold">{t("auth.signUp")}</span>
             </button>
           </div>
         </div>
